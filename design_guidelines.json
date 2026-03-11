@@ -1,0 +1,152 @@
+{
+  "project_name": "F1 Paddock Predictor",
+  "design_philosophy": {
+    "theme_name": "Midnight Telemetry",
+    "core_concept": "Race Control Dashboard meets Cyberpunk Gaming",
+    "emotional_drivers": ["Adrenaline", "Precision", "Competition", "Speed"],
+    "visual_style": "Dark Mode Only, High Contrast, Neon Accents, Carbon Fiber textures, Aerodynamic Shapes"
+  },
+  "typography": {
+    "font_family": {
+      "headings": "Racing Sans One, sans-serif",
+      "body": "Chivo, sans-serif",
+      "data": "JetBrains Mono, monospace"
+    },
+    "installation": {
+      "google_fonts_url": "https://fonts.googleapis.com/css2?family=Chivo:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:wght@100..800&family=Racing+Sans+One&display=swap"
+    },
+    "usage_rules": {
+      "h1": "font-heading text-4xl md:text-6xl uppercase tracking-tighter italic",
+      "h2": "font-heading text-2xl md:text-4xl uppercase tracking-tight italic",
+      "h3": "font-heading text-xl md:text-2xl uppercase tracking-normal",
+      "body": "font-body text-base text-zinc-300 leading-relaxed",
+      "caption": "font-data text-xs text-zinc-500 uppercase tracking-widest",
+      "data_display": "font-data text-lg font-bold tracking-tight"
+    }
+  },
+  "colors": {
+    "palette": {
+      "background": "#09090b",
+      "foreground": "#fafafa",
+      "card": "#121214",
+      "card-foreground": "#fafafa",
+      "popover": "#121214",
+      "popover-foreground": "#fafafa",
+      "primary": "#EF4444",
+      "primary-foreground": "#fafafa",
+      "secondary": "#10b981",
+      "secondary-foreground": "#000000",
+      "muted": "#27272a",
+      "muted-foreground": "#a1a1aa",
+      "accent": "#f59e0b",
+      "accent-foreground": "#000000",
+      "destructive": "#7f1d1d",
+      "destructive-foreground": "#fafafa",
+      "border": "#27272a",
+      "input": "#27272a",
+      "ring": "#EF4444"
+    },
+    "usage_guidelines": {
+      "primary_action": "bg-primary hover:bg-red-600 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)] transition-all duration-300 hover:scale-105",
+      "secondary_action": "bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700",
+      "success_state": "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+      "warning_state": "text-amber-500 bg-amber-500/10 border-amber-500/20",
+      "error_state": "text-red-500 bg-red-500/10 border-red-500/20",
+      "glass_surface": "bg-zinc-950/80 backdrop-blur-md border border-white/10"
+    }
+  },
+  "layout": {
+    "spacing_system": {
+      "container_padding": "p-4 md:p-8 lg:p-12",
+      "section_gap": "gap-8 md:gap-12",
+      "item_gap": "gap-3 md:gap-4"
+    },
+    "grid_strategies": {
+      "dashboard_bento": "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4",
+      "race_card": "flex flex-col md:flex-row justify-between items-center p-6 border-l-4 border-primary bg-card",
+      "leaderboard_row": "grid grid-cols-12 gap-2 items-center p-3 hover:bg-white/5 transition-colors border-b border-white/5"
+    },
+    "shapes": {
+      "default_radius": "rounded-sm",
+      "button_radius": "rounded-sm",
+      "card_radius": "rounded-md",
+      "special_effect": "skew-x-[-10deg] for badges and labels to simulate speed"
+    }
+  },
+  "components": {
+    "buttons": {
+      "default": "h-11 px-8 font-heading uppercase tracking-wider text-sm clip-path-slant",
+      "icon": "h-10 w-10 p-2",
+      "ghost": "hover:bg-white/5 text-zinc-400 hover:text-white"
+    },
+    "cards": {
+      "base": "bg-card border border-border/40 shadow-xl overflow-hidden relative group",
+      "hover_effect": "hover:border-primary/50 transition-colors duration-300",
+      "race_countdown": "bg-gradient-to-br from-zinc-900 to-black border-zinc-800"
+    },
+    "inputs": {
+      "style": "bg-zinc-950/50 border-zinc-800 focus:border-primary focus:ring-1 focus:ring-primary/50 h-12 text-lg font-body"
+    },
+    "navigation": {
+      "mobile_bottom_bar": "fixed bottom-0 left-0 right-0 bg-zinc-950/90 backdrop-blur-xl border-t border-white/10 h-16 flex justify-around items-center z-50",
+      "desktop_sidebar": "hidden md:flex flex-col w-64 h-screen bg-zinc-950 border-r border-white/10 p-6"
+    }
+  },
+  "assets": {
+    "images": {
+      "hero_bg": "https://images.unsplash.com/photo-1749952649510-c2197ce61b9a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzh8MHwxfHNlYXJjaHw0fHxGMSUyMHJhY2UlMjBjYXIlMjBuaWdodCUyMHRyYWNrJTIwYWN0aW9ufGVufDB8fHx8MTc3MzIxNzIwMXww&ixlib=rb-4.1.0&q=85",
+      "login_bg": "https://images.unsplash.com/photo-1749952648856-a4cf58358d84?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzh8MHwxfHNlYXJjaHwzfHxGMSUyMHJhY2UlMjBjYXIlMjBuaWdodCUyMHRyYWNrJTIwYWN0aW9ufGVufDB8fHx8MTc3MzIxNzIwMXww&ixlib=rb-4.1.0&q=85",
+      "finish_flag": "https://images.unsplash.com/photo-1689974288558-c393a05cb59e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNTl8MHwxfHNlYXJjaHwyfHxmb3JtdWxhJTIwMSUyMGNoZWNrZXJlZCUyMGZsYWclMjBmaW5pc2glMjBsaW5lfGVufDB8fHx8MTc3MzIxNzIwMnww&ixlib=rb-4.1.0&q=85",
+      "driver_placeholder": "https://images.unsplash.com/photo-1770349694206-5d7adcbe9a8b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzZ8MHwxfHNlYXJjaHw0fHxtb2Rlcm4lMjBmb3JtdWxhJTIwMSUyMGRyaXZlciUyMGhlbG1ldCUyMHN0dWRpb3xlbnwwfHx8fDE3NzMyMTcyMDN8MA&ixlib=rb-4.1.0&q=85"
+    },
+    "icons_library": "lucide-react",
+    "icon_usage": "Use stroke-width={1.5} for a thin, technical look. Size usually 20px or 24px."
+  },
+  "motion": {
+    "libraries": ["framer-motion"],
+    "presets": {
+      "page_transition": {
+        "initial": { "opacity": 0, "y": 20 },
+        "animate": { "opacity": 1, "y": 0 },
+        "exit": { "opacity": 0, "y": -20 },
+        "transition": { "duration": 0.3, "ease": "easeOut" }
+      },
+      "list_item_stagger": {
+        "container": {
+          "hidden": { "opacity": 0 },
+          "show": {
+            "opacity": 1,
+            "transition": { "staggerChildren": 0.05 }
+          }
+        },
+        "item": {
+          "hidden": { "opacity": 0, "x": -20 },
+          "show": { "opacity": 1, "x": 0 }
+        }
+      },
+      "pulse_glow": {
+        "animate": { "boxShadow": ["0 0 0px rgba(239,68,68,0)", "0 0 20px rgba(239,68,68,0.5)", "0 0 0px rgba(239,68,68,0)"] },
+        "transition": { "duration": 2, "repeat": "Infinity" }
+      }
+    }
+  },
+  "universal_guidelines": [
+    "ALWAYS use 'data-testid' on interactive elements.",
+    "Dark mode is NOT optional. It is the only mode.",
+    "Use 'Red' (#EF4444) for primary actions, but use it sparingly to maintain impact.",
+    "Borders should be subtle (opacity 10-20%) unless active/focused.",
+    "Typography hierarchy must be strict: Racing Sans One for impact, Chivo for reading, JetBrains Mono for data.",
+    "No gradients on text. Legibility is key for data.",
+    "Mobile-first: Touch targets must be at least 44px.",
+    "Use Lucide React icons.",
+    "For toasts, use 'sonner'."
+  ],
+  "instructions_to_main_agent": [
+    "Install dependencies: `npm install framer-motion lucide-react sonner clsx tailwind-merge`",
+    "Update `tailwind.config.js` to include the custom font families and colors defined in this JSON.",
+    "In `index.css`, import the Google Fonts at the very top.",
+    "Create a Layout component that handles the bottom navigation on mobile and sidebar on desktop.",
+    "Ensure the `Prediction` flow feels like a game—selecting a driver should highlight them with a 'selected' border and glow.",
+    "The Dashboard should show the 'Next Race' countdown prominently."
+  ]
+}
