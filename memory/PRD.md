@@ -1,67 +1,83 @@
-# Paddock Predictor - PRD
+# PRONOKIF - PRD
 
 ## Problème Original
-Application de pronostics F1 entre amis avec :
-- Inscription rapide (email/mot de passe + pseudo)
-- Créer/rejoindre une ligue avec code d'invitation
-- Faire des pronostics (Qualifications: poleman + Top 3, Course: vainqueur + Top 3)
-- Tableau de bord avec prochain GP, classement ligue, position utilisateur
-- Système de points après chaque course
-- Notifications in-app
-- Partage code d'invitation (WhatsApp, copier lien)
+Application de pronostics F1 entre amis avec design gaming arcade.
 
-## User Personas
-1. **Fan F1 Casual** - Suit les courses le week-end, veut s'amuser avec ses amis
-2. **Passionné F1** - Connaît tous les pilotes, veut prouver ses connaissances
-3. **Compétiteur Social** - Motivé par le classement et battre ses amis
+## Choix Utilisateur
+- Nom: **PRONOKIF**
+- Design: Gaming arcade (inspiré image fournie - métallique, néon orange/cyan)
+- Auth: JWT
+- Données F1: Statiques (saison 2026)
+- Notifications: In-app
+- Paris bonus: Safety Car, DNF, Fastest Lap
 
 ## Architecture Technique
 
 ### Backend (FastAPI + MongoDB)
-- **Auth**: JWT avec bcrypt pour le hashing
-- **Modèles**: Users, Leagues, Predictions, Leaderboard
-- **Données F1**: Liste statique saison 2026 (20 pilotes, 24 courses)
-- **Scoring**: Points pour pole exacte (5), top 3 exact (3/5), top 3 présent (1/2)
+- **Auth**: JWT + bcrypt + système XP/Niveau
+- **Modèles**: Users, Leagues, Predictions, Leaderboard, Notifications, RaceResults
+- **Données F1**: 20 pilotes, 24 courses (saison 2026)
+- **Scoring**: Pole(5), Top3 exact(3/5), Winner(10), Bonus(+2 à +5)
 
 ### Frontend (React + Tailwind)
-- **Theme**: "Midnight Telemetry" - Gaming sombre avec accents rouges
-- **Typography**: Racing Sans One (titres), Chivo (corps), JetBrains Mono (données)
-- **Components**: shadcn/ui + effets glow personnalisés
+- **Theme**: "Gaming Arcade" - néon orange/cyan, fond sombre, effets glow
+- **Typography**: Orbitron (titres), Rajdhani (corps), JetBrains Mono (données)
+- **Components**: shadcn/ui + effets gaming personnalisés
 
 ## Fonctionnalités Implémentées ✅
+
+### Core
 - [x] Authentification JWT (inscription/connexion)
-- [x] Choix du pseudo (première connexion)
-- [x] Création de ligue avec code unique
-- [x] Rejoindre une ligue avec code
-- [x] Dashboard avec prochain GP + countdown
-- [x] Page pronostics (4 étapes: pole, top3 quali, vainqueur, top3 course)
-- [x] Classement ligue avec évolution de position
-- [x] Profil utilisateur avec stats
-- [x] Partage code invitation (Web Share API / WhatsApp)
-- [x] Navigation mobile (bottom nav)
-- [x] Design gaming F1 complet
+- [x] Choix pseudo + système XP/Niveau
+- [x] Création/rejoindre ligues avec code 6 caractères
+- [x] Partage invitation (Web Share API / WhatsApp)
 
-## Backlog Priorisé
+### Pronostics
+- [x] Page pronostics 5 étapes (Pole, Top3 Qualif, Winner, Top3 Course, Bonus)
+- [x] Paris bonus: Safety Car (+3), DNF (+2), Fastest Lap (+5)
+- [x] Countdown jusqu'à clôture
+- [x] Verrouillage automatique
 
-### P0 (Critique)
-- [ ] Endpoint admin pour entrer les résultats réels
-- [ ] Calcul automatique des points après course
+### Admin & Points
+- [x] **Interface Admin** pour entrer résultats officiels (/admin)
+- [x] **Calcul automatique des points** après saisie résultats
+- [x] Mise à jour XP + Level up automatique
+- [x] Mise à jour classement ligue
 
-### P1 (Important)
-- [ ] Notifications in-app (rappel avant clôture)
-- [ ] Page résultats avec comparaison pronostics/réel
-- [ ] Historique des courses passées
+### Notifications
+- [x] **Page notifications** (/notifications)
+- [x] **Badge non-lus** dans navigation
+- [x] Notifications: résultats disponibles, level up
+- [x] Endpoint rappel 24h avant clôture
 
-### P2 (Nice to have)
-- [ ] Intégration API F1 temps réel (OpenF1)
+### Design Gaming
+- [x] Logo PRONOKIF avec effet métallique
+- [x] Countdown cyberpunk bleu cyan
+- [x] Boutons avec glow orange
+- [x] Cards avec bordures néon
+- [x] Navigation gaming avec effets
+
+## Système de Points
+
+| Action | Points |
+|--------|--------|
+| Pole exacte | +5 |
+| Top 3 Qualif exact | +3 |
+| Top 3 Qualif présent | +1 |
+| Vainqueur exact | +10 |
+| Top 3 Course exact | +5 |
+| Top 3 Course présent | +2 |
+| Safety Car correct | +3 |
+| DNF correct | +2 |
+| Fastest Lap exact | +5 |
+
+## Backlog Restant
+
+### P1 (Nice to have)
+- [ ] Intégration API F1 temps réel
 - [ ] Avatars personnalisés
 - [ ] Badges/achievements
-- [ ] Mode multi-ligues actif
-
-## Prochaines Étapes
-1. Créer interface admin pour entrer résultats
-2. Tester calcul de points avec données réelles
-3. Ajouter notifications avant clôture pronostics
+- [ ] Cron job pour envoyer rappels auto
 
 ---
-*Dernière mise à jour: Mars 2026*
+*Dernière mise à jour: Mars 2026 - v2.0 avec Admin, Points, Notifications*
