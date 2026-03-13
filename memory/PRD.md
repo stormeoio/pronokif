@@ -37,6 +37,8 @@ PRONOKIF est une application de jeu de pronostics sur la Formule 1, permettant a
 - Vainqueur Course Principale
 - Top 10 Course Principale
 - Bonus: Safety Car, DNF (multi), Meilleur tour, Leader 1er virage
+- **Calendrier complet** : Accès à tous les GP pour pronostiquer en avance
+- **Clôture 15 min avant FP1** : Les pronos sont modifiables jusqu'à 15 minutes avant le début des essais libres
 
 ### ✅ Pronostics Personnalisés
 - Création de questions personnalisées par les membres

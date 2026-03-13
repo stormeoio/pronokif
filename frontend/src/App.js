@@ -9,6 +9,7 @@ import AuthPage from "./pages/AuthPage";
 import SetUsernamePage from "./pages/SetUsernamePage";
 import LeaguePage from "./pages/LeaguePage";
 import DashboardPage from "./pages/DashboardPage";
+import RaceCalendarPage from "./pages/RaceCalendarPage";
 import PredictionsPage from "./pages/PredictionsPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import ResultsPage from "./pages/ResultsPage";
@@ -208,7 +209,7 @@ function AppRouter() {
 
       <Route path="/predictions" element={
         <ProtectedRoute>
-          <PredictionsPage />
+          <RaceCalendarPage />
         </ProtectedRoute>
       } />
 
