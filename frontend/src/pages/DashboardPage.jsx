@@ -15,8 +15,8 @@ const GP_BACKGROUNDS = {
   default: "https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/84bf8f32c39693df24f61199e48ea90a376cae9f73cc5c8550bc87301e7c8ec1.png"
 };
 
-// Hero banner with F1 car (without embedded text - we'll overlay it)
-const HERO_BANNER = "https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/25ea65ea1c6f8a7608c9768d4bf92327f4fa6d439e628eadf7121869c65e5737.png";
+// Hero banner with F1 car (no text - we overlay via CSS)
+const HERO_BANNER = "https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/d9b6f1a65194f54bbc34bb7e15e4af8069ab64dab312c6c3be1db79b2ca45259.png";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -116,11 +116,11 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-app-main pb-24" data-testid="dashboard-page">
       {/* Hero Banner with F1 Car and Logo */}
-      <div className="relative w-full h-52 overflow-hidden">
+      <div className="relative w-full h-56 overflow-hidden">
         <img 
           src={HERO_BANNER} 
           alt="PRONOKIF" 
-          className="w-full h-[280px] object-cover object-bottom"
+          className="w-full h-full object-cover object-center"
         />
         {/* PRONOKIF + Slogan overlay - at top, above the car */}
         <div className="absolute top-3 left-0 right-0 text-center z-10">
