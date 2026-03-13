@@ -5,147 +5,107 @@ Application de pronostics F1 entre amis avec design gaming arcade.
 
 ## Choix Utilisateur
 - Nom: **PRONOKIF**
-- Design: Gaming arcade (métallique, néon orange/cyan)
-- Auth: JWT
-- Données F1: Statiques (saison 2026)
-- Notifications: In-app
+- Design: **Arcade F1 coloré et lumineux** (Mars 2026)
+  - Fond bleu dégradé (ciel)
+  - Logo doré 3D avec drapeaux à damier
+  - Cadres chrome/aluminium brossé
+  - Bandes rouge/blanc (kerbs)
+  - Effets néon bleu sur les cartes
+  - Texture asphalte pour certains éléments
 
 ## Architecture Technique
 
 ### Backend (FastAPI + MongoDB)
 - **Auth**: JWT + bcrypt + système XP/Niveau
 - **Modèles**: Users, Leagues, Predictions, Leaderboard, Notifications, RaceResults, CustomPredictions, MinigameResults, MinigameAwards, UserStats, UserMissions
-- **Données F1**: 20 pilotes, 25 courses (saison 2026 avec 6 Sprint Weekends)
-- **Scoring**: Pole(5), Top10 exact(3), Top10 présent(1), Winner(10), Bonus(+2 à +5)
 
 ### Frontend (React + Tailwind)
-- **Theme**: "Gaming Arcade" - néon orange/cyan, fond sombre, effets glow
-- **Typography**: Orbitron (titres), Rajdhani (corps), JetBrains Mono (données)
-- **Components**: shadcn/ui + effets gaming personnalisés
+- **Fonts**: Racing Sans One (titres), Oswald (corps), JetBrains Mono (données)
+- **Components**: shadcn/ui + styles arcade personnalisés
+
+## Design System v2.0 (Arcade F1)
+
+### Couleurs
+- Sky Gradient: #1a4a8a → #4a9fea → #7dd3fc
+- Racing Red: #e63946
+- Trophy Gold: #fbbf24
+- Chrome: #d1d5db → #6b7280
+- Neon Blue: #3b82f6
+- Asphalt: #374151
+
+### Éléments Visuels
+- `.bg-sky-racing` - Fond dégradé ciel
+- `.bg-chrome` - Aluminium brossé
+- `.bg-checkered` - Motif damier
+- `.bg-kerb-stripe` - Bandes rouge/blanc
+- `.card-chrome` - Cartes métalliques
+- `.card-neon` - Cartes avec effet néon bleu
+- `.card-gold` / `.card-racing` - Cartes colorées
+- `.btn-racing` - Boutons rouges
+- `.btn-gold` - Boutons dorés
+- `.btn-chrome` - Boutons métalliques
+- `.text-gold-3d` - Texte doré avec effet 3D
 
 ## Fonctionnalités Implémentées ✅
 
 ### Core
-- [x] Authentification JWT (inscription/connexion)
-- [x] Choix pseudo + système XP/Niveau
-- [x] Création/rejoindre ligues avec code 6 caractères
-- [x] Partage invitation (Web Share API / WhatsApp)
+- [x] Authentification JWT
+- [x] Système XP/Niveau (1-50)
+- [x] Ligues avec code 6 caractères
 
 ### Pronostics
-- [x] **Top 10** au lieu de Top 3 pour qualifications et course
-- [x] **Sprint Weekends** : Qualifications Sprint + Course Sprint (Top 10 chacun)
-- [x] Sélection Pole Position
-- [x] Countdown jusqu'à clôture
-- [x] Verrouillage automatique
+- [x] Top 10 pour qualifications et course
+- [x] Sprint Weekends
+- [x] Paris Bonus (Safety Car, DNF, Fastest Lap, Leader 1er virage)
+- [x] Pronostics Personnalisés par ligue
 
-### Paris Bonus
-- [x] Safety Car (+3 pts)
-- [x] **DNF Pilotes** - Sélection multiple jusqu'à 5 pilotes (+2 pts par pilote correct)
-- [x] Meilleur Tour (+5 pts)
-- [x] **Leader 1er Virage** (+3 pts)
+### Avatars (45 total)
+- [x] 15 avatars classiques
+- [x] 10 avatars écuries stylisées
+- [x] 20 avatars pilotes (silhouettes avec numéros)
+- [x] Upload photo personnalisée
 
-### Pronostics Personnalisés ✅ NEW
-- [x] Créer des pronostics personnalisés par ligue
-- [x] Types: Oui/Non, Texte libre, Choix multiples
-- [x] Le créateur définit la bonne réponse après la course
-- [x] +2 points pour chaque bonne réponse
-- [x] Interface complète de création et réponse
+### Missions (35 total)
+- [x] Assiduité: 10/50/100/500/1000 pronostics
+- [x] Performance: Pole, Winner, corrects
+- [x] Social: Ligues, pronostics perso
+- [x] Mini-jeux: Parties, victoires
 
-### Avatars Personnalisés ✅ NEW
-- [x] **15 avatars classiques** (Loup, Aigle, Lion, Gamer, Champion, Star, etc.)
-- [x] **10 avatars écuries** stylisés avec couleurs d'équipes
-- [x] **20 avatars pilotes** - Silhouettes avec numéros (#1 Verstappen, #44 Hamilton, etc.)
-- [x] **Upload photo** depuis galerie (max 500KB)
-- [x] Modal de sélection avec 4 catégories
+### Mini-Jeux
+- [x] Reaction Time (feux F1)
+- [x] Batak Pro (30 secondes)
+- [x] Mode Entraînement illimité
+- [x] Mode Compétition (3 essais/weekend)
+- [x] +2 points au gagnant
 
-### Système XP & Missions ✅ NEW
-- [x] Niveaux 1-50 avec paliers XP croissants
-- [x] **35 missions** réparties en 4 catégories:
-  - **Assiduité**: 10/50/100/500/1000 pronostics, weekends complets
-  - **Performance**: Pole 1/5/10/15/25x, Winner 1/5/10/15/25x, pronostics corrects
-  - **Social**: Créer ligue, rejoindre ligues, pronostics personnalisés
-  - **Mini-jeux**: Parties jouées, victoires, records
-- [x] Réclamation des récompenses XP
-- [x] Notifications de level up
+### Classements
+- [x] Par ligue
+- [x] Par weekend
+- [x] Global visible par tous
 
-### Mini-Jeux ✅ NEW
-- [x] **Reaction Time** - Simulation départ F1 avec 5 feux rouges
-- [x] **Batak Pro** - Cibles à cliquer en 30 secondes
-- [x] **Mode Entraînement** illimité
-- [x] **Mode Compétition** - 3 essais par jeu par weekend
-- [x] Classements par ligue et global
-- [x] **+2 points** au gagnant de chaque jeu (attribution admin)
-
-### Classements ✅ NEW
-- [x] Classement par ligue (points totaux)
-- [x] Classement par weekend de course
-- [x] **Classement Global** visible par tous avec podium
-- [x] Position mondiale affichée sur le profil
-
-### Admin & Points
-- [x] Interface Admin pour entrer résultats officiels (/admin)
-- [x] Support Top 10 et Sprint dans l'admin
-- [x] Bouton Sync OpenF1 pour récupérer résultats automatiquement
-- [x] Calcul automatique des points après saisie résultats
-- [x] Attribution des points mini-jeux
-- [x] Mise à jour XP + Level up automatique
-
-### Notifications
-- [x] Page notifications (/notifications)
-- [x] Badge non-lus dans navigation
-- [x] Notifications: résultats, level up, victoire mini-jeu
-- [x] Endpoint rappel 24h avant clôture
-
-## Système de Points
-
-| Action | Points |
-|--------|--------|
-| Pole exacte | +5 |
-| Top 10 position exacte | +3 |
-| Top 10 pilote présent | +1 |
-| Vainqueur exact | +10 |
-| Safety Car correct | +3 |
-| DNF pilote correct | +2 (par pilote) |
-| Fastest Lap exact | +5 |
-| Leader 1er virage exact | +3 |
-| Pronostic perso correct | +2 |
-| Victoire mini-jeu | +2 |
-
-## Sprint Weekends 2026
-- Chine (Mars)
-- Miami (Mai)
-- Autriche (Juillet)
-- Austin (Octobre)
-- Brésil (Novembre)
-- Qatar (Novembre)
-
-## Pages Frontend
+## Pages
 
 | Route | Description |
 |-------|-------------|
 | /auth | Connexion/Inscription |
-| /set-username | Choix du pseudo |
-| /league | Créer/Rejoindre ligue |
-| / | Dashboard principal |
-| /predictions/:raceId | Faire ses pronostics |
-| /leaderboard | Classement de la ligue |
+| / | Dashboard |
+| /predictions/:raceId | Pronostics |
+| /leaderboard | Classement ligue |
 | /leaderboard/global | Classement mondial |
-| /results | Historique des résultats |
-| /profile | Profil utilisateur + avatars |
-| /admin | Administration (résultats) |
+| /profile | Profil + avatars |
+| /missions | Missions |
+| /minigames | Mini-jeux |
+| /custom-predictions | Pronos perso |
+| /admin | Administration |
 | /notifications | Notifications |
-| /missions | Missions & achievements |
-| /minigames | Mini-jeux (Reaction/Batak) |
-| /custom-predictions | Pronostics personnalisés |
 
-## Backlog Restant
+## Backlog
 
 ### P2 (Future)
 - [ ] Push notifications
-- [ ] Historique détaillé des points par course
-- [ ] Comparaison directe entre joueurs
-- [ ] Badges/achievements visuels
-- [ ] Cron job pour envoyer rappels auto
+- [ ] Historique détaillé
+- [ ] Comparaison joueurs
+- [ ] Badges visuels
 
 ---
-*Dernière mise à jour: 13 Mars 2026 - v3.0 avec Avatars, Missions, Mini-jeux, Pronostics Perso*
+*Dernière mise à jour: 13 Mars 2026 - v3.0 avec nouveau design Arcade F1*

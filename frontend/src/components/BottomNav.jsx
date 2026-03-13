@@ -36,9 +36,12 @@ export default function BottomNav() {
 
   return (
     <nav 
-      className="nav-gaming fixed bottom-0 left-0 right-0 h-20 flex justify-around items-center z-50"
+      className="nav-chrome fixed bottom-0 left-0 right-0 h-20 flex justify-around items-center z-50 px-2"
       data-testid="bottom-nav"
     >
+      {/* Kerb stripe decoration top */}
+      <div className="absolute top-0 left-0 right-0 h-2 bg-kerb-stripe" />
+      
       {navItems.map((item) => {
         const isActive = location.pathname === item.path || 
           (item.path !== "/" && location.pathname.startsWith(item.path));
@@ -49,35 +52,31 @@ export default function BottomNav() {
           <button
             key={item.path}
             onClick={() => navigate(item.path)}
-            className={`nav-item-gaming flex flex-col items-center justify-center w-16 h-full transition-all relative ${
-              isActive ? "active" : "text-gray-500 hover:text-gray-300"
+            className={`flex flex-col items-center justify-center w-16 h-16 rounded-lg transition-all relative ${
+              isActive 
+                ? "nav-item-active" 
+                : "text-gray-600 hover:text-gray-800 hover:bg-white/30"
             }`}
             data-testid={`nav-${item.label.toLowerCase()}`}
           >
-            <div className={`relative p-2 rounded-lg transition-all ${
-              isActive ? 'bg-gradient-to-b from-orange-500/20 to-orange-600/10' : ''
-            }`}>
+            <div className="relative">
               <Icon 
-                size={22} 
-                strokeWidth={isActive ? 2.5 : 1.5}
-                className={`nav-icon transition-all ${
-                  isActive ? 'text-orange-500' : ''
-                }`}
+                size={24} 
+                strokeWidth={isActive ? 2.5 : 2}
+                className={isActive ? 'text-white' : ''}
               />
-              {isActive && (
-                <div className="absolute inset-0 bg-orange-500/20 rounded-lg blur-md" />
-              )}
               {/* Notification Badge */}
               {showBadge && (
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center border-2 border-gray-900">
-                  <span className="font-data text-[10px] text-white">
+                <div className="absolute -top-2 -right-2 w-5 h-5 bg-racing-red rounded-full flex items-center justify-center border-2 border-white shadow-lg"
+                     style={{ backgroundColor: '#e63946' }}>
+                  <span className="font-data text-[10px] text-white font-bold">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 </div>
               )}
             </div>
             <span className={`text-[10px] mt-1 font-body font-semibold uppercase tracking-wide ${
-              isActive ? 'text-orange-500' : ''
+              isActive ? 'text-white' : 'text-gray-700'
             }`}>
               {item.label}
             </span>
