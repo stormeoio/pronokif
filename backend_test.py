@@ -272,6 +272,113 @@ class F1PredictorAPITester:
             self.log_result("Get Prediction History", False, f"Failed to get prediction history - Status: {response.status_code}")
             return False
 
+    def test_admin_races(self):
+        """Test getting admin races (requires league creator access)"""
+        if not self.token:
+            self.log_result("Admin Races", False, "No auth token available")
+            return False
+            
+        success, response = self.make_request('GET', 'admin/races')
+        
+        if success:
+            races = response.json()
+            self.log_result("Admin Races", True, f"Retrieved {len(races)} races for admin")
+            return True
+        else:
+            # Expected 403 if user is not league creator
+            if hasattr(response, 'status_code') and response.status_code == 403:
+                self.log_result("Admin Races", True, "Access denied as expected (user is not league creator)")
+                return True
+            else:
+                self.log_result("Admin Races", False, f"Failed to get admin races - Status: {getattr(response, 'status_code', 'unknown')}")
+                return False
+
+    def test_notifications_unread_count(self):
+        """Test getting unread notifications count"""
+        if not self.token:
+            self.log_result("Notifications Unread Count", False, "No auth token available")
+            return False
+            
+        success, response = self.make_request('GET', 'notifications/unread-count')
+        
+        if success:
+            count_data = response.json()
+            count = count_data.get('count', 0)
+            self.log_result("Notifications Unread Count", True, f"Unread notifications count: {count}")
+            return True
+        else:
+            self.log_result("Notifications Unread Count", False, f"Failed to get unread count - Status: {response.status_code}")
+            return False
+
+    def test_get_notifications(self):
+        """Test getting user notifications"""
+        if not self.token:
+            self.log_result("Get Notifications", False, "No auth token available")
+            return False
+            
+        success, response = self.make_request('GET', 'notifications')
+        
+        if success:
+            notifications = response.json()
+            self.log_result("Get Notifications", True, f"Retrieved {len(notifications)} notifications")
+            return True
+        else:
+            self.log_result("Get Notifications", False, f"Failed to get notifications - Status: {response.status_code}")
+            return False
+
+    def test_create_prediction_with_bonus(self):
+        """Test creating a prediction with bonus bets"""
+        if not self.token:
+            self.log_result("Create Prediction with Bonus", False, "No auth token available")
+            return False
+            
+        # Get next race first
+        success, race_response = self.make_request('GET', 'races/next')
+        if not success:
+            self.log_result("Create Prediction with Bonus", False, "Could not get next race")
+            return False
+            
+        race = race_response.json()
+        race_id = race.get('id')
+        
+        # Get drivers for prediction
+        success, drivers_response = self.make_request('GET', 'drivers')
+        if not success:
+            self.log_result("Create Prediction with Bonus", False, "Could not get drivers")
+            return False
+            
+        drivers = drivers_response.json()
+        if len(drivers) < 6:
+            self.log_result("Create Prediction with Bonus", False, "Not enough drivers for prediction")
+            return False
+            
+        # Create prediction with bonus bets
+        driver_ids = [driver['id'] for driver in drivers[:6]]
+        
+        data = {
+            "race_id": race_id,
+            "quali_pole": driver_ids[0],
+            "quali_top3": driver_ids[:3],
+            "race_winner": driver_ids[1],
+            "race_top3": driver_ids[1:4],
+            "bonus_bets": {
+                "safety_car": True,
+                "will_have_dnf": True,
+                "fastest_lap_driver": driver_ids[0]
+            }
+        }
+        
+        success, response = self.make_request('POST', 'predictions', data)
+        
+        if success:
+            prediction = response.json()
+            self.log_result("Create Prediction with Bonus", True, f"Prediction with bonus bets created for race: {race.get('name')}")
+            return True
+        else:
+            error_msg = response.json().get('detail', 'Unknown error') if hasattr(response, 'json') else str(response)
+            self.log_result("Create Prediction with Bonus", False, f"Failed to create prediction with bonus - {error_msg}")
+            return False
+
     def test_login(self):
         """Test user login with existing credentials"""
         # Clear current token to test login
@@ -320,7 +427,13 @@ class F1PredictorAPITester:
             
             # Prediction tests
             self.test_create_prediction()
+            self.test_create_prediction_with_bonus()
             self.test_get_prediction_history()
+            
+            # NEW FEATURES: Admin and Notifications tests
+            self.test_admin_races()
+            self.test_notifications_unread_count()
+            self.test_get_notifications()
             
             # Login test
             self.test_login()

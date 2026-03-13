@@ -13,6 +13,8 @@ import PredictionsPage from "./pages/PredictionsPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import ResultsPage from "./pages/ResultsPage";
 import ProfilePage from "./pages/ProfilePage";
+import AdminPage from "./pages/AdminPage";
+import NotificationsPage from "./pages/NotificationsPage";
 
 // Components
 import BottomNav from "./components/BottomNav";
@@ -232,6 +234,18 @@ function AppRouter() {
       <Route path="/profile" element={
         <ProtectedRoute>
           <ProfilePage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/admin" element={
+        <ProtectedRoute>
+          <AdminPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/notifications" element={
+        <ProtectedRoute>
+          <NotificationsPage />
         </ProtectedRoute>
       } />
 

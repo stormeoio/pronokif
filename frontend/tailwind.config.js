@@ -7,8 +7,8 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        heading: ['"Racing Sans One"', 'sans-serif'],
-        body: ['Chivo', 'sans-serif'],
+        heading: ['Orbitron', 'sans-serif'],
+        body: ['Rajdhani', 'sans-serif'],
         data: ['"JetBrains Mono"', 'monospace'],
       },
       colors: {
@@ -45,12 +45,15 @@ module.exports = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        f1: {
-          red: '#EF4444',
-          green: '#10b981',
-          amber: '#f59e0b',
-          dark: '#09090b',
-          card: '#121214',
+        gaming: {
+          orange: '#ff6600',
+          red: '#ff0040',
+          blue: '#00ccff',
+          yellow: '#ffcc00',
+          green: '#00ff66',
+          dark: '#0a0f1a',
+          card: '#1a1f2e',
+          metallic: '#4a4a5a',
         }
       },
       borderRadius: {
@@ -68,8 +71,8 @@ module.exports = {
           to: { height: "0" }
         },
         "pulse-glow": {
-          "0%, 100%": { boxShadow: "0 0 0 rgba(239, 68, 68, 0)" },
-          "50%": { boxShadow: "0 0 20px rgba(239, 68, 68, 0.5)" }
+          "0%, 100%": { boxShadow: "0 0 10px rgba(255, 102, 0, 0.4)" },
+          "50%": { boxShadow: "0 0 25px rgba(255, 102, 0, 0.8), 0 0 40px rgba(255, 102, 0, 0.4)" }
         }
       },
       animation: {

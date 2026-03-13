@@ -78,11 +78,11 @@ export default function LeaderboardPage() {
   const shareLeague = async () => {
     if (!currentLeague) return;
     
-    const shareText = `Rejoins ma ligue F1 "${currentLeague.name}" sur Paddock Predictor ! Code: ${currentLeague.code}`;
+    const shareText = `Rejoins ma ligue F1 "${currentLeague.name}" sur PRONOKIF ! Code: ${currentLeague.code}`;
     
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Paddock Predictor", text: shareText });
+        await navigator.share({ title: "PRONOKIF", text: shareText });
       } catch (e) {
         if (e.name !== "AbortError") copyCode();
       }
@@ -94,48 +94,40 @@ export default function LeaderboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-4 pt-6">
+      <div className="min-h-screen p-4 pt-6" style={{ background: 'linear-gradient(180deg, #0a0f1a 0%, #151c2c 50%, #0a0f1a 100%)' }}>
         <div className="max-w-2xl mx-auto space-y-4">
-          <div className="h-8 w-48 skeleton rounded" />
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="h-16 skeleton rounded-md" />
-          ))}
+          <div className="h-8 w-48 skeleton-gaming rounded" />
+          {[...Array(8)].map((_, i) => <div key={i} className="h-16 skeleton-gaming rounded-md" />)}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 pt-6" data-testid="leaderboard-page">
+    <div className="min-h-screen p-4 pt-6" data-testid="leaderboard-page"
+         style={{ background: 'linear-gradient(180deg, #0a0f1a 0%, #151c2c 50%, #0a0f1a 100%)' }}>
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-heading text-2xl uppercase tracking-tight italic text-white flex items-center gap-2">
-              <Trophy className="w-6 h-6 text-amber-500" />
-              Classement
-            </h1>
-          </div>
+          <h1 className="font-heading text-2xl uppercase tracking-tight text-yellow-500 flex items-center gap-2">
+            <Trophy className="w-7 h-7" />
+            Classement
+          </h1>
 
-          {/* League Selector */}
           {leagues.length > 1 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  className="border-zinc-700 bg-zinc-900/50"
-                  data-testid="league-selector"
-                >
+                <Button variant="outline" className="border-gray-700 bg-gray-900/50 font-body" data-testid="league-selector">
                   {currentLeague?.name || "Sélectionner"}
                   <ChevronDown className="w-4 h-4 ml-2" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
+              <DropdownMenuContent align="end" className="bg-gray-900 border-gray-700">
                 {leagues.map((league) => (
                   <DropdownMenuItem
                     key={league.id}
                     onClick={() => switchLeague(league.id)}
-                    className={`font-body ${league.id === currentLeague?.id ? 'text-primary' : ''}`}
+                    className={`font-body ${league.id === currentLeague?.id ? 'text-orange-500' : ''}`}
                   >
                     {league.name}
                   </DropdownMenuItem>
@@ -145,36 +137,24 @@ export default function LeaderboardPage() {
           )}
         </div>
 
-        {/* League Info & Share */}
+        {/* League Info */}
         {currentLeague && (
-          <Card className="bg-card border-white/10">
+          <Card className="game-card">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-heading text-lg uppercase tracking-tight text-white">
+                  <p className="font-heading text-lg uppercase tracking-tight text-cyan-400">
                     {currentLeague.name}
                   </p>
-                  <p className="font-body text-sm text-zinc-400">
-                    {currentLeague.members.length} membres • Code: <span className="font-data text-white">{currentLeague.code}</span>
+                  <p className="font-body text-sm text-gray-400">
+                    {currentLeague.members.length} membres • Code: <span className="font-data text-yellow-500">{currentLeague.code}</span>
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={copyCode}
-                    className="text-zinc-400 hover:text-white"
-                    data-testid="copy-code-btn"
-                  >
-                    {copied ? <Check className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
+                  <Button variant="ghost" size="icon" onClick={copyCode} className="text-gray-400 hover:text-white" data-testid="copy-code-btn">
+                    {copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={shareLeague}
-                    className="text-zinc-400 hover:text-white"
-                    data-testid="share-league-btn"
-                  >
+                  <Button variant="ghost" size="icon" onClick={shareLeague} className="text-gray-400 hover:text-white" data-testid="share-league-btn">
                     <Share2 className="w-5 h-5" />
                   </Button>
                 </div>
@@ -184,9 +164,9 @@ export default function LeaderboardPage() {
         )}
 
         {/* Leaderboard */}
-        <Card className="bg-card border-white/10 overflow-hidden">
-          <CardHeader className="pb-0 border-b border-white/5">
-            <div className="grid grid-cols-12 gap-2 py-2 text-zinc-500 font-body text-xs uppercase tracking-wider">
+        <Card className="game-card overflow-hidden">
+          <CardHeader className="pb-0 border-b border-gray-800">
+            <div className="grid grid-cols-12 gap-2 py-2 text-gray-500 font-body text-xs uppercase tracking-wider">
               <div className="col-span-2 text-center">#</div>
               <div className="col-span-5">Joueur</div>
               <div className="col-span-3 text-right">Points</div>
@@ -200,58 +180,50 @@ export default function LeaderboardPage() {
               return (
                 <div 
                   key={entry.user_id}
-                  className={`leaderboard-row grid grid-cols-12 gap-2 items-center p-4 border-b border-white/5 ${
-                    isMe ? 'bg-primary/10' : ''
+                  className={`grid grid-cols-12 gap-2 items-center p-4 border-b border-gray-800 transition-colors hover:bg-white/5 ${
+                    isMe ? 'bg-orange-500/10' : ''
                   }`}
                   data-testid={`leaderboard-row-${index}`}
                 >
-                  {/* Position */}
                   <div className="col-span-2 flex justify-center">
-                    <span className={`inline-flex items-center justify-center w-10 h-10 rounded-sm font-heading text-lg ${
-                      index === 0 ? 'bg-amber-500 text-black' :
-                      index === 1 ? 'bg-zinc-300 text-black' :
-                      index === 2 ? 'bg-amber-700 text-white' :
-                      'bg-zinc-800 text-zinc-300'
+                    <span className={`inline-flex items-center justify-center w-10 h-10 rounded-lg font-heading text-lg ${
+                      index === 0 ? 'position-1-gaming' :
+                      index === 1 ? 'position-2-gaming' :
+                      index === 2 ? 'position-3-gaming' :
+                      'bg-gray-800 text-gray-300 border border-gray-700'
                     }`}>
                       {entry.position}
                     </span>
                   </div>
 
-                  {/* Name */}
                   <div className="col-span-5">
-                    <p className={`font-body truncate ${isMe ? 'text-primary font-semibold' : 'text-white'}`}>
+                    <p className={`font-body truncate ${isMe ? 'text-orange-400 font-semibold' : 'text-white'}`}>
                       {entry.username}
                       {isMe && " (toi)"}
                     </p>
                     {entry.last_race_points > 0 && (
-                      <p className="font-data text-xs text-emerald-500">
-                        +{entry.last_race_points} dernière course
-                      </p>
+                      <p className="font-data text-xs text-green-400">+{entry.last_race_points} dernière course</p>
                     )}
                   </div>
 
-                  {/* Points */}
                   <div className="col-span-3 text-right">
                     <span className="font-data text-lg text-white">{entry.total_points}</span>
-                    <span className="font-body text-xs text-zinc-500 ml-1">pts</span>
+                    <span className="font-body text-xs text-gray-500 ml-1">pts</span>
                   </div>
 
-                  {/* Evolution */}
                   <div className="col-span-2 flex justify-end">
                     {entry.position_change > 0 && (
-                      <span className="flex items-center text-emerald-500 font-data text-sm">
-                        <TrendingUp className="w-4 h-4 mr-1" />
-                        +{entry.position_change}
+                      <span className="flex items-center text-green-400 font-data text-sm bg-green-500/20 px-2 py-1 rounded">
+                        <TrendingUp className="w-3 h-3 mr-1" />+{entry.position_change}
                       </span>
                     )}
                     {entry.position_change < 0 && (
-                      <span className="flex items-center text-red-500 font-data text-sm">
-                        <TrendingDown className="w-4 h-4 mr-1" />
-                        {entry.position_change}
+                      <span className="flex items-center text-red-400 font-data text-sm bg-red-500/20 px-2 py-1 rounded">
+                        <TrendingDown className="w-3 h-3 mr-1" />{entry.position_change}
                       </span>
                     )}
                     {entry.position_change === 0 && (
-                      <span className="flex items-center text-zinc-500 font-data text-sm">
+                      <span className="flex items-center text-gray-500 font-data text-sm">
                         <Minus className="w-4 h-4" />
                       </span>
                     )}
@@ -262,21 +234,12 @@ export default function LeaderboardPage() {
 
             {leaderboard.length === 0 && (
               <div className="p-8 text-center">
-                <Users className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-                <p className="font-heading text-lg uppercase text-zinc-400 mb-2">
-                  Aucun classement
-                </p>
-                <p className="font-body text-sm text-zinc-500 mb-4">
-                  Invite tes amis pour commencer la compétition !
-                </p>
+                <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                <p className="font-heading text-lg uppercase text-gray-400 mb-2">Aucun classement</p>
+                <p className="font-body text-sm text-gray-500 mb-4">Invite tes amis pour commencer !</p>
                 {currentLeague && (
-                  <Button
-                    onClick={shareLeague}
-                    className="bg-primary hover:bg-red-600"
-                    data-testid="invite-friends-btn"
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Inviter des amis
+                  <Button onClick={shareLeague} className="btn-gaming" data-testid="invite-friends-btn">
+                    <Share2 className="w-4 h-4 mr-2" />Inviter des amis
                   </Button>
                 )}
               </div>
@@ -284,22 +247,14 @@ export default function LeaderboardPage() {
           </CardContent>
         </Card>
 
-        {/* Create/Join League */}
         {leagues.length === 0 && (
-          <Card className="bg-card border-white/10">
+          <Card className="game-card">
             <CardContent className="p-6 text-center">
-              <Trophy className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-              <p className="font-heading text-lg uppercase text-white mb-2">
-                Aucune ligue
-              </p>
-              <p className="font-body text-sm text-zinc-400 mb-4">
-                Crée ou rejoins une ligue pour voir le classement
-              </p>
-              <Button
-                onClick={() => navigate("/league")}
-                className="bg-primary hover:bg-red-600"
-              >
-                Créer / Rejoindre une ligue
+              <Trophy className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+              <p className="font-heading text-lg uppercase text-white mb-2">Aucune ligue</p>
+              <p className="font-body text-sm text-gray-400 mb-4">Crée ou rejoins une ligue</p>
+              <Button onClick={() => navigate("/league")} className="btn-gaming">
+                Créer / Rejoindre
               </Button>
             </CardContent>
           </Card>
