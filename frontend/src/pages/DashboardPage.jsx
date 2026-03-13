@@ -16,7 +16,7 @@ const GP_BACKGROUNDS = {
 };
 
 // Hero banner with F1 car and PRONOKIF logo
-const HERO_BANNER = "https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/28490c8f55395716ccda4c8107276f0c36f4b0e8a4fff4b0a8604f7e530cab5e.png";
+const HERO_BANNER = "https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/25ea65ea1c6f8a7608c9768d4bf92327f4fa6d439e628eadf7121869c65e5737.png";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -116,23 +116,24 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-app-main pb-24" data-testid="dashboard-page">
       {/* Hero Banner with F1 Car and Logo */}
-      <div className="relative w-full h-56 overflow-hidden">
+      <div className="relative w-full h-60 overflow-hidden">
         <img 
           src={HERO_BANNER} 
           alt="PRONOKIF" 
-          className="w-full h-full object-cover object-center"
+          className="w-full h-full object-cover object-top"
         />
-        {/* Slogan overlay */}
-        <div className="absolute top-[85px] left-0 right-0 text-center">
-          <p className="font-body text-[10px] text-white/90 tracking-[0.15em] drop-shadow-lg">
+        {/* Slogan overlay - positioned at the bottom, just above the gradient */}
+        <div className="absolute bottom-6 left-0 right-0 text-center z-10">
+          <p className="font-body text-[11px] text-white tracking-[0.1em] font-medium px-4"
+             style={{textShadow: '0 1px 3px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.8)'}}>
             Pronostique 🔹 Défie tes amis 🔹 Domine le classement
           </p>
         </div>
         {/* Gradient overlay at bottom for smooth transition */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#050a14] to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-[#050a14] to-transparent" />
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 -mt-8 space-y-4 relative z-10">
+      <div className="max-w-2xl mx-auto px-4 -mt-6 space-y-4 relative z-10">
         
         {/* User Info Card - Brushed Aluminum Style */}
         <div className="card-brushed-aluminum p-4">
