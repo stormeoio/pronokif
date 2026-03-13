@@ -277,12 +277,12 @@ export default function PredictionsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-4 pt-6" style={{ background: 'linear-gradient(180deg, #0a0f1a 0%, #151c2c 50%, #0a0f1a 100%)' }}>
+      <div className="min-h-screen bg-app-main p-4 pt-6">
         <div className="max-w-2xl mx-auto space-y-4">
-          <div className="h-8 w-48 skeleton-gaming rounded" />
-          <div className="h-32 skeleton-gaming rounded-md" />
+          <div className="h-8 w-48 skeleton-arcade rounded" />
+          <div className="h-32 skeleton-arcade rounded-md" />
           <div className="grid grid-cols-2 gap-3">
-            {[...Array(10)].map((_, i) => <div key={i} className="h-20 skeleton-gaming rounded-md" />)}
+            {[...Array(10)].map((_, i) => <div key={i} className="h-20 skeleton-arcade rounded-md" />)}
           </div>
         </div>
       </div>
@@ -291,14 +291,12 @@ export default function PredictionsPage() {
 
   if (!race) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(180deg, #0a0f1a 0%, #151c2c 50%, #0a0f1a 100%)' }}>
-        <Card className="game-card max-w-sm w-full">
-          <CardContent className="p-6 text-center">
-            <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-            <p className="font-body text-gray-300">Aucune course disponible</p>
-            <Button onClick={() => navigate("/")} className="mt-4 btn-gaming-blue">Retour</Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-app-main flex items-center justify-center p-4">
+        <div className="card-arcade max-w-sm w-full p-6 text-center">
+          <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+          <p className="font-body text-gray-300">Aucune course disponible</p>
+          <Button onClick={() => navigate("/")} className="mt-4 btn-racing">Retour</Button>
+        </div>
       </div>
     );
   }
@@ -307,16 +305,16 @@ export default function PredictionsPage() {
   const showDriverGrid = !["bonus"].includes(selectionMode);
 
   return (
-    <div className="min-h-screen" data-testid="predictions-page" style={{ background: 'linear-gradient(180deg, #0a0f1a 0%, #151c2c 50%, #0a0f1a 100%)' }}>
+    <div className="min-h-screen bg-app-main" data-testid="predictions-page">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-gray-900/95 backdrop-blur-md border-b border-orange-500/30">
+      <div className="sticky top-0 z-40 bg-[#050a14]/95 backdrop-blur-md border-b border-red-500/30">
         <div className="max-w-2xl mx-auto p-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-400 hover:text-white" data-testid="back-btn">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-400 hover:text-white hover:bg-white/10" data-testid="back-btn">
               <ChevronLeft className="w-6 h-6" />
             </Button>
             <div className="flex-1">
-              <h1 className="font-heading text-xl uppercase tracking-tight text-orange-500">
+              <h1 className="font-heading text-xl uppercase tracking-tight text-white">
                 {race.name.replace(" Grand Prix", "")}
               </h1>
               <div className="flex items-center gap-2">
@@ -327,7 +325,7 @@ export default function PredictionsPage() {
                   </p>
                 )}
                 {race.is_sprint_weekend && (
-                  <span className="px-2 py-0.5 bg-purple-500/20 border border-purple-500/50 rounded text-purple-400 text-xs font-heading uppercase">
+                  <span className="px-2 py-0.5 bg-yellow-500/20 border border-yellow-500/50 rounded text-yellow-400 text-xs font-heading uppercase">
                     Sprint Weekend
                   </span>
                 )}

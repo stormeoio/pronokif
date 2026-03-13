@@ -46,11 +46,11 @@ export default function GlobalLeaderboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-4 pt-6" style={{ background: 'linear-gradient(180deg, #0a0f1a 0%, #151c2c 50%, #0a0f1a 100%)' }}>
+      <div className="min-h-screen bg-app-main p-4 pt-6">
         <div className="max-w-2xl mx-auto space-y-4">
-          <div className="h-8 w-48 skeleton-gaming rounded" />
+          <div className="h-8 w-48 skeleton-arcade rounded" />
           <div className="space-y-2">
-            {[1,2,3,4,5].map(i => <div key={i} className="h-16 skeleton-gaming rounded-md" />)}
+            {[1,2,3,4,5].map(i => <div key={i} className="h-16 skeleton-arcade rounded-md" />)}
           </div>
         </div>
       </div>
@@ -62,17 +62,17 @@ export default function GlobalLeaderboardPage() {
   const rest = leaderboard.slice(3);
 
   return (
-    <div className="min-h-screen pb-24" data-testid="global-leaderboard-page" style={{ background: 'linear-gradient(180deg, #0a0f1a 0%, #151c2c 50%, #0a0f1a 100%)' }}>
+    <div className="min-h-screen bg-app-main pb-24" data-testid="global-leaderboard-page">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-gray-900/95 backdrop-blur-md border-b border-orange-500/30">
+      <div className="sticky top-0 z-40 bg-[#050a14]/95 backdrop-blur-md border-b border-cyan-500/30">
         <div className="max-w-2xl mx-auto p-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-400 hover:text-white">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-400 hover:text-white hover:bg-white/10">
               <ChevronLeft className="w-6 h-6" />
             </Button>
             <div className="flex-1">
-              <h1 className="font-heading text-xl uppercase tracking-tight text-orange-500 flex items-center gap-2">
-                <Crown className="w-5 h-5" />
+              <h1 className="font-heading text-xl uppercase tracking-tight text-white flex items-center gap-2">
+                <Crown className="w-5 h-5 text-cyan-500" />
                 Classement Global
               </h1>
               <p className="font-body text-xs text-gray-400 flex items-center gap-1">
@@ -87,21 +87,19 @@ export default function GlobalLeaderboardPage() {
       <div className="max-w-2xl mx-auto p-4 space-y-6">
         {/* My Position Card */}
         {myPosition && (
-          <Card className="game-card border-cyan-500/50">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <AvatarDisplay avatar={getAvatarById(user?.avatar_id)} customUrl={user?.custom_avatar_url} size="md" />
-                <div>
-                  <p className="font-heading text-sm text-white uppercase">{user?.username}</p>
-                  <p className="font-body text-xs text-gray-400">Ta position</p>
-                </div>
+          <div className="card-arcade border-cyan-500/50 p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <AvatarDisplay avatar={getAvatarById(user?.avatar_id)} customUrl={user?.custom_avatar_url} size="md" />
+              <div>
+                <p className="font-heading text-sm text-white uppercase">{user?.username}</p>
+                <p className="font-body text-xs text-gray-400">Ta position</p>
               </div>
-              <div className="text-right">
-                <p className="font-data text-3xl text-cyan-400">#{myPosition}</p>
-                <p className="font-body text-xs text-gray-500">sur {totalPlayers}</p>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="text-right">
+              <p className="font-data text-3xl text-cyan-neon">#{myPosition}</p>
+              <p className="font-body text-xs text-gray-500">sur {totalPlayers}</p>
+            </div>
+          </div>
         )}
 
         {/* Podium */}
@@ -112,19 +110,19 @@ export default function GlobalLeaderboardPage() {
               <AvatarDisplay avatar={getAvatarById(podium[1]?.avatar_id)} size="lg" />
               <p className="font-heading text-sm text-white mt-2 truncate max-w-[80px]">{podium[1]?.username}</p>
               <p className="font-data text-xs text-gray-400">{podium[1]?.total_points} pts</p>
-              <div className="w-20 h-16 bg-gradient-to-t from-gray-500 to-gray-400 rounded-t-lg mt-2 flex items-center justify-center">
-                <span className="font-heading text-2xl text-white">2</span>
+              <div className="w-20 h-16 position-2 rounded-t-lg mt-2 flex items-center justify-center">
+                <span className="font-heading text-2xl">2</span>
               </div>
             </div>
             
             {/* 1st Place */}
             <div className="flex flex-col items-center -mt-4">
-              <Crown className="w-8 h-8 text-yellow-500 mb-1" />
+              <Crown className="w-8 h-8 text-yellow-500 mb-1 animate-gold" />
               <AvatarDisplay avatar={getAvatarById(podium[0]?.avatar_id)} size="xl" />
               <p className="font-heading text-sm text-white mt-2 truncate max-w-[90px]">{podium[0]?.username}</p>
               <p className="font-data text-xs text-yellow-400">{podium[0]?.total_points} pts</p>
-              <div className="w-24 h-24 bg-gradient-to-t from-yellow-600 to-yellow-400 rounded-t-lg mt-2 flex items-center justify-center">
-                <span className="font-heading text-3xl text-white">1</span>
+              <div className="w-24 h-24 position-1 rounded-t-lg mt-2 flex items-center justify-center">
+                <span className="font-heading text-3xl">1</span>
               </div>
             </div>
             
@@ -133,38 +131,38 @@ export default function GlobalLeaderboardPage() {
               <AvatarDisplay avatar={getAvatarById(podium[2]?.avatar_id)} size="lg" />
               <p className="font-heading text-sm text-white mt-2 truncate max-w-[80px]">{podium[2]?.username}</p>
               <p className="font-data text-xs text-gray-400">{podium[2]?.total_points} pts</p>
-              <div className="w-20 h-12 bg-gradient-to-t from-amber-700 to-amber-600 rounded-t-lg mt-2 flex items-center justify-center">
-                <span className="font-heading text-2xl text-white">3</span>
+              <div className="w-20 h-12 position-3 rounded-t-lg mt-2 flex items-center justify-center">
+                <span className="font-heading text-2xl">3</span>
               </div>
             </div>
           </div>
         )}
 
         {/* Rest of leaderboard */}
-        <Card className="game-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="font-heading text-sm uppercase text-gray-400 flex items-center gap-2">
+        <div className="card-arcade overflow-hidden">
+          <div className="bg-gradient-to-r from-cyan-600/20 to-transparent px-4 py-3 border-b border-gray-700/50">
+            <h3 className="font-heading text-sm uppercase text-gray-300 flex items-center gap-2">
               <Users className="w-4 h-4" />
               Classement complet
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
+            </h3>
+          </div>
+          <div>
             {rest.length === 0 ? (
               <p className="font-body text-sm text-gray-500 text-center py-8">
                 Pas assez de joueurs pour afficher le classement
               </p>
             ) : (
-              <div className="divide-y divide-gray-800">
+              <div className="divide-y divide-gray-800/50">
                 {rest.map((entry) => {
                   const isMe = entry.user_id === user?.id;
                   return (
                     <div
                       key={entry.user_id}
                       className={`flex items-center gap-3 p-3 ${
-                        isMe ? "bg-cyan-500/10" : ""
+                        isMe ? "bg-cyan-500/10" : "hover:bg-white/5"
                       }`}
                     >
-                      <div className="w-10 h-10 rounded flex items-center justify-center bg-gray-800">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-gray-800">
                         <span className="font-heading text-sm text-gray-400">
                           {entry.position}
                         </span>
@@ -190,8 +188,9 @@ export default function GlobalLeaderboardPage() {
                 })}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+          <div className="h-2 bg-kerb-stripe" />
+        </div>
       </div>
     </div>
   );

@@ -303,37 +303,35 @@ export default function AdminPage() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen p-4 pt-6" style={{ background: 'linear-gradient(180deg, #0a0f1a 0%, #151c2c 50%, #0a0f1a 100%)' }}>
+      <div className="min-h-screen bg-app-main p-4 pt-6">
         <div className="max-w-2xl mx-auto">
-          <Card className="game-card">
-            <CardContent className="p-8 text-center">
-              <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
-              <h2 className="font-heading text-2xl uppercase text-white mb-2">Accès Refusé</h2>
-              <p className="font-body text-gray-400 mb-6">
-                Seuls les créateurs de ligue peuvent accéder à cette page.
-              </p>
-              <Button onClick={() => navigate("/")} className="btn-gaming">
-                Retour à l'accueil
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="card-arcade p-8 text-center">
+            <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="font-heading text-2xl uppercase text-white mb-2">Accès Refusé</h2>
+            <p className="font-body text-gray-400 mb-6">
+              Seuls les créateurs de ligue peuvent accéder à cette page.
+            </p>
+            <Button onClick={() => navigate("/")} className="btn-racing">
+              Retour à l'accueil
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen" data-testid="admin-page" style={{ background: 'linear-gradient(180deg, #0a0f1a 0%, #151c2c 50%, #0a0f1a 100%)' }}>
+    <div className="min-h-screen bg-app-main" data-testid="admin-page">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-gray-900/95 backdrop-blur-md border-b border-orange-500/30">
+      <div className="sticky top-0 z-40 bg-[#050a14]/95 backdrop-blur-md border-b border-red-500/30">
         <div className="max-w-2xl mx-auto p-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-400 hover:text-white">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-400 hover:text-white hover:bg-white/10">
               <ChevronLeft className="w-6 h-6" />
             </Button>
             <div className="flex-1">
-              <h1 className="font-heading text-xl uppercase tracking-tight text-orange-500 flex items-center gap-2">
-                <Shield className="w-5 h-5" />
+              <h1 className="font-heading text-xl uppercase tracking-tight text-white flex items-center gap-2">
+                <Shield className="w-5 h-5 text-red-500" />
                 Administration
               </h1>
               <p className="font-body text-xs text-gray-400">Entrer les résultats officiels</p>
@@ -344,14 +342,14 @@ export default function AdminPage() {
 
       <div className="max-w-2xl mx-auto p-4 pb-32">
         {/* Race Selector */}
-        <Card className="game-card mb-6">
-          <CardHeader className="pb-2">
-            <CardTitle className="font-heading text-sm uppercase text-cyan-400 flex items-center gap-2">
+        <div className="card-arcade mb-6 overflow-hidden">
+          <div className="bg-gradient-to-r from-cyan-600/20 to-transparent px-4 py-3 border-b border-gray-700/50">
+            <h3 className="font-heading text-sm uppercase text-cyan-400 flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               Sélectionner une course
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-2">
+            </h3>
+          </div>
+          <div className="p-3">
             <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
               {races.filter(r => r.is_past).map((race) => (
                 <Button
@@ -360,10 +358,10 @@ export default function AdminPage() {
                   onClick={() => selectRace(race)}
                   className={`flex-shrink-0 text-xs ${
                     selectedRace?.id === race.id 
-                      ? 'btn-gaming' 
+                      ? 'btn-racing' 
                       : race.has_results 
                         ? 'border-green-500/50 text-green-400' 
-                        : 'border-gray-700'
+                        : 'border-gray-700 text-gray-300'
                   }`}
                 >
                   {race.name.replace(" Grand Prix", "")}
@@ -372,8 +370,8 @@ export default function AdminPage() {
                 </Button>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {selectedRace && (
           <>

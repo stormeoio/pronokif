@@ -1,111 +1,119 @@
-# PRONOKIF - PRD
+# PRONOKIF - PRD (Product Requirements Document)
 
-## Problème Original
-Application de pronostics F1 entre amis avec design gaming arcade.
+## Vision du produit
+PRONOKIF est une application de jeu de pronostics sur la Formule 1, permettant aux utilisateurs de s'inscrire, rejoindre ou créer des ligues, et de faire des pronostics sur les courses.
 
-## Choix Utilisateur
-- Nom: **PRONOKIF**
-- Design: **Arcade F1 coloré et lumineux** (Mars 2026)
-  - Fond bleu dégradé (ciel)
-  - Logo doré 3D avec drapeaux à damier
-  - Cadres chrome/aluminium brossé
-  - Bandes rouge/blanc (kerbs)
-  - Effets néon bleu sur les cartes
-  - Texture asphalte pour certains éléments
+## Design
+**Thème:** Arcade Gaming F1
+- Fond bleu sombre profond (#050a14 à #0a1628)
+- Éléments métalliques chrome
+- Accents cyan néon (#22d3ee) et or (#fbbf24)
+- Bandes kerb rouge/blanc comme séparateurs
+- Hero banner avec voiture F1 rouge et logo PRONOKIF doré 3D
 
-## Architecture Technique
+**Assets générés:**
+- Hero Banner: https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/d71e4f8baaf09d0a9c181630097e14820689ebaae4e8d85396944b8e628c816c.png
+- Chrome Frame: https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/78b5c3494748180c023e9ae942169b78c5557b0a28dc2e7d6dc99087ca8dfa6e.png
+- Monaco GP Background: https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/84bf8f32c39693df24f61199e48ea90a376cae9f73cc5c8550bc87301e7c8ec1.png
+- Dark Panel Texture: https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/b7b92423aa24dd25313c4414c9091052d3cc5c5cf546f50f6162caf6a5bc3a20.png
+
+## Fonctionnalités implémentées
+
+### ✅ Authentification
+- Inscription/Connexion par email
+- JWT tokens
+- Gestion du profil utilisateur
+
+### ✅ Ligues
+- Création de ligue avec code d'invitation
+- Rejoindre une ligue existante
+- Gestion multi-ligues
+
+### ✅ Pronostics de Course
+- Pole Position (1 pilote)
+- Top 10 Qualifications
+- Top 10 Course Sprint (weekends sprint)
+- Vainqueur Course Sprint
+- Vainqueur Course Principale
+- Top 10 Course Principale
+- Bonus: Safety Car, DNF (multi), Meilleur tour, Leader 1er virage
+
+### ✅ Pronostics Personnalisés
+- Création de questions personnalisées par les membres
+- Types: Oui/Non, Choix multiples, Texte libre
+- Attribution des réponses correctes par le créateur
+
+### ✅ Système XP & Niveaux
+- 35 missions dans 4 catégories (Assiduité, Performance, Social, Mini-jeux)
+- Gains d'XP automatiques
+- Progression de niveau
+
+### ✅ Avatars Personnalisés
+- 45 avatars prédéfinis (classiques, écuries, pilotes)
+- Upload de photo personnelle
+
+### ✅ Mini-Jeux
+- Reaction Time (feux de départ F1)
+- Batak Pro (rapidité)
+- Modes: Entraînement (illimité), Compétition (3 essais/weekend)
+- Classements dédiés par jeu
+- +2 points bonus pour le vainqueur de chaque jeu
+
+### ✅ Classements
+- Classement par ligue (weekend + général)
+- Classement global de l'application
+- Classement mini-jeux
+
+### ✅ Administration
+- Interface pour entrer les résultats officiels
+- Synchronisation avec API OpenF1
+- Calcul automatique des points
+
+### ✅ Design Arcade Gaming F1
+- Toutes les pages utilisent le thème arcade cohérent
+- Hero banner avec logo PRONOKIF et voiture F1
+- Cartes avec bordures chrome/métalliques
+- Countdown néon cyan
+- Bandes kerb rouge/blanc
+- Navigation chrome en bas
+
+## Architecture technique
 
 ### Backend (FastAPI + MongoDB)
-- **Auth**: JWT + bcrypt + système XP/Niveau
-- **Modèles**: Users, Leagues, Predictions, Leaderboard, Notifications, RaceResults, CustomPredictions, MinigameResults, MinigameAwards, UserStats, UserMissions
+- `/app/backend/server.py` - Routes principales
+- `/app/backend/features.py` - Missions, avatars, mini-jeux
 
-### Frontend (React + Tailwind)
-- **Fonts**: Racing Sans One (titres), Oswald (corps), JetBrains Mono (données)
-- **Components**: shadcn/ui + styles arcade personnalisés
+### Frontend (React + TailwindCSS)
+- `/app/frontend/src/index.css` - Thème arcade global
+- `/app/frontend/src/pages/` - Pages de l'application
+- `/app/frontend/src/components/` - Composants réutilisables
 
-## Design System v2.0 (Arcade F1)
+### Collections MongoDB
+- users, leagues, races, drivers
+- predictions, custom_predictions
+- missions, user_achievements
+- minigame_scores, notifications
 
-### Couleurs
-- Sky Gradient: #1a4a8a → #4a9fea → #7dd3fc
-- Racing Red: #e63946
-- Trophy Gold: #fbbf24
-- Chrome: #d1d5db → #6b7280
-- Neon Blue: #3b82f6
-- Asphalt: #374151
+## Prochaines étapes (Backlog)
 
-### Éléments Visuels
-- `.bg-sky-racing` - Fond dégradé ciel
-- `.bg-chrome` - Aluminium brossé
-- `.bg-checkered` - Motif damier
-- `.bg-kerb-stripe` - Bandes rouge/blanc
-- `.card-chrome` - Cartes métalliques
-- `.card-neon` - Cartes avec effet néon bleu
-- `.card-gold` / `.card-racing` - Cartes colorées
-- `.btn-racing` - Boutons rouges
-- `.btn-gold` - Boutons dorés
-- `.btn-chrome` - Boutons métalliques
-- `.text-gold-3d` - Texte doré avec effet 3D
+### P1 - Priorité haute
+- Générer des images de fond pour chaque GP (Silverstone, Spa, Monza, etc.)
+- Système de fonds GP dynamiques selon le calendrier
 
-## Fonctionnalités Implémentées ✅
+### P2 - Améliorations futures
+- Animations d'entrée sur les cartes
+- Notifications push
+- Badges visuels pour missions accomplies
+- Historique détaillé des points
+- Bonus de série (streak) pour pronostics consécutifs
 
-### Core
-- [x] Authentification JWT
-- [x] Système XP/Niveau (1-50)
-- [x] Ligues avec code 6 caractères
+### P3 - Nice to have
+- Mode sombre/clair toggle
+- Statistiques détaillées de performance
+- Comparaison avec les amis
+- Partage sur réseaux sociaux
 
-### Pronostics
-- [x] Top 10 pour qualifications et course
-- [x] Sprint Weekends
-- [x] Paris Bonus (Safety Car, DNF, Fastest Lap, Leader 1er virage)
-- [x] Pronostics Personnalisés par ligue
-
-### Avatars (45 total)
-- [x] 15 avatars classiques
-- [x] 10 avatars écuries stylisées
-- [x] 20 avatars pilotes (silhouettes avec numéros)
-- [x] Upload photo personnalisée
-
-### Missions (35 total)
-- [x] Assiduité: 10/50/100/500/1000 pronostics
-- [x] Performance: Pole, Winner, corrects
-- [x] Social: Ligues, pronostics perso
-- [x] Mini-jeux: Parties, victoires
-
-### Mini-Jeux
-- [x] Reaction Time (feux F1)
-- [x] Batak Pro (30 secondes)
-- [x] Mode Entraînement illimité
-- [x] Mode Compétition (3 essais/weekend)
-- [x] +2 points au gagnant
-
-### Classements
-- [x] Par ligue
-- [x] Par weekend
-- [x] Global visible par tous
-
-## Pages
-
-| Route | Description |
-|-------|-------------|
-| /auth | Connexion/Inscription |
-| / | Dashboard |
-| /predictions/:raceId | Pronostics |
-| /leaderboard | Classement ligue |
-| /leaderboard/global | Classement mondial |
-| /profile | Profil + avatars |
-| /missions | Missions |
-| /minigames | Mini-jeux |
-| /custom-predictions | Pronos perso |
-| /admin | Administration |
-| /notifications | Notifications |
-
-## Backlog
-
-### P2 (Future)
-- [ ] Push notifications
-- [ ] Historique détaillé
-- [ ] Comparaison joueurs
-- [ ] Badges visuels
-
----
-*Dernière mise à jour: 13 Mars 2026 - v3.0 avec nouveau design Arcade F1*
+## Notes techniques
+- Les images de fond GP sont stockées comme URLs et peuvent être modifiées par GP
+- Le système est prêt pour supporter plusieurs fonds GP via `GP_BACKGROUNDS` dans DashboardPage.jsx
+- L'API OpenF1 est utilisée pour récupérer les résultats officiels

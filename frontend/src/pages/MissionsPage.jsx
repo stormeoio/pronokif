@@ -101,11 +101,11 @@ export default function MissionsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-4 pt-6" style={{ background: 'linear-gradient(180deg, #0a0f1a 0%, #151c2c 50%, #0a0f1a 100%)' }}>
+      <div className="min-h-screen bg-app-main p-4 pt-6">
         <div className="max-w-2xl mx-auto space-y-4">
-          <div className="h-8 w-48 skeleton-gaming rounded" />
+          <div className="h-8 w-48 skeleton-arcade rounded" />
           <div className="grid grid-cols-2 gap-4">
-            {[1,2,3,4].map(i => <div key={i} className="h-32 skeleton-gaming rounded-md" />)}
+            {[1,2,3,4].map(i => <div key={i} className="h-32 skeleton-arcade rounded-md" />)}
           </div>
         </div>
       </div>
@@ -117,17 +117,17 @@ export default function MissionsPage() {
   const claimableCount = currentMissions.filter(m => m.completed && !m.claimed).length;
 
   return (
-    <div className="min-h-screen pb-24" data-testid="missions-page" style={{ background: 'linear-gradient(180deg, #0a0f1a 0%, #151c2c 50%, #0a0f1a 100%)' }}>
+    <div className="min-h-screen bg-app-main pb-24" data-testid="missions-page">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-gray-900/95 backdrop-blur-md border-b border-orange-500/30">
+      <div className="sticky top-0 z-40 bg-[#050a14]/95 backdrop-blur-md border-b border-yellow-500/30">
         <div className="max-w-2xl mx-auto p-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-400 hover:text-white">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-400 hover:text-white hover:bg-white/10">
               <ChevronLeft className="w-6 h-6" />
             </Button>
             <div className="flex-1">
-              <h1 className="font-heading text-xl uppercase tracking-tight text-orange-500 flex items-center gap-2">
-                <Trophy className="w-5 h-5" />
+              <h1 className="font-heading text-xl uppercase tracking-tight text-white flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-yellow-500" />
                 Missions
               </h1>
               <p className="font-body text-xs text-gray-400">
