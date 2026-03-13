@@ -100,6 +100,26 @@
   background: linear-gradient(180deg, #e8ecef 0%, #b8c4ce 50%, #9aa8b4 100%);
 }
 
+/* Brushed Aluminum Texture Effect */
+.card-brushed-aluminum {
+  background: 
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(255,255,255,0.03) 2px,
+      rgba(255,255,255,0.03) 4px
+    ),
+    linear-gradient(180deg, #d4d8dc 0%, #a8b0b8 30%, #8a9298 60%, #a0a8b0 100%);
+  border: 2px solid;
+  border-image: linear-gradient(180deg, #e8ecef, #6a7a8a) 1;
+  box-shadow: 
+    0 4px 12px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.6),
+    inset 0 -1px 0 rgba(0,0,0,0.1);
+  border-radius: 12px;
+}
+
 /* Kerb Stripes (Red/White) */
 .bg-kerb-stripe {
   background: repeating-linear-gradient(

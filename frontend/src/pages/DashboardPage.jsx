@@ -122,14 +122,20 @@ export default function DashboardPage() {
           alt="PRONOKIF" 
           className="w-full h-full object-cover object-center"
         />
+        {/* Slogan overlay */}
+        <div className="absolute top-[85px] left-0 right-0 text-center">
+          <p className="font-body text-[10px] text-white/90 tracking-[0.15em] drop-shadow-lg">
+            Pronostique 🔹 Défie tes amis 🔹 Domine le classement
+          </p>
+        </div>
         {/* Gradient overlay at bottom for smooth transition */}
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#050a14] to-transparent" />
       </div>
 
       <div className="max-w-2xl mx-auto px-4 -mt-8 space-y-4 relative z-10">
         
-        {/* User Info Card - Chrome Style */}
-        <div className="card-chrome p-4">
+        {/* User Info Card - Brushed Aluminum Style */}
+        <div className="card-brushed-aluminum p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="ring-2 ring-yellow-500 rounded-full p-0.5">
@@ -164,7 +170,8 @@ export default function DashboardPage() {
               className="relative h-32 bg-cover bg-center"
               style={{ backgroundImage: `url(${getGPBackground(nextRace.name)})` }}
             >
-              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-[#0c1525]" />
+              {/* Dark overlay for better text contrast */}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-[#0c1525]" />
               
               {/* Sprint badge */}
               {nextRace.is_sprint_weekend && (
@@ -175,17 +182,17 @@ export default function DashboardPage() {
               
               {/* Race Title Overlay */}
               <div className="absolute bottom-0 left-0 right-0 p-4">
-                <p className="font-body text-xs text-cyan-400 uppercase tracking-widest mb-1">
+                <p className="font-body text-xs text-cyan-300 uppercase tracking-widest mb-1 drop-shadow-lg">
                   Prochain Grand Prix
                 </p>
-                <h2 className="font-heading text-2xl text-white uppercase tracking-tight text-gold-glow">
+                <h2 className="font-heading text-2xl text-white uppercase tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{textShadow: '0 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(251,191,36,0.4)'}}>
                   {nextRace.name.replace(" Grand Prix", "")}
                 </h2>
                 <div className="flex items-center gap-4 mt-1">
-                  <span className="font-body text-xs text-gray-300 flex items-center gap-1">
+                  <span className="font-body text-xs text-white flex items-center gap-1 drop-shadow-lg">
                     <MapPin className="w-3 h-3 text-red-400" /> {nextRace.circuit}
                   </span>
-                  <span className="font-body text-xs text-gray-300 flex items-center gap-1">
+                  <span className="font-body text-xs text-white flex items-center gap-1 drop-shadow-lg">
                     <Calendar className="w-3 h-3 text-blue-400" /> {new Date(nextRace.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                   </span>
                 </div>
@@ -246,11 +253,11 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Quick Actions - Chrome Style */}
+        {/* Quick Actions - Brushed Aluminum Style */}
         <div className="grid grid-cols-2 gap-3">
           <button 
             onClick={() => navigate("/minigames")} 
-            className="card-chrome p-4 text-left hover:scale-[1.02] transition-transform active:scale-[0.98]"
+            className="card-brushed-aluminum p-4 text-left hover:scale-[1.02] transition-transform active:scale-[0.98]"
             data-testid="minigames-btn"
           >
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center mb-3 shadow-lg">
@@ -261,7 +268,7 @@ export default function DashboardPage() {
           </button>
           <button 
             onClick={() => navigate("/missions")} 
-            className="card-chrome p-4 text-left hover:scale-[1.02] transition-transform active:scale-[0.98]"
+            className="card-brushed-aluminum p-4 text-left hover:scale-[1.02] transition-transform active:scale-[0.98]"
             data-testid="missions-btn"
           >
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-700 flex items-center justify-center mb-3 shadow-lg">
@@ -280,7 +287,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <h3 className="font-heading text-lg text-white uppercase flex items-center gap-2">
                   <Trophy className="w-5 h-5 text-yellow-500" />
-                  Ma Ligue
+                  Mes Ligues
                 </h3>
                 <Button 
                   variant="ghost" 
