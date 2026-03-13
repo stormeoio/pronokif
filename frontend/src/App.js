@@ -15,6 +15,10 @@ import ResultsPage from "./pages/ResultsPage";
 import ProfilePage from "./pages/ProfilePage";
 import AdminPage from "./pages/AdminPage";
 import NotificationsPage from "./pages/NotificationsPage";
+import MiniGamesPage from "./pages/MiniGamesPage";
+import MissionsPage from "./pages/MissionsPage";
+import GlobalLeaderboardPage from "./pages/GlobalLeaderboardPage";
+import CustomPredictionsPage from "./pages/CustomPredictionsPage";
 
 // Components
 import BottomNav from "./components/BottomNav";
@@ -115,7 +119,8 @@ function AuthProvider({ children }) {
     setUser(null);
   };
 
-  const updateUser = (newUser) => {
+  const updateUser = (updates) => {
+    const newUser = { ...user, ...updates };
     setUser(newUser);
     localStorage.setItem("user", JSON.stringify(newUser));
   };
@@ -246,6 +251,36 @@ function AppRouter() {
       <Route path="/notifications" element={
         <ProtectedRoute>
           <NotificationsPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/minigames" element={
+        <ProtectedRoute>
+          <MiniGamesPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/missions" element={
+        <ProtectedRoute>
+          <MissionsPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/leaderboard/global" element={
+        <ProtectedRoute>
+          <GlobalLeaderboardPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/custom-predictions" element={
+        <ProtectedRoute>
+          <CustomPredictionsPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/custom-predictions/:leagueId" element={
+        <ProtectedRoute>
+          <CustomPredictionsPage />
         </ProtectedRoute>
       } />
 

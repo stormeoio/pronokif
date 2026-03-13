@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -15,6 +15,16 @@ import jwt
 import httpx
 import random
 import string
+import base64
+
+# Import extended features
+from features import (
+    ALL_AVATARS, DEFAULT_AVATARS, TEAM_AVATARS, DRIVER_AVATARS,
+    MISSIONS, XP_REWARDS, get_xp_for_level, get_level_from_xp,
+    get_default_user_stats, check_mission_completion, get_user_mission_progress,
+    AvatarUpdate, UserStats, MissionProgress, GlobalLeaderboardEntry,
+    RaceWeekendLeaderboardEntry, ReactionGameResult, BatakGameResult, MinigameLeaderboardEntry
+)
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -58,6 +68,8 @@ class UserResponse(BaseModel):
     current_league_id: Optional[str] = None
     xp: int = 0
     level: int = 1
+    avatar_id: Optional[str] = None
+    custom_avatar_url: Optional[str] = None
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -120,10 +132,11 @@ class PredictionResponse(BaseModel):
 
 # Custom Prediction Models
 class CustomPredictionChoice(BaseModel):
-    id: str
+    id: Optional[str] = None
     text: str
     driver_id: Optional[str] = None  # If it's a driver choice
     position: Optional[int] = None   # If it's a position choice
+    points: int = 2  # Points awarded for this choice
 
 class CustomPredictionCreate(BaseModel):
     race_id: str
@@ -310,13 +323,18 @@ async def register(data: UserCreate):
     user = {
         "id": user_id, "email": data.email, "password_hash": hash_password(data.password),
         "username": None, "current_league_id": None, "xp": 0, "level": 1,
+        "avatar_id": None, "custom_avatar_url": None,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.users.insert_one(user)
+    
+    # Create default stats
+    await db.user_stats.insert_one({"user_id": user_id, **get_default_user_stats()})
+    
     token = create_token(user_id)
     return TokenResponse(access_token=token, user=UserResponse(
         id=user_id, email=data.email, username=None, created_at=user["created_at"],
-        current_league_id=None, xp=0, level=1
+        current_league_id=None, xp=0, level=1, avatar_id=None, custom_avatar_url=None
     ))
 
 @api_router.post("/auth/login", response_model=TokenResponse)
@@ -328,7 +346,8 @@ async def login(data: UserLogin):
     return TokenResponse(access_token=token, user=UserResponse(
         id=user["id"], email=user["email"], username=user.get("username"),
         created_at=user["created_at"], current_league_id=user.get("current_league_id"),
-        xp=user.get("xp", 0), level=user.get("level", 1)
+        xp=user.get("xp", 0), level=user.get("level", 1),
+        avatar_id=user.get("avatar_id"), custom_avatar_url=user.get("custom_avatar_url")
     ))
 
 @api_router.get("/auth/me", response_model=UserResponse)
@@ -336,7 +355,8 @@ async def get_me(user=Depends(get_current_user)):
     return UserResponse(
         id=user["id"], email=user["email"], username=user.get("username"),
         created_at=user["created_at"], current_league_id=user.get("current_league_id"),
-        xp=user.get("xp", 0), level=user.get("level", 1)
+        xp=user.get("xp", 0), level=user.get("level", 1),
+        avatar_id=user.get("avatar_id"), custom_avatar_url=user.get("custom_avatar_url")
     )
 
 @api_router.post("/auth/username", response_model=UserResponse)
@@ -392,7 +412,7 @@ async def join_league(data: LeagueJoin, user=Depends(get_current_user)):
 @api_router.get("/leagues/my", response_model=List[LeagueResponse])
 async def get_my_leagues(user=Depends(get_current_user)):
     leagues = await db.leagues.find({"members": user["id"]}, {"_id": 0}).to_list(100)
-    return [LeagueResponse(**l) for l in leagues]
+    return [LeagueResponse(**league) for league in leagues]
 
 @api_router.get("/leagues/{league_id}", response_model=LeagueResponse)
 async def get_league(league_id: str, user=Depends(get_current_user)):
@@ -621,6 +641,16 @@ async def create_custom_prediction(data: CustomPredictionCreate, user=Depends(ge
         raise HTTPException(status_code=403, detail="Not a member of this league")
     
     prediction_id = str(uuid.uuid4())
+    # Auto-generate IDs for choices if not provided
+    processed_choices = None
+    if data.choices:
+        processed_choices = []
+        for i, c in enumerate(data.choices):
+            choice_dict = c.dict()
+            if not choice_dict.get("id"):
+                choice_dict["id"] = f"choice_{i}"
+            processed_choices.append(choice_dict)
+    
     custom_pred = {
         "id": prediction_id,
         "race_id": data.race_id,
@@ -629,7 +659,7 @@ async def create_custom_prediction(data: CustomPredictionCreate, user=Depends(ge
         "question": data.question,
         "answer_type": data.answer_type,
         "multiple_choice": data.multiple_choice,
-        "choices": [c.dict() for c in data.choices] if data.choices else None,
+        "choices": processed_choices,
         "correct_answer": None,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
@@ -721,7 +751,8 @@ SCORING_RULES = {
     "first_corner_leader": 3,
 }
 
-XP_REWARDS = {
+# XP rewards for scoring (local copy - different from features.py)
+XP_REWARDS_SCORING = {
     "prediction_made": 10,
     "correct_pole": 20,
     "correct_winner": 30,
@@ -738,7 +769,7 @@ def calculate_points(prediction: dict, results: dict) -> dict:
     # Quali Pole
     if prediction.get("quali_pole") == results.get("quali_pole"):
         points["quali_pole"] = SCORING_RULES["quali_pole_exact"]
-        points["xp_earned"] += XP_REWARDS["correct_pole"]
+        points["xp_earned"] += XP_REWARDS_SCORING["correct_pole"]
         points["details"].append(f"Pole exacte: +{SCORING_RULES['quali_pole_exact']} pts")
     
     # Quali Top 10
@@ -769,8 +800,8 @@ def calculate_points(prediction: dict, results: dict) -> dict:
     # Race Winner
     if prediction.get("race_winner") == results.get("race_winner"):
         points["race_winner"] = SCORING_RULES["race_winner_exact"]
-        points["xp_earned"] += XP_REWARDS["correct_winner"]
-        points["details"].append(f"Vainqueur exact: +10 pts")
+        points["xp_earned"] += XP_REWARDS_SCORING["correct_winner"]
+        points["details"].append("Vainqueur exact: +10 pts")
     
     # Race Top 10
     actual_race = results.get("race_top10", [])
@@ -788,8 +819,8 @@ def calculate_points(prediction: dict, results: dict) -> dict:
     # Safety Car
     if pred_bonus.get("safety_car") == results_bonus.get("safety_car"):
         points["bonus"] += SCORING_RULES["safety_car_correct"]
-        points["xp_earned"] += XP_REWARDS["bonus_correct"]
-        points["details"].append(f"Safety Car correct: +3 pts")
+        points["xp_earned"] += XP_REWARDS_SCORING["bonus_correct"]
+        points["details"].append("Safety Car correct: +3 pts")
     
     # DNF Drivers (new logic - points per correct driver)
     pred_dnf = pred_bonus.get("dnf_drivers", [])
@@ -802,14 +833,14 @@ def calculate_points(prediction: dict, results: dict) -> dict:
     # Fastest Lap
     if pred_bonus.get("fastest_lap_driver") == results_bonus.get("fastest_lap"):
         points["bonus"] += SCORING_RULES["fastest_lap_correct"]
-        points["xp_earned"] += XP_REWARDS["bonus_correct"]
-        points["details"].append(f"Meilleur tour exact: +5 pts")
+        points["xp_earned"] += XP_REWARDS_SCORING["bonus_correct"]
+        points["details"].append("Meilleur tour exact: +5 pts")
     
     # First Corner Leader
     if pred_bonus.get("first_corner_leader") == results_bonus.get("first_corner_leader"):
         points["bonus"] += SCORING_RULES["first_corner_leader"]
-        points["xp_earned"] += XP_REWARDS["bonus_correct"]
-        points["details"].append(f"Leader 1er virage exact: +3 pts")
+        points["xp_earned"] += XP_REWARDS_SCORING["bonus_correct"]
+        points["details"].append("Leader 1er virage exact: +3 pts")
     
     points["total"] = (points["quali_pole"] + points["quali_top10"] + points["sprint_quali_top10"] +
                        points["sprint_race_top10"] + points["race_winner"] + points["race_top10"] + points["bonus"])
@@ -1066,6 +1097,689 @@ async def send_reminder_notifications(user=Depends(get_current_user)):
                     notifications_sent += 1
     
     return {"message": f"{notifications_sent} reminders sent"}
+
+# ==================== AVATARS ====================
+
+@api_router.get("/avatars")
+async def get_available_avatars():
+    """Get all available avatars organized by category"""
+    return {
+        "default": DEFAULT_AVATARS,
+        "teams": TEAM_AVATARS,
+        "drivers": DRIVER_AVATARS,
+        "all": ALL_AVATARS
+    }
+
+@api_router.post("/user/avatar")
+async def update_user_avatar(data: AvatarUpdate, user=Depends(get_current_user)):
+    """Update user's avatar"""
+    update_data = {}
+    
+    if data.avatar_id:
+        # Verify avatar exists
+        valid_ids = [a["id"] for a in ALL_AVATARS]
+        if data.avatar_id not in valid_ids:
+            raise HTTPException(status_code=400, detail="Invalid avatar ID")
+        update_data["avatar_id"] = data.avatar_id
+        update_data["custom_avatar_url"] = None
+    elif data.custom_avatar_url:
+        update_data["custom_avatar_url"] = data.custom_avatar_url
+        update_data["avatar_id"] = None
+    else:
+        raise HTTPException(status_code=400, detail="Provide avatar_id or custom_avatar_url")
+    
+    await db.users.update_one({"id": user["id"]}, {"$set": update_data})
+    
+    updated_user = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    return UserResponse(
+        id=updated_user["id"], email=updated_user["email"],
+        username=updated_user.get("username"), created_at=updated_user["created_at"],
+        current_league_id=updated_user.get("current_league_id"),
+        xp=updated_user.get("xp", 0), level=updated_user.get("level", 1),
+        avatar_id=updated_user.get("avatar_id"), custom_avatar_url=updated_user.get("custom_avatar_url")
+    )
+
+@api_router.post("/user/avatar/upload")
+async def upload_custom_avatar(file: UploadFile = File(...), user=Depends(get_current_user)):
+    """Upload a custom avatar image (base64 encoded, stored in DB for simplicity)"""
+    # Read file and convert to base64
+    contents = await file.read()
+    if len(contents) > 500000:  # 500KB limit
+        raise HTTPException(status_code=400, detail="Image too large (max 500KB)")
+    
+    # Create a data URL
+    content_type = file.content_type or "image/jpeg"
+    base64_data = base64.b64encode(contents).decode('utf-8')
+    data_url = f"data:{content_type};base64,{base64_data}"
+    
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"custom_avatar_url": data_url, "avatar_id": None}}
+    )
+    
+    return {"message": "Avatar uploaded", "avatar_url": data_url}
+
+# ==================== USER STATS & MISSIONS ====================
+
+@api_router.get("/user/stats")
+async def get_user_stats(user=Depends(get_current_user)):
+    """Get user's statistics"""
+    stats_doc = await db.user_stats.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not stats_doc:
+        # Create default stats
+        stats_doc = {"user_id": user["id"], **get_default_user_stats()}
+        await db.user_stats.insert_one(stats_doc)
+    
+    return stats_doc
+
+@api_router.get("/user/missions")
+async def get_user_missions(user=Depends(get_current_user)):
+    """Get user's mission progress"""
+    stats_doc = await db.user_stats.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not stats_doc:
+        stats_doc = get_default_user_stats()
+    
+    # Get completed missions from DB
+    completed_missions = await db.user_missions.find(
+        {"user_id": user["id"], "completed": True}, {"_id": 0}
+    ).to_list(1000)
+    completed_ids = {m["mission_id"] for m in completed_missions}
+    
+    progress = get_user_mission_progress(stats_doc)
+    
+    # Mark already claimed missions
+    for p in progress:
+        p["claimed"] = p["mission_id"] in completed_ids
+    
+    return {
+        "missions": progress,
+        "categories": {
+            "assiduity": [p for p in progress if p["category"] == "assiduity"],
+            "performance": [p for p in progress if p["category"] == "performance"],
+            "social": [p for p in progress if p["category"] == "social"],
+            "minigames": [p for p in progress if p["category"] == "minigames"]
+        }
+    }
+
+@api_router.post("/user/missions/{mission_id}/claim")
+async def claim_mission_reward(mission_id: str, user=Depends(get_current_user)):
+    """Claim XP reward for completed mission"""
+    # Find mission
+    mission = next((m for m in MISSIONS if m["id"] == mission_id), None)
+    if not mission:
+        raise HTTPException(status_code=404, detail="Mission not found")
+    
+    # Check if already claimed
+    existing = await db.user_missions.find_one(
+        {"user_id": user["id"], "mission_id": mission_id, "completed": True}
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail="Mission already claimed")
+    
+    # Check if mission is actually completed
+    stats_doc = await db.user_stats.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not stats_doc or stats_doc.get(mission["stat"], 0) < mission["target"]:
+        raise HTTPException(status_code=400, detail="Mission not completed")
+    
+    # Award XP
+    xp_reward = mission["xp_reward"]
+    user_data = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    new_xp = user_data.get("xp", 0) + xp_reward
+    new_level = get_level_from_xp(new_xp)
+    
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"xp": new_xp, "level": new_level}}
+    )
+    
+    # Mark mission as claimed
+    await db.user_missions.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "mission_id": mission_id,
+        "completed": True,
+        "claimed_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    # Notification
+    await create_notification(
+        user["id"],
+        f"Mission '{mission['name']}' complétée ! +{xp_reward} XP",
+        "mission_complete"
+    )
+    
+    level_up = new_level > user_data.get("level", 1)
+    if level_up:
+        await create_notification(user["id"], f"Niveau {new_level} atteint !", "level_up")
+    
+    return {
+        "message": "Mission claimed",
+        "xp_earned": xp_reward,
+        "new_xp": new_xp,
+        "new_level": new_level,
+        "level_up": level_up
+    }
+
+# ==================== GLOBAL LEADERBOARD ====================
+
+@api_router.get("/leaderboard/global")
+async def get_global_leaderboard(limit: int = 100, user=Depends(get_current_user)):
+    """Get global leaderboard (all users)"""
+    # Get all users with stats
+    users = await db.users.find({}, {"_id": 0}).to_list(10000)
+    
+    # Calculate total points for each user from all leagues
+    user_points = []
+    for u in users:
+        if not u.get("username"):
+            continue
+        
+        # Sum points from all leagues
+        leaderboard_entries = await db.leaderboard.find(
+            {"user_id": u["id"]}, {"_id": 0}
+        ).to_list(100)
+        total_points = sum(e.get("total_points", 0) for e in leaderboard_entries)
+        
+        user_points.append({
+            "user_id": u["id"],
+            "username": u.get("username", "Anonymous"),
+            "avatar_id": u.get("avatar_id"),
+            "total_points": total_points,
+            "level": u.get("level", 1),
+            "xp": u.get("xp", 0)
+        })
+    
+    # Sort by points
+    user_points.sort(key=lambda x: (-x["total_points"], -x["xp"]))
+    
+    # Add positions
+    result = []
+    for i, entry in enumerate(user_points[:limit]):
+        entry["position"] = i + 1
+        result.append(GlobalLeaderboardEntry(**entry))
+    
+    # Find current user's position if not in top
+    my_position = next(
+        (i + 1 for i, e in enumerate(user_points) if e["user_id"] == user["id"]),
+        None
+    )
+    
+    return {
+        "leaderboard": result,
+        "my_position": my_position,
+        "total_players": len(user_points)
+    }
+
+@api_router.get("/leaderboard/race/{race_id}")
+async def get_race_weekend_leaderboard(race_id: str, league_id: Optional[str] = None, user=Depends(get_current_user)):
+    """Get leaderboard for a specific race weekend"""
+    # Get all predictions for this race
+    query = {"race_id": race_id}
+    predictions = await db.predictions.find(query, {"_id": 0}).to_list(10000)
+    
+    # Get race results
+    results = await db.race_results.find_one({"race_id": race_id}, {"_id": 0})
+    if not results:
+        return {"message": "Results not available yet", "leaderboard": []}
+    
+    # Calculate points for each prediction
+    user_race_points = []
+    for pred in predictions:
+        points = calculate_points(pred, results["results"])
+        
+        # Get user info
+        user_data = await db.users.find_one({"id": pred["user_id"]}, {"_id": 0})
+        if not user_data:
+            continue
+        
+        # If league_id specified, filter
+        if league_id:
+            user_leagues = await db.leagues.find(
+                {"id": league_id, "members": pred["user_id"]}, {"_id": 0}
+            ).to_list(1)
+            if not user_leagues:
+                continue
+        
+        user_race_points.append({
+            "user_id": pred["user_id"],
+            "username": user_data.get("username", "Anonymous"),
+            "avatar_id": user_data.get("avatar_id"),
+            "race_points": points["total"]
+        })
+    
+    # Sort by points
+    user_race_points.sort(key=lambda x: x["race_points"], reverse=True)
+    
+    # Add positions
+    result = []
+    for i, entry in enumerate(user_race_points):
+        entry["position"] = i + 1
+        result.append(RaceWeekendLeaderboardEntry(**entry))
+    
+    return {"leaderboard": result, "race_id": race_id}
+
+# ==================== MINI-GAMES ====================
+
+@api_router.post("/minigames/reaction")
+async def submit_reaction_game(data: ReactionGameResult, user=Depends(get_current_user)):
+    """Submit a reaction game result"""
+    # Validate race and league
+    if not data.is_training:
+        league = await db.leagues.find_one({"id": data.league_id}, {"_id": 0})
+        if not league or user["id"] not in league["members"]:
+            raise HTTPException(status_code=403, detail="Not a member of this league")
+        
+        # Check attempts for this race weekend
+        existing_attempts = await db.minigame_results.count_documents({
+            "user_id": user["id"],
+            "race_id": data.race_id,
+            "league_id": data.league_id,
+            "game_type": "reaction",
+            "is_training": False
+        })
+        
+        if existing_attempts >= 3:
+            raise HTTPException(status_code=400, detail="Maximum 3 attempts per race weekend")
+    
+    # Save result
+    result_id = str(uuid.uuid4())
+    result_doc = {
+        "id": result_id,
+        "user_id": user["id"],
+        "race_id": data.race_id,
+        "league_id": data.league_id,
+        "game_type": "reaction",
+        "score": data.reaction_time_ms,
+        "is_training": data.is_training,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.minigame_results.insert_one(result_doc)
+    
+    # Update stats
+    stats_update = {"$inc": {"reaction_games_played": 1}}
+    
+    # Check for sub-200ms achievement
+    if data.reaction_time_ms < 200:
+        stats_update["$inc"]["reaction_sub_200"] = 1
+    
+    # Update best time
+    stats_doc = await db.user_stats.find_one({"user_id": user["id"]}, {"_id": 0})
+    if stats_doc:
+        current_best = stats_doc.get("best_reaction_time")
+        if current_best is None or data.reaction_time_ms < current_best:
+            stats_update["$set"] = {"best_reaction_time": data.reaction_time_ms}
+    
+    await db.user_stats.update_one(
+        {"user_id": user["id"]},
+        stats_update,
+        upsert=True
+    )
+    
+    # Award XP
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$inc": {"xp": XP_REWARDS["minigame_played"]}}
+    )
+    
+    return {
+        "message": "Result saved",
+        "result_id": result_id,
+        "reaction_time_ms": data.reaction_time_ms,
+        "is_training": data.is_training
+    }
+
+@api_router.post("/minigames/batak")
+async def submit_batak_game(data: BatakGameResult, user=Depends(get_current_user)):
+    """Submit a batak game result"""
+    if not data.is_training:
+        league = await db.leagues.find_one({"id": data.league_id}, {"_id": 0})
+        if not league or user["id"] not in league["members"]:
+            raise HTTPException(status_code=403, detail="Not a member of this league")
+        
+        existing_attempts = await db.minigame_results.count_documents({
+            "user_id": user["id"],
+            "race_id": data.race_id,
+            "league_id": data.league_id,
+            "game_type": "batak",
+            "is_training": False
+        })
+        
+        if existing_attempts >= 3:
+            raise HTTPException(status_code=400, detail="Maximum 3 attempts per race weekend")
+    
+    result_id = str(uuid.uuid4())
+    result_doc = {
+        "id": result_id,
+        "user_id": user["id"],
+        "race_id": data.race_id,
+        "league_id": data.league_id,
+        "game_type": "batak",
+        "score": data.score,
+        "time_seconds": data.time_seconds,
+        "is_training": data.is_training,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.minigame_results.insert_one(result_doc)
+    
+    stats_update = {"$inc": {"batak_games_played": 1}}
+    
+    if data.score >= 30:
+        stats_update["$inc"]["batak_30_targets"] = 1
+    
+    stats_doc = await db.user_stats.find_one({"user_id": user["id"]}, {"_id": 0})
+    if stats_doc:
+        current_best = stats_doc.get("best_batak_score")
+        if current_best is None or data.score > current_best:
+            stats_update["$set"] = {"best_batak_score": data.score}
+    
+    await db.user_stats.update_one(
+        {"user_id": user["id"]},
+        stats_update,
+        upsert=True
+    )
+    
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$inc": {"xp": XP_REWARDS["minigame_played"]}}
+    )
+    
+    return {
+        "message": "Result saved",
+        "result_id": result_id,
+        "score": data.score,
+        "is_training": data.is_training
+    }
+
+@api_router.get("/minigames/leaderboard/{game_type}/{league_id}/{race_id}")
+async def get_minigame_leaderboard(
+    game_type: str,
+    league_id: str,
+    race_id: str,
+    user=Depends(get_current_user)
+):
+    """Get mini-game leaderboard for a specific race weekend"""
+    if game_type not in ["reaction", "batak"]:
+        raise HTTPException(status_code=400, detail="Invalid game type")
+    
+    league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
+    if not league or user["id"] not in league["members"]:
+        raise HTTPException(status_code=403, detail="Not a member of this league")
+    
+    # Get all results for this game/league/race
+    results = await db.minigame_results.find({
+        "league_id": league_id,
+        "race_id": race_id,
+        "game_type": game_type,
+        "is_training": False
+    }, {"_id": 0}).to_list(1000)
+    
+    # Group by user and get best score
+    user_best = {}
+    user_attempts = {}
+    for r in results:
+        uid = r["user_id"]
+        score = r["score"]
+        
+        if uid not in user_attempts:
+            user_attempts[uid] = 0
+        user_attempts[uid] += 1
+        
+        if uid not in user_best:
+            user_best[uid] = score
+        else:
+            if game_type == "reaction":
+                user_best[uid] = min(user_best[uid], score)  # Lower is better
+            else:
+                user_best[uid] = max(user_best[uid], score)  # Higher is better
+    
+    # Build leaderboard
+    leaderboard_data = []
+    for uid, best_score in user_best.items():
+        user_data = await db.users.find_one({"id": uid}, {"_id": 0})
+        if user_data:
+            leaderboard_data.append({
+                "user_id": uid,
+                "username": user_data.get("username", "Anonymous"),
+                "avatar_id": user_data.get("avatar_id"),
+                "best_score": best_score,
+                "attempts_used": user_attempts.get(uid, 0)
+            })
+    
+    # Sort
+    if game_type == "reaction":
+        leaderboard_data.sort(key=lambda x: x["best_score"])  # Lower is better
+    else:
+        leaderboard_data.sort(key=lambda x: x["best_score"], reverse=True)  # Higher is better
+    
+    # Add positions
+    result = []
+    for i, entry in enumerate(leaderboard_data):
+        entry["position"] = i + 1
+        result.append(MinigameLeaderboardEntry(**entry))
+    
+    return {
+        "leaderboard": result,
+        "game_type": game_type,
+        "race_id": race_id,
+        "league_id": league_id
+    }
+
+@api_router.get("/minigames/attempts/{game_type}/{league_id}/{race_id}")
+async def get_my_minigame_attempts(
+    game_type: str,
+    league_id: str,
+    race_id: str,
+    user=Depends(get_current_user)
+):
+    """Get user's attempts for a specific mini-game"""
+    results = await db.minigame_results.find({
+        "user_id": user["id"],
+        "league_id": league_id,
+        "race_id": race_id,
+        "game_type": game_type,
+        "is_training": False
+    }, {"_id": 0}).to_list(10)
+    
+    return {
+        "attempts": results,
+        "attempts_used": len(results),
+        "attempts_remaining": max(0, 3 - len(results))
+    }
+
+@api_router.get("/minigames/global-leaderboard/{game_type}")
+async def get_global_minigame_leaderboard(game_type: str, user=Depends(get_current_user)):
+    """Get global mini-game leaderboard (all time best scores)"""
+    if game_type not in ["reaction", "batak"]:
+        raise HTTPException(status_code=400, detail="Invalid game type")
+    
+    # Get best score per user
+    stat_field = "best_reaction_time" if game_type == "reaction" else "best_batak_score"
+    
+    stats = await db.user_stats.find(
+        {stat_field: {"$ne": None}}, {"_id": 0}
+    ).to_list(10000)
+    
+    leaderboard_data = []
+    for s in stats:
+        user_data = await db.users.find_one({"id": s["user_id"]}, {"_id": 0})
+        if user_data and user_data.get("username"):
+            leaderboard_data.append({
+                "user_id": s["user_id"],
+                "username": user_data.get("username", "Anonymous"),
+                "avatar_id": user_data.get("avatar_id"),
+                "best_score": s[stat_field],
+                "attempts_used": 0  # Not relevant for global
+            })
+    
+    # Sort
+    if game_type == "reaction":
+        leaderboard_data.sort(key=lambda x: x["best_score"])
+    else:
+        leaderboard_data.sort(key=lambda x: x["best_score"], reverse=True)
+    
+    result = []
+    for i, entry in enumerate(leaderboard_data[:100]):
+        entry["position"] = i + 1
+        result.append(MinigameLeaderboardEntry(**entry))
+    
+    return {"leaderboard": result, "game_type": game_type}
+
+@api_router.post("/admin/minigames/award-winners/{race_id}")
+async def award_minigame_winners(race_id: str, user=Depends(get_current_user)):
+    """Award +2 points to mini-game winners for each league after race weekend"""
+    # Verify user is admin (league owner)
+    leagues_owned = await db.leagues.find({"owner_id": user["id"]}, {"_id": 0}).to_list(100)
+    if not leagues_owned:
+        raise HTTPException(status_code=403, detail="Only league owners can award mini-game points")
+    
+    total_awards = 0
+    
+    for league in leagues_owned:
+        league_id = league["id"]
+        
+        for game_type in ["reaction", "batak"]:
+            # Get all competition results for this game/league/race
+            results = await db.minigame_results.find({
+                "league_id": league_id,
+                "race_id": race_id,
+                "game_type": game_type,
+                "is_training": False
+            }, {"_id": 0}).to_list(1000)
+            
+            if not results:
+                continue
+            
+            # Group by user and get best score
+            user_best = {}
+            for r in results:
+                uid = r["user_id"]
+                score = r["score"]
+                
+                if uid not in user_best:
+                    user_best[uid] = score
+                else:
+                    if game_type == "reaction":
+                        user_best[uid] = min(user_best[uid], score)  # Lower is better
+                    else:
+                        user_best[uid] = max(user_best[uid], score)  # Higher is better
+            
+            if not user_best:
+                continue
+            
+            # Find winner
+            if game_type == "reaction":
+                winner_id = min(user_best.keys(), key=lambda k: user_best[k])
+            else:
+                winner_id = max(user_best.keys(), key=lambda k: user_best[k])
+            
+            # Check if already awarded
+            existing_award = await db.minigame_awards.find_one({
+                "league_id": league_id,
+                "race_id": race_id,
+                "game_type": game_type
+            })
+            
+            if existing_award:
+                continue  # Already awarded
+            
+            # Award 2 points to winner
+            await db.leaderboard.update_one(
+                {"league_id": league_id, "user_id": winner_id},
+                {"$inc": {"total_points": 2, "minigame_points": 2}},
+                upsert=True
+            )
+            
+            # Record the award
+            await db.minigame_awards.insert_one({
+                "id": str(uuid.uuid4()),
+                "league_id": league_id,
+                "race_id": race_id,
+                "game_type": game_type,
+                "winner_id": winner_id,
+                "points_awarded": 2,
+                "awarded_at": datetime.now(timezone.utc).isoformat()
+            })
+            
+            # Update winner stats
+            await db.user_stats.update_one(
+                {"user_id": winner_id},
+                {"$inc": {f"{game_type}_wins": 1}},
+                upsert=True
+            )
+            
+            # Award XP
+            await db.users.update_one(
+                {"id": winner_id},
+                {"$inc": {"xp": XP_REWARDS["minigame_won"]}}
+            )
+            
+            # Notification
+            game_name = "Reaction Time" if game_type == "reaction" else "Batak"
+            await create_notification(
+                winner_id,
+                f"Tu as gagné le mini-jeu {game_name} dans {league['name']} ! +2 points",
+                "minigame_win"
+            )
+            
+            total_awards += 1
+    
+    return {"message": f"{total_awards} awards distributed", "total_awards": total_awards}
+
+@api_router.get("/minigames/winners/{league_id}/{race_id}")
+async def get_minigame_winners(league_id: str, race_id: str, user=Depends(get_current_user)):
+    """Get mini-game winners for a specific race weekend"""
+    league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
+    if not league or user["id"] not in league["members"]:
+        raise HTTPException(status_code=403, detail="Not a member of this league")
+    
+    awards = await db.minigame_awards.find({
+        "league_id": league_id,
+        "race_id": race_id
+    }, {"_id": 0}).to_list(10)
+    
+    result = []
+    for award in awards:
+        winner_data = await db.users.find_one({"id": award["winner_id"]}, {"_id": 0})
+        result.append({
+            "game_type": award["game_type"],
+            "winner_id": award["winner_id"],
+            "winner_username": winner_data.get("username", "Unknown") if winner_data else "Unknown",
+            "points_awarded": award["points_awarded"]
+        })
+    
+    return {"winners": result, "race_id": race_id, "league_id": league_id}
+
+# ==================== CUSTOM PREDICTIONS UI HELPERS ====================
+
+@api_router.get("/custom-predictions/my-created")
+async def get_my_created_custom_predictions(user=Depends(get_current_user)):
+    """Get custom predictions created by the user"""
+    predictions = await db.custom_predictions.find(
+        {"created_by": user["id"]}, {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    return predictions
+
+@api_router.get("/custom-predictions/to-answer/{league_id}/{race_id}")
+async def get_custom_predictions_to_answer(league_id: str, race_id: str, user=Depends(get_current_user)):
+    """Get custom predictions that user can answer"""
+    league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
+    if not league or user["id"] not in league["members"]:
+        raise HTTPException(status_code=403, detail="Not a member")
+    
+    # Get all custom predictions for this league/race
+    predictions = await db.custom_predictions.find(
+        {"league_id": league_id, "race_id": race_id}, {"_id": 0}
+    ).to_list(100)
+    
+    # Check which ones user has answered
+    for pred in predictions:
+        answer = await db.custom_prediction_answers.find_one(
+            {"prediction_id": pred["id"], "user_id": user["id"]}, {"_id": 0}
+        )
+        pred["user_answer"] = answer.get("answer") if answer else None
+        pred["has_answered"] = answer is not None
+    
+    return predictions
 
 # ==================== HEALTH CHECK ====================
 

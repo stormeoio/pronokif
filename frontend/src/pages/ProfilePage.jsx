@@ -1,16 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, apiClient } from "../App";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { 
   User, LogOut, Trophy, Target, Users, ChevronRight,
-  Plus, History, Share2, Copy, Check, Zap, Star, Shield
+  Plus, History, Share2, Copy, Check, Zap, Star, Shield,
+  Gamepad2, Medal, Edit, Crown, Globe, MessageSquare
 } from "lucide-react";
 import { toast } from "sonner";
+import { AvatarDisplay, AvatarSelector } from "../components/AvatarDisplay";
 
 export default function ProfilePage() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   
   const [leagues, setLeagues] = useState([]);
@@ -18,20 +20,23 @@ export default function ProfilePage() {
   const [stats, setStats] = useState({ totalPredictions: 0, totalPoints: 0 });
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(null);
+  const [avatars, setAvatars] = useState(null);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [globalPosition, setGlobalPosition] = useState(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const [leaguesRes, predictionsRes] = await Promise.all([
+      const [leaguesRes, predictionsRes, avatarsRes, globalLbRes] = await Promise.all([
         apiClient.get("/leagues/my"),
-        apiClient.get("/predictions/history")
+        apiClient.get("/predictions/history"),
+        apiClient.get("/avatars"),
+        apiClient.get("/leaderboard/global")
       ]);
 
       setLeagues(leaguesRes.data);
       setPredictions(predictionsRes.data);
+      setAvatars(avatarsRes.data);
+      setGlobalPosition(globalLbRes.data.my_position);
       setStats({ totalPredictions: predictionsRes.data.length, totalPoints: 0 });
 
       if (user.current_league_id) {
@@ -48,7 +53,11 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user.current_league_id, user.id]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleLogout = () => {
     logout();
@@ -91,6 +100,40 @@ export default function ProfilePage() {
     }
   };
 
+  const handleAvatarSelect = async (avatarId) => {
+    try {
+      const res = await apiClient.post("/user/avatar", { avatar_id: avatarId });
+      if (updateUser) {
+        updateUser({ avatar_id: avatarId, custom_avatar_url: null });
+      }
+      toast.success("Avatar mis à jour !");
+      setShowAvatarModal(false);
+    } catch (e) {
+      toast.error("Erreur lors de la mise à jour");
+    }
+  };
+
+  const handleAvatarUpload = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await apiClient.post("/user/avatar/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      if (updateUser) {
+        updateUser({ avatar_id: null, custom_avatar_url: res.data.avatar_url });
+      }
+      toast.success("Photo uploadée !");
+      setShowAvatarModal(false);
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Erreur lors de l'upload");
+    }
+  };
+
+  const getAvatarById = (avatarId) => {
+    return avatars?.all?.find(a => a.id === avatarId) || null;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen p-4 pt-6" style={{ background: 'linear-gradient(180deg, #0a0f1a 0%, #151c2c 50%, #0a0f1a 100%)' }}>
@@ -104,18 +147,29 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen p-4 pt-6" data-testid="profile-page"
+    <div className="min-h-screen p-4 pt-6 pb-24" data-testid="profile-page"
          style={{ background: 'linear-gradient(180deg, #0a0f1a 0%, #151c2c 50%, #0a0f1a 100%)' }}>
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Profile Header */}
         <Card className="game-card racing-stripe">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-lg bg-gradient-to-b from-orange-500 to-orange-700 border-2 border-orange-400 flex items-center justify-center glow-orange">
-                <span className="font-heading text-3xl text-white">
-                  {user.username?.charAt(0).toUpperCase() || "?"}
-                </span>
+              {/* Avatar with edit button */}
+              <div className="relative">
+                <AvatarDisplay 
+                  avatar={getAvatarById(user.avatar_id)} 
+                  customUrl={user.custom_avatar_url}
+                  size="xl" 
+                />
+                <button 
+                  onClick={() => setShowAvatarModal(true)}
+                  className="absolute -bottom-1 -right-1 w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center border-2 border-gray-900 hover:bg-orange-400 transition-colors"
+                  data-testid="edit-avatar-btn"
+                >
+                  <Edit className="w-4 h-4 text-white" />
+                </button>
               </div>
+              
               <div className="flex-1">
                 <h1 className="font-heading text-2xl uppercase tracking-tight text-white">
                   {user.username}
@@ -131,7 +185,17 @@ export default function ProfilePage() {
                     <span className="font-data text-sm text-yellow-500">XP {user.xp || 0}</span>
                   </div>
                 </div>
+                {/* Global Ranking */}
+                {globalPosition && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <Globe className="w-3 h-3 text-gray-500" />
+                    <span className="font-body text-xs text-gray-500">
+                      Rang mondial: <span className="text-cyan-400">#{globalPosition}</span>
+                    </span>
+                  </div>
+                )}
               </div>
+              
               <Button variant="ghost" size="icon" onClick={handleLogout} className="text-gray-400 hover:text-red-500" data-testid="logout-btn">
                 <LogOut className="w-5 h-5" />
               </Button>
@@ -156,6 +220,52 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Quick Links - New features */}
+        <Card className="game-card overflow-hidden">
+          <CardContent className="p-0">
+            <button onClick={() => navigate("/missions")} className="w-full p-4 flex items-center justify-between border-b border-gray-800 hover:bg-white/5 transition-colors" data-testid="nav-missions">
+              <div className="flex items-center gap-3">
+                <Medal className="w-5 h-5 text-yellow-500" />
+                <div className="text-left">
+                  <span className="font-body text-white block">Missions</span>
+                  <span className="font-body text-xs text-gray-500">Gagne de l'XP en complétant des missions</span>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-500" />
+            </button>
+            <button onClick={() => navigate("/minigames")} className="w-full p-4 flex items-center justify-between border-b border-gray-800 hover:bg-white/5 transition-colors" data-testid="nav-minigames">
+              <div className="flex items-center gap-3">
+                <Gamepad2 className="w-5 h-5 text-purple-500" />
+                <div className="text-left">
+                  <span className="font-body text-white block">Mini-Jeux</span>
+                  <span className="font-body text-xs text-gray-500">Reaction Time & Batak Pro</span>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-500" />
+            </button>
+            <button onClick={() => navigate("/custom-predictions")} className="w-full p-4 flex items-center justify-between border-b border-gray-800 hover:bg-white/5 transition-colors" data-testid="nav-custom-predictions">
+              <div className="flex items-center gap-3">
+                <MessageSquare className="w-5 h-5 text-pink-500" />
+                <div className="text-left">
+                  <span className="font-body text-white block">Pronos Perso</span>
+                  <span className="font-body text-xs text-gray-500">Crée des pronostics fun pour ta ligue</span>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-500" />
+            </button>
+            <button onClick={() => navigate("/leaderboard/global")} className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors" data-testid="nav-global-leaderboard">
+              <div className="flex items-center gap-3">
+                <Crown className="w-5 h-5 text-cyan-500" />
+                <div className="text-left">
+                  <span className="font-body text-white block">Classement Global</span>
+                  <span className="font-body text-xs text-gray-500">Tous les joueurs PRONOKIF</span>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-500" />
+            </button>
+          </CardContent>
+        </Card>
 
         {/* My Leagues */}
         <Card className="game-card">
@@ -211,13 +321,13 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Quick Links */}
+        {/* Other Links */}
         <Card className="game-card">
           <CardContent className="p-0">
             <button onClick={() => navigate("/leaderboard")} className="w-full p-4 flex items-center justify-between border-b border-gray-800 hover:bg-white/5 transition-colors" data-testid="nav-leaderboard">
               <div className="flex items-center gap-3">
                 <Trophy className="w-5 h-5 text-yellow-500" />
-                <span className="font-body text-white">Classement</span>
+                <span className="font-body text-white">Classement Ligue</span>
               </div>
               <ChevronRight className="w-5 h-5 text-gray-500" />
             </button>
@@ -245,9 +355,34 @@ export default function ProfilePage() {
 
         {/* App Info */}
         <p className="text-center text-gray-600 text-xs font-body">
-          PRONOKIF v1.0 • Made with passion for F1
+          PRONOKIF v2.0 • Made with passion for F1
         </p>
       </div>
+
+      {/* Avatar Selection Modal */}
+      {showAvatarModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80" onClick={() => setShowAvatarModal(false)}>
+          <div className="bg-gray-900 rounded-lg border border-orange-500/30 w-full max-w-lg max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 bg-gray-900 p-4 border-b border-gray-800">
+              <div className="flex items-center justify-between">
+                <h2 className="font-heading text-lg uppercase text-orange-500">Choisir un Avatar</h2>
+                <Button variant="ghost" size="sm" onClick={() => setShowAvatarModal(false)}>
+                  ✕
+                </Button>
+              </div>
+            </div>
+            <div className="p-4">
+              <AvatarSelector
+                avatars={avatars}
+                selectedId={user.avatar_id}
+                onSelect={handleAvatarSelect}
+                customUrl={user.custom_avatar_url}
+                onUpload={handleAvatarUpload}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
