@@ -15,8 +15,8 @@ const GP_BACKGROUNDS = {
   default: "https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/84bf8f32c39693df24f61199e48ea90a376cae9f73cc5c8550bc87301e7c8ec1.png"
 };
 
-// Hero banner with F1 car and PRONOKIF logo
-const HERO_BANNER = "https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/0988457c2bf0725d4e6fe4a0960dc4740d8e985496ab5a323c2c40ac2c8e0030.png";
+// Hero banner with F1 car (without embedded text - we'll overlay it)
+const HERO_BANNER = "https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/25ea65ea1c6f8a7608c9768d4bf92327f4fa6d439e628eadf7121869c65e5737.png";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -116,15 +116,19 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-app-main pb-24" data-testid="dashboard-page">
       {/* Hero Banner with F1 Car and Logo */}
-      <div className="relative w-full h-56 overflow-hidden">
+      <div className="relative w-full h-52 overflow-hidden">
         <img 
           src={HERO_BANNER} 
           alt="PRONOKIF" 
-          className="w-full h-full object-cover object-top"
+          className="w-full h-[280px] object-cover object-bottom"
         />
-        {/* Slogan overlay - positioned at the top, just below PRONOKIF text */}
-        <div className="absolute top-[52px] left-0 right-0 text-center z-10">
-          <p className="font-body text-[10px] text-white tracking-[0.08em] font-medium px-4"
+        {/* PRONOKIF + Slogan overlay - at top, above the car */}
+        <div className="absolute top-3 left-0 right-0 text-center z-10">
+          <h1 className="font-heading text-3xl text-white tracking-wider uppercase"
+              style={{textShadow: '0 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7)'}}>
+            PRONOKIF
+          </h1>
+          <p className="font-body text-[10px] text-white tracking-[0.08em] font-medium mt-1"
              style={{textShadow: '0 1px 4px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.9)'}}>
             Pronostique 🔹 Défie tes amis 🔹 Domine le classement
           </p>
