@@ -7,7 +7,7 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timezone, timedelta
 import bcrypt
@@ -25,13 +25,15 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # JWT Configuration
-JWT_SECRET = os.environ.get('JWT_SECRET', 'f1-paddock-predictor-secret-key-2025')
+JWT_SECRET = os.environ.get('JWT_SECRET', 'pronokif-secret-key-2026')
 JWT_ALGORITHM = "HS256"
-JWT_EXPIRATION_HOURS = 24 * 7  # 7 days
+JWT_EXPIRATION_HOURS = 24 * 7
 
 security = HTTPBearer()
 
-# Create the main app
+# OpenF1 API Base URL
+OPENF1_API = "https://api.openf1.org/v1"
+
 app = FastAPI(title="PRONOKIF API")
 api_router = APIRouter(prefix="/api")
 
@@ -76,31 +78,72 @@ class LeagueResponse(BaseModel):
     members: List[str]
     created_at: str
 
-class BonusBet(BaseModel):
+# Extended prediction models for Top 10 + Sprint
+class BonusBets(BaseModel):
     safety_car: bool = False
-    will_have_dnf: bool = False
+    dnf_drivers: List[str] = []  # Changed from bool to list of driver IDs
     fastest_lap_driver: Optional[str] = None
+    first_corner_leader: Optional[str] = None  # NEW: Leader after first corner
 
 class PredictionCreate(BaseModel):
     race_id: str
+    # Qualifications Race (Top 10)
     quali_pole: str
-    quali_top3: List[str]
+    quali_top10: List[str]  # Extended to Top 10
+    # Sprint Qualifications (Top 10) - only for sprint weekends
+    sprint_quali_top10: Optional[List[str]] = None
+    # Sprint Race (Top 10) - only for sprint weekends
+    sprint_race_top10: Optional[List[str]] = None
+    # Main Race (Top 10)
     race_winner: str
-    race_top3: List[str]
-    bonus_bets: Optional[BonusBet] = None
+    race_top10: List[str]  # Extended to Top 10
+    # Bonus bets
+    bonus_bets: Optional[BonusBets] = None
+    # Custom predictions answers
+    custom_predictions: Optional[Dict[str, Any]] = None  # {prediction_id: answer}
 
 class PredictionResponse(BaseModel):
     id: str
     user_id: str
     race_id: str
     quali_pole: str
-    quali_top3: List[str]
+    quali_top10: List[str]
+    sprint_quali_top10: Optional[List[str]] = None
+    sprint_race_top10: Optional[List[str]] = None
     race_winner: str
-    race_top3: List[str]
+    race_top10: List[str]
     bonus_bets: Optional[dict] = None
+    custom_predictions: Optional[dict] = None
     locked: bool
     created_at: str
     updated_at: str
+
+# Custom Prediction Models
+class CustomPredictionChoice(BaseModel):
+    id: str
+    text: str
+    driver_id: Optional[str] = None  # If it's a driver choice
+    position: Optional[int] = None   # If it's a position choice
+
+class CustomPredictionCreate(BaseModel):
+    race_id: str
+    league_id: str
+    question: str
+    answer_type: str  # "text", "drivers", "positions", "custom"
+    multiple_choice: bool = False  # Single or multiple answers allowed
+    choices: Optional[List[CustomPredictionChoice]] = None  # For custom choices
+
+class CustomPredictionResponse(BaseModel):
+    id: str
+    race_id: str
+    league_id: str
+    created_by: str
+    question: str
+    answer_type: str
+    multiple_choice: bool
+    choices: Optional[List[dict]] = None
+    correct_answer: Optional[Any] = None
+    created_at: str
 
 class LeaderboardEntry(BaseModel):
     user_id: str
@@ -117,8 +160,11 @@ class RaceResponse(BaseModel):
     country: str
     date: str
     quali_date: str
+    sprint_quali_date: Optional[str] = None
+    sprint_race_date: Optional[str] = None
     predictions_close_at: str
-    status: str  # upcoming, quali_open, race_open, finished
+    status: str
+    is_sprint_weekend: bool = False
     results: Optional[dict] = None
 
 class DriverResponse(BaseModel):
@@ -146,11 +192,7 @@ def verify_password(password: str, hashed: str) -> bool:
 
 def create_token(user_id: str) -> str:
     expiration = datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)
-    payload = {
-        "sub": user_id,
-        "exp": expiration,
-        "iat": datetime.now(timezone.utc)
-    }
+    payload = {"sub": user_id, "exp": expiration, "iat": datetime.now(timezone.utc)}
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -171,6 +213,91 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 def generate_league_code() -> str:
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
+# ==================== F1 DATA ====================
+
+F1_DRIVERS_2026 = [
+    {"id": "verstappen", "name": "Max Verstappen", "team": "Red Bull Racing", "number": 1, "country": "NED"},
+    {"id": "lawson", "name": "Liam Lawson", "team": "Red Bull Racing", "number": 30, "country": "NZL"},
+    {"id": "hamilton", "name": "Lewis Hamilton", "team": "Ferrari", "number": 44, "country": "GBR"},
+    {"id": "leclerc", "name": "Charles Leclerc", "team": "Ferrari", "number": 16, "country": "MON"},
+    {"id": "norris", "name": "Lando Norris", "team": "McLaren", "number": 4, "country": "GBR"},
+    {"id": "piastri", "name": "Oscar Piastri", "team": "McLaren", "number": 81, "country": "AUS"},
+    {"id": "russell", "name": "George Russell", "team": "Mercedes", "number": 63, "country": "GBR"},
+    {"id": "antonelli", "name": "Kimi Antonelli", "team": "Mercedes", "number": 12, "country": "ITA"},
+    {"id": "alonso", "name": "Fernando Alonso", "team": "Aston Martin", "number": 14, "country": "ESP"},
+    {"id": "stroll", "name": "Lance Stroll", "team": "Aston Martin", "number": 18, "country": "CAN"},
+    {"id": "gasly", "name": "Pierre Gasly", "team": "Alpine", "number": 10, "country": "FRA"},
+    {"id": "doohan", "name": "Jack Doohan", "team": "Alpine", "number": 7, "country": "AUS"},
+    {"id": "albon", "name": "Alexander Albon", "team": "Williams", "number": 23, "country": "THA"},
+    {"id": "sainz", "name": "Carlos Sainz", "team": "Williams", "number": 55, "country": "ESP"},
+    {"id": "tsunoda", "name": "Yuki Tsunoda", "team": "RB", "number": 22, "country": "JPN"},
+    {"id": "hadjar", "name": "Isack Hadjar", "team": "RB", "number": 6, "country": "FRA"},
+    {"id": "hulkenberg", "name": "Nico Hülkenberg", "team": "Sauber", "number": 27, "country": "GER"},
+    {"id": "bortoleto", "name": "Gabriel Bortoleto", "team": "Sauber", "number": 5, "country": "BRA"},
+    {"id": "ocon", "name": "Esteban Ocon", "team": "Haas", "number": 31, "country": "FRA"},
+    {"id": "bearman", "name": "Oliver Bearman", "team": "Haas", "number": 87, "country": "GBR"},
+]
+
+# F1 2026 Calendar with Sprint weekends marked
+F1_RACES_2026 = [
+    {"id": "australia-2026", "name": "Australian Grand Prix", "circuit": "Albert Park", "country": "Australia", 
+     "date": "2026-03-08", "quali_date": "2026-03-07", "is_sprint": False},
+    {"id": "china-2026", "name": "Chinese Grand Prix", "circuit": "Shanghai", "country": "China", 
+     "date": "2026-03-15", "quali_date": "2026-03-13", "is_sprint": True, 
+     "sprint_quali_date": "2026-03-14", "sprint_race_date": "2026-03-14"},
+    {"id": "japan-2026", "name": "Japanese Grand Prix", "circuit": "Suzuka", "country": "Japan", 
+     "date": "2026-03-29", "quali_date": "2026-03-28", "is_sprint": False},
+    {"id": "bahrain-2026", "name": "Bahrain Grand Prix", "circuit": "Sakhir", "country": "Bahrain", 
+     "date": "2026-04-05", "quali_date": "2026-04-04", "is_sprint": False},
+    {"id": "saudi-2026", "name": "Saudi Arabian Grand Prix", "circuit": "Jeddah", "country": "Saudi Arabia", 
+     "date": "2026-04-19", "quali_date": "2026-04-18", "is_sprint": False},
+    {"id": "miami-2026", "name": "Miami Grand Prix", "circuit": "Miami", "country": "USA", 
+     "date": "2026-05-03", "quali_date": "2026-05-01", "is_sprint": True,
+     "sprint_quali_date": "2026-05-02", "sprint_race_date": "2026-05-02"},
+    {"id": "emilia-2026", "name": "Emilia Romagna Grand Prix", "circuit": "Imola", "country": "Italy", 
+     "date": "2026-05-17", "quali_date": "2026-05-16", "is_sprint": False},
+    {"id": "monaco-2026", "name": "Monaco Grand Prix", "circuit": "Monaco", "country": "Monaco", 
+     "date": "2026-05-24", "quali_date": "2026-05-23", "is_sprint": False},
+    {"id": "spain-2026", "name": "Spanish Grand Prix", "circuit": "Barcelona", "country": "Spain", 
+     "date": "2026-06-07", "quali_date": "2026-06-06", "is_sprint": False},
+    {"id": "canada-2026", "name": "Canadian Grand Prix", "circuit": "Montreal", "country": "Canada", 
+     "date": "2026-06-21", "quali_date": "2026-06-20", "is_sprint": False},
+    {"id": "austria-2026", "name": "Austrian Grand Prix", "circuit": "Red Bull Ring", "country": "Austria", 
+     "date": "2026-07-05", "quali_date": "2026-07-03", "is_sprint": True,
+     "sprint_quali_date": "2026-07-04", "sprint_race_date": "2026-07-04"},
+    {"id": "silverstone-2026", "name": "British Grand Prix", "circuit": "Silverstone", "country": "UK", 
+     "date": "2026-07-19", "quali_date": "2026-07-18", "is_sprint": False},
+    {"id": "belgium-2026", "name": "Belgian Grand Prix", "circuit": "Spa-Francorchamps", "country": "Belgium", 
+     "date": "2026-08-02", "quali_date": "2026-08-01", "is_sprint": False},
+    {"id": "hungary-2026", "name": "Hungarian Grand Prix", "circuit": "Hungaroring", "country": "Hungary", 
+     "date": "2026-08-16", "quali_date": "2026-08-15", "is_sprint": False},
+    {"id": "netherlands-2026", "name": "Dutch Grand Prix", "circuit": "Zandvoort", "country": "Netherlands", 
+     "date": "2026-08-30", "quali_date": "2026-08-29", "is_sprint": False},
+    {"id": "monza-2026", "name": "Italian Grand Prix", "circuit": "Monza", "country": "Italy", 
+     "date": "2026-09-06", "quali_date": "2026-09-05", "is_sprint": False},
+    {"id": "madrid-2026", "name": "Madrid Grand Prix", "circuit": "Madrid", "country": "Spain", 
+     "date": "2026-09-13", "quali_date": "2026-09-12", "is_sprint": False},
+    {"id": "azerbaijan-2026", "name": "Azerbaijan Grand Prix", "circuit": "Baku", "country": "Azerbaijan", 
+     "date": "2026-09-20", "quali_date": "2026-09-19", "is_sprint": False},
+    {"id": "singapore-2026", "name": "Singapore Grand Prix", "circuit": "Marina Bay", "country": "Singapore", 
+     "date": "2026-10-04", "quali_date": "2026-10-03", "is_sprint": False},
+    {"id": "austin-2026", "name": "US Grand Prix", "circuit": "COTA", "country": "USA", 
+     "date": "2026-10-18", "quali_date": "2026-10-16", "is_sprint": True,
+     "sprint_quali_date": "2026-10-17", "sprint_race_date": "2026-10-17"},
+    {"id": "mexico-2026", "name": "Mexico City Grand Prix", "circuit": "Hermanos Rodríguez", "country": "Mexico", 
+     "date": "2026-10-25", "quali_date": "2026-10-24", "is_sprint": False},
+    {"id": "brazil-2026", "name": "São Paulo Grand Prix", "circuit": "Interlagos", "country": "Brazil", 
+     "date": "2026-11-08", "quali_date": "2026-11-06", "is_sprint": True,
+     "sprint_quali_date": "2026-11-07", "sprint_race_date": "2026-11-07"},
+    {"id": "vegas-2026", "name": "Las Vegas Grand Prix", "circuit": "Las Vegas", "country": "USA", 
+     "date": "2026-11-21", "quali_date": "2026-11-20", "is_sprint": False},
+    {"id": "qatar-2026", "name": "Qatar Grand Prix", "circuit": "Lusail", "country": "Qatar", 
+     "date": "2026-11-29", "quali_date": "2026-11-27", "is_sprint": True,
+     "sprint_quali_date": "2026-11-28", "sprint_race_date": "2026-11-28"},
+    {"id": "abudhabi-2026", "name": "Abu Dhabi Grand Prix", "circuit": "Yas Marina", "country": "UAE", 
+     "date": "2026-12-06", "quali_date": "2026-12-05", "is_sprint": False},
+]
+
 # ==================== AUTH ENDPOINTS ====================
 
 @api_router.post("/auth/register", response_model=TokenResponse)
@@ -181,61 +308,35 @@ async def register(data: UserCreate):
     
     user_id = str(uuid.uuid4())
     user = {
-        "id": user_id,
-        "email": data.email,
-        "password_hash": hash_password(data.password),
-        "username": None,
-        "current_league_id": None,
-        "xp": 0,
-        "level": 1,
+        "id": user_id, "email": data.email, "password_hash": hash_password(data.password),
+        "username": None, "current_league_id": None, "xp": 0, "level": 1,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.users.insert_one(user)
-    
     token = create_token(user_id)
-    return TokenResponse(
-        access_token=token,
-        user=UserResponse(
-            id=user_id,
-            email=data.email,
-            username=None,
-            created_at=user["created_at"],
-            current_league_id=None,
-            xp=0,
-            level=1
-        )
-    )
+    return TokenResponse(access_token=token, user=UserResponse(
+        id=user_id, email=data.email, username=None, created_at=user["created_at"],
+        current_league_id=None, xp=0, level=1
+    ))
 
 @api_router.post("/auth/login", response_model=TokenResponse)
 async def login(data: UserLogin):
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if not user or not verify_password(data.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
     token = create_token(user["id"])
-    return TokenResponse(
-        access_token=token,
-        user=UserResponse(
-            id=user["id"],
-            email=user["email"],
-            username=user.get("username"),
-            created_at=user["created_at"],
-            current_league_id=user.get("current_league_id"),
-            xp=user.get("xp", 0),
-            level=user.get("level", 1)
-        )
-    )
+    return TokenResponse(access_token=token, user=UserResponse(
+        id=user["id"], email=user["email"], username=user.get("username"),
+        created_at=user["created_at"], current_league_id=user.get("current_league_id"),
+        xp=user.get("xp", 0), level=user.get("level", 1)
+    ))
 
 @api_router.get("/auth/me", response_model=UserResponse)
 async def get_me(user=Depends(get_current_user)):
     return UserResponse(
-        id=user["id"],
-        email=user["email"],
-        username=user.get("username"),
-        created_at=user["created_at"],
-        current_league_id=user.get("current_league_id"),
-        xp=user.get("xp", 0),
-        level=user.get("level", 1)
+        id=user["id"], email=user["email"], username=user.get("username"),
+        created_at=user["created_at"], current_league_id=user.get("current_league_id"),
+        xp=user.get("xp", 0), level=user.get("level", 1)
     )
 
 @api_router.post("/auth/username", response_model=UserResponse)
@@ -243,15 +344,11 @@ async def set_username(data: UserSetUsername, user=Depends(get_current_user)):
     existing = await db.users.find_one({"username": data.username, "id": {"$ne": user["id"]}})
     if existing:
         raise HTTPException(status_code=400, detail="Username already taken")
-    
     await db.users.update_one({"id": user["id"]}, {"$set": {"username": data.username}})
-    user["username"] = data.username
     return UserResponse(
-        id=user["id"],
-        email=user["email"],
-        username=data.username,
-        created_at=user["created_at"],
-        current_league_id=user.get("current_league_id")
+        id=user["id"], email=user["email"], username=data.username,
+        created_at=user["created_at"], current_league_id=user.get("current_league_id"),
+        xp=user.get("xp", 0), level=user.get("level", 1)
     )
 
 # ==================== LEAGUE ENDPOINTS ====================
@@ -260,34 +357,19 @@ async def set_username(data: UserSetUsername, user=Depends(get_current_user)):
 async def create_league(data: LeagueCreate, user=Depends(get_current_user)):
     league_id = str(uuid.uuid4())
     code = generate_league_code()
-    
-    # Ensure unique code
     while await db.leagues.find_one({"code": code}):
         code = generate_league_code()
     
     league = {
-        "id": league_id,
-        "name": data.name,
-        "code": code,
-        "created_by": user["id"],
-        "members": [user["id"]],
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "id": league_id, "name": data.name, "code": code, "created_by": user["id"],
+        "members": [user["id"]], "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.leagues.insert_one(league)
-    
-    # Update user's current league
     await db.users.update_one({"id": user["id"]}, {"$set": {"current_league_id": league_id}})
-    
-    # Initialize leaderboard entry
     await db.leaderboard.insert_one({
-        "id": str(uuid.uuid4()),
-        "league_id": league_id,
-        "user_id": user["id"],
-        "total_points": 0,
-        "last_race_points": 0,
-        "previous_position": 1
+        "id": str(uuid.uuid4()), "league_id": league_id, "user_id": user["id"],
+        "total_points": 0, "last_race_points": 0, "previous_position": 1
     })
-    
     return LeagueResponse(**{k: v for k, v in league.items() if k != "_id"})
 
 @api_router.post("/leagues/join", response_model=LeagueResponse)
@@ -295,29 +377,15 @@ async def join_league(data: LeagueJoin, user=Depends(get_current_user)):
     league = await db.leagues.find_one({"code": data.code.upper()}, {"_id": 0})
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
-    
     if user["id"] in league["members"]:
         raise HTTPException(status_code=400, detail="Already a member")
     
-    await db.leagues.update_one(
-        {"id": league["id"]},
-        {"$push": {"members": user["id"]}}
-    )
-    
-    # Update user's current league
+    await db.leagues.update_one({"id": league["id"]}, {"$push": {"members": user["id"]}})
     await db.users.update_one({"id": user["id"]}, {"$set": {"current_league_id": league["id"]}})
-    
-    # Initialize leaderboard entry
-    member_count = len(league["members"]) + 1
     await db.leaderboard.insert_one({
-        "id": str(uuid.uuid4()),
-        "league_id": league["id"],
-        "user_id": user["id"],
-        "total_points": 0,
-        "last_race_points": 0,
-        "previous_position": member_count
+        "id": str(uuid.uuid4()), "league_id": league["id"], "user_id": user["id"],
+        "total_points": 0, "last_race_points": 0, "previous_position": len(league["members"]) + 1
     })
-    
     league["members"].append(user["id"])
     return LeagueResponse(**league)
 
@@ -349,121 +417,66 @@ async def get_leaderboard(league_id: str, user=Depends(get_current_user)):
         user_data = await db.users.find_one({"id": entry["user_id"]}, {"_id": 0})
         position = i + 1
         position_change = entry.get("previous_position", position) - position
-        
+        # Handle None username - use "Anonymous" as fallback
+        username = user_data.get("username") if user_data else None
+        if not username:
+            username = "Anonymous"
         result.append(LeaderboardEntry(
             user_id=entry["user_id"],
-            username=user_data.get("username", "Anonymous") if user_data else "Anonymous",
+            username=username,
             total_points=entry["total_points"],
             last_race_points=entry.get("last_race_points", 0),
-            position=position,
-            position_change=position_change
+            position=position, position_change=position_change
         ))
-    
     return result
 
 @api_router.post("/leagues/{league_id}/select")
 async def select_league(league_id: str, user=Depends(get_current_user)):
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
-    if not league:
-        raise HTTPException(status_code=404, detail="League not found")
-    if user["id"] not in league["members"]:
-        raise HTTPException(status_code=403, detail="Not a member")
-    
+    if not league or user["id"] not in league["members"]:
+        raise HTTPException(status_code=404, detail="League not found or not a member")
     await db.users.update_one({"id": user["id"]}, {"$set": {"current_league_id": league_id}})
     return {"message": "League selected", "league_id": league_id}
 
 # ==================== RACE & DRIVER ENDPOINTS ====================
 
-# F1 2025 Season Data (Static fallback)
-F1_DRIVERS_2025 = [
-    {"id": "verstappen", "name": "Max Verstappen", "team": "Red Bull Racing", "number": 1, "country": "NED"},
-    {"id": "perez", "name": "Sergio Pérez", "team": "Red Bull Racing", "number": 11, "country": "MEX"},
-    {"id": "hamilton", "name": "Lewis Hamilton", "team": "Ferrari", "number": 44, "country": "GBR"},
-    {"id": "leclerc", "name": "Charles Leclerc", "team": "Ferrari", "number": 16, "country": "MON"},
-    {"id": "norris", "name": "Lando Norris", "team": "McLaren", "number": 4, "country": "GBR"},
-    {"id": "piastri", "name": "Oscar Piastri", "team": "McLaren", "number": 81, "country": "AUS"},
-    {"id": "russell", "name": "George Russell", "team": "Mercedes", "number": 63, "country": "GBR"},
-    {"id": "antonelli", "name": "Kimi Antonelli", "team": "Mercedes", "number": 12, "country": "ITA"},
-    {"id": "alonso", "name": "Fernando Alonso", "team": "Aston Martin", "number": 14, "country": "ESP"},
-    {"id": "stroll", "name": "Lance Stroll", "team": "Aston Martin", "number": 18, "country": "CAN"},
-    {"id": "gasly", "name": "Pierre Gasly", "team": "Alpine", "number": 10, "country": "FRA"},
-    {"id": "doohan", "name": "Jack Doohan", "team": "Alpine", "number": 7, "country": "AUS"},
-    {"id": "albon", "name": "Alexander Albon", "team": "Williams", "number": 23, "country": "THA"},
-    {"id": "sainz", "name": "Carlos Sainz", "team": "Williams", "number": 55, "country": "ESP"},
-    {"id": "tsunoda", "name": "Yuki Tsunoda", "team": "RB", "number": 22, "country": "JPN"},
-    {"id": "lawson", "name": "Liam Lawson", "team": "RB", "number": 30, "country": "NZL"},
-    {"id": "hulkenberg", "name": "Nico Hülkenberg", "team": "Sauber", "number": 27, "country": "GER"},
-    {"id": "bortoleto", "name": "Gabriel Bortoleto", "team": "Sauber", "number": 5, "country": "BRA"},
-    {"id": "ocon", "name": "Esteban Ocon", "team": "Haas", "number": 31, "country": "FRA"},
-    {"id": "bearman", "name": "Oliver Bearman", "team": "Haas", "number": 87, "country": "GBR"},
-]
-
-# F1 2026 Season Data (updated for current date)
-F1_RACES_2025 = [
-    {"id": "australia-2026", "name": "Australian Grand Prix", "circuit": "Albert Park", "country": "Australia", "date": "2026-03-15", "quali_date": "2026-03-14"},
-    {"id": "china-2026", "name": "Chinese Grand Prix", "circuit": "Shanghai", "country": "China", "date": "2026-03-22", "quali_date": "2026-03-21"},
-    {"id": "japan-2026", "name": "Japanese Grand Prix", "circuit": "Suzuka", "country": "Japan", "date": "2026-04-05", "quali_date": "2026-04-04"},
-    {"id": "bahrain-2026", "name": "Bahrain Grand Prix", "circuit": "Sakhir", "country": "Bahrain", "date": "2026-04-12", "quali_date": "2026-04-11"},
-    {"id": "saudi-2026", "name": "Saudi Arabian Grand Prix", "circuit": "Jeddah", "country": "Saudi Arabia", "date": "2026-04-19", "quali_date": "2026-04-18"},
-    {"id": "miami-2026", "name": "Miami Grand Prix", "circuit": "Miami", "country": "USA", "date": "2026-05-03", "quali_date": "2026-05-02"},
-    {"id": "emilia-2026", "name": "Emilia Romagna Grand Prix", "circuit": "Imola", "country": "Italy", "date": "2026-05-17", "quali_date": "2026-05-16"},
-    {"id": "monaco-2026", "name": "Monaco Grand Prix", "circuit": "Monaco", "country": "Monaco", "date": "2026-05-24", "quali_date": "2026-05-23"},
-    {"id": "spain-2026", "name": "Spanish Grand Prix", "circuit": "Barcelona", "country": "Spain", "date": "2026-05-31", "quali_date": "2026-05-30"},
-    {"id": "canada-2026", "name": "Canadian Grand Prix", "circuit": "Montreal", "country": "Canada", "date": "2026-06-14", "quali_date": "2026-06-13"},
-    {"id": "austria-2026", "name": "Austrian Grand Prix", "circuit": "Red Bull Ring", "country": "Austria", "date": "2026-06-28", "quali_date": "2026-06-27"},
-    {"id": "silverstone-2026", "name": "British Grand Prix", "circuit": "Silverstone", "country": "UK", "date": "2026-07-05", "quali_date": "2026-07-04"},
-    {"id": "belgium-2026", "name": "Belgian Grand Prix", "circuit": "Spa-Francorchamps", "country": "Belgium", "date": "2026-07-26", "quali_date": "2026-07-25"},
-    {"id": "hungary-2026", "name": "Hungarian Grand Prix", "circuit": "Hungaroring", "country": "Hungary", "date": "2026-08-02", "quali_date": "2026-08-01"},
-    {"id": "netherlands-2026", "name": "Dutch Grand Prix", "circuit": "Zandvoort", "country": "Netherlands", "date": "2026-08-30", "quali_date": "2026-08-29"},
-    {"id": "monza-2026", "name": "Italian Grand Prix", "circuit": "Monza", "country": "Italy", "date": "2026-09-06", "quali_date": "2026-09-05"},
-    {"id": "azerbaijan-2026", "name": "Azerbaijan Grand Prix", "circuit": "Baku", "country": "Azerbaijan", "date": "2026-09-20", "quali_date": "2026-09-19"},
-    {"id": "singapore-2026", "name": "Singapore Grand Prix", "circuit": "Marina Bay", "country": "Singapore", "date": "2026-10-04", "quali_date": "2026-10-03"},
-    {"id": "austin-2026", "name": "US Grand Prix", "circuit": "COTA", "country": "USA", "date": "2026-10-18", "quali_date": "2026-10-17"},
-    {"id": "mexico-2026", "name": "Mexico City Grand Prix", "circuit": "Hermanos Rodríguez", "country": "Mexico", "date": "2026-10-25", "quali_date": "2026-10-24"},
-    {"id": "brazil-2026", "name": "São Paulo Grand Prix", "circuit": "Interlagos", "country": "Brazil", "date": "2026-11-08", "quali_date": "2026-11-07"},
-    {"id": "vegas-2026", "name": "Las Vegas Grand Prix", "circuit": "Las Vegas", "country": "USA", "date": "2026-11-21", "quali_date": "2026-11-20"},
-    {"id": "qatar-2026", "name": "Qatar Grand Prix", "circuit": "Lusail", "country": "Qatar", "date": "2026-11-29", "quali_date": "2026-11-28"},
-    {"id": "abudhabi-2026", "name": "Abu Dhabi Grand Prix", "circuit": "Yas Marina", "country": "UAE", "date": "2026-12-06", "quali_date": "2026-12-05"},
-]
-
 @api_router.get("/drivers", response_model=List[DriverResponse])
 async def get_drivers():
-    return [DriverResponse(**d) for d in F1_DRIVERS_2025]
+    return [DriverResponse(**d) for d in F1_DRIVERS_2026]
 
 @api_router.get("/races", response_model=List[RaceResponse])
 async def get_races():
     now = datetime.now(timezone.utc)
     races = []
     
-    for race in F1_RACES_2025:
+    for race in F1_RACES_2026:
         race_date = datetime.fromisoformat(race["date"] + "T15:00:00+00:00")
         quali_date = datetime.fromisoformat(race["quali_date"] + "T14:00:00+00:00")
         predictions_close = quali_date - timedelta(hours=1)
         
-        # Determine status
         if now < predictions_close:
             status = "upcoming"
-        elif now < quali_date:
-            status = "quali_open"
         elif now < race_date:
-            status = "race_open"
+            status = "in_progress"
         else:
             status = "finished"
         
-        # Check for results in DB
         result_doc = await db.race_results.find_one({"race_id": race["id"]}, {"_id": 0})
         
-        races.append(RaceResponse(
-            id=race["id"],
-            name=race["name"],
-            circuit=race["circuit"],
-            country=race["country"],
-            date=race_date.isoformat(),
-            quali_date=quali_date.isoformat(),
-            predictions_close_at=predictions_close.isoformat(),
-            status=status,
-            results=result_doc.get("results") if result_doc else None
-        ))
+        race_response = {
+            "id": race["id"], "name": race["name"], "circuit": race["circuit"],
+            "country": race["country"], "date": race_date.isoformat(),
+            "quali_date": quali_date.isoformat(),
+            "predictions_close_at": predictions_close.isoformat(),
+            "status": status, "is_sprint_weekend": race.get("is_sprint", False),
+            "results": result_doc.get("results") if result_doc else None
+        }
+        
+        if race.get("is_sprint"):
+            race_response["sprint_quali_date"] = race.get("sprint_quali_date", "") + "T10:00:00+00:00"
+            race_response["sprint_race_date"] = race.get("sprint_race_date", "") + "T14:00:00+00:00"
+        
+        races.append(RaceResponse(**race_response))
     
     return races
 
@@ -471,43 +484,39 @@ async def get_races():
 async def get_next_race():
     now = datetime.now(timezone.utc)
     
-    for race in F1_RACES_2025:
+    for race in F1_RACES_2026:
         race_date = datetime.fromisoformat(race["date"] + "T15:00:00+00:00")
-        quali_date = datetime.fromisoformat(race["quali_date"] + "T14:00:00+00:00")
-        predictions_close = quali_date - timedelta(hours=1)
-        
         if now < race_date:
-            status = "upcoming" if now < predictions_close else ("quali_open" if now < quali_date else "race_open")
+            quali_date = datetime.fromisoformat(race["quali_date"] + "T14:00:00+00:00")
+            predictions_close = quali_date - timedelta(hours=1)
+            status = "upcoming" if now < predictions_close else "in_progress"
             
-            return RaceResponse(
-                id=race["id"],
-                name=race["name"],
-                circuit=race["circuit"],
-                country=race["country"],
-                date=race_date.isoformat(),
-                quali_date=quali_date.isoformat(),
-                predictions_close_at=predictions_close.isoformat(),
-                status=status,
-                results=None
-            )
+            response = {
+                "id": race["id"], "name": race["name"], "circuit": race["circuit"],
+                "country": race["country"], "date": race_date.isoformat(),
+                "quali_date": quali_date.isoformat(),
+                "predictions_close_at": predictions_close.isoformat(),
+                "status": status, "is_sprint_weekend": race.get("is_sprint", False),
+                "results": None
+            }
+            if race.get("is_sprint"):
+                response["sprint_quali_date"] = race.get("sprint_quali_date", "") + "T10:00:00+00:00"
+                response["sprint_race_date"] = race.get("sprint_race_date", "") + "T14:00:00+00:00"
+            return RaceResponse(**response)
     
     # Return last race if all finished
-    race = F1_RACES_2025[-1]
+    race = F1_RACES_2026[-1]
     return RaceResponse(
-        id=race["id"],
-        name=race["name"],
-        circuit=race["circuit"],
-        country=race["country"],
-        date=race["date"] + "T15:00:00+00:00",
+        id=race["id"], name=race["name"], circuit=race["circuit"],
+        country=race["country"], date=race["date"] + "T15:00:00+00:00",
         quali_date=race["quali_date"] + "T14:00:00+00:00",
         predictions_close_at=race["quali_date"] + "T13:00:00+00:00",
-        status="finished",
-        results=None
+        status="finished", is_sprint_weekend=race.get("is_sprint", False), results=None
     )
 
-@api_router.get("/races/{race_id}", response_model=RaceResponse)
+@api_router.get("/races/{race_id}")
 async def get_race(race_id: str):
-    for race in F1_RACES_2025:
+    for race in F1_RACES_2026:
         if race["id"] == race_id:
             now = datetime.now(timezone.utc)
             race_date = datetime.fromisoformat(race["date"] + "T15:00:00+00:00")
@@ -516,40 +525,35 @@ async def get_race(race_id: str):
             
             if now < predictions_close:
                 status = "upcoming"
-            elif now < quali_date:
-                status = "quali_open"
             elif now < race_date:
-                status = "race_open"
+                status = "in_progress"
             else:
                 status = "finished"
             
             result_doc = await db.race_results.find_one({"race_id": race_id}, {"_id": 0})
             
-            return RaceResponse(
-                id=race["id"],
-                name=race["name"],
-                circuit=race["circuit"],
-                country=race["country"],
-                date=race_date.isoformat(),
-                quali_date=quali_date.isoformat(),
-                predictions_close_at=predictions_close.isoformat(),
-                status=status,
-                results=result_doc.get("results") if result_doc else None
-            )
-    
+            return {
+                "id": race["id"], "name": race["name"], "circuit": race["circuit"],
+                "country": race["country"], "date": race_date.isoformat(),
+                "quali_date": quali_date.isoformat(),
+                "sprint_quali_date": (race.get("sprint_quali_date", "") + "T10:00:00+00:00") if race.get("is_sprint") else None,
+                "sprint_race_date": (race.get("sprint_race_date", "") + "T14:00:00+00:00") if race.get("is_sprint") else None,
+                "predictions_close_at": predictions_close.isoformat(),
+                "status": status, "is_sprint_weekend": race.get("is_sprint", False),
+                "results": result_doc.get("results") if result_doc else None
+            }
     raise HTTPException(status_code=404, detail="Race not found")
 
 # ==================== PREDICTION ENDPOINTS ====================
 
-@api_router.post("/predictions", response_model=PredictionResponse)
+@api_router.post("/predictions")
 async def create_prediction(data: PredictionCreate, user=Depends(get_current_user)):
-    # Check if race exists and predictions are still open
+    # Validate race
     race = None
-    for r in F1_RACES_2025:
+    for r in F1_RACES_2026:
         if r["id"] == data.race_id:
             race = r
             break
-    
     if not race:
         raise HTTPException(status_code=404, detail="Race not found")
     
@@ -557,100 +561,166 @@ async def create_prediction(data: PredictionCreate, user=Depends(get_current_use
     predictions_close = quali_date - timedelta(hours=1)
     
     if datetime.now(timezone.utc) > predictions_close:
-        raise HTTPException(status_code=400, detail="Predictions are closed for this race")
+        raise HTTPException(status_code=400, detail="Predictions are closed")
     
-    # Validate Top 3 has exactly 3 drivers
-    if len(data.quali_top3) != 3 or len(data.race_top3) != 3:
-        raise HTTPException(status_code=400, detail="Top 3 must have exactly 3 drivers")
+    # Validate Top 10
+    if len(data.quali_top10) != 10 or len(data.race_top10) != 10:
+        raise HTTPException(status_code=400, detail="Top 10 must have exactly 10 drivers")
     
-    # Check for existing prediction
-    existing = await db.predictions.find_one({
-        "user_id": user["id"],
-        "race_id": data.race_id
-    })
+    # Validate sprint if sprint weekend
+    if race.get("is_sprint"):
+        if not data.sprint_quali_top10 or len(data.sprint_quali_top10) != 10:
+            raise HTTPException(status_code=400, detail="Sprint quali top 10 required for sprint weekend")
+        if not data.sprint_race_top10 or len(data.sprint_race_top10) != 10:
+            raise HTTPException(status_code=400, detail="Sprint race top 10 required for sprint weekend")
     
     now = datetime.now(timezone.utc).isoformat()
+    existing = await db.predictions.find_one({"user_id": user["id"], "race_id": data.race_id})
     
-    if existing:
-        # Update existing
-        await db.predictions.update_one(
-            {"id": existing["id"]},
-            {"$set": {
-                "quali_pole": data.quali_pole,
-                "quali_top3": data.quali_top3,
-                "race_winner": data.race_winner,
-                "race_top3": data.race_top3,
-                "updated_at": now
-            }}
-        )
-        return PredictionResponse(
-            id=existing["id"],
-            user_id=user["id"],
-            race_id=data.race_id,
-            quali_pole=data.quali_pole,
-            quali_top3=data.quali_top3,
-            race_winner=data.race_winner,
-            race_top3=data.race_top3,
-            locked=False,
-            created_at=existing["created_at"],
-            updated_at=now
-        )
-    
-    # Create new prediction
-    prediction_id = str(uuid.uuid4())
-    prediction = {
-        "id": prediction_id,
-        "user_id": user["id"],
-        "race_id": data.race_id,
+    prediction_data = {
         "quali_pole": data.quali_pole,
-        "quali_top3": data.quali_top3,
+        "quali_top10": data.quali_top10,
+        "sprint_quali_top10": data.sprint_quali_top10 if race.get("is_sprint") else None,
+        "sprint_race_top10": data.sprint_race_top10 if race.get("is_sprint") else None,
         "race_winner": data.race_winner,
-        "race_top3": data.race_top3,
-        "locked": False,
-        "created_at": now,
+        "race_top10": data.race_top10,
+        "bonus_bets": data.bonus_bets.dict() if data.bonus_bets else None,
+        "custom_predictions": data.custom_predictions,
         "updated_at": now
     }
+    
+    if existing:
+        await db.predictions.update_one({"id": existing["id"]}, {"$set": prediction_data})
+        return {**existing, **prediction_data, "locked": False}
+    
+    prediction_id = str(uuid.uuid4())
+    prediction = {
+        "id": prediction_id, "user_id": user["id"], "race_id": data.race_id,
+        **prediction_data, "locked": False, "created_at": now
+    }
     await db.predictions.insert_one(prediction)
-    
-    return PredictionResponse(**{k: v for k, v in prediction.items() if k != "_id"})
+    return {k: v for k, v in prediction.items() if k != "_id"}
 
-@api_router.get("/predictions/race/{race_id}", response_model=Optional[PredictionResponse])
+@api_router.get("/predictions/race/{race_id}")
 async def get_my_prediction(race_id: str, user=Depends(get_current_user)):
-    prediction = await db.predictions.find_one({
-        "user_id": user["id"],
-        "race_id": race_id
-    }, {"_id": 0})
-    
-    if not prediction:
-        return None
-    
-    return PredictionResponse(**prediction)
+    prediction = await db.predictions.find_one({"user_id": user["id"], "race_id": race_id}, {"_id": 0})
+    return prediction
 
-@api_router.get("/predictions/history", response_model=List[PredictionResponse])
+@api_router.get("/predictions/history")
 async def get_prediction_history(user=Depends(get_current_user)):
-    predictions = await db.predictions.find(
-        {"user_id": user["id"]},
-        {"_id": 0}
-    ).sort("created_at", -1).to_list(100)
+    predictions = await db.predictions.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return predictions
+
+# ==================== CUSTOM PREDICTIONS ====================
+
+@api_router.post("/custom-predictions")
+async def create_custom_prediction(data: CustomPredictionCreate, user=Depends(get_current_user)):
+    # Verify user is member of the league
+    league = await db.leagues.find_one({"id": data.league_id}, {"_id": 0})
+    if not league or user["id"] not in league["members"]:
+        raise HTTPException(status_code=403, detail="Not a member of this league")
     
-    return [PredictionResponse(**p) for p in predictions]
+    prediction_id = str(uuid.uuid4())
+    custom_pred = {
+        "id": prediction_id,
+        "race_id": data.race_id,
+        "league_id": data.league_id,
+        "created_by": user["id"],
+        "question": data.question,
+        "answer_type": data.answer_type,
+        "multiple_choice": data.multiple_choice,
+        "choices": [c.dict() for c in data.choices] if data.choices else None,
+        "correct_answer": None,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.custom_predictions.insert_one(custom_pred)
+    return {k: v for k, v in custom_pred.items() if k != "_id"}
+
+@api_router.get("/custom-predictions/league/{league_id}/race/{race_id}")
+async def get_league_custom_predictions(league_id: str, race_id: str, user=Depends(get_current_user)):
+    league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
+    if not league or user["id"] not in league["members"]:
+        raise HTTPException(status_code=403, detail="Not a member of this league")
+    
+    predictions = await db.custom_predictions.find(
+        {"league_id": league_id, "race_id": race_id}, {"_id": 0}
+    ).to_list(100)
+    return predictions
+
+@api_router.post("/custom-predictions/{prediction_id}/answer")
+async def answer_custom_prediction(prediction_id: str, answer: dict, user=Depends(get_current_user)):
+    custom_pred = await db.custom_predictions.find_one({"id": prediction_id}, {"_id": 0})
+    if not custom_pred:
+        raise HTTPException(status_code=404, detail="Custom prediction not found")
+    
+    # Store user's answer
+    await db.custom_prediction_answers.update_one(
+        {"prediction_id": prediction_id, "user_id": user["id"]},
+        {"$set": {
+            "prediction_id": prediction_id,
+            "user_id": user["id"],
+            "answer": answer.get("answer"),
+            "answered_at": datetime.now(timezone.utc).isoformat()
+        }},
+        upsert=True
+    )
+    return {"message": "Answer saved"}
+
+@api_router.post("/custom-predictions/{prediction_id}/set-correct")
+async def set_correct_answer(prediction_id: str, data: dict, user=Depends(get_current_user)):
+    custom_pred = await db.custom_predictions.find_one({"id": prediction_id}, {"_id": 0})
+    if not custom_pred:
+        raise HTTPException(status_code=404, detail="Custom prediction not found")
+    if custom_pred["created_by"] != user["id"]:
+        raise HTTPException(status_code=403, detail="Only creator can set correct answer")
+    
+    await db.custom_predictions.update_one(
+        {"id": prediction_id},
+        {"$set": {"correct_answer": data.get("correct_answer")}}
+    )
+    
+    # Calculate points for all answers
+    answers = await db.custom_prediction_answers.find({"prediction_id": prediction_id}, {"_id": 0}).to_list(1000)
+    correct = data.get("correct_answer")
+    
+    for ans in answers:
+        user_answer = ans.get("answer")
+        is_correct = False
+        
+        if custom_pred["multiple_choice"]:
+            # For multiple choice, check if any answer matches
+            if isinstance(user_answer, list) and isinstance(correct, list):
+                is_correct = any(a in correct for a in user_answer)
+            elif isinstance(user_answer, list):
+                is_correct = correct in user_answer
+        else:
+            is_correct = user_answer == correct
+        
+        if is_correct:
+            # Award 2 points
+            league = await db.leagues.find_one({"id": custom_pred["league_id"]}, {"_id": 0})
+            if league:
+                await db.leaderboard.update_one(
+                    {"league_id": league["id"], "user_id": ans["user_id"]},
+                    {"$inc": {"total_points": 2}}
+                )
+                await db.users.update_one({"id": ans["user_id"]}, {"$inc": {"xp": 10}})
+    
+    return {"message": "Correct answer set and points calculated"}
 
 # ==================== RESULTS & SCORING ====================
 
 SCORING_RULES = {
     "quali_pole_exact": 5,
-    "quali_top3_exact_position": 3,
-    "quali_top3_in_top3": 1,
+    "top10_exact_position": 3,
+    "top10_in_top10": 1,
     "race_winner_exact": 10,
-    "race_top3_exact_position": 5,
-    "race_top3_in_top3": 2,
-    # Bonus points
     "safety_car_correct": 3,
-    "dnf_correct": 2,
+    "dnf_driver_correct": 2,  # Per correct DNF driver
     "fastest_lap_correct": 5,
+    "first_corner_leader": 3,
 }
 
-# XP rewards
 XP_REWARDS = {
     "prediction_made": 10,
     "correct_pole": 20,
@@ -660,47 +730,56 @@ XP_REWARDS = {
 
 def calculate_points(prediction: dict, results: dict) -> dict:
     points = {
-        "quali_pole": 0,
-        "quali_top3": 0,
-        "race_winner": 0,
-        "race_top3": 0,
-        "bonus": 0,
-        "total": 0,
-        "xp_earned": 0,
-        "details": []
+        "quali_pole": 0, "quali_top10": 0, "sprint_quali_top10": 0,
+        "sprint_race_top10": 0, "race_winner": 0, "race_top10": 0,
+        "bonus": 0, "total": 0, "xp_earned": 0, "details": []
     }
     
     # Quali Pole
-    if prediction["quali_pole"] == results.get("quali_pole"):
+    if prediction.get("quali_pole") == results.get("quali_pole"):
         points["quali_pole"] = SCORING_RULES["quali_pole_exact"]
         points["xp_earned"] += XP_REWARDS["correct_pole"]
-        points["details"].append(f"Pole position exacte: +{SCORING_RULES['quali_pole_exact']} pts")
+        points["details"].append(f"Pole exacte: +{SCORING_RULES['quali_pole_exact']} pts")
     
-    # Quali Top 3
-    actual_quali_top3 = results.get("quali_top3", [])
-    for i, driver in enumerate(prediction.get("quali_top3", [])):
-        if i < len(actual_quali_top3) and driver == actual_quali_top3[i]:
-            points["quali_top3"] += SCORING_RULES["quali_top3_exact_position"]
-            points["details"].append(f"Quali P{i+1} exact: +{SCORING_RULES['quali_top3_exact_position']} pts")
-        elif driver in actual_quali_top3:
-            points["quali_top3"] += SCORING_RULES["quali_top3_in_top3"]
-            points["details"].append(f"Quali {driver} dans Top 3: +{SCORING_RULES['quali_top3_in_top3']} pt")
+    # Quali Top 10
+    actual_quali = results.get("quali_top10", [])
+    for i, driver in enumerate(prediction.get("quali_top10", [])):
+        if i < len(actual_quali) and driver == actual_quali[i]:
+            points["quali_top10"] += SCORING_RULES["top10_exact_position"]
+            points["details"].append(f"Quali P{i+1} exact: +3 pts")
+        elif driver in actual_quali:
+            points["quali_top10"] += SCORING_RULES["top10_in_top10"]
+    
+    # Sprint Quali Top 10
+    actual_sprint_quali = results.get("sprint_quali_top10", [])
+    for i, driver in enumerate(prediction.get("sprint_quali_top10") or []):
+        if i < len(actual_sprint_quali) and driver == actual_sprint_quali[i]:
+            points["sprint_quali_top10"] += SCORING_RULES["top10_exact_position"]
+        elif driver in actual_sprint_quali:
+            points["sprint_quali_top10"] += SCORING_RULES["top10_in_top10"]
+    
+    # Sprint Race Top 10
+    actual_sprint_race = results.get("sprint_race_top10", [])
+    for i, driver in enumerate(prediction.get("sprint_race_top10") or []):
+        if i < len(actual_sprint_race) and driver == actual_sprint_race[i]:
+            points["sprint_race_top10"] += SCORING_RULES["top10_exact_position"]
+        elif driver in actual_sprint_race:
+            points["sprint_race_top10"] += SCORING_RULES["top10_in_top10"]
     
     # Race Winner
-    if prediction["race_winner"] == results.get("race_winner"):
+    if prediction.get("race_winner") == results.get("race_winner"):
         points["race_winner"] = SCORING_RULES["race_winner_exact"]
         points["xp_earned"] += XP_REWARDS["correct_winner"]
-        points["details"].append(f"Vainqueur exact: +{SCORING_RULES['race_winner_exact']} pts")
+        points["details"].append(f"Vainqueur exact: +10 pts")
     
-    # Race Top 3
-    actual_race_top3 = results.get("race_top3", [])
-    for i, driver in enumerate(prediction.get("race_top3", [])):
-        if i < len(actual_race_top3) and driver == actual_race_top3[i]:
-            points["race_top3"] += SCORING_RULES["race_top3_exact_position"]
-            points["details"].append(f"Course P{i+1} exact: +{SCORING_RULES['race_top3_exact_position']} pts")
-        elif driver in actual_race_top3:
-            points["race_top3"] += SCORING_RULES["race_top3_in_top3"]
-            points["details"].append(f"Course {driver} dans Top 3: +{SCORING_RULES['race_top3_in_top3']} pts")
+    # Race Top 10
+    actual_race = results.get("race_top10", [])
+    for i, driver in enumerate(prediction.get("race_top10", [])):
+        if i < len(actual_race) and driver == actual_race[i]:
+            points["race_top10"] += SCORING_RULES["top10_exact_position"]
+            points["details"].append(f"Course P{i+1} exact: +3 pts")
+        elif driver in actual_race:
+            points["race_top10"] += SCORING_RULES["top10_in_top10"]
     
     # Bonus Bets
     pred_bonus = prediction.get("bonus_bets", {}) or {}
@@ -710,34 +789,44 @@ def calculate_points(prediction: dict, results: dict) -> dict:
     if pred_bonus.get("safety_car") == results_bonus.get("safety_car"):
         points["bonus"] += SCORING_RULES["safety_car_correct"]
         points["xp_earned"] += XP_REWARDS["bonus_correct"]
-        sc_text = "OUI" if pred_bonus.get("safety_car") else "NON"
-        points["details"].append(f"Safety Car ({sc_text}): +{SCORING_RULES['safety_car_correct']} pts")
+        points["details"].append(f"Safety Car correct: +3 pts")
     
-    # DNF
-    if pred_bonus.get("will_have_dnf") == results_bonus.get("has_dnf"):
-        points["bonus"] += SCORING_RULES["dnf_correct"]
-        points["xp_earned"] += XP_REWARDS["bonus_correct"]
-        dnf_text = "OUI" if pred_bonus.get("will_have_dnf") else "NON"
-        points["details"].append(f"Abandon ({dnf_text}): +{SCORING_RULES['dnf_correct']} pts")
+    # DNF Drivers (new logic - points per correct driver)
+    pred_dnf = pred_bonus.get("dnf_drivers", [])
+    actual_dnf = results_bonus.get("dnf_drivers", [])
+    for driver in pred_dnf:
+        if driver in actual_dnf:
+            points["bonus"] += SCORING_RULES["dnf_driver_correct"]
+            points["details"].append(f"DNF {driver} correct: +2 pts")
     
     # Fastest Lap
-    if pred_bonus.get("fastest_lap_driver") and pred_bonus.get("fastest_lap_driver") == results_bonus.get("fastest_lap"):
+    if pred_bonus.get("fastest_lap_driver") == results_bonus.get("fastest_lap"):
         points["bonus"] += SCORING_RULES["fastest_lap_correct"]
         points["xp_earned"] += XP_REWARDS["bonus_correct"]
-        points["details"].append(f"Meilleur tour exact: +{SCORING_RULES['fastest_lap_correct']} pts")
+        points["details"].append(f"Meilleur tour exact: +5 pts")
     
-    points["total"] = points["quali_pole"] + points["quali_top3"] + points["race_winner"] + points["race_top3"] + points["bonus"]
+    # First Corner Leader
+    if pred_bonus.get("first_corner_leader") == results_bonus.get("first_corner_leader"):
+        points["bonus"] += SCORING_RULES["first_corner_leader"]
+        points["xp_earned"] += XP_REWARDS["bonus_correct"]
+        points["details"].append(f"Leader 1er virage exact: +3 pts")
+    
+    points["total"] = (points["quali_pole"] + points["quali_top10"] + points["sprint_quali_top10"] +
+                       points["sprint_race_top10"] + points["race_winner"] + points["race_top10"] + points["bonus"])
     return points
 
-# Model for race results input
+# Results input model
 class RaceResultsInput(BaseModel):
     quali_pole: str
-    quali_top3: List[str]
+    quali_top10: List[str]
+    sprint_quali_top10: Optional[List[str]] = None
+    sprint_race_top10: Optional[List[str]] = None
     race_winner: str
-    race_top3: List[str]
+    race_top10: List[str]
     safety_car: bool = False
-    has_dnf: bool = False
+    dnf_drivers: List[str] = []
     fastest_lap: Optional[str] = None
+    first_corner_leader: Optional[str] = None
 
 @api_router.get("/results/{race_id}")
 async def get_race_results(race_id: str, user=Depends(get_current_user)):
@@ -745,51 +834,38 @@ async def get_race_results(race_id: str, user=Depends(get_current_user)):
     if not result:
         raise HTTPException(status_code=404, detail="Results not available yet")
     
-    # Get user's prediction
-    prediction = await db.predictions.find_one({
-        "user_id": user["id"],
-        "race_id": race_id
-    }, {"_id": 0})
+    prediction = await db.predictions.find_one({"user_id": user["id"], "race_id": race_id}, {"_id": 0})
+    points = calculate_points(prediction, result["results"]) if prediction else None
     
-    points = None
-    if prediction:
-        points = calculate_points(prediction, result["results"])
-    
-    return {
-        "results": result["results"],
-        "prediction": prediction,
-        "points": points
-    }
+    return {"results": result["results"], "prediction": prediction, "points": points}
 
-# Check if user is league admin (creator)
-async def check_league_admin(user_id: str, league_id: str) -> bool:
-    league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
-    return league and league.get("created_by") == user_id
+# ==================== ADMIN ENDPOINTS ====================
 
-# Admin endpoint to set results
 @api_router.post("/admin/results/{race_id}")
 async def set_race_results(race_id: str, data: RaceResultsInput, user=Depends(get_current_user)):
-    # Check if user is admin of at least one league
     user_leagues = await db.leagues.find({"created_by": user["id"]}, {"_id": 0}).to_list(100)
     if not user_leagues:
-        raise HTTPException(status_code=403, detail="Seuls les créateurs de ligue peuvent entrer les résultats")
+        raise HTTPException(status_code=403, detail="Only league creators can enter results")
     
-    # Format results
     results = {
         "quali_pole": data.quali_pole,
-        "quali_top3": data.quali_top3,
+        "quali_top10": data.quali_top10,
+        "sprint_quali_top10": data.sprint_quali_top10,
+        "sprint_race_top10": data.sprint_race_top10,
         "race_winner": data.race_winner,
-        "race_top3": data.race_top3,
+        "race_top10": data.race_top10,
         "bonus": {
             "safety_car": data.safety_car,
-            "has_dnf": data.has_dnf,
-            "fastest_lap": data.fastest_lap
+            "dnf_drivers": data.dnf_drivers,
+            "fastest_lap": data.fastest_lap,
+            "first_corner_leader": data.first_corner_leader
         }
     }
     
     await db.race_results.update_one(
         {"race_id": race_id},
-        {"$set": {"race_id": race_id, "results": results, "entered_by": user["id"], "entered_at": datetime.now(timezone.utc).isoformat()}},
+        {"$set": {"race_id": race_id, "results": results, "entered_by": user["id"], 
+                  "entered_at": datetime.now(timezone.utc).isoformat()}},
         upsert=True
     )
     
@@ -799,45 +875,22 @@ async def set_race_results(race_id: str, data: RaceResultsInput, user=Depends(ge
     for pred in predictions:
         points = calculate_points(pred, results)
         
-        # Update user's XP
-        await db.users.update_one(
-            {"id": pred["user_id"]},
-            {"$inc": {"xp": points["xp_earned"]}}
-        )
+        await db.users.update_one({"id": pred["user_id"]}, {"$inc": {"xp": points["xp_earned"]}})
         
-        # Check for level up (100 XP per level)
         user_data = await db.users.find_one({"id": pred["user_id"]}, {"_id": 0})
         if user_data:
             new_xp = user_data.get("xp", 0) + points["xp_earned"]
             new_level = (new_xp // 100) + 1
             if new_level > user_data.get("level", 1):
-                await db.users.update_one(
-                    {"id": pred["user_id"]},
-                    {"$set": {"level": new_level}}
-                )
-                # Create level up notification
-                await create_notification(
-                    pred["user_id"],
-                    f"Félicitations ! Tu as atteint le niveau {new_level} !",
-                    "level_up"
-                )
+                await db.users.update_one({"id": pred["user_id"]}, {"$set": {"level": new_level}})
+                await create_notification(pred["user_id"], f"Niveau {new_level} atteint !", "level_up")
             
-            # Create results notification
-            race_name = next((r["name"] for r in F1_RACES_2025 if r["id"] == race_id), race_id)
-            await create_notification(
-                pred["user_id"],
-                f"Résultats du {race_name} disponibles ! Tu as gagné {points['total']} points.",
-                "results"
-            )
+            race_name = next((r["name"] for r in F1_RACES_2026 if r["id"] == race_id), race_id)
+            await create_notification(pred["user_id"], f"Résultats {race_name}: +{points['total']} pts!", "results")
             
-            # Update leaderboard in all user's leagues
             leagues = await db.leagues.find({"members": pred["user_id"]}, {"_id": 0}).to_list(100)
             for league in leagues:
-                entry = await db.leaderboard.find_one({
-                    "league_id": league["id"],
-                    "user_id": pred["user_id"]
-                })
-                
+                entry = await db.leaderboard.find_one({"league_id": league["id"], "user_id": pred["user_id"]})
                 if entry:
                     all_entries = await db.leaderboard.find({"league_id": league["id"]}, {"_id": 0}).to_list(100)
                     all_entries.sort(key=lambda x: x["total_points"], reverse=True)
@@ -845,80 +898,133 @@ async def set_race_results(race_id: str, data: RaceResultsInput, user=Depends(ge
                     
                     await db.leaderboard.update_one(
                         {"id": entry["id"]},
-                        {
-                            "$inc": {"total_points": points["total"]},
-                            "$set": {
-                                "last_race_points": points["total"],
-                                "previous_position": current_pos
-                            }
-                        }
+                        {"$inc": {"total_points": points["total"]},
+                         "$set": {"last_race_points": points["total"], "previous_position": current_pos}}
                     )
     
-    # Lock all predictions for this race
-    await db.predictions.update_many(
-        {"race_id": race_id},
-        {"$set": {"locked": True}}
-    )
-    
-    return {"message": "Résultats enregistrés et points calculés", "predictions_processed": len(predictions)}
+    await db.predictions.update_many({"race_id": race_id}, {"$set": {"locked": True}})
+    return {"message": "Results saved", "predictions_processed": len(predictions)}
 
-# Get admin-accessible races
 @api_router.get("/admin/races")
 async def get_admin_races(user=Depends(get_current_user)):
-    # Check if user is admin of at least one league
     user_leagues = await db.leagues.find({"created_by": user["id"]}, {"_id": 0}).to_list(100)
     if not user_leagues:
-        raise HTTPException(status_code=403, detail="Accès réservé aux créateurs de ligue")
+        raise HTTPException(status_code=403, detail="Access denied")
     
-    # Get all races with their result status
     races_with_status = []
-    for race in F1_RACES_2025:
+    for race in F1_RACES_2026:
         result = await db.race_results.find_one({"race_id": race["id"]}, {"_id": 0})
         race_date = datetime.fromisoformat(race["date"] + "T15:00:00+00:00")
         
         races_with_status.append({
-            "id": race["id"],
-            "name": race["name"],
-            "date": race["date"],
+            "id": race["id"], "name": race["name"], "date": race["date"],
             "has_results": result is not None,
-            "is_past": datetime.now(timezone.utc) > race_date
+            "is_past": datetime.now(timezone.utc) > race_date,
+            "is_sprint": race.get("is_sprint", False)
         })
-    
     return races_with_status
 
-# Get existing results for editing
 @api_router.get("/admin/results/{race_id}")
 async def get_admin_results(race_id: str, user=Depends(get_current_user)):
     user_leagues = await db.leagues.find({"created_by": user["id"]}, {"_id": 0}).to_list(100)
     if not user_leagues:
-        raise HTTPException(status_code=403, detail="Accès réservé aux créateurs de ligue")
+        raise HTTPException(status_code=403, detail="Access denied")
+    return await db.race_results.find_one({"race_id": race_id}, {"_id": 0})
+
+# ==================== OPENF1 API INTEGRATION ====================
+
+@api_router.post("/admin/sync-results/{race_id}")
+async def sync_results_from_openf1(race_id: str, user=Depends(get_current_user)):
+    """Fetch results from OpenF1 API"""
+    user_leagues = await db.leagues.find({"created_by": user["id"]}, {"_id": 0}).to_list(100)
+    if not user_leagues:
+        raise HTTPException(status_code=403, detail="Access denied")
     
-    result = await db.race_results.find_one({"race_id": race_id}, {"_id": 0})
-    return result
+    # Find race info
+    race = next((r for r in F1_RACES_2026 if r["id"] == race_id), None)
+    if not race:
+        raise HTTPException(status_code=404, detail="Race not found")
+    
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            # Get session info for this race
+            # OpenF1 uses meeting_key, we need to map race to meeting
+            # For now, return instructions since we need the actual meeting_key
+            
+            # Try to get latest session data
+            sessions_resp = await client.get(f"{OPENF1_API}/sessions", params={
+                "year": 2026,
+                "circuit_short_name": race["circuit"].split()[0][:3].upper()
+            })
+            
+            if sessions_resp.status_code != 200:
+                return {"status": "error", "message": "Could not fetch sessions from OpenF1", "manual_entry_required": True}
+            
+            sessions = sessions_resp.json()
+            if not sessions:
+                return {"status": "no_data", "message": "No session data available yet", "manual_entry_required": True}
+            
+            # Get race session
+            race_session = next((s for s in sessions if s.get("session_name") == "Race"), None)
+            if not race_session:
+                return {"status": "no_race", "message": "Race session not found", "manual_entry_required": True}
+            
+            session_key = race_session.get("session_key")
+            
+            # Get position data
+            positions_resp = await client.get(f"{OPENF1_API}/position", params={
+                "session_key": session_key
+            })
+            
+            if positions_resp.status_code != 200:
+                return {"status": "error", "message": "Could not fetch positions", "manual_entry_required": True}
+            
+            positions = positions_resp.json()
+            
+            # Get final positions (last entry for each driver)
+            final_positions = {}
+            for pos in positions:
+                driver_num = pos.get("driver_number")
+                if driver_num:
+                    final_positions[driver_num] = pos.get("position")
+            
+            # Sort by position to get top 10
+            sorted_drivers = sorted(final_positions.items(), key=lambda x: x[1] if x[1] else 999)
+            top_10_numbers = [d[0] for d in sorted_drivers[:10]]
+            
+            # Map driver numbers to our driver IDs
+            number_to_id = {d["number"]: d["id"] for d in F1_DRIVERS_2026}
+            race_top10 = [number_to_id.get(n, f"unknown_{n}") for n in top_10_numbers]
+            race_winner = race_top10[0] if race_top10 else None
+            
+            return {
+                "status": "success",
+                "fetched_data": {
+                    "race_winner": race_winner,
+                    "race_top10": race_top10,
+                    "session_key": session_key
+                },
+                "message": "Data fetched. Please verify and complete missing fields (quali, bonus) manually."
+            }
+            
+    except Exception as e:
+        logging.error(f"OpenF1 API error: {e}")
+        return {"status": "error", "message": str(e), "manual_entry_required": True}
 
 # ==================== NOTIFICATIONS ====================
 
 async def create_notification(user_id: str, message: str, notif_type: str):
-    """Helper to create a notification"""
     notification = {
-        "id": str(uuid.uuid4()),
-        "user_id": user_id,
-        "message": message,
-        "type": notif_type,
-        "read": False,
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "id": str(uuid.uuid4()), "user_id": user_id, "message": message,
+        "type": notif_type, "read": False, "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.notifications.insert_one(notification)
     return notification
 
-@api_router.get("/notifications", response_model=List[NotificationResponse])
+@api_router.get("/notifications")
 async def get_notifications(user=Depends(get_current_user)):
-    notifications = await db.notifications.find(
-        {"user_id": user["id"]},
-        {"_id": 0}
-    ).sort("created_at", -1).to_list(50)
-    
-    return [NotificationResponse(**n) for n in notifications]
+    notifications = await db.notifications.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return notifications
 
 @api_router.get("/notifications/unread-count")
 async def get_unread_count(user=Depends(get_current_user)):
@@ -927,70 +1033,39 @@ async def get_unread_count(user=Depends(get_current_user)):
 
 @api_router.post("/notifications/{notification_id}/read")
 async def mark_notification_read(notification_id: str, user=Depends(get_current_user)):
-    result = await db.notifications.update_one(
-        {"id": notification_id, "user_id": user["id"]},
-        {"$set": {"read": True}}
-    )
-    if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Notification not found")
+    await db.notifications.update_one({"id": notification_id, "user_id": user["id"]}, {"$set": {"read": True}})
     return {"message": "Marked as read"}
 
 @api_router.post("/notifications/read-all")
 async def mark_all_notifications_read(user=Depends(get_current_user)):
-    await db.notifications.update_many(
-        {"user_id": user["id"]},
-        {"$set": {"read": True}}
-    )
-    return {"message": "All notifications marked as read"}
+    await db.notifications.update_many({"user_id": user["id"]}, {"$set": {"read": True}})
+    return {"message": "All marked as read"}
 
-# Send reminder notifications (to be called periodically)
 @api_router.post("/admin/send-reminders")
 async def send_reminder_notifications(user=Depends(get_current_user)):
-    """Send reminder notifications for upcoming race (24h before close)"""
     user_leagues = await db.leagues.find({"created_by": user["id"]}, {"_id": 0}).to_list(100)
     if not user_leagues:
-        raise HTTPException(status_code=403, detail="Accès réservé aux créateurs de ligue")
+        raise HTTPException(status_code=403, detail="Access denied")
     
     now = datetime.now(timezone.utc)
     notifications_sent = 0
     
-    for race in F1_RACES_2025:
+    for race in F1_RACES_2026:
         quali_date = datetime.fromisoformat(race["quali_date"] + "T14:00:00+00:00")
         predictions_close = quali_date - timedelta(hours=1)
         time_until_close = predictions_close - now
         
-        # Send reminder if between 24h and 23h before close
         if timedelta(hours=23) < time_until_close < timedelta(hours=25):
-            # Get all users who haven't made predictions yet
             all_users = await db.users.find({}, {"_id": 0}).to_list(10000)
-            
             for u in all_users:
                 if not u.get("id"):
                     continue
-                    
-                # Check if user already has prediction for this race
-                existing = await db.predictions.find_one({
-                    "user_id": u["id"],
-                    "race_id": race["id"]
-                })
-                
+                existing = await db.predictions.find_one({"user_id": u["id"], "race_id": race["id"]})
                 if not existing:
-                    # Check if reminder already sent
-                    existing_notif = await db.notifications.find_one({
-                        "user_id": u["id"],
-                        "type": "reminder",
-                        "message": {"$regex": race["id"]}
-                    })
-                    
-                    if not existing_notif:
-                        await create_notification(
-                            u["id"],
-                            f"N'oublie pas ! Les pronostics pour le {race['name']} ferment dans 24h.",
-                            "reminder"
-                        )
-                        notifications_sent += 1
+                    await create_notification(u["id"], f"Rappel: Pronos {race['name']} ferment dans 24h!", "reminder")
+                    notifications_sent += 1
     
-    return {"message": f"{notifications_sent} rappels envoyés"}
+    return {"message": f"{notifications_sent} reminders sent"}
 
 # ==================== HEALTH CHECK ====================
 
@@ -1009,11 +1084,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 @app.on_event("shutdown")

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, apiClient } from "../App";
 import { Button } from "../components/ui/button";
@@ -8,7 +8,7 @@ import { Label } from "../components/ui/label";
 import { toast } from "sonner";
 import { 
   ChevronLeft, Check, Flag, Trophy, Shield, Calendar,
-  AlertTriangle, AlertCircle, Timer, Save, Loader2
+  AlertTriangle, Timer, Save, Loader2, Target, Users, X, Zap, RefreshCw
 } from "lucide-react";
 
 const TEAM_COLORS = {
@@ -33,24 +33,26 @@ export default function AdminPage() {
   const [selectedRace, setSelectedRace] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   
-  // Results state
+  // Results state - Now Top 10
   const [qualiPole, setQualiPole] = useState(null);
-  const [qualiTop3, setQualiTop3] = useState([]);
+  const [qualiTop10, setQualiTop10] = useState([]);
+  const [sprintQualiTop10, setSprintQualiTop10] = useState([]);
+  const [sprintRaceTop10, setSprintRaceTop10] = useState([]);
   const [raceWinner, setRaceWinner] = useState(null);
-  const [raceTop3, setRaceTop3] = useState([]);
+  const [raceTop10, setRaceTop10] = useState([]);
+  
+  // Bonus results
   const [safetyCar, setSafetyCar] = useState(false);
-  const [hasDNF, setHasDNF] = useState(false);
+  const [dnfDrivers, setDnfDrivers] = useState([]);
   const [fastestLap, setFastestLap] = useState(null);
+  const [firstCornerLeader, setFirstCornerLeader] = useState(null);
   
   const [selectionMode, setSelectionMode] = useState("quali_pole");
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [racesRes, driversRes] = await Promise.all([
         apiClient.get("/admin/races"),
@@ -64,7 +66,7 @@ export default function AdminPage() {
       // Select first race without results that is past
       const pastRaceWithoutResults = racesRes.data.find(r => r.is_past && !r.has_results);
       if (pastRaceWithoutResults) {
-        selectRace(pastRaceWithoutResults);
+        await selectRace(pastRaceWithoutResults);
       }
     } catch (e) {
       if (e.response?.status === 403) {
@@ -74,7 +76,11 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const selectRace = async (race) => {
     setSelectedRace(race);
@@ -87,12 +93,15 @@ export default function AdminPage() {
         if (res.data?.results) {
           const r = res.data.results;
           setQualiPole(r.quali_pole);
-          setQualiTop3(r.quali_top3 || []);
+          setQualiTop10(r.quali_top10 || []);
+          setSprintQualiTop10(r.sprint_quali_top10 || []);
+          setSprintRaceTop10(r.sprint_race_top10 || []);
           setRaceWinner(r.race_winner);
-          setRaceTop3(r.race_top3 || []);
+          setRaceTop10(r.race_top10 || []);
           setSafetyCar(r.bonus?.safety_car || false);
-          setHasDNF(r.bonus?.has_dnf || false);
+          setDnfDrivers(r.bonus?.dnf_drivers || []);
           setFastestLap(r.bonus?.fastest_lap || null);
+          setFirstCornerLeader(r.bonus?.first_corner_leader || null);
         }
       } catch (e) {
         console.error(e);
@@ -102,12 +111,15 @@ export default function AdminPage() {
 
   const resetForm = () => {
     setQualiPole(null);
-    setQualiTop3([]);
+    setQualiTop10([]);
+    setSprintQualiTop10([]);
+    setSprintRaceTop10([]);
     setRaceWinner(null);
-    setRaceTop3([]);
+    setRaceTop10([]);
     setSafetyCar(false);
-    setHasDNF(false);
+    setDnfDrivers([]);
     setFastestLap(null);
+    setFirstCornerLeader(null);
     setSelectionMode("quali_pole");
   };
 
@@ -116,25 +128,51 @@ export default function AdminPage() {
       case "quali_pole":
         setQualiPole(driverId);
         break;
-      case "quali_top3":
-        if (qualiTop3.includes(driverId)) {
-          setQualiTop3(qualiTop3.filter(d => d !== driverId));
-        } else if (qualiTop3.length < 3) {
-          setQualiTop3([...qualiTop3, driverId]);
+      case "quali_top10":
+        if (qualiTop10.includes(driverId)) {
+          setQualiTop10(qualiTop10.filter(d => d !== driverId));
+        } else if (qualiTop10.length < 10) {
+          setQualiTop10([...qualiTop10, driverId]);
+        }
+        break;
+      case "sprint_quali_top10":
+        if (sprintQualiTop10.includes(driverId)) {
+          setSprintQualiTop10(sprintQualiTop10.filter(d => d !== driverId));
+        } else if (sprintQualiTop10.length < 10) {
+          setSprintQualiTop10([...sprintQualiTop10, driverId]);
+        }
+        break;
+      case "sprint_race_top10":
+        if (sprintRaceTop10.includes(driverId)) {
+          setSprintRaceTop10(sprintRaceTop10.filter(d => d !== driverId));
+        } else if (sprintRaceTop10.length < 10) {
+          setSprintRaceTop10([...sprintRaceTop10, driverId]);
         }
         break;
       case "race_winner":
         setRaceWinner(driverId);
         break;
-      case "race_top3":
-        if (raceTop3.includes(driverId)) {
-          setRaceTop3(raceTop3.filter(d => d !== driverId));
-        } else if (raceTop3.length < 3) {
-          setRaceTop3([...raceTop3, driverId]);
+      case "race_top10":
+        if (raceTop10.includes(driverId)) {
+          setRaceTop10(raceTop10.filter(d => d !== driverId));
+        } else if (raceTop10.length < 10) {
+          setRaceTop10([...raceTop10, driverId]);
         }
         break;
       case "fastest_lap":
         setFastestLap(driverId === fastestLap ? null : driverId);
+        break;
+      case "first_corner":
+        setFirstCornerLeader(driverId === firstCornerLeader ? null : driverId);
+        break;
+      case "dnf_select":
+        if (dnfDrivers.includes(driverId)) {
+          setDnfDrivers(dnfDrivers.filter(d => d !== driverId));
+        } else {
+          setDnfDrivers([...dnfDrivers, driverId]);
+        }
+        break;
+      default:
         break;
     }
   };
@@ -142,21 +180,28 @@ export default function AdminPage() {
   const isDriverSelected = (driverId) => {
     switch (selectionMode) {
       case "quali_pole": return qualiPole === driverId;
-      case "quali_top3": return qualiTop3.includes(driverId);
+      case "quali_top10": return qualiTop10.includes(driverId);
+      case "sprint_quali_top10": return sprintQualiTop10.includes(driverId);
+      case "sprint_race_top10": return sprintRaceTop10.includes(driverId);
       case "race_winner": return raceWinner === driverId;
-      case "race_top3": return raceTop3.includes(driverId);
+      case "race_top10": return raceTop10.includes(driverId);
       case "fastest_lap": return fastestLap === driverId;
+      case "first_corner": return firstCornerLeader === driverId;
+      case "dnf_select": return dnfDrivers.includes(driverId);
       default: return false;
     }
   };
 
   const getDriverPosition = (driverId) => {
-    if (selectionMode === "quali_top3") return qualiTop3.indexOf(driverId) + 1 || null;
-    if (selectionMode === "race_top3") return raceTop3.indexOf(driverId) + 1 || null;
+    if (selectionMode === "quali_top10") return qualiTop10.indexOf(driverId) + 1 || null;
+    if (selectionMode === "sprint_quali_top10") return sprintQualiTop10.indexOf(driverId) + 1 || null;
+    if (selectionMode === "sprint_race_top10") return sprintRaceTop10.indexOf(driverId) + 1 || null;
+    if (selectionMode === "race_top10") return raceTop10.indexOf(driverId) + 1 || null;
     return null;
   };
 
-  const isComplete = qualiPole && qualiTop3.length === 3 && raceWinner && raceTop3.length === 3;
+  const isSprintComplete = !selectedRace?.is_sprint || (sprintQualiTop10.length === 10 && sprintRaceTop10.length === 10);
+  const isComplete = qualiPole && qualiTop10.length === 10 && raceWinner && raceTop10.length === 10 && isSprintComplete;
 
   const handleSubmit = async () => {
     if (!isComplete) {
@@ -166,16 +211,24 @@ export default function AdminPage() {
 
     setSaving(true);
     try {
-      await apiClient.post(`/admin/results/${selectedRace.id}`, {
+      const payload = {
         quali_pole: qualiPole,
-        quali_top3: qualiTop3,
+        quali_top10: qualiTop10,
         race_winner: raceWinner,
-        race_top3: raceTop3,
+        race_top10: raceTop10,
         safety_car: safetyCar,
-        has_dnf: hasDNF,
-        fastest_lap: fastestLap
-      });
+        dnf_drivers: dnfDrivers,
+        fastest_lap: fastestLap,
+        first_corner_leader: firstCornerLeader
+      };
 
+      // Add sprint results if sprint weekend
+      if (selectedRace.is_sprint) {
+        payload.sprint_quali_top10 = sprintQualiTop10;
+        payload.sprint_race_top10 = sprintRaceTop10;
+      }
+
+      await apiClient.post(`/admin/results/${selectedRace.id}`, payload);
       toast.success("Résultats enregistrés ! Les points ont été calculés.");
       
       // Refresh races
@@ -190,13 +243,53 @@ export default function AdminPage() {
     }
   };
 
-  const selectionSteps = [
-    { key: "quali_pole", label: "Pole", icon: Flag, done: !!qualiPole, count: qualiPole ? 1 : 0, max: 1 },
-    { key: "quali_top3", label: "Top 3 Q", icon: Trophy, done: qualiTop3.length === 3, count: qualiTop3.length, max: 3 },
-    { key: "race_winner", label: "Winner", icon: Trophy, done: !!raceWinner, count: raceWinner ? 1 : 0, max: 1 },
-    { key: "race_top3", label: "Top 3 R", icon: Trophy, done: raceTop3.length === 3, count: raceTop3.length, max: 3 },
-    { key: "fastest_lap", label: "FL", icon: Timer, done: true, count: fastestLap ? 1 : 0, max: 1, optional: true },
-  ];
+  const handleSyncOpenF1 = async () => {
+    if (!selectedRace) return;
+    
+    setSyncing(true);
+    try {
+      const res = await apiClient.post(`/admin/sync-results/${selectedRace.id}`);
+      
+      if (res.data.status === "success") {
+        const fetched = res.data.fetched_data;
+        if (fetched.race_winner) setRaceWinner(fetched.race_winner);
+        if (fetched.race_top10?.length) setRaceTop10(fetched.race_top10);
+        toast.success("Données récupérées depuis OpenF1 ! Vérifiez et complétez les champs manquants.");
+      } else {
+        toast.warning(res.data.message || "Données non disponibles, saisie manuelle requise.");
+      }
+    } catch (error) {
+      toast.error("Erreur lors de la synchronisation avec OpenF1");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  // Selection steps
+  const getSelectionSteps = () => {
+    const steps = [
+      { key: "quali_pole", label: "Pole", icon: Flag, done: !!qualiPole, count: qualiPole ? 1 : 0, max: 1 },
+      { key: "quali_top10", label: "Top 10 Q", icon: Trophy, done: qualiTop10.length === 10, count: qualiTop10.length, max: 10 },
+    ];
+
+    if (selectedRace?.is_sprint) {
+      steps.push(
+        { key: "sprint_quali_top10", label: "Sprint Q", icon: Zap, done: sprintQualiTop10.length === 10, count: sprintQualiTop10.length, max: 10, isSprint: true },
+        { key: "sprint_race_top10", label: "Sprint R", icon: Zap, done: sprintRaceTop10.length === 10, count: sprintRaceTop10.length, max: 10, isSprint: true }
+      );
+    }
+
+    steps.push(
+      { key: "race_winner", label: "Winner", icon: Trophy, done: !!raceWinner, count: raceWinner ? 1 : 0, max: 1 },
+      { key: "race_top10", label: "Top 10 R", icon: Trophy, done: raceTop10.length === 10, count: raceTop10.length, max: 10 },
+      { key: "bonus", label: "Bonus", icon: Zap, done: true, count: 0, max: 0, isBonus: true }
+    );
+
+    return steps;
+  };
+
+  const selectionSteps = getSelectionSteps();
+  const showBonus = ["bonus", "fastest_lap", "first_corner", "dnf_select"].includes(selectionMode);
 
   if (loading) {
     return (
@@ -275,6 +368,7 @@ export default function AdminPage() {
                 >
                   {race.name.replace(" Grand Prix", "")}
                   {race.has_results && <Check className="w-3 h-3 ml-1" />}
+                  {race.is_sprint && <Zap className="w-3 h-3 ml-1 text-purple-400" />}
                 </Button>
               ))}
             </div>
@@ -286,13 +380,34 @@ export default function AdminPage() {
             {/* Race Info */}
             <Card className="game-card mb-4">
               <CardContent className="p-4">
-                <h2 className="font-heading text-lg uppercase text-white">{selectedRace.name}</h2>
-                <p className="font-body text-sm text-gray-400">{selectedRace.date}</p>
-                {selectedRace.has_results && (
-                  <p className="font-body text-xs text-green-400 mt-1 flex items-center gap-1">
-                    <Check className="w-3 h-3" /> Résultats déjà enregistrés (modification possible)
-                  </p>
-                )}
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h2 className="font-heading text-lg uppercase text-white flex items-center gap-2">
+                      {selectedRace.name}
+                      {selectedRace.is_sprint && (
+                        <span className="px-2 py-0.5 bg-purple-500/20 border border-purple-500/50 rounded text-purple-400 text-xs font-heading uppercase">
+                          Sprint
+                        </span>
+                      )}
+                    </h2>
+                    <p className="font-body text-sm text-gray-400">{selectedRace.date}</p>
+                    {selectedRace.has_results && (
+                      <p className="font-body text-xs text-green-400 mt-1 flex items-center gap-1">
+                        <Check className="w-3 h-3" /> Résultats déjà enregistrés (modification possible)
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    onClick={handleSyncOpenF1}
+                    disabled={syncing}
+                    variant="outline"
+                    size="sm"
+                    className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/20"
+                  >
+                    {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                    <span className="ml-1 text-xs">OpenF1</span>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
@@ -300,109 +415,202 @@ export default function AdminPage() {
             <div className="flex gap-1 mb-6 overflow-x-auto no-scrollbar">
               {selectionSteps.map((step) => {
                 const Icon = step.icon;
-                const isActive = selectionMode === step.key;
+                const isActive = selectionMode === step.key || (step.key === "bonus" && showBonus);
                 
                 return (
                   <button
                     key={step.key}
                     onClick={() => setSelectionMode(step.key)}
-                    className={`flex-1 min-w-[60px] p-2 rounded-lg border-2 transition-all ${
+                    className={`flex-1 min-w-[55px] p-2 rounded-lg border-2 transition-all ${
                       isActive 
-                        ? 'border-orange-500 bg-orange-500/20 glow-orange' 
-                        : step.done && !step.optional
+                        ? step.isBonus 
+                          ? 'border-yellow-500 bg-yellow-500/20 glow-yellow' 
+                          : step.isSprint
+                            ? 'border-purple-500 bg-purple-500/20'
+                            : 'border-orange-500 bg-orange-500/20 glow-orange' 
+                        : step.done && !step.isBonus
                           ? 'border-green-500/50 bg-green-500/10' 
                           : 'border-gray-700 bg-gray-900/50'
                     }`}
                   >
                     <Icon className={`w-4 h-4 mx-auto mb-1 ${
-                      isActive ? 'text-orange-500' : step.done && !step.optional ? 'text-green-500' : 'text-gray-500'
+                      isActive ? step.isBonus ? 'text-yellow-500' : step.isSprint ? 'text-purple-500' : 'text-orange-500' : step.done && !step.isBonus ? 'text-green-500' : 'text-gray-500'
                     }`} />
-                    <p className={`font-heading text-[9px] uppercase ${isActive ? 'text-white' : 'text-gray-400'}`}>
+                    <p className={`font-heading text-[8px] uppercase ${isActive ? 'text-white' : 'text-gray-400'}`}>
                       {step.label}
                     </p>
-                    <p className="font-data text-[10px] text-gray-500">{step.count}/{step.max}</p>
+                    {!step.isBonus && (
+                      <p className="font-data text-[9px] text-gray-500">{step.count}/{step.max}</p>
+                    )}
                   </button>
                 );
               })}
             </div>
 
             {/* Bonus Options */}
-            {selectionMode === "fastest_lap" && (
-              <Card className="game-card mb-4">
-                <CardContent className="p-4 space-y-4">
-                  <h3 className="font-heading text-sm uppercase text-yellow-500 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" /> Options Bonus
-                  </h3>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-yellow-500" />
-                      <Label className="font-body text-white">Safety Car pendant la course</Label>
+            {selectionMode === "bonus" && (
+              <div className="space-y-4 mb-6">
+                <h3 className="font-heading text-lg uppercase text-yellow-500 flex items-center gap-2">
+                  <Zap className="w-5 h-5" /> Options Bonus
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Safety Car */}
+                  <div className={`bonus-bet-card p-4 rounded-lg ${safetyCar ? 'selected' : ''}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                        <Label className="font-body text-white text-sm">Safety Car</Label>
+                      </div>
+                      <Switch checked={safetyCar} onCheckedChange={setSafetyCar} />
                     </div>
-                    <Switch checked={safetyCar} onCheckedChange={setSafetyCar} />
                   </div>
-                  
-                  <div className="flex items-center justify-between">
+
+                  {/* DNF Drivers */}
+                  <button
+                    onClick={() => setSelectionMode("dnf_select")}
+                    className={`bonus-bet-card p-4 rounded-lg text-left ${dnfDrivers.length > 0 ? 'selected' : ''}`}
+                  >
+                    <Users className={`w-5 h-5 mb-1 ${dnfDrivers.length > 0 ? 'text-yellow-500' : 'text-gray-500'}`} />
+                    <p className="font-body text-sm text-white">DNF Pilotes</p>
+                    <p className="font-data text-xs text-gray-400">{dnfDrivers.length} sélectionné(s)</p>
+                  </button>
+                </div>
+
+                {/* Fastest Lap */}
+                <div className="bonus-bet-card p-4 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-red-500" />
-                      <Label className="font-body text-white">Au moins un abandon (DNF)</Label>
+                      <Timer className="w-5 h-5 text-purple-500" />
+                      <span className="font-body text-white text-sm">Meilleur Tour</span>
                     </div>
-                    <Switch checked={hasDNF} onCheckedChange={setHasDNF} />
                   </div>
-                  
+                  <Button
+                    onClick={() => setSelectionMode("fastest_lap")}
+                    className={`w-full ${fastestLap ? 'btn-gaming' : 'btn-gaming-blue'}`}
+                  >
+                    {fastestLap ? drivers.find(d => d.id === fastestLap)?.name : "Choisir un pilote"}
+                  </Button>
+                </div>
+
+                {/* First Corner Leader */}
+                <div className="bonus-bet-card p-4 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Target className="w-5 h-5 text-cyan-500" />
+                      <span className="font-body text-white text-sm">Leader 1er Virage</span>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => setSelectionMode("first_corner")}
+                    className={`w-full ${firstCornerLeader ? 'btn-gaming' : 'btn-gaming-blue'}`}
+                  >
+                    {firstCornerLeader ? drivers.find(d => d.id === firstCornerLeader)?.name : "Choisir un pilote"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* DNF Selection Mode */}
+            {selectionMode === "dnf_select" && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-4">
                   <div>
-                    <p className="font-body text-sm text-gray-400 mb-2 flex items-center gap-1">
-                      <Timer className="w-4 h-4 text-purple-500" />
-                      Meilleur tour: {fastestLap ? drivers.find(d => d.id === fastestLap)?.name : "Non sélectionné"}
-                    </p>
+                    <h3 className="font-heading text-lg uppercase text-red-500 flex items-center gap-2">
+                      <Users className="w-5 h-5" /> Pilotes DNF
+                    </h3>
+                    <p className="font-body text-xs text-gray-400">Sélectionne les pilotes qui ont abandonné</p>
                   </div>
+                  <Button onClick={() => setSelectionMode("bonus")} variant="outline" size="sm" className="border-gray-600">
+                    Retour
+                  </Button>
+                </div>
+                
+                {dnfDrivers.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {dnfDrivers.map(driverId => {
+                      const driver = drivers.find(d => d.id === driverId);
+                      return (
+                        <div key={driverId} className="flex items-center gap-2 px-3 py-1 bg-red-500/20 border border-red-500/50 rounded-full">
+                          <span className="font-body text-sm text-red-400">{driver?.name}</span>
+                          <button onClick={() => setDnfDrivers(dnfDrivers.filter(d => d !== driverId))}>
+                            <X className="w-4 h-4 text-red-400 hover:text-red-300" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Selection Info */}
+            {!showBonus && (
+              <Card className="game-card mb-4">
+                <CardContent className="p-4">
+                  <p className="font-body text-gray-300">
+                    {selectionMode === "quali_pole" && "Sélectionne le pilote en pole position"}
+                    {selectionMode === "quali_top10" && `Sélectionne le Top 10 des qualifications (${qualiTop10.length}/10)`}
+                    {selectionMode === "sprint_quali_top10" && `Sélectionne le Top 10 des qualifs sprint (${sprintQualiTop10.length}/10)`}
+                    {selectionMode === "sprint_race_top10" && `Sélectionne le Top 10 de la course sprint (${sprintRaceTop10.length}/10)`}
+                    {selectionMode === "race_winner" && "Sélectionne le vainqueur de la course"}
+                    {selectionMode === "race_top10" && `Sélectionne le Top 10 de la course (${raceTop10.length}/10)`}
+                    {selectionMode === "fastest_lap" && "Sélectionne le pilote qui a fait le meilleur tour"}
+                    {selectionMode === "first_corner" && "Sélectionne le leader au premier virage"}
+                  </p>
                 </CardContent>
               </Card>
             )}
 
             {/* Drivers Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              {drivers.map((driver) => {
-                const selected = isDriverSelected(driver.id);
-                const position = getDriverPosition(driver.id);
-                const teamColor = TEAM_COLORS[driver.team] || "#666";
+            {!["bonus"].includes(selectionMode) && (
+              <div className="grid grid-cols-2 gap-3">
+                {drivers.map((driver) => {
+                  const selected = isDriverSelected(driver.id);
+                  const position = getDriverPosition(driver.id);
+                  const teamColor = TEAM_COLORS[driver.team] || "#666";
 
-                return (
-                  <button
-                    key={driver.id}
-                    onClick={() => handleDriverSelect(driver.id)}
-                    className={`driver-card-gaming relative p-4 rounded-lg border-l-4 transition-all text-left ${selected ? 'selected' : ''}`}
-                    style={{ borderLeftColor: teamColor }}
-                  >
-                    {position && (
-                      <div className="absolute top-2 right-2 w-7 h-7 rounded bg-gradient-to-b from-orange-500 to-orange-700 flex items-center justify-center border border-orange-400">
-                        <span className="font-heading text-sm text-white">{position}</span>
-                      </div>
-                    )}
-                    {selected && !position && (
-                      <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-gradient-to-b from-green-500 to-green-700 flex items-center justify-center">
-                        <Check className="w-4 h-4 text-white" />
-                      </div>
-                    )}
+                  return (
+                    <button
+                      key={driver.id}
+                      onClick={() => handleDriverSelect(driver.id)}
+                      className={`driver-card-gaming relative p-4 rounded-lg border-l-4 transition-all text-left ${selected ? 'selected' : ''}`}
+                      style={{ borderLeftColor: teamColor }}
+                    >
+                      {position && (
+                        <div className={`absolute top-2 right-2 w-7 h-7 rounded flex items-center justify-center border ${
+                          position <= 3 
+                            ? position === 1 ? 'position-1-gaming' : position === 2 ? 'position-2-gaming' : 'position-3-gaming'
+                            : 'bg-gradient-to-b from-orange-500 to-orange-700 border-orange-400'
+                        }`}>
+                          <span className={`font-heading text-sm ${position <= 3 && position !== 3 ? 'text-black' : 'text-white'}`}>{position}</span>
+                        </div>
+                      )}
+                      {selected && !position && (
+                        <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-gradient-to-b from-green-500 to-green-700 flex items-center justify-center">
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                      )}
 
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="w-11 h-11 rounded-lg flex items-center justify-center font-heading text-lg border-2"
-                        style={{ backgroundColor: teamColor + '30', borderColor: teamColor, color: teamColor }}
-                      >
-                        {driver.number}
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-11 h-11 rounded-lg flex items-center justify-center font-heading text-lg border-2"
+                          style={{ backgroundColor: teamColor + '30', borderColor: teamColor, color: teamColor }}
+                        >
+                          {driver.number}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-heading text-sm uppercase tracking-tight text-white truncate">
+                            {driver.name}
+                          </p>
+                          <p className="font-body text-xs text-gray-500 truncate">{driver.team}</p>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-heading text-sm uppercase tracking-tight text-white truncate">
-                          {driver.name}
-                        </p>
-                        <p className="font-body text-xs text-gray-500 truncate">{driver.team}</p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </>
         )}
       </div>
