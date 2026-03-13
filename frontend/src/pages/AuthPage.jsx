@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Mail, Lock, ChevronRight } from "lucide-react";
 
 // Hero banner with F1 car and PRONOKIF logo
-const HERO_BANNER = "https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/25ea65ea1c6f8a7608c9768d4bf92327f4fa6d439e628eadf7121869c65e5737.png";
+const HERO_BANNER = "https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/0988457c2bf0725d4e6fe4a0960dc4740d8e985496ab5a323c2c40ac2c8e0030.png";
 
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
