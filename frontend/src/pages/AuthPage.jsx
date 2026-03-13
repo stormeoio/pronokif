@@ -9,8 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { toast } from "sonner";
 import { Mail, Lock, ChevronRight } from "lucide-react";
 
-// Hero banner with F1 car and PRONOKIF logo
-const HERO_BANNER = "https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/0988457c2bf0725d4e6fe4a0960dc4740d8e985496ab5a323c2c40ac2c8e0030.png";
+// Hero banner with F1 car (no text - we overlay via CSS)
+const HERO_BANNER = "https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/d9b6f1a65194f54bbc34bb7e15e4af8069ab64dab312c6c3be1db79b2ca45259.png";
 
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
