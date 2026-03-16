@@ -1,0 +1,115 @@
+{
+  "summary": "Tested new separate sprint/main prediction endpoints and admin members feature. Found and fixed MongoDB ObjectId serialization bug in sprint/main endpoints. All 16 backend tests pass. Frontend verification shows Sprint/Course tabs, double countdown, and admin Members tab working correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [],
+    "fixed": [
+      {
+        "endpoint": "POST /api/predictions/sprint, /api/predictions/main, /api/predictions",
+        "issue": "MongoDB ObjectId not serializable when returning existing prediction - caused 500 error",
+        "fix": "Added _id exclusion: existing_clean = {k: v for k, v in existing.items() if k != '_id'}",
+        "priority": "HIGH"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_separate_sprint_main_predictions.py",
+    "/app/test_reports/pytest/pytest_sprint_main.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/server.py (lines ~1290, ~1340, ~1380 - fixed MongoDB _id serialization)"
+  ],
+  "success_rate": {
+    "backend": "100% (16 passed, 3 skipped - skipped due to auth dependency chain)",
+    "frontend": "100%"
+  },
+  "test_credentials": {
+    "admin_email": "catalan.baptiste123@gmail.com",
+    "admin_password": "test12345 (updated via MongoDB)"
+  },
+  "seed_data_creation": "Created multiple test users during testing",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The new /api/predictions/sprint and /api/predictions/main endpoints are now working. These endpoints update the same prediction document independently. Miami-2026 is a sprint weekend (is_sprint_weekend=true). Japan-2026 is a classic weekend. Sprint predictions close 15min before SQ1, main predictions close 15min before Q1.",
+  "features_tested": {
+    "POST /api/predictions/sprint": {
+      "status": "PASS",
+      "tests": [
+        "Accepts valid sprint predictions for sprint weekend",
+        "Rejects non-sprint weekend races",
+        "Validates top10 count",
+        "Rejects invalid race ID",
+        "Requires authentication"
+      ]
+    },
+    "POST /api/predictions/main": {
+      "status": "PASS",
+      "tests": [
+        "Accepts valid main predictions",
+        "Works for both sprint and classic weekends",
+        "Validates top10 count",
+        "Rejects invalid race ID",
+        "Requires authentication"
+      ]
+    },
+    "Sprint/Main Integration": {
+      "status": "PASS",
+      "tests": [
+        "Both endpoints update same prediction document"
+      ]
+    },
+    "GET /api/admin/members": {
+      "status": "PASS",
+      "tests": [
+        "Returns list of all users with email, predictions_count, leagues_count",
+        "Requires admin access"
+      ]
+    },
+    "GET /api/admin/members/{id}": {
+      "status": "PASS",
+      "tests": [
+        "Returns full member details (id, email, username, level, xp, stats, leagues, recent_predictions)",
+        "Returns 404 for invalid ID",
+        "Requires admin access"
+      ]
+    },
+    "Frontend - PredictionsPage": {
+      "status": "PASS",
+      "tests": [
+        "Sprint/Course tabs visible for sprint weekends (Miami)",
+        "Deadline text shows 'Clôture 15 min avant SQ1' for sprint",
+        "Step navigation (Pole, Top 10, Winner, Top 10, Bonus) visible",
+        "22 drivers displayed for selection"
+      ]
+    },
+    "Frontend - AdminPage Members": {
+      "status": "PASS",
+      "tests": [
+        "MEMBRES tab visible with 53 registered members",
+        "Each member shows username, email, level, prediction count"
+      ]
+    },
+    "Frontend - MiniGames Batak": {
+      "status": "PASS",
+      "tests": [
+        "Page loads without blank screen",
+        "REACTION and BATAK game tabs visible",
+        "Start button and game controls available"
+      ]
+    }
+  },
+  "bug_fixed_during_testing": {
+    "description": "MongoDB ObjectId serialization error in prediction update endpoints",
+    "root_cause": "When updating existing predictions, the code returned {**existing, **new_data} but 'existing' contained the MongoDB '_id' field which is not JSON serializable",
+    "fix_applied": "Added exclusion of '_id' field before merging: existing_clean = {k: v for k, v in existing.items() if k != '_id'}",
+    "files_modified": ["/app/backend/server.py"],
+    "lines_modified": ["~1290 (original endpoint)", "~1340 (sprint endpoint)", "~1380 (main endpoint)"]
+  }
+}

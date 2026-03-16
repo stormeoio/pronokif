@@ -1270,7 +1270,9 @@ async def create_prediction(data: PredictionCreate, user=Depends(get_current_use
     
     if existing:
         await db.predictions.update_one({"id": existing["id"]}, {"$set": prediction_data})
-        return {**existing, **prediction_data, "locked": False}
+        # Exclude MongoDB _id from response
+        existing_clean = {k: v for k, v in existing.items() if k != "_id"}
+        return {**existing_clean, **prediction_data, "locked": False}
     
     prediction_id = str(uuid.uuid4())
     prediction = {
@@ -1330,7 +1332,9 @@ async def save_sprint_prediction(data: SprintPredictionCreate, user=Depends(get_
     
     if existing:
         await db.predictions.update_one({"id": existing["id"]}, {"$set": sprint_data})
-        return {**existing, **sprint_data}
+        # Exclude MongoDB _id from response
+        existing_clean = {k: v for k, v in existing.items() if k != "_id"}
+        return {**existing_clean, **sprint_data}
     
     # Create new prediction with sprint data only
     prediction_id = str(uuid.uuid4())
@@ -1376,7 +1380,9 @@ async def save_main_prediction(data: MainPredictionCreate, user=Depends(get_curr
     
     if existing:
         await db.predictions.update_one({"id": existing["id"]}, {"$set": main_data})
-        return {**existing, **main_data}
+        # Exclude MongoDB _id from response
+        existing_clean = {k: v for k, v in existing.items() if k != "_id"}
+        return {**existing_clean, **main_data}
     
     # Create new prediction with main data only
     prediction_id = str(uuid.uuid4())
