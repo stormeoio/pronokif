@@ -12,66 +12,83 @@ PRONOKIF est une application de jeu de pronostics sur la Formule 1, permettant a
 - Hero banner avec voiture F1 rouge et logo PRONOKIF doré 3D
 
 **Assets générés:**
-- Hero Banner: https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/d71e4f8baaf09d0a9c181630097e14820689ebaae4e8d85396944b8e628c816c.png
+- Hero Banner: https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/d9b6f1a65194f54bbc34bb7e15e4af8069ab64dab312c6c3be1db79b2ca45259.png
 - Chrome Frame: https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/78b5c3494748180c023e9ae942169b78c5557b0a28dc2e7d6dc99087ca8dfa6e.png
 - Monaco GP Background: https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/84bf8f32c39693df24f61199e48ea90a376cae9f73cc5c8550bc87301e7c8ec1.png
 - Dark Panel Texture: https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/b7b92423aa24dd25313c4414c9091052d3cc5c5cf546f50f6162caf6a5bc3a20.png
 
 ## Fonctionnalités implémentées
 
-### ✅ Authentification
+### Authentification
 - Inscription/Connexion par email
 - JWT tokens
 - Gestion du profil utilisateur
 
-### ✅ Ligues
+### Ligues
 - Création de ligue avec code d'invitation
 - Rejoindre une ligue existante
 - Gestion multi-ligues
 
-### ✅ Pronostics de Course
+### Pronostics de Course - SYSTÈME SÉPARÉ (Mis à jour 16/03/2026)
+**Nouveaux endpoints séparés:**
+- `POST /api/predictions/sprint` - Pronostics sprint uniquement
+- `POST /api/predictions/main` - Pronostics course principale uniquement
+
+**Weekend Sprint (dates limites distinctes):**
+- Sprint: Clôture 15 min avant SQ1 (qualifications sprint)
+- Course: Clôture 15 min avant Q1 (qualifications principales)
+
+**Interface à onglets:**
+- Onglet "Sprint" : Pole SQ, Top 10 SQ, Vainqueur Sprint, Top 10 Sprint, Bonus Sprint
+- Onglet "Course" : Pole Q, Top 10 Q, Vainqueur Course, Top 10 Course, Bonus Course
+
+**Weekend Classique:**
 - Pole Position (1 pilote)
 - Top 10 Qualifications
-- Top 10 Course Sprint (weekends sprint)
-- Vainqueur Course Sprint
 - Vainqueur Course Principale
 - Top 10 Course Principale
 - Bonus: Safety Car, DNF (multi), Meilleur tour, Leader 1er virage
-- **Calendrier complet** : Accès à tous les GP pour pronostiquer en avance
-- **Clôture 15 min avant FP1** : Les pronos sont modifiables jusqu'à 15 minutes avant le début des essais libres
 
-### ✅ Pronostics Personnalisés
+### Pronostics Personnalisés
 - Création de questions personnalisées par les membres
 - Types: Oui/Non, Choix multiples, Texte libre
 - Attribution des réponses correctes par le créateur
 
-### ✅ Système XP & Niveaux
+### Système XP & Niveaux
 - 35 missions dans 4 catégories (Assiduité, Performance, Social, Mini-jeux)
 - Gains d'XP automatiques
 - Progression de niveau
 
-### ✅ Avatars Personnalisés
+### Avatars Personnalisés
 - 45 avatars prédéfinis (classiques, écuries, pilotes)
 - Upload de photo personnelle
 
-### ✅ Mini-Jeux
+### Mini-Jeux (Bug Batak corrigé 16/03/2026)
 - Reaction Time (feux de départ F1)
-- Batak Pro (rapidité)
+- Batak Pro (rapidité) - **CORRIGÉ**
 - Modes: Entraînement (illimité), Compétition (3 essais/weekend)
 - Classements dédiés par jeu
 - +2 points bonus pour le vainqueur de chaque jeu
 
-### ✅ Classements
+### Classements
 - Classement par ligue (weekend + général)
 - Classement global de l'application
 - Classement mini-jeux
 
-### ✅ Administration
-- Interface pour entrer les résultats officiels
-- Synchronisation avec API OpenF1
-- Calcul automatique des points
+### Administration (Mis à jour 16/03/2026)
+**4 onglets:**
+- RÉSULTATS : Entrée des résultats officiels, synchronisation OpenF1
+- NOTIFS : Envoi de notifications à tous les membres
+- FEEDBACK : Visualisation des retours utilisateurs
+- **MEMBRES (NOUVEAU)** : Liste de tous les utilisateurs inscrits avec détails
 
-### ✅ Design Arcade Gaming F1
+**Endpoints admin membres:**
+- `GET /api/admin/members` - Liste tous les utilisateurs
+- `GET /api/admin/members/{id}` - Détails d'un utilisateur
+
+**Admin:** Email `catalan.baptiste123@gmail.com`
+
+### Design Arcade Gaming F1
 - Toutes les pages utilisent le thème arcade cohérent
 - Hero banner avec logo PRONOKIF et voiture F1
 - Cartes avec bordures chrome/métalliques
@@ -79,87 +96,40 @@ PRONOKIF est une application de jeu de pronostics sur la Formule 1, permettant a
 - Bandes kerb rouge/blanc
 - Navigation chrome en bas
 
-### ✅ Slider des Courses et Détails GP (Ajouté le 16/03/2026)
-- **Slider sur le Dashboard** : Carrousel permettant de naviguer entre les 8 prochaines courses
-  - Navigation par boutons gauche/droite et points de pagination
-  - Affiche le nom du GP, circuit, date et compte à rebours
-  - Badge "SPRINT WEEKEND" pour les weekends sprint
-  - Indicateur de pronos enregistrés/non enregistrés
-- **Page de Détails du Grand Prix** (`/race/:raceId`)
-  - Informations du circuit : nom complet, longueur (km), nombre de virages, nombre de tours
-  - Programme du weekend avec toutes les sessions (FP1, FP2/SQ, FP3/Sprint, Quali, Course)
-  - Horaires en heure française
-  - Bouton "FAIRE MES PRONOS" ou "Voir les résultats"
-- **API** : `GET /api/races/{race_id}/details` - Retourne les infos complètes du circuit et le programme des sessions
+### Slider des Courses et Détails GP
+- Carrousel permettant de naviguer entre les 8 prochaines courses
+- Badge "SPRINT WEEKEND" pour les weekends sprint
+- Page de Détails du Grand Prix avec infos circuit et programme
+- Double compte à rebours pour weekends sprint
 
-### ✅ Chat de Ligue, Ajout Ligue et Profils Membres (Ajouté le 16/03/2026)
-- **Chat de Ligue** (`/league/:leagueId/chat`)
-  - Messagerie entre membres de la ligue
-  - Auto-refresh toutes les 15 secondes
-  - Barre des membres cliquable avec avatars
-  - Messages limités à 500 caractères
-  - Affichage du pseudo, avatar et horodatage
-- **Bouton Ajouter une ligue** 
-  - Présent dans la section "Mes Ligues" du dashboard (+)
-  - Présent dans l'en-tête de la page Classement
-  - Redirige vers la page de création/rejoindre une ligue
-- **Profils des membres cliquables** (`/profile/:userId`)
-  - Accessible depuis le classement (dashboard et page classement) et le chat
-  - Statistiques : XP, niveau, nombre de pronos, poles et vainqueurs exacts
-  - Ligues en commun avec position et points
-  - Derniers pronostics (5 derniers GP)
-  - Meilleurs scores mini-jeux (réaction et Batak)
-- **APIs** :
-  - `POST /api/leagues/{league_id}/messages` - Envoyer un message
-  - `GET /api/leagues/{league_id}/messages` - Récupérer les messages
-  - `GET /api/leagues/{league_id}/members` - Liste des membres
-  - `GET /api/users/{user_id}/profile` - Profil public avec stats
+### Chat de Ligue et Profils Membres
+- Chat de Ligue avec auto-refresh
+- Profils des membres cliquables avec statistiques
+- Bouton "+" pour ajouter une ligue
 
-### ✅ Feedback Utilisateurs et Notifications Admin (Ajouté le 16/03/2026)
-- **Onglet "Aider l'administrateur"** (Dashboard)
-  - Carte visible en bas du dashboard
-  - Icône (?) en haut à droite du header
-  - Modal avec 3 catégories : Bug, Suggestion, Feedback
-  - Messages jusqu'à 2000 caractères
-  - Confirmation de succès après envoi
-- **Panel Admin - Gestion des Notifications** (`/admin`)
-  - 3 onglets : Résultats, Notifications, Feedback
-  - Créer et envoyer des notifications à tous les membres
-  - Types de notifications : Info, Mise à jour, Important
-  - Visualiser tous les feedbacks utilisateurs avec statut lu/non lu
-- **Système de Notifications pour les membres**
-  - Icône cloche avec badge (nombre de non-lues) en haut à droite
-  - Dropdown avec notifications récentes
-  - Page dédiée `/notifications` avec liste complète
-  - Marquer comme lu (individuel ou tout)
-- **APIs** :
-  - `POST /api/feedback` - Soumettre un feedback
-  - `GET /api/admin/feedback` - Voir tous les feedbacks (admin)
-  - `POST /api/admin/notifications` - Créer une notification (admin)
-  - `GET /api/notifications` - Liste des notifications
-  - `GET /api/notifications/unread-count` - Nombre de non-lues
-  - `PUT /api/notifications/{id}/read` - Marquer comme lu
-- **Admin** : Identifié par email `catalan.baptiste123@gmail.com`
+### Feedback Utilisateurs et Notifications Admin
+- Modal feedback (Bug, Suggestion, Feedback)
+- Icône cloche avec badge de notifications
+- Panel admin pour gérer notifications et feedbacks
 
 ## Architecture technique
 
 ### Backend (FastAPI + MongoDB)
-- `/app/backend/server.py` - Routes principales, F1_CIRCUITS data, F1_RACES_2026 calendar
+- `/app/backend/server.py` - Routes principales (~2500 lignes)
 - `/app/backend/features.py` - Missions, avatars, mini-jeux
 
 ### Frontend (React + TailwindCSS)
 - `/app/frontend/src/index.css` - Thème arcade global
-- `/app/frontend/src/pages/DashboardPage.jsx` - Dashboard avec slider des courses
-- `/app/frontend/src/pages/GrandPrixDetailPage.jsx` - Page de détails du GP
-- `/app/frontend/src/pages/RaceCalendarPage.jsx` - Calendrier complet
-- `/app/frontend/src/pages/` - Autres pages de l'application
-- `/app/frontend/src/components/` - Composants réutilisables
+- `/app/frontend/src/pages/DashboardPage.jsx` - Dashboard avec slider
+- `/app/frontend/src/pages/PredictionsPage.jsx` - **Refonte avec onglets Sprint/Course**
+- `/app/frontend/src/pages/AdminPage.jsx` - **4 onglets dont MEMBRES**
+- `/app/frontend/src/components/MiniGames.jsx` - Jeux Reaction et Batak
 
 ### Collections MongoDB
 - users, leagues, races, drivers
 - predictions, custom_predictions
 - missions, user_achievements
-- minigame_scores, notifications
+- minigame_scores, notifications, feedback
 
 ## Prochaines étapes (Backlog)
 
@@ -181,6 +151,12 @@ PRONOKIF est une application de jeu de pronostics sur la Formule 1, permettant a
 - Partage sur réseaux sociaux
 
 ## Notes techniques
-- Les images de fond GP sont stockées comme URLs et peuvent être modifiées par GP
-- Le système est prêt pour supporter plusieurs fonds GP via `GP_BACKGROUNDS` dans DashboardPage.jsx
+- Les images de fond GP sont stockées comme URLs
 - L'API OpenF1 est utilisée pour récupérer les résultats officiels
+- Bug MongoDB ObjectId corrigé dans les endpoints de prédiction (16/03/2026)
+- `server.py` dépasse 2500 lignes - envisager refactoring en modules
+
+## Tests validés (16/03/2026)
+- Backend: 16/16 tests passés (iteration_8)
+- Frontend: 100% validé
+- Bug MongoDB ObjectId: Corrigé et testé
