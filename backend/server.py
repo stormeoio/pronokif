@@ -194,6 +194,7 @@ class DriverResponse(BaseModel):
     team: str
     number: int
     country: str
+    code: Optional[str] = None
 
 class NotificationResponse(BaseModel):
     id: str
@@ -237,26 +238,28 @@ def generate_league_code() -> str:
 # ==================== F1 DATA ====================
 
 F1_DRIVERS_2026 = [
-    {"id": "verstappen", "name": "Max Verstappen", "team": "Red Bull Racing", "number": 1, "country": "NED"},
-    {"id": "lawson", "name": "Liam Lawson", "team": "Red Bull Racing", "number": 30, "country": "NZL"},
-    {"id": "hamilton", "name": "Lewis Hamilton", "team": "Ferrari", "number": 44, "country": "GBR"},
-    {"id": "leclerc", "name": "Charles Leclerc", "team": "Ferrari", "number": 16, "country": "MON"},
-    {"id": "norris", "name": "Lando Norris", "team": "McLaren", "number": 4, "country": "GBR"},
-    {"id": "piastri", "name": "Oscar Piastri", "team": "McLaren", "number": 81, "country": "AUS"},
-    {"id": "russell", "name": "George Russell", "team": "Mercedes", "number": 63, "country": "GBR"},
-    {"id": "antonelli", "name": "Kimi Antonelli", "team": "Mercedes", "number": 12, "country": "ITA"},
-    {"id": "alonso", "name": "Fernando Alonso", "team": "Aston Martin", "number": 14, "country": "ESP"},
-    {"id": "stroll", "name": "Lance Stroll", "team": "Aston Martin", "number": 18, "country": "CAN"},
-    {"id": "gasly", "name": "Pierre Gasly", "team": "Alpine", "number": 10, "country": "FRA"},
-    {"id": "doohan", "name": "Jack Doohan", "team": "Alpine", "number": 7, "country": "AUS"},
-    {"id": "albon", "name": "Alexander Albon", "team": "Williams", "number": 23, "country": "THA"},
-    {"id": "sainz", "name": "Carlos Sainz", "team": "Williams", "number": 55, "country": "ESP"},
-    {"id": "tsunoda", "name": "Yuki Tsunoda", "team": "RB", "number": 22, "country": "JPN"},
-    {"id": "hadjar", "name": "Isack Hadjar", "team": "RB", "number": 6, "country": "FRA"},
-    {"id": "hulkenberg", "name": "Nico Hülkenberg", "team": "Sauber", "number": 27, "country": "GER"},
-    {"id": "bortoleto", "name": "Gabriel Bortoleto", "team": "Sauber", "number": 5, "country": "BRA"},
-    {"id": "ocon", "name": "Esteban Ocon", "team": "Haas", "number": 31, "country": "FRA"},
-    {"id": "bearman", "name": "Oliver Bearman", "team": "Haas", "number": 87, "country": "GBR"},
+    {"id": "norris", "name": "Lando Norris", "team": "McLaren", "number": 1, "country": "GBR", "code": "NOR"},
+    {"id": "piastri", "name": "Oscar Piastri", "team": "McLaren", "number": 81, "country": "AUS", "code": "PIA"},
+    {"id": "russell", "name": "George Russell", "team": "Mercedes", "number": 63, "country": "GBR", "code": "RUS"},
+    {"id": "antonelli", "name": "Kimi Antonelli", "team": "Mercedes", "number": 12, "country": "ITA", "code": "ANT"},
+    {"id": "leclerc", "name": "Charles Leclerc", "team": "Ferrari", "number": 16, "country": "MON", "code": "LEC"},
+    {"id": "hamilton", "name": "Lewis Hamilton", "team": "Ferrari", "number": 44, "country": "GBR", "code": "HAM"},
+    {"id": "verstappen", "name": "Max Verstappen", "team": "Red Bull Racing", "number": 3, "country": "NED", "code": "VER"},
+    {"id": "hadjar", "name": "Isack Hadjar", "team": "Red Bull Racing", "number": 6, "country": "FRA", "code": "HAD"},
+    {"id": "sainz", "name": "Carlos Sainz", "team": "Williams", "number": 55, "country": "ESP", "code": "SAI"},
+    {"id": "albon", "name": "Alexander Albon", "team": "Williams", "number": 23, "country": "THA", "code": "ALB"},
+    {"id": "lawson", "name": "Liam Lawson", "team": "Racing Bulls", "number": 30, "country": "NZL", "code": "LAW"},
+    {"id": "lindblad", "name": "Arvid Lindblad", "team": "Racing Bulls", "number": 41, "country": "GBR", "code": "LIN"},
+    {"id": "alonso", "name": "Fernando Alonso", "team": "Aston Martin", "number": 14, "country": "ESP", "code": "ALO"},
+    {"id": "stroll", "name": "Lance Stroll", "team": "Aston Martin", "number": 18, "country": "CAN", "code": "STR"},
+    {"id": "ocon", "name": "Esteban Ocon", "team": "Haas", "number": 31, "country": "FRA", "code": "OCO"},
+    {"id": "bearman", "name": "Oliver Bearman", "team": "Haas", "number": 87, "country": "GBR", "code": "BEA"},
+    {"id": "gasly", "name": "Pierre Gasly", "team": "Alpine", "number": 10, "country": "FRA", "code": "GAS"},
+    {"id": "colapinto", "name": "Franco Colapinto", "team": "Alpine", "number": 43, "country": "ARG", "code": "COL"},
+    {"id": "hulkenberg", "name": "Nico Hülkenberg", "team": "Audi", "number": 27, "country": "GER", "code": "HUL"},
+    {"id": "bortoleto", "name": "Gabriel Bortoleto", "team": "Audi", "number": 5, "country": "BRA", "code": "BOR"},
+    {"id": "perez", "name": "Sergio Pérez", "team": "Cadillac", "number": 11, "country": "MEX", "code": "PER"},
+    {"id": "bottas", "name": "Valtteri Bottas", "team": "Cadillac", "number": 77, "country": "FIN", "code": "BOT"},
 ]
 
 # F1 2026 Calendar with Sprint weekends marked and FP1 times
