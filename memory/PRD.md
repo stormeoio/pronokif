@@ -63,9 +63,13 @@ PRONOKIF est une application de jeu de pronostics sur la Formule 1, permettant a
 - 45 avatars prédéfinis (classiques, écuries, pilotes)
 - Upload de photo personnelle
 
-### Mini-Jeux (Bug Batak corrigé 16/03/2026)
+### Mini-Jeux (Mis à jour 16/03/2026)
 - Reaction Time (feux de départ F1)
-- Batak Pro (rapidité) - **CORRIGÉ**
+- Batak Pro (rapidité) - **BOUTON DÉMARRER CORRIGÉ**
+- **NOUVEAU: Bouton "Partager dans une ligue"** après chaque partie
+  - Permet de partager son score dans le chat d'une ligue
+  - Modal de sélection de ligue
+  - Message automatique avec score et commentaire
 - Modes: Entraînement (illimité), Compétition (3 essais/weekend)
 - Classements dédiés par jeu
 - +2 points bonus pour le vainqueur de chaque jeu
