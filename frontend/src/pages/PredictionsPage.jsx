@@ -34,23 +34,28 @@ export default function PredictionsPage() {
   const [saving, setSaving] = useState(false);
   const [existingPrediction, setExistingPrediction] = useState(null);
   
-  // Main predictions state - Now Top 10
-  const [qualiPole, setQualiPole] = useState(null);
-  const [qualiTop10, setQualiTop10] = useState([]);
-  const [raceWinner, setRaceWinner] = useState(null);
-  const [raceTop10, setRaceTop10] = useState([]);
+  // Tab for sprint weekends: "sprint" or "main"
+  const [activeTab, setActiveTab] = useState("sprint");
   
-  // Sprint predictions (for sprint weekends)
+  // Sprint predictions
   const [sprintQualiPole, setSprintQualiPole] = useState(null);
   const [sprintQualiTop10, setSprintQualiTop10] = useState([]);
   const [sprintRaceWinner, setSprintRaceWinner] = useState(null);
   const [sprintRaceTop10, setSprintRaceTop10] = useState([]);
+  const [sprintSafetyCar, setSprintSafetyCar] = useState(false);
+  const [sprintDnfDrivers, setSprintDnfDrivers] = useState([]);
+  const [sprintFastestLap, setSprintFastestLap] = useState(null);
+  const [sprintFirstCorner, setSprintFirstCorner] = useState(null);
   
-  // Bonus bets state
+  // Main race predictions
+  const [qualiPole, setQualiPole] = useState(null);
+  const [qualiTop10, setQualiTop10] = useState([]);
+  const [raceWinner, setRaceWinner] = useState(null);
+  const [raceTop10, setRaceTop10] = useState([]);
   const [safetyCar, setSafetyCar] = useState(false);
-  const [dnfDrivers, setDnfDrivers] = useState([]); // Changed from boolean to array
+  const [dnfDrivers, setDnfDrivers] = useState([]);
   const [fastestLapDriver, setFastestLapDriver] = useState(null);
-  const [firstCornerLeader, setFirstCornerLeader] = useState(null); // NEW
+  const [firstCornerLeader, setFirstCornerLeader] = useState(null);
   
   // Current selection mode
   const [selectionMode, setSelectionMode] = useState("quali_pole");
@@ -58,37 +63,51 @@ export default function PredictionsPage() {
   const fetchData = useCallback(async () => {
     try {
       const [raceRes, driversRes] = await Promise.all([
-        raceId ? apiClient.get(`/races/${raceId}`) : apiClient.get("/races/next"),
+        apiClient.get(`/races/${raceId}`),
         apiClient.get("/drivers")
       ]);
-
       setRace(raceRes.data);
       setDrivers(driversRes.data);
-
-      // Fetch existing prediction
+      
+      // Load existing predictions
       try {
-        const predRes = await apiClient.get(`/predictions/race/${raceRes.data.id}`);
+        const predRes = await apiClient.get(`/predictions/race/${raceId}`);
         if (predRes.data) {
           setExistingPrediction(predRes.data);
-          setQualiPole(predRes.data.quali_pole);
+          // Main race
+          setQualiPole(predRes.data.quali_pole || null);
           setQualiTop10(predRes.data.quali_top10 || []);
-          setRaceWinner(predRes.data.race_winner);
+          setRaceWinner(predRes.data.race_winner || null);
           setRaceTop10(predRes.data.race_top10 || []);
-          // Sprint predictions
-          setSprintQualiPole(predRes.data.sprint_quali_pole || null);
-          setSprintQualiTop10(predRes.data.sprint_quali_top10 || []);
-          setSprintRaceWinner(predRes.data.sprint_race_winner || null);
-          setSprintRaceTop10(predRes.data.sprint_race_top10 || []);
-          // Bonus bets
           if (predRes.data.bonus_bets) {
             setSafetyCar(predRes.data.bonus_bets.safety_car || false);
             setDnfDrivers(predRes.data.bonus_bets.dnf_drivers || []);
             setFastestLapDriver(predRes.data.bonus_bets.fastest_lap_driver || null);
             setFirstCornerLeader(predRes.data.bonus_bets.first_corner_leader || null);
           }
+          // Sprint
+          setSprintQualiPole(predRes.data.sprint_quali_pole || null);
+          setSprintQualiTop10(predRes.data.sprint_quali_top10 || []);
+          setSprintRaceWinner(predRes.data.sprint_race_winner || null);
+          setSprintRaceTop10(predRes.data.sprint_race_top10 || []);
+          if (predRes.data.sprint_bonus_bets) {
+            setSprintSafetyCar(predRes.data.sprint_bonus_bets.safety_car || false);
+            setSprintDnfDrivers(predRes.data.sprint_bonus_bets.dnf_drivers || []);
+            setSprintFastestLap(predRes.data.sprint_bonus_bets.fastest_lap_driver || null);
+            setSprintFirstCorner(predRes.data.sprint_bonus_bets.first_corner_leader || null);
+          }
         }
       } catch {
         // No existing prediction
+      }
+      
+      // Set initial tab for sprint weekends
+      if (raceRes.data?.is_sprint_weekend) {
+        setActiveTab("sprint");
+        setSelectionMode("sprint_quali_pole");
+      } else {
+        setActiveTab("main");
+        setSelectionMode("quali_pole");
       }
     } catch (e) {
       console.error(e);
@@ -102,77 +121,88 @@ export default function PredictionsPage() {
     fetchData();
   }, [fetchData]);
 
-  // Set initial selection mode based on race type
+  // Update selection mode when tab changes
   useEffect(() => {
-    if (race?.is_sprint_weekend && !existingPrediction) {
+    if (activeTab === "sprint") {
       setSelectionMode("sprint_quali_pole");
-    } else if (!existingPrediction) {
+    } else {
       setSelectionMode("quali_pole");
     }
-  }, [race, existingPrediction]);
+  }, [activeTab]);
 
   const handleDriverSelect = (driverId) => {
-    switch (selectionMode) {
-      case "quali_pole":
-        setQualiPole(driverId);
-        if (qualiTop10.length < 10) setSelectionMode("quali_top10");
-        break;
-        
-      case "quali_top10":
-        if (qualiTop10.includes(driverId)) {
-          setQualiTop10(qualiTop10.filter(d => d !== driverId));
-        } else if (qualiTop10.length < 10) {
-          const newTop10 = [...qualiTop10, driverId];
-          setQualiTop10(newTop10);
-          if (newTop10.length === 10) {
-            if (race?.is_sprint_weekend && !sprintQualiPole) {
-              setSelectionMode("sprint_quali_pole");
-            } else if (!raceWinner) {
-              setSelectionMode("race_winner");
-            }
-          }
-        }
-        break;
+    if (activeTab === "sprint") {
+      handleSprintDriverSelect(driverId);
+    } else {
+      handleMainDriverSelect(driverId);
+    }
+  };
 
+  const handleSprintDriverSelect = (driverId) => {
+    switch (selectionMode) {
       case "sprint_quali_pole":
         setSprintQualiPole(driverId);
         if (sprintQualiTop10.length < 10) setSelectionMode("sprint_quali_top10");
         break;
-
       case "sprint_quali_top10":
         if (sprintQualiTop10.includes(driverId)) {
           setSprintQualiTop10(sprintQualiTop10.filter(d => d !== driverId));
         } else if (sprintQualiTop10.length < 10) {
           const newTop10 = [...sprintQualiTop10, driverId];
           setSprintQualiTop10(newTop10);
-          if (newTop10.length === 10 && !sprintRaceWinner) {
-            setSelectionMode("sprint_race_winner");
-          }
+          if (newTop10.length === 10 && !sprintRaceWinner) setSelectionMode("sprint_race_winner");
         }
         break;
-
       case "sprint_race_winner":
         setSprintRaceWinner(driverId);
         if (sprintRaceTop10.length < 10) setSelectionMode("sprint_race_top10");
         break;
-
       case "sprint_race_top10":
         if (sprintRaceTop10.includes(driverId)) {
           setSprintRaceTop10(sprintRaceTop10.filter(d => d !== driverId));
         } else if (sprintRaceTop10.length < 10) {
           const newTop10 = [...sprintRaceTop10, driverId];
           setSprintRaceTop10(newTop10);
-          if (newTop10.length === 10 && !raceWinner) {
-            setSelectionMode("race_winner");
-          }
+          if (newTop10.length === 10) setSelectionMode("sprint_bonus");
         }
         break;
-        
+      case "sprint_fastest_lap":
+        setSprintFastestLap(driverId === sprintFastestLap ? null : driverId);
+        break;
+      case "sprint_first_corner":
+        setSprintFirstCorner(driverId === sprintFirstCorner ? null : driverId);
+        break;
+      case "sprint_dnf_select":
+        if (sprintDnfDrivers.includes(driverId)) {
+          setSprintDnfDrivers(sprintDnfDrivers.filter(d => d !== driverId));
+        } else if (sprintDnfDrivers.length < 5) {
+          setSprintDnfDrivers([...sprintDnfDrivers, driverId]);
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleMainDriverSelect = (driverId) => {
+    switch (selectionMode) {
+      case "quali_pole":
+        setQualiPole(driverId);
+        if (qualiTop10.length < 10) setSelectionMode("quali_top10");
+        break;
+      case "quali_top10":
+        if (qualiTop10.includes(driverId)) {
+          setQualiTop10(qualiTop10.filter(d => d !== driverId));
+        } else if (qualiTop10.length < 10) {
+          const newTop10 = [...qualiTop10, driverId];
+          setQualiTop10(newTop10);
+          if (newTop10.length === 10 && !raceWinner) setSelectionMode("race_winner");
+        }
+        break;
       case "race_winner":
         setRaceWinner(driverId);
         if (raceTop10.length < 10) setSelectionMode("race_top10");
         break;
-        
       case "race_top10":
         if (raceTop10.includes(driverId)) {
           setRaceTop10(raceTop10.filter(d => d !== driverId));
@@ -182,72 +212,93 @@ export default function PredictionsPage() {
           if (newTop10.length === 10) setSelectionMode("bonus");
         }
         break;
-        
       case "fastest_lap":
         setFastestLapDriver(driverId === fastestLapDriver ? null : driverId);
         break;
-
       case "first_corner":
         setFirstCornerLeader(driverId === firstCornerLeader ? null : driverId);
         break;
-
       case "dnf_select":
         if (dnfDrivers.includes(driverId)) {
           setDnfDrivers(dnfDrivers.filter(d => d !== driverId));
-        } else if (dnfDrivers.length < 5) { // Max 5 DNF predictions
+        } else if (dnfDrivers.length < 5) {
           setDnfDrivers([...dnfDrivers, driverId]);
         }
         break;
-
       default:
         break;
     }
   };
 
   const isDriverSelected = (driverId) => {
-    switch (selectionMode) {
-      case "quali_pole": return qualiPole === driverId;
-      case "quali_top10": return qualiTop10.includes(driverId);
-      case "sprint_quali_pole": return sprintQualiPole === driverId;
-      case "sprint_quali_top10": return sprintQualiTop10.includes(driverId);
-      case "sprint_race_winner": return sprintRaceWinner === driverId;
-      case "sprint_race_top10": return sprintRaceTop10.includes(driverId);
-      case "race_winner": return raceWinner === driverId;
-      case "race_top10": return raceTop10.includes(driverId);
-      case "fastest_lap": return fastestLapDriver === driverId;
-      case "first_corner": return firstCornerLeader === driverId;
-      case "dnf_select": return dnfDrivers.includes(driverId);
-      default: return false;
+    if (activeTab === "sprint") {
+      switch (selectionMode) {
+        case "sprint_quali_pole": return sprintQualiPole === driverId;
+        case "sprint_quali_top10": return sprintQualiTop10.includes(driverId);
+        case "sprint_race_winner": return sprintRaceWinner === driverId;
+        case "sprint_race_top10": return sprintRaceTop10.includes(driverId);
+        case "sprint_fastest_lap": return sprintFastestLap === driverId;
+        case "sprint_first_corner": return sprintFirstCorner === driverId;
+        case "sprint_dnf_select": return sprintDnfDrivers.includes(driverId);
+        default: return false;
+      }
+    } else {
+      switch (selectionMode) {
+        case "quali_pole": return qualiPole === driverId;
+        case "quali_top10": return qualiTop10.includes(driverId);
+        case "race_winner": return raceWinner === driverId;
+        case "race_top10": return raceTop10.includes(driverId);
+        case "fastest_lap": return fastestLapDriver === driverId;
+        case "first_corner": return firstCornerLeader === driverId;
+        case "dnf_select": return dnfDrivers.includes(driverId);
+        default: return false;
+      }
     }
   };
 
-  const getDriverPosition = (driverId) => {
-    if (selectionMode === "quali_top10") return qualiTop10.indexOf(driverId) + 1 || null;
-    if (selectionMode === "sprint_quali_top10") return sprintQualiTop10.indexOf(driverId) + 1 || null;
-    if (selectionMode === "sprint_race_top10") return sprintRaceTop10.indexOf(driverId) + 1 || null;
-    if (selectionMode === "race_top10") return raceTop10.indexOf(driverId) + 1 || null;
-    return null;
-  };
+  // Check completion
+  const isSprintComplete = sprintQualiPole && sprintQualiTop10.length === 10 && sprintRaceWinner && sprintRaceTop10.length === 10;
+  const isMainComplete = qualiPole && qualiTop10.length === 10 && raceWinner && raceTop10.length === 10;
 
-  // Check if all required predictions are complete
-  const isSprintComplete = !race?.is_sprint_weekend || (
-    sprintQualiPole && 
-    sprintQualiTop10.length === 10 && 
-    sprintRaceWinner && 
-    sprintRaceTop10.length === 10
-  );
-  const isComplete = qualiPole && qualiTop10.length === 10 && raceWinner && raceTop10.length === 10 && isSprintComplete;
-
-  const handleSubmit = async () => {
-    if (!isComplete) {
-      toast.error("Complete tous les pronostics obligatoires");
+  const handleSaveSprint = async () => {
+    if (!isSprintComplete) {
+      toast.error("Complete tous les pronostics sprint");
       return;
     }
 
     setSaving(true);
     try {
-      const payload = {
-        race_id: race.id,
+      await apiClient.post("/predictions/sprint", {
+        race_id: raceId,
+        sprint_quali_pole: sprintQualiPole,
+        sprint_quali_top10: sprintQualiTop10,
+        sprint_race_winner: sprintRaceWinner,
+        sprint_race_top10: sprintRaceTop10,
+        sprint_bonus_bets: {
+          safety_car: sprintSafetyCar,
+          dnf_drivers: sprintDnfDrivers,
+          fastest_lap_driver: sprintFastestLap,
+          first_corner_leader: sprintFirstCorner
+        }
+      });
+      toast.success("Pronostics Sprint enregistrés !");
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Erreur lors de l'enregistrement");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveMain = async () => {
+    if (!isMainComplete) {
+      toast.error("Complete tous les pronostics course");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await apiClient.post("/predictions/main", {
+        race_id: raceId,
         quali_pole: qualiPole,
         quali_top10: qualiTop10,
         race_winner: raceWinner,
@@ -258,66 +309,42 @@ export default function PredictionsPage() {
           fastest_lap_driver: fastestLapDriver,
           first_corner_leader: firstCornerLeader
         }
-      };
-
-      // Add sprint predictions if it's a sprint weekend
-      if (race.is_sprint_weekend) {
-        payload.sprint_quali_pole = sprintQualiPole;
-        payload.sprint_quali_top10 = sprintQualiTop10;
-        payload.sprint_race_winner = sprintRaceWinner;
-        payload.sprint_race_top10 = sprintRaceTop10;
-      }
-
-      await apiClient.post("/predictions", payload);
-      toast.success("Pronostics enregistrés !");
-      navigate("/");
-    } catch (error) {
-      const message = error.response?.data?.detail || "Erreur lors de l'enregistrement";
-      toast.error(message);
+      });
+      toast.success("Pronostics Course enregistrés !");
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Erreur lors de l'enregistrement");
     } finally {
       setSaving(false);
     }
   };
 
-  const isPredictionOpen = race?.status === "upcoming";
+  // Selection steps for each tab
+  const getSprintSteps = () => [
+    { key: "sprint_quali_pole", label: "Pole", sublabel: "Sprint Q", icon: Flag, done: !!sprintQualiPole, count: sprintQualiPole ? 1 : 0, max: 1 },
+    { key: "sprint_quali_top10", label: "Top 10", sublabel: "Sprint Q", icon: Medal, done: sprintQualiTop10.length === 10, count: sprintQualiTop10.length, max: 10 },
+    { key: "sprint_race_winner", label: "Winner", sublabel: "Sprint", icon: Trophy, done: !!sprintRaceWinner, count: sprintRaceWinner ? 1 : 0, max: 1 },
+    { key: "sprint_race_top10", label: "Top 10", sublabel: "Sprint", icon: Medal, done: sprintRaceTop10.length === 10, count: sprintRaceTop10.length, max: 10 },
+    { key: "sprint_bonus", label: "Bonus", sublabel: "Sprint", icon: Zap, done: true, count: 0, max: 0, isBonus: true }
+  ];
 
-  // Define all selection steps
-  const getSelectionSteps = () => {
-    const steps = [];
+  const getMainSteps = () => [
+    { key: "quali_pole", label: "Pole", sublabel: "Qualif", icon: Flag, done: !!qualiPole, count: qualiPole ? 1 : 0, max: 1 },
+    { key: "quali_top10", label: "Top 10", sublabel: "Qualif", icon: Medal, done: qualiTop10.length === 10, count: qualiTop10.length, max: 10 },
+    { key: "race_winner", label: "Winner", sublabel: "Course", icon: Trophy, done: !!raceWinner, count: raceWinner ? 1 : 0, max: 1 },
+    { key: "race_top10", label: "Top 10", sublabel: "Course", icon: Medal, done: raceTop10.length === 10, count: raceTop10.length, max: 10 },
+    { key: "bonus", label: "Bonus", sublabel: "Paris", icon: Zap, done: true, count: 0, max: 0, isBonus: true }
+  ];
 
-    // Add sprint steps FIRST if it's a sprint weekend (Sprint happens before main quali/race)
-    if (race?.is_sprint_weekend) {
-      steps.push(
-        { key: "sprint_quali_pole", label: "Pole", sublabel: "Sprint Qualif", icon: Flag, done: !!sprintQualiPole, count: sprintQualiPole ? 1 : 0, max: 1, isSprint: true },
-        { key: "sprint_quali_top10", label: "Top 10", sublabel: "Sprint Qualif", icon: Medal, done: sprintQualiTop10.length === 10, count: sprintQualiTop10.length, max: 10, isSprint: true },
-        { key: "sprint_race_winner", label: "Winner", sublabel: "Sprint Course", icon: Trophy, done: !!sprintRaceWinner, count: sprintRaceWinner ? 1 : 0, max: 1, isSprint: true },
-        { key: "sprint_race_top10", label: "Top 10", sublabel: "Sprint Course", icon: Medal, done: sprintRaceTop10.length === 10, count: sprintRaceTop10.length, max: 10, isSprint: true }
-      );
-    }
-
-    // Main qualifying and race
-    steps.push(
-      { key: "quali_pole", label: "Pole", sublabel: "Qualif", icon: Flag, done: !!qualiPole, count: qualiPole ? 1 : 0, max: 1 },
-      { key: "quali_top10", label: "Top 10", sublabel: "Qualif", icon: Medal, done: qualiTop10.length === 10, count: qualiTop10.length, max: 10 },
-      { key: "race_winner", label: "Winner", sublabel: "Course", icon: Trophy, done: !!raceWinner, count: raceWinner ? 1 : 0, max: 1 },
-      { key: "race_top10", label: "Top 10", sublabel: "Course", icon: Medal, done: raceTop10.length === 10, count: raceTop10.length, max: 10 },
-      { key: "bonus", label: "Bonus", sublabel: "Paris", icon: Zap, done: true, count: 0, max: 0, isBonus: true }
-    );
-
-    return steps;
-  };
-
-  const selectionSteps = getSelectionSteps();
+  const showBonus = activeTab === "sprint" ? selectionMode === "sprint_bonus" : selectionMode === "bonus";
+  const steps = activeTab === "sprint" ? getSprintSteps() : getMainSteps();
 
   if (loading) {
     return (
       <div className="min-h-screen bg-app-main p-4 pt-6">
         <div className="max-w-2xl mx-auto space-y-4">
-          <div className="h-8 w-48 skeleton-arcade rounded" />
-          <div className="h-32 skeleton-arcade rounded-md" />
-          <div className="grid grid-cols-2 gap-3">
-            {[...Array(10)].map((_, i) => <div key={i} className="h-20 skeleton-arcade rounded-md" />)}
-          </div>
+          <div className="h-8 skeleton-arcade rounded w-48" />
+          <div className="h-32 skeleton-arcade rounded-xl" />
+          <div className="h-64 skeleton-arcade rounded-xl" />
         </div>
       </div>
     );
@@ -325,292 +352,291 @@ export default function PredictionsPage() {
 
   if (!race) {
     return (
-      <div className="min-h-screen bg-app-main flex items-center justify-center p-4">
-        <div className="card-arcade max-w-sm w-full p-6 text-center">
-          <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-          <p className="font-body text-gray-300">Aucune course disponible</p>
-          <Button onClick={() => navigate("/")} className="mt-4 btn-racing">Retour</Button>
+      <div className="min-h-screen bg-app-main p-4 pt-6">
+        <div className="max-w-2xl mx-auto card-arcade p-6 text-center">
+          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
+          <p className="text-white">Course non trouvée</p>
         </div>
       </div>
     );
   }
 
-  const showBonus = selectionMode === "bonus" || selectionMode === "fastest_lap" || selectionMode === "first_corner" || selectionMode === "dnf_select";
-  const showDriverGrid = !["bonus"].includes(selectionMode);
+  const canPredictSprint = race.can_predict_sprint;
+  const canPredictMain = race.can_predict;
 
   return (
-    <div className="min-h-screen bg-app-main" data-testid="predictions-page">
+    <div className="min-h-screen bg-app-main pb-32" data-testid="predictions-page">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-[#050a14]/95 backdrop-blur-md border-b border-red-500/30">
-        <div className="max-w-2xl mx-auto p-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-400 hover:text-white hover:bg-white/10" data-testid="back-btn">
-              <ChevronLeft className="w-6 h-6" />
-            </Button>
-            <div className="flex-1">
-              <h1 className="font-heading text-xl uppercase tracking-tight text-white">
-                {race.name.replace(" Grand Prix", "")}
-              </h1>
-              <div className="flex items-center gap-2">
-                {isPredictionOpen && (
-                  <p className="font-body text-xs text-gray-400 flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-cyan-500" />
-                    Clôture: {new Date(race.predictions_close_at).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                )}
-                {race.is_sprint_weekend && (
-                  <span className="px-2 py-0.5 bg-yellow-500/20 border border-yellow-500/50 rounded text-yellow-400 text-xs font-heading uppercase">
-                    Sprint Weekend
-                  </span>
-                )}
-              </div>
-            </div>
+      <div className="bg-gradient-to-b from-[#0a1628] to-transparent p-4">
+        <div className="max-w-2xl mx-auto flex items-center gap-3">
+          <button onClick={() => navigate(-1)} className="p-2 text-cyan-400" data-testid="back-btn">
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <div>
+            <p className="font-body text-xs text-cyan-400 uppercase tracking-widest">Pronostics</p>
+            <h1 className="font-heading text-xl text-white uppercase">{race.name.replace(" Grand Prix", "")}</h1>
           </div>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto p-4 pb-32">
-        {/* Predictions closed warning */}
-        {!isPredictionOpen && (
-          <Card className="bg-yellow-500/10 border-yellow-500/30 mb-4">
-            <CardContent className="p-4 flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0" />
-              <p className="font-body text-yellow-500 text-sm">Les pronostics sont fermés</p>
-            </CardContent>
-          </Card>
+      <div className="max-w-2xl mx-auto px-4 space-y-4">
+        {/* Tabs for Sprint weekends */}
+        {race.is_sprint_weekend && (
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <button
+              onClick={() => setActiveTab("sprint")}
+              disabled={!canPredictSprint}
+              className={`p-3 rounded-xl font-heading text-sm uppercase transition-all ${
+                activeTab === "sprint"
+                  ? 'bg-yellow-500/20 border-2 border-yellow-500 text-yellow-400'
+                  : canPredictSprint 
+                    ? 'bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10'
+                    : 'bg-gray-800/50 border-2 border-gray-800 text-gray-600 cursor-not-allowed'
+              }`}
+              data-testid="tab-sprint"
+            >
+              <Zap className="w-5 h-5 mx-auto mb-1" />
+              Sprint
+              {!canPredictSprint && <span className="block text-[10px] text-red-400">Fermé</span>}
+              {isSprintComplete && canPredictSprint && <Check className="w-4 h-4 mx-auto mt-1 text-green-400" />}
+            </button>
+            <button
+              onClick={() => setActiveTab("main")}
+              disabled={!canPredictMain}
+              className={`p-3 rounded-xl font-heading text-sm uppercase transition-all ${
+                activeTab === "main"
+                  ? 'bg-cyan-500/20 border-2 border-cyan-500 text-cyan-400'
+                  : canPredictMain
+                    ? 'bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10'
+                    : 'bg-gray-800/50 border-2 border-gray-800 text-gray-600 cursor-not-allowed'
+              }`}
+              data-testid="tab-main"
+            >
+              <Flag className="w-5 h-5 mx-auto mb-1" />
+              Course
+              {!canPredictMain && <span className="block text-[10px] text-red-400">Fermé</span>}
+              {isMainComplete && canPredictMain && <Check className="w-4 h-4 mx-auto mt-1 text-green-400" />}
+            </button>
+          </div>
         )}
 
-        {/* Selection Steps */}
-        <div className="flex gap-1 mb-6 overflow-x-auto no-scrollbar">
-          {selectionSteps.map((step) => {
-            const Icon = step.icon;
-            const isActive = selectionMode === step.key || (step.key === "bonus" && ["bonus", "fastest_lap", "first_corner", "dnf_select"].includes(selectionMode));
-            
-            return (
-              <button
-                key={step.key}
-                onClick={() => isPredictionOpen && setSelectionMode(step.key)}
-                disabled={!isPredictionOpen}
-                className={`flex-1 min-w-[60px] p-2 rounded-lg border-2 transition-all ${
-                  isActive 
-                    ? step.isBonus 
-                      ? 'border-yellow-500 bg-yellow-500/20 glow-yellow' 
-                      : step.isSprint
-                        ? 'border-purple-500 bg-purple-500/20 glow-purple'
-                        : 'border-orange-500 bg-orange-500/20 glow-orange' 
-                    : step.done 
-                      ? 'border-green-500/50 bg-green-500/10' 
-                      : 'border-gray-700 bg-gray-900/50'
-                }`}
-                data-testid={`step-${step.key}`}
-              >
-                <Icon className={`w-4 h-4 mx-auto mb-1 ${
-                  isActive ? step.isBonus ? 'text-yellow-500' : step.isSprint ? 'text-purple-500' : 'text-orange-500' : step.done ? 'text-green-500' : 'text-gray-500'
-                }`} />
-                <p className={`font-heading text-[8px] uppercase tracking-wide ${isActive ? 'text-white' : 'text-gray-400'}`}>
-                  {step.label}
-                </p>
-                {!step.isBonus && (
-                  <p className="font-data text-[9px] text-gray-500">{step.count}/{step.max}</p>
-                )}
-              </button>
-            );
-          })}
+        {/* Deadline info */}
+        <div className={`p-3 rounded-xl ${
+          activeTab === "sprint" ? 'bg-yellow-500/10 border border-yellow-500/30' : 'bg-cyan-500/10 border border-cyan-500/30'
+        }`}>
+          <div className="flex items-center gap-2">
+            <Clock className={`w-4 h-4 ${activeTab === "sprint" ? 'text-yellow-400' : 'text-cyan-400'}`} />
+            <span className="font-body text-sm text-gray-300">
+              {activeTab === "sprint" 
+                ? "Clôture 15 min avant SQ1"
+                : "Clôture 15 min avant Q1"
+              }
+            </span>
+          </div>
         </div>
 
-        {/* Bonus Bets Section */}
-        {selectionMode === "bonus" && (
-          <div className="space-y-4 mb-6">
-            <h3 className="font-heading text-lg uppercase tracking-tight text-yellow-500 flex items-center gap-2">
-              <Zap className="w-5 h-5" />
-              Paris Bonus (+points)
-            </h3>
-            
-            <div className="grid grid-cols-2 gap-3">
-              {/* Safety Car */}
-              <button
-                onClick={() => isPredictionOpen && setSafetyCar(!safetyCar)}
-                disabled={!isPredictionOpen}
-                className={`bonus-bet-card p-4 rounded-lg text-left transition-all ${safetyCar ? 'selected' : ''}`}
-                data-testid="safety-car-toggle"
-              >
-                <AlertTriangle className={`w-6 h-6 mb-2 ${safetyCar ? 'text-yellow-500' : 'text-gray-500'}`} />
-                <p className="font-heading text-sm uppercase text-white">Safety Car</p>
-                <p className="font-body text-xs text-gray-400">Y aura-t-il un SC ?</p>
-                <p className="font-data text-xs text-yellow-500 mt-1">+3 pts si correct</p>
-              </button>
-
-              {/* DNF Drivers */}
-              <button
-                onClick={() => isPredictionOpen && setSelectionMode("dnf_select")}
-                disabled={!isPredictionOpen}
-                className={`bonus-bet-card p-4 rounded-lg text-left transition-all ${dnfDrivers.length > 0 ? 'selected' : ''}`}
-                data-testid="dnf-select-btn"
-              >
-                <Users className={`w-6 h-6 mb-2 ${dnfDrivers.length > 0 ? 'text-yellow-500' : 'text-gray-500'}`} />
-                <p className="font-heading text-sm uppercase text-white">DNF Pilotes</p>
-                <p className="font-body text-xs text-gray-400">{dnfDrivers.length > 0 ? `${dnfDrivers.length} sélectionné(s)` : 'Qui abandonnera ?'}</p>
-                <p className="font-data text-xs text-yellow-500 mt-1">+2 pts par pilote correct</p>
-              </button>
-            </div>
-
-            {/* Fastest Lap */}
-            <div className="bonus-bet-card p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Timer className="w-5 h-5 text-purple-500" />
-                  <div>
-                    <p className="font-heading text-sm uppercase text-white">Meilleur Tour</p>
-                    <p className="font-body text-xs text-gray-400">Qui fera le fastest lap ?</p>
-                  </div>
-                </div>
-                <p className="font-data text-xs text-yellow-500">+5 pts si correct</p>
-              </div>
-              <Button
-                onClick={() => isPredictionOpen && setSelectionMode("fastest_lap")}
-                disabled={!isPredictionOpen}
-                className={`w-full ${fastestLapDriver ? 'btn-gaming' : 'btn-gaming-blue'}`}
-                data-testid="fastest-lap-btn"
-              >
-                {fastestLapDriver ? `${drivers.find(d => d.id === fastestLapDriver)?.name}` : "Choisir un pilote"}
-              </Button>
-            </div>
-
-            {/* First Corner Leader - NEW */}
-            <div className="bonus-bet-card p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Target className="w-5 h-5 text-cyan-500" />
-                  <div>
-                    <p className="font-heading text-sm uppercase text-white">Leader 1er Virage</p>
-                    <p className="font-body text-xs text-gray-400">Qui sera en tête au T1 ?</p>
-                  </div>
-                </div>
-                <p className="font-data text-xs text-yellow-500">+3 pts si correct</p>
-              </div>
-              <Button
-                onClick={() => isPredictionOpen && setSelectionMode("first_corner")}
-                disabled={!isPredictionOpen}
-                className={`w-full ${firstCornerLeader ? 'btn-gaming' : 'btn-gaming-blue'}`}
-                data-testid="first-corner-btn"
-              >
-                {firstCornerLeader ? `${drivers.find(d => d.id === firstCornerLeader)?.name}` : "Choisir un pilote"}
-              </Button>
-            </div>
+        {/* Step Navigation */}
+        <div className="overflow-x-auto pb-2 -mx-4 px-4">
+          <div className="flex gap-2 min-w-max">
+            {steps.map((step) => {
+              const Icon = step.icon;
+              const isActive = selectionMode === step.key || (step.isBonus && showBonus);
+              return (
+                <button
+                  key={step.key}
+                  onClick={() => !step.isBonus && setSelectionMode(step.key)}
+                  className={`flex flex-col items-center p-2 rounded-xl min-w-[70px] transition-all ${
+                    isActive 
+                      ? (activeTab === "sprint" ? 'bg-yellow-500/20 border-2 border-yellow-500' : 'bg-blue-500/20 border-2 border-blue-500')
+                      : step.done 
+                        ? 'bg-green-500/10 border-2 border-green-500/50' 
+                        : 'bg-white/5 border-2 border-gray-700'
+                  }`}
+                  data-testid={`step-${step.key}`}
+                >
+                  <Icon className={`w-5 h-5 mb-1 ${
+                    isActive ? (activeTab === "sprint" ? 'text-yellow-400' : 'text-blue-400') : step.done ? 'text-green-400' : 'text-gray-500'
+                  }`} />
+                  <span className={`font-heading text-[10px] ${
+                    isActive ? 'text-white' : step.done ? 'text-green-400' : 'text-gray-500'
+                  }`}>{step.label}</span>
+                  <span className="font-body text-[8px] text-gray-500">{step.sublabel}</span>
+                  {!step.isBonus && (
+                    <span className={`font-data text-xs mt-1 ${step.done ? 'text-green-400' : 'text-gray-400'}`}>
+                      {step.count}/{step.max}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
-        )}
+        </div>
 
-        {/* DNF Selection Mode */}
-        {selectionMode === "dnf_select" && (
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="font-heading text-lg uppercase tracking-tight text-yellow-500 flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  Pilotes DNF
+        {/* Selection Info */}
+        <Card className="game-card">
+          <CardContent className="p-4">
+            <p className="font-body text-gray-300 text-sm">
+              {activeTab === "sprint" ? (
+                <>
+                  {selectionMode === "sprint_quali_pole" && "Sélectionne le pilote en pole des qualifs sprint"}
+                  {selectionMode === "sprint_quali_top10" && `Sélectionne le Top 10 des qualifs sprint (${sprintQualiTop10.length}/10)`}
+                  {selectionMode === "sprint_race_winner" && "Sélectionne le vainqueur de la course sprint"}
+                  {selectionMode === "sprint_race_top10" && `Sélectionne le Top 10 de la course sprint (${sprintRaceTop10.length}/10)`}
+                  {selectionMode === "sprint_bonus" && "Configure tes paris bonus sprint"}
+                  {selectionMode === "sprint_fastest_lap" && "Sélectionne le pilote qui fera le meilleur tour sprint"}
+                  {selectionMode === "sprint_first_corner" && "Sélectionne le leader au premier virage du sprint"}
+                  {selectionMode === "sprint_dnf_select" && `Sélectionne les abandons sprint (${sprintDnfDrivers.length}/5)`}
+                </>
+              ) : (
+                <>
+                  {selectionMode === "quali_pole" && "Sélectionne le pilote en pole position"}
+                  {selectionMode === "quali_top10" && `Sélectionne le Top 10 des qualifications (${qualiTop10.length}/10)`}
+                  {selectionMode === "race_winner" && "Sélectionne le vainqueur de la course"}
+                  {selectionMode === "race_top10" && `Sélectionne le Top 10 de la course (${raceTop10.length}/10)`}
+                  {selectionMode === "bonus" && "Configure tes paris bonus"}
+                  {selectionMode === "fastest_lap" && "Sélectionne le pilote qui fera le meilleur tour"}
+                  {selectionMode === "first_corner" && "Sélectionne le leader au premier virage"}
+                  {selectionMode === "dnf_select" && `Sélectionne les abandons (${dnfDrivers.length}/5)`}
+                </>
+              )}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Bonus Section */}
+        {showBonus ? (
+          <div className="space-y-4">
+            <Card className="game-card">
+              <CardContent className="p-4 space-y-4">
+                <h3 className="font-heading text-lg text-white uppercase flex items-center gap-2">
+                  <Zap className={activeTab === "sprint" ? "text-yellow-400" : "text-cyan-400"} />
+                  Paris Bonus {activeTab === "sprint" ? "Sprint" : ""}
                 </h3>
-                <p className="font-body text-xs text-gray-400">Sélectionne jusqu'à 5 pilotes qui abandonneront</p>
-              </div>
-              <Button
-                onClick={() => setSelectionMode("bonus")}
-                variant="outline"
-                size="sm"
-                className="border-gray-600"
-              >
-                Retour
-              </Button>
-            </div>
-            
-            {/* Selected DNF drivers */}
-            {dnfDrivers.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-4">
-                {dnfDrivers.map(driverId => {
-                  const driver = drivers.find(d => d.id === driverId);
-                  return (
-                    <div 
-                      key={driverId}
-                      className="flex items-center gap-2 px-3 py-1 bg-red-500/20 border border-red-500/50 rounded-full"
-                    >
-                      <span className="font-body text-sm text-red-400">{driver?.name}</span>
-                      <button onClick={() => setDnfDrivers(dnfDrivers.filter(d => d !== driverId))}>
-                        <X className="w-4 h-4 text-red-400 hover:text-red-300" />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                
+                {/* Safety Car */}
+                <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 text-orange-400" />
+                    <span className="font-body text-white">Safety Car</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => activeTab === "sprint" ? setSprintSafetyCar(true) : setSafetyCar(true)}
+                      className={`px-4 py-2 rounded-lg font-heading text-sm transition-all ${
+                        (activeTab === "sprint" ? sprintSafetyCar : safetyCar) 
+                          ? 'bg-green-500 text-white' : 'bg-white/10 text-gray-400'
+                      }`}
+                    >OUI</button>
+                    <button
+                      onClick={() => activeTab === "sprint" ? setSprintSafetyCar(false) : setSafetyCar(false)}
+                      className={`px-4 py-2 rounded-lg font-heading text-sm transition-all ${
+                        !(activeTab === "sprint" ? sprintSafetyCar : safetyCar)
+                          ? 'bg-red-500 text-white' : 'bg-white/10 text-gray-400'
+                      }`}
+                    >NON</button>
+                  </div>
+                </div>
+
+                {/* Fastest Lap */}
+                <button
+                  onClick={() => setSelectionMode(activeTab === "sprint" ? "sprint_fastest_lap" : "fastest_lap")}
+                  className="w-full flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <Timer className="w-5 h-5 text-purple-400" />
+                    <span className="font-body text-white">Meilleur tour</span>
+                  </div>
+                  <span className="font-body text-sm text-cyan-400">
+                    {(activeTab === "sprint" ? sprintFastestLap : fastestLapDriver) 
+                      ? drivers.find(d => d.id === (activeTab === "sprint" ? sprintFastestLap : fastestLapDriver))?.name || "Sélectionné"
+                      : "Sélectionner →"}
+                  </span>
+                </button>
+
+                {/* First Corner Leader */}
+                <button
+                  onClick={() => setSelectionMode(activeTab === "sprint" ? "sprint_first_corner" : "first_corner")}
+                  className="w-full flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <Flag className="w-5 h-5 text-green-400" />
+                    <span className="font-body text-white">Leader T1</span>
+                  </div>
+                  <span className="font-body text-sm text-cyan-400">
+                    {(activeTab === "sprint" ? sprintFirstCorner : firstCornerLeader)
+                      ? drivers.find(d => d.id === (activeTab === "sprint" ? sprintFirstCorner : firstCornerLeader))?.name || "Sélectionné"
+                      : "Sélectionner →"}
+                  </span>
+                </button>
+
+                {/* DNF */}
+                <button
+                  onClick={() => setSelectionMode(activeTab === "sprint" ? "sprint_dnf_select" : "dnf_select")}
+                  className="w-full flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <X className="w-5 h-5 text-red-400" />
+                    <span className="font-body text-white">Abandons</span>
+                  </div>
+                  <span className="font-body text-sm text-cyan-400">
+                    {(activeTab === "sprint" ? sprintDnfDrivers : dnfDrivers).length}/5 sélectionnés →
+                  </span>
+                </button>
+              </CardContent>
+            </Card>
           </div>
-        )}
-
-        {/* Current Selection Info */}
-        {!showBonus && (
-          <Card className="game-card mb-4">
-            <CardContent className="p-4">
-              <p className="font-heading text-sm uppercase tracking-wide text-cyan-400 mb-1">
-                {selectionSteps.find(s => s.key === selectionMode)?.sublabel}
-              </p>
-              <p className="font-body text-gray-300">
-                {selectionMode === "quali_pole" && "Sélectionne le pilote en pole position"}
-                {selectionMode === "quali_top10" && `Sélectionne le Top 10 des qualifications (${qualiTop10.length}/10)`}
-                {selectionMode === "sprint_quali_top10" && `Sélectionne le Top 10 des qualifs sprint (${sprintQualiTop10.length}/10)`}
-                {selectionMode === "sprint_race_top10" && `Sélectionne le Top 10 de la course sprint (${sprintRaceTop10.length}/10)`}
-                {selectionMode === "race_winner" && "Sélectionne le vainqueur de la course"}
-                {selectionMode === "race_top10" && `Sélectionne le Top 10 de la course (${raceTop10.length}/10)`}
-                {selectionMode === "fastest_lap" && "Sélectionne le pilote qui fera le meilleur tour"}
-                {selectionMode === "first_corner" && "Sélectionne le leader au premier virage"}
-                {selectionMode === "dnf_select" && `Sélectionne les pilotes qui abandonneront (${dnfDrivers.length}/5)`}
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Drivers Grid */}
-        {showDriverGrid && (
-          <div className="grid grid-cols-2 gap-3">
+        ) : (
+          /* Driver Grid */
+          <div className="grid grid-cols-2 gap-2">
             {drivers.map((driver) => {
               const selected = isDriverSelected(driver.id);
-              const position = getDriverPosition(driver.id);
-              const teamColor = TEAM_COLORS[driver.team] || "#666";
+              const teamColor = TEAM_COLORS[driver.team] || "#6B7280";
+              
+              // Get position in current selection
+              let position = null;
+              if (activeTab === "sprint") {
+                if (selectionMode === "sprint_quali_top10") {
+                  const idx = sprintQualiTop10.indexOf(driver.id);
+                  if (idx >= 0) position = idx + 1;
+                } else if (selectionMode === "sprint_race_top10") {
+                  const idx = sprintRaceTop10.indexOf(driver.id);
+                  if (idx >= 0) position = idx + 1;
+                }
+              } else {
+                if (selectionMode === "quali_top10") {
+                  const idx = qualiTop10.indexOf(driver.id);
+                  if (idx >= 0) position = idx + 1;
+                } else if (selectionMode === "race_top10") {
+                  const idx = raceTop10.indexOf(driver.id);
+                  if (idx >= 0) position = idx + 1;
+                }
+              }
 
               return (
                 <button
                   key={driver.id}
-                  onClick={() => isPredictionOpen && handleDriverSelect(driver.id)}
-                  disabled={!isPredictionOpen}
-                  className={`driver-card-gaming relative p-4 rounded-lg border-l-4 transition-all text-left ${selected ? 'selected' : ''}`}
-                  style={{ borderLeftColor: teamColor }}
+                  onClick={() => handleDriverSelect(driver.id)}
+                  className={`relative p-3 rounded-xl border-2 transition-all ${
+                    selected 
+                      ? 'border-cyan-400 bg-cyan-500/20' 
+                      : 'border-gray-700 bg-white/5 hover:bg-white/10'
+                  }`}
+                  style={{ borderLeftColor: teamColor, borderLeftWidth: '4px' }}
                   data-testid={`driver-${driver.id}`}
                 >
                   {position && (
-                    <div className={`absolute top-2 right-2 w-7 h-7 rounded flex items-center justify-center border ${
-                      position <= 3 
-                        ? position === 1 ? 'position-1-gaming' : position === 2 ? 'position-2-gaming' : 'position-3-gaming'
-                        : 'bg-gradient-to-b from-orange-500 to-orange-700 border-orange-400'
-                    }`}>
-                      <span className={`font-heading text-sm ${position <= 3 && position !== 3 ? 'text-black' : 'text-white'}`}>{position}</span>
+                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                      {position}
                     </div>
                   )}
-                  {selected && !position && (
-                    <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-gradient-to-b from-green-500 to-green-700 flex items-center justify-center">
-                      <Check className="w-4 h-4 text-white" />
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-11 h-11 rounded-lg flex items-center justify-center font-heading text-lg border-2"
-                      style={{ backgroundColor: teamColor + '30', borderColor: teamColor, color: teamColor }}
-                    >
-                      {driver.number}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-heading text-sm uppercase tracking-tight text-white truncate">
-                        {driver.name}
-                      </p>
-                      <p className="font-body text-xs text-gray-500 truncate">{driver.team}</p>
+                  <div className="flex items-center gap-2">
+                    <span className="font-data text-lg text-gray-500">{driver.number}</span>
+                    <div className="text-left">
+                      <p className="font-body text-sm text-white">{driver.name}</p>
+                      <p className="font-body text-xs text-gray-500">{driver.team}</p>
                     </div>
                   </div>
+                  {selected && <Check className="absolute top-2 right-2 w-4 h-4 text-cyan-400" />}
                 </button>
               );
             })}
@@ -618,24 +644,32 @@ export default function PredictionsPage() {
         )}
       </div>
 
-      {/* Submit Button */}
-      {isPredictionOpen && (
-        <div className="fixed bottom-20 left-0 right-0 p-4 bg-gradient-to-t from-gray-900 via-gray-900/95 to-transparent">
-          <div className="max-w-2xl mx-auto">
-            <Button
-              onClick={handleSubmit}
-              disabled={!isComplete || saving}
-              className={`w-full h-14 font-heading uppercase tracking-wider transition-all ${
-                isComplete ? 'btn-gaming' : 'bg-gray-800 text-gray-500 border-2 border-gray-700'
-              }`}
-              data-testid="submit-predictions-btn"
-            >
-              <Check className="w-5 h-5 mr-2" />
-              {saving ? "Enregistrement..." : existingPrediction ? "Mettre à jour" : "Valider mes pronos"}
-            </Button>
-          </div>
+      {/* Save Button */}
+      <div className="fixed bottom-16 left-0 right-0 bg-gradient-to-t from-[#050a14] to-transparent pt-8 pb-4 px-4">
+        <div className="max-w-2xl mx-auto">
+          <Button
+            onClick={activeTab === "sprint" ? handleSaveSprint : handleSaveMain}
+            disabled={saving || (activeTab === "sprint" ? !isSprintComplete : !isMainComplete) || (activeTab === "sprint" ? !canPredictSprint : !canPredictMain)}
+            className={`w-full h-14 font-heading text-lg ${
+              activeTab === "sprint" ? 'btn-gold' : 'btn-racing'
+            }`}
+            data-testid="save-predictions-btn"
+          >
+            {saving ? (
+              "Enregistrement..."
+            ) : (activeTab === "sprint" ? !canPredictSprint : !canPredictMain) ? (
+              "Pronostics fermés"
+            ) : (activeTab === "sprint" ? isSprintComplete : isMainComplete) ? (
+              <>
+                <Check className="w-5 h-5 mr-2" />
+                Enregistrer {activeTab === "sprint" ? "Sprint" : "Course"}
+              </>
+            ) : (
+              "Complète tous les pronostics"
+            )}
+          </Button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

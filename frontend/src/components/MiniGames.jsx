@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Zap, Trophy, Timer, RotateCcw, Play } from "lucide-react";
+import { Zap, Trophy, Timer, RotateCcw, Play, Target } from "lucide-react";
 
 // F1 Lights Out Reaction Game
 export function ReactionGame({ onSubmit, attemptsRemaining, isTraining = false }) {

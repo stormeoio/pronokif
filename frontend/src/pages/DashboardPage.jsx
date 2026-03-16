@@ -34,6 +34,7 @@ export default function DashboardPage() {
   const [myPrediction, setMyPrediction] = useState(null);
   const [predictions, setPredictions] = useState({});
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [sprintCountdown, setSprintCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [avatars, setAvatars] = useState({});
   const sliderRef = useRef(null);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -91,17 +92,33 @@ export default function DashboardPage() {
     if (!currentRace?.predictions_close_at) return;
     
     const updateCountdown = () => {
-      const diff = new Date(currentRace.predictions_close_at) - new Date();
-      if (diff <= 0) {
+      // Main race countdown (15 min before Q1)
+      const mainDiff = new Date(currentRace.predictions_close_at) - new Date();
+      if (mainDiff <= 0) {
         setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        return;
+      } else {
+        setCountdown({
+          days: Math.floor(mainDiff / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((mainDiff / (1000 * 60 * 60)) % 24),
+          minutes: Math.floor((mainDiff / (1000 * 60)) % 60),
+          seconds: Math.floor((mainDiff / 1000) % 60)
+        });
       }
-      setCountdown({
-        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-        minutes: Math.floor((diff / (1000 * 60)) % 60),
-        seconds: Math.floor((diff / 1000) % 60)
-      });
+
+      // Sprint countdown (15 min before SQ1) - only for sprint weekends
+      if (currentRace.is_sprint_weekend && currentRace.sprint_predictions_close_at) {
+        const sprintDiff = new Date(currentRace.sprint_predictions_close_at) - new Date();
+        if (sprintDiff <= 0) {
+          setSprintCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        } else {
+          setSprintCountdown({
+            days: Math.floor(sprintDiff / (1000 * 60 * 60 * 24)),
+            hours: Math.floor((sprintDiff / (1000 * 60 * 60)) % 24),
+            minutes: Math.floor((sprintDiff / (1000 * 60)) % 60),
+            seconds: Math.floor((sprintDiff / 1000) % 60)
+          });
+        }
+      }
     };
 
     updateCountdown();
@@ -275,20 +292,25 @@ export default function DashboardPage() {
               {/* Dark overlay for better text contrast */}
               <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-[#0c1525] group-hover:from-black/40 transition-all" />
               
-              {/* Info icon overlay */}
-              <div className="absolute top-3 left-3 bg-white/10 backdrop-blur-sm rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Info className="w-4 h-4 text-white" />
-              </div>
+              {/* Info/Horaires link - positioned on the right */}
+              <button 
+                onClick={(e) => { e.stopPropagation(); navigate(`/race/${currentRace.id}`); }}
+                className="absolute top-3 right-3 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1 text-white text-xs font-body hover:bg-white/20 transition-all z-10"
+                data-testid="view-details-btn"
+              >
+                <Info className="w-3 h-3" />
+                Infos / Horaires
+              </button>
               
               {/* Sprint badge */}
               {currentRace.is_sprint_weekend && (
-                <div className="absolute top-3 right-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-yellow-900 font-heading text-xs px-4 py-1 rounded-full shadow-lg animate-gold">
-                  SPRINT WEEKEND
+                <div className="absolute top-12 right-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-yellow-900 font-heading text-xs px-3 py-1 rounded-full shadow-lg animate-gold">
+                  SPRINT
                 </div>
               )}
               
               {/* Race index badge */}
-              <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-sm text-white font-heading text-xs px-2 py-1 rounded-full group-hover:hidden">
+              <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-sm text-white font-heading text-xs px-2 py-1 rounded-full">
                 {currentRaceIndex + 1}/{upcomingRaces.length}
               </div>
               
@@ -311,38 +333,83 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Countdown Section */}
-            {currentRace.can_predict && (
-              <div className="p-4 border-t border-blue-500/30">
-                <p className="font-body text-xs text-center text-cyan-neon uppercase mb-3 tracking-wider flex items-center justify-center gap-2">
-                  <Clock className="w-4 h-4" /> Clôture des pronos dans
-                </p>
-                <div className="flex justify-center gap-2">
-                  {[
-                    { value: countdown.days, label: "JOURS" },
-                    { value: countdown.hours, label: "HEURES" },
-                    { value: countdown.minutes, label: "MIN" },
-                    { value: countdown.seconds, label: "SEC" }
-                  ].map((item, i) => (
-                    <div key={i} className="countdown-digit w-16 h-16 flex flex-col items-center justify-center">
-                      <span className="text-2xl font-bold">{String(item.value).padStart(2, '0')}</span>
-                      <span className="text-[8px] text-gray-400 tracking-wider">{item.label}</span>
-                    </div>
-                  ))}
+            {/* Countdown Section - Different for Sprint vs Classic */}
+            {currentRace.is_sprint_weekend ? (
+              /* Sprint Weekend - Two countdowns */
+              <div className="p-4 border-t border-blue-500/30 space-y-4">
+                {/* Sprint Countdown */}
+                <div>
+                  <p className="font-body text-xs text-center text-yellow-400 uppercase mb-2 tracking-wider flex items-center justify-center gap-2">
+                    <Zap className="w-4 h-4" /> Course Sprint
+                    <span className="text-gray-500 text-[10px]">(clôture 15 min avant SQ1)</span>
+                  </p>
+                  <div className="flex justify-center gap-2">
+                    {[
+                      { value: sprintCountdown.days, label: "J" },
+                      { value: sprintCountdown.hours, label: "H" },
+                      { value: sprintCountdown.minutes, label: "M" },
+                      { value: sprintCountdown.seconds, label: "S" }
+                    ].map((item, i) => (
+                      <div key={i} className="countdown-digit w-12 h-12 flex flex-col items-center justify-center bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                        <span className="text-lg font-bold text-yellow-400">{String(item.value).padStart(2, '0')}</span>
+                        <span className="text-[8px] text-yellow-600 tracking-wider">{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Main Race Countdown */}
+                <div>
+                  <p className="font-body text-xs text-center text-cyan-400 uppercase mb-2 tracking-wider flex items-center justify-center gap-2">
+                    <Flag className="w-4 h-4" /> Course Principale
+                    <span className="text-gray-500 text-[10px]">(clôture 15 min avant Q1)</span>
+                  </p>
+                  <div className="flex justify-center gap-2">
+                    {[
+                      { value: countdown.days, label: "J" },
+                      { value: countdown.hours, label: "H" },
+                      { value: countdown.minutes, label: "M" },
+                      { value: countdown.seconds, label: "S" }
+                    ].map((item, i) => (
+                      <div key={i} className="countdown-digit w-12 h-12 flex flex-col items-center justify-center">
+                        <span className="text-lg font-bold">{String(item.value).padStart(2, '0')}</span>
+                        <span className="text-[8px] text-gray-400 tracking-wider">{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
+            ) : (
+              /* Classic Weekend - Single countdown */
+              currentRace.can_predict && (
+                <div className="p-4 border-t border-blue-500/30">
+                  <p className="font-body text-xs text-center text-cyan-neon uppercase mb-3 tracking-wider flex items-center justify-center gap-2">
+                    <Clock className="w-4 h-4" /> Clôture 15 min avant Q1
+                  </p>
+                  <div className="flex justify-center gap-2">
+                    {[
+                      { value: countdown.days, label: "JOURS" },
+                      { value: countdown.hours, label: "HEURES" },
+                      { value: countdown.minutes, label: "MIN" },
+                      { value: countdown.seconds, label: "SEC" }
+                    ].map((item, i) => (
+                      <div key={i} className="countdown-digit w-16 h-16 flex flex-col items-center justify-center">
+                        <span className="text-2xl font-bold">{String(item.value).padStart(2, '0')}</span>
+                        <span className="text-[8px] text-gray-400 tracking-wider">{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
             )}
 
-            {!currentRace.can_predict && (
+            {!currentRace.can_predict && !currentRace.is_sprint_weekend && (
               <div className="p-4 border-t border-orange-500/30 bg-orange-500/10">
                 <p className="font-body text-sm text-center text-orange-400">
                   Les pronostics sont fermés pour cette course
                 </p>
               </div>
             )}
-
-            {/* Kerb Stripe Separator */}
-            <div className="h-2 bg-kerb-stripe" />
 
             {/* Prediction Status & CTA */}
             <div className="p-4">
@@ -377,19 +444,6 @@ export default function DashboardPage() {
                   <p className="font-body text-sm text-gray-500">Pronostics fermés</p>
                 </div>
               )}
-            </div>
-
-            {/* View Details Link */}
-            <div className="px-4 pb-4">
-              <button 
-                onClick={() => navigate(`/race/${currentRace.id}`)}
-                className="w-full flex items-center justify-center gap-2 text-cyan-400 hover:text-cyan-300 font-body text-sm py-2 rounded-lg hover:bg-cyan-500/10 transition-all"
-                data-testid="view-details-btn"
-              >
-                <Info className="w-4 h-4" />
-                Voir les détails du circuit
-                <ChevronRight className="w-4 h-4" />
-              </button>
             </div>
           </div>
         )}

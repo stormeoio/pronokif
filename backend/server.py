@@ -46,11 +46,20 @@ OPENF1_API = "https://api.openf1.org/v1"
 
 # Helper function to calculate predictions close time (15 min before FP1)
 def get_predictions_close_time(race: dict) -> datetime:
-    """Calculate when predictions close - 15 minutes before FP1 start"""
-    fp1_date = race.get("fp1_date", race["quali_date"])
-    fp1_time = race.get("fp1_time", "14:00")
-    fp1_datetime = datetime.fromisoformat(f"{fp1_date}T{fp1_time}:00+00:00")
-    return fp1_datetime - timedelta(minutes=15)
+    """Calculate when main race predictions close - 15 minutes before Q1 start"""
+    quali_date = race.get("quali_date")
+    quali_time = race.get("quali_time", "14:00")
+    quali_datetime = datetime.fromisoformat(f"{quali_date}T{quali_time}:00+00:00")
+    return quali_datetime - timedelta(minutes=15)
+
+def get_sprint_predictions_close_time(race: dict) -> datetime:
+    """Calculate when sprint predictions close - 15 minutes before SQ1 start (only for sprint weekends)"""
+    if not race.get("is_sprint"):
+        return None
+    sprint_quali_date = race.get("sprint_quali_date")
+    sprint_quali_time = race.get("sprint_quali_time", "10:30")
+    sprint_quali_datetime = datetime.fromisoformat(f"{sprint_quali_date}T{sprint_quali_time}:00+00:00")
+    return sprint_quali_datetime - timedelta(minutes=15)
 
 app = FastAPI(title="PRONOKIF API")
 api_router = APIRouter(prefix="/api")
@@ -105,6 +114,23 @@ class BonusBets(BaseModel):
     fastest_lap_driver: Optional[str] = None
     first_corner_leader: Optional[str] = None  # NEW: Leader after first corner
 
+# Separate prediction models for Sprint and Main race
+class SprintPredictionCreate(BaseModel):
+    race_id: str
+    sprint_quali_pole: str
+    sprint_quali_top10: List[str]
+    sprint_race_winner: str
+    sprint_race_top10: List[str]
+    sprint_bonus_bets: Optional[BonusBets] = None
+
+class MainPredictionCreate(BaseModel):
+    race_id: str
+    quali_pole: str
+    quali_top10: List[str]
+    race_winner: str
+    race_top10: List[str]
+    bonus_bets: Optional[BonusBets] = None
+
 class PredictionCreate(BaseModel):
     race_id: str
     # Qualifications Race (Top 10)
@@ -121,6 +147,7 @@ class PredictionCreate(BaseModel):
     race_top10: List[str]  # Extended to Top 10
     # Bonus bets
     bonus_bets: Optional[BonusBets] = None
+    sprint_bonus_bets: Optional[BonusBets] = None
     # Custom predictions answers
     custom_predictions: Optional[Dict[str, Any]] = None  # {prediction_id: answer}
 
@@ -771,6 +798,87 @@ async def mark_feedback_read(feedback_id: str, user=Depends(get_current_user)):
     
     return {"message": "Feedback marked as read"}
 
+# ==================== ADMIN MEMBERS MANAGEMENT ====================
+
+@api_router.get("/admin/members")
+async def get_all_members(user=Depends(get_current_user)):
+    """Get all registered members (admin only)"""
+    if not await check_is_admin(user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    members = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(1000)
+    
+    # Enrich with stats
+    for member in members:
+        # Count predictions
+        member["predictions_count"] = await db.predictions.count_documents({"user_id": member["id"]})
+        
+        # Get leagues count
+        leagues = await db.leagues.count_documents({"members": member["id"]})
+        member["leagues_count"] = leagues
+        
+    return members
+
+@api_router.get("/admin/members/{member_id}")
+async def get_member_details(member_id: str, user=Depends(get_current_user)):
+    """Get detailed info about a specific member (admin only)"""
+    if not await check_is_admin(user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    member = await db.users.find_one({"id": member_id}, {"_id": 0, "password_hash": 0})
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+    
+    # Get stats
+    stats = await db.user_stats.find_one({"user_id": member_id}, {"_id": 0})
+    if not stats:
+        stats = get_default_user_stats()
+    
+    # Count predictions
+    predictions_count = await db.predictions.count_documents({"user_id": member_id})
+    
+    # Get leagues
+    leagues = await db.leagues.find({"members": member_id}, {"_id": 0}).to_list(100)
+    
+    # Get recent predictions
+    recent_predictions = await db.predictions.find(
+        {"user_id": member_id}, 
+        {"_id": 0}
+    ).sort("created_at", -1).limit(10).to_list(10)
+    
+    # Map race names
+    race_map = {r["id"]: r["name"] for r in F1_RACES_2026}
+    for pred in recent_predictions:
+        pred["race_name"] = race_map.get(pred["race_id"], pred["race_id"])
+    
+    # Get minigame scores
+    minigame_scores = await db.minigame_scores.find(
+        {"user_id": member_id}, 
+        {"_id": 0}
+    ).sort("created_at", -1).limit(20).to_list(20)
+    
+    return {
+        "id": member["id"],
+        "email": member.get("email"),
+        "username": member.get("username", "Anonymous"),
+        "avatar_id": member.get("avatar_id"),
+        "custom_avatar_url": member.get("custom_avatar_url"),
+        "level": member.get("level", 1),
+        "xp": member.get("xp", 0),
+        "created_at": member.get("created_at"),
+        "current_league_id": member.get("current_league_id"),
+        "stats": {
+            "predictions_count": predictions_count,
+            "correct_poles": stats.get("correct_poles", 0),
+            "correct_winners": stats.get("correct_winners", 0),
+            "perfect_top10": stats.get("perfect_top10", 0),
+            "races_participated": stats.get("races_participated", 0)
+        },
+        "leagues": [{"id": l["id"], "name": l["name"], "members_count": len(l["members"])} for l in leagues],
+        "recent_predictions": recent_predictions,
+        "minigame_scores": minigame_scores
+    }
+
 # ==================== NOTIFICATIONS SYSTEM ====================
 
 class NotificationCreate(BaseModel):
@@ -932,12 +1040,12 @@ async def get_upcoming_races():
     upcoming = []
     
     for race in F1_RACES_2026:
-        race_date = datetime.fromisoformat(race["date"] + "T15:00:00+00:00")
-        quali_date = datetime.fromisoformat(race["quali_date"] + "T14:00:00+00:00")
+        race_date = datetime.fromisoformat(race["date"] + "T" + race.get("race_time", "15:00") + ":00+00:00")
+        quali_date = datetime.fromisoformat(race["quali_date"] + "T" + race.get("quali_time", "14:00") + ":00+00:00")
         predictions_close = get_predictions_close_time(race)
-        fp1_datetime = datetime.fromisoformat(f"{race['fp1_date']}T{race['fp1_time']}:00+00:00")
+        sprint_predictions_close = get_sprint_predictions_close_time(race)
         
-        # Determine status
+        # Determine status based on main race
         if now < predictions_close:
             status = "upcoming"
         elif now < race_date:
@@ -945,8 +1053,11 @@ async def get_upcoming_races():
         else:
             status = "finished"
         
-        # Check if user can still predict
+        # Check if user can still predict main race (15 min before Q1)
         can_predict = now < predictions_close
+        
+        # Check if user can still predict sprint (15 min before SQ1)
+        can_predict_sprint = sprint_predictions_close and now < sprint_predictions_close
         
         race_data = {
             "id": race["id"],
@@ -955,10 +1066,11 @@ async def get_upcoming_races():
             "country": race["country"],
             "date": race_date.isoformat(),
             "quali_date": quali_date.isoformat(),
-            "fp1_date": fp1_datetime.isoformat(),
             "predictions_close_at": predictions_close.isoformat(),
+            "sprint_predictions_close_at": sprint_predictions_close.isoformat() if sprint_predictions_close else None,
             "status": status,
             "can_predict": can_predict,
+            "can_predict_sprint": can_predict_sprint,
             "is_sprint_weekend": race.get("is_sprint", False)
         }
         
@@ -971,10 +1083,10 @@ async def get_race(race_id: str):
     for race in F1_RACES_2026:
         if race["id"] == race_id:
             now = datetime.now(timezone.utc)
-            race_date = datetime.fromisoformat(race["date"] + "T15:00:00+00:00")
-            quali_date = datetime.fromisoformat(race["quali_date"] + "T14:00:00+00:00")
+            race_date = datetime.fromisoformat(race["date"] + "T" + race.get("race_time", "15:00") + ":00+00:00")
+            quali_date = datetime.fromisoformat(race["quali_date"] + "T" + race.get("quali_time", "14:00") + ":00+00:00")
             predictions_close = get_predictions_close_time(race)
-            fp1_datetime = datetime.fromisoformat(f"{race['fp1_date']}T{race['fp1_time']}:00+00:00")
+            sprint_predictions_close = get_sprint_predictions_close_time(race)
             
             if now < predictions_close:
                 status = "upcoming"
@@ -983,16 +1095,22 @@ async def get_race(race_id: str):
             else:
                 status = "finished"
             
+            # Check if user can still predict
+            can_predict = now < predictions_close
+            can_predict_sprint = sprint_predictions_close and now < sprint_predictions_close
+            
             result_doc = await db.race_results.find_one({"race_id": race_id}, {"_id": 0})
             
             return {
                 "id": race["id"], "name": race["name"], "circuit": race["circuit"],
                 "country": race["country"], "date": race_date.isoformat(),
                 "quali_date": quali_date.isoformat(),
-                "fp1_date": fp1_datetime.isoformat(),
-                "sprint_quali_date": (race.get("sprint_quali_date", "") + "T10:00:00+00:00") if race.get("is_sprint") else None,
-                "sprint_race_date": (race.get("sprint_race_date", "") + "T14:00:00+00:00") if race.get("is_sprint") else None,
+                "sprint_quali_date": (race.get("sprint_quali_date", "") + "T" + race.get("sprint_quali_time", "10:30") + ":00+00:00") if race.get("is_sprint") else None,
+                "sprint_race_date": (race.get("sprint_race_date", "") + "T" + race.get("sprint_race_time", "14:00") + ":00+00:00") if race.get("is_sprint") else None,
                 "predictions_close_at": predictions_close.isoformat(),
+                "sprint_predictions_close_at": sprint_predictions_close.isoformat() if sprint_predictions_close else None,
+                "can_predict": can_predict,
+                "can_predict_sprint": can_predict_sprint,
                 "status": status, "is_sprint_weekend": race.get("is_sprint", False),
                 "results": result_doc.get("results") if result_doc else None
             }
@@ -1171,6 +1289,103 @@ async def get_my_prediction(race_id: str, user=Depends(get_current_user)):
 async def get_prediction_history(user=Depends(get_current_user)):
     predictions = await db.predictions.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
     return predictions
+
+# ==================== SEPARATE SPRINT/MAIN PREDICTIONS ====================
+
+@api_router.post("/predictions/sprint")
+async def save_sprint_prediction(data: SprintPredictionCreate, user=Depends(get_current_user)):
+    """Save sprint predictions separately (closes 15 min before SQ1)"""
+    # Validate race
+    race = None
+    for r in F1_RACES_2026:
+        if r["id"] == data.race_id:
+            race = r
+            break
+    if not race:
+        raise HTTPException(status_code=404, detail="Race not found")
+    
+    if not race.get("is_sprint"):
+        raise HTTPException(status_code=400, detail="This is not a sprint weekend")
+    
+    # Check sprint predictions close time (15 min before SQ1)
+    sprint_predictions_close = get_sprint_predictions_close_time(race)
+    if datetime.now(timezone.utc) > sprint_predictions_close:
+        raise HTTPException(status_code=400, detail="Les pronostics sprint sont fermés (15 min avant SQ1)")
+    
+    # Validate Top 10
+    if len(data.sprint_quali_top10) != 10 or len(data.sprint_race_top10) != 10:
+        raise HTTPException(status_code=400, detail="Sprint Top 10 must have exactly 10 drivers")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    existing = await db.predictions.find_one({"user_id": user["id"], "race_id": data.race_id})
+    
+    sprint_data = {
+        "sprint_quali_pole": data.sprint_quali_pole,
+        "sprint_quali_top10": data.sprint_quali_top10,
+        "sprint_race_winner": data.sprint_race_winner,
+        "sprint_race_top10": data.sprint_race_top10,
+        "sprint_bonus_bets": data.sprint_bonus_bets.dict() if data.sprint_bonus_bets else None,
+        "sprint_updated_at": now
+    }
+    
+    if existing:
+        await db.predictions.update_one({"id": existing["id"]}, {"$set": sprint_data})
+        return {**existing, **sprint_data}
+    
+    # Create new prediction with sprint data only
+    prediction_id = str(uuid.uuid4())
+    prediction = {
+        "id": prediction_id, "user_id": user["id"], "race_id": data.race_id,
+        **sprint_data, "locked": False, "created_at": now
+    }
+    await db.predictions.insert_one(prediction)
+    return {k: v for k, v in prediction.items() if k != "_id"}
+
+@api_router.post("/predictions/main")
+async def save_main_prediction(data: MainPredictionCreate, user=Depends(get_current_user)):
+    """Save main race predictions separately (closes 15 min before Q1)"""
+    # Validate race
+    race = None
+    for r in F1_RACES_2026:
+        if r["id"] == data.race_id:
+            race = r
+            break
+    if not race:
+        raise HTTPException(status_code=404, detail="Race not found")
+    
+    # Check main predictions close time (15 min before Q1)
+    predictions_close = get_predictions_close_time(race)
+    if datetime.now(timezone.utc) > predictions_close:
+        raise HTTPException(status_code=400, detail="Les pronostics sont fermés (15 min avant Q1)")
+    
+    # Validate Top 10
+    if len(data.quali_top10) != 10 or len(data.race_top10) != 10:
+        raise HTTPException(status_code=400, detail="Top 10 must have exactly 10 drivers")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    existing = await db.predictions.find_one({"user_id": user["id"], "race_id": data.race_id})
+    
+    main_data = {
+        "quali_pole": data.quali_pole,
+        "quali_top10": data.quali_top10,
+        "race_winner": data.race_winner,
+        "race_top10": data.race_top10,
+        "bonus_bets": data.bonus_bets.dict() if data.bonus_bets else None,
+        "main_updated_at": now
+    }
+    
+    if existing:
+        await db.predictions.update_one({"id": existing["id"]}, {"$set": main_data})
+        return {**existing, **main_data}
+    
+    # Create new prediction with main data only
+    prediction_id = str(uuid.uuid4())
+    prediction = {
+        "id": prediction_id, "user_id": user["id"], "race_id": data.race_id,
+        **main_data, "locked": False, "created_at": now
+    }
+    await db.predictions.insert_one(prediction)
+    return {k: v for k, v in prediction.items() if k != "_id"}
 
 # ==================== CUSTOM PREDICTIONS ====================
 

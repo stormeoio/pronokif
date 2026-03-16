@@ -58,7 +58,7 @@ export default function AdminPage() {
   const [selectionMode, setSelectionMode] = useState("quali_pole");
   
   // Admin panel tabs
-  const [adminTab, setAdminTab] = useState("results"); // results, notifications, feedback
+  const [adminTab, setAdminTab] = useState("results"); // results, notifications, feedback, members
   
   // Notifications state
   const [notifTitle, setNotifTitle] = useState("");
@@ -69,6 +69,13 @@ export default function AdminPage() {
   // Feedback state
   const [feedbackList, setFeedbackList] = useState([]);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
+  
+  // Members state
+  const [membersList, setMembersList] = useState([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [memberDetails, setMemberDetails] = useState(null);
+  const [loadingMemberDetails, setLoadingMemberDetails] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -107,6 +114,13 @@ export default function AdminPage() {
     }
   }, [adminTab, isAdmin]);
 
+  // Fetch members when on members tab
+  useEffect(() => {
+    if (adminTab === "members" && isAdmin && membersList.length === 0) {
+      fetchMembers();
+    }
+  }, [adminTab, isAdmin]);
+
   const fetchFeedback = async () => {
     setLoadingFeedback(true);
     try {
@@ -116,6 +130,31 @@ export default function AdminPage() {
       console.error(e);
     } finally {
       setLoadingFeedback(false);
+    }
+  };
+
+  const fetchMembers = async () => {
+    setLoadingMembers(true);
+    try {
+      const res = await apiClient.get("/admin/members");
+      setMembersList(res.data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingMembers(false);
+    }
+  };
+
+  const fetchMemberDetails = async (memberId) => {
+    setLoadingMemberDetails(true);
+    try {
+      const res = await apiClient.get(`/admin/members/${memberId}`);
+      setMemberDetails(res.data);
+    } catch (e) {
+      console.error(e);
+      toast.error("Erreur lors du chargement des détails");
+    } finally {
+      setLoadingMemberDetails(false);
     }
   };
 
@@ -433,10 +472,10 @@ export default function AdminPage() {
 
       <div className="max-w-2xl mx-auto p-4 pb-32">
         {/* Admin Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="grid grid-cols-4 gap-2 mb-6">
           <button
             onClick={() => setAdminTab("results")}
-            className={`flex-1 p-3 rounded-xl font-heading text-sm uppercase transition-all ${
+            className={`p-3 rounded-xl font-heading text-xs uppercase transition-all ${
               adminTab === "results" 
                 ? 'bg-red-500/20 border-2 border-red-500 text-red-400' 
                 : 'bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10'
@@ -447,18 +486,18 @@ export default function AdminPage() {
           </button>
           <button
             onClick={() => setAdminTab("notifications")}
-            className={`flex-1 p-3 rounded-xl font-heading text-sm uppercase transition-all ${
+            className={`p-3 rounded-xl font-heading text-xs uppercase transition-all ${
               adminTab === "notifications" 
                 ? 'bg-cyan-500/20 border-2 border-cyan-500 text-cyan-400' 
                 : 'bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10'
             }`}
           >
             <Bell className="w-5 h-5 mx-auto mb-1" />
-            Notifications
+            Notifs
           </button>
           <button
             onClick={() => setAdminTab("feedback")}
-            className={`flex-1 p-3 rounded-xl font-heading text-sm uppercase relative transition-all ${
+            className={`p-3 rounded-xl font-heading text-xs uppercase relative transition-all ${
               adminTab === "feedback" 
                 ? 'bg-yellow-500/20 border-2 border-yellow-500 text-yellow-400' 
                 : 'bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10'
@@ -472,7 +511,166 @@ export default function AdminPage() {
               </span>
             )}
           </button>
+          <button
+            onClick={() => setAdminTab("members")}
+            className={`p-3 rounded-xl font-heading text-xs uppercase transition-all ${
+              adminTab === "members" 
+                ? 'bg-green-500/20 border-2 border-green-500 text-green-400' 
+                : 'bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10'
+            }`}
+          >
+            <Users className="w-5 h-5 mx-auto mb-1" />
+            Membres
+          </button>
         </div>
+
+        {/* Members Panel */}
+        {adminTab === "members" && (
+          <div className="space-y-4">
+            {/* Member Details Modal */}
+            {selectedMember && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                <div className="w-full max-w-lg card-arcade overflow-hidden max-h-[80vh] overflow-y-auto">
+                  <div className="bg-gradient-to-r from-green-600/20 to-transparent px-4 py-3 border-b border-gray-700/50 flex items-center justify-between sticky top-0 bg-[#0c1525]">
+                    <h3 className="font-heading text-sm uppercase text-green-400 flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Détails du membre
+                    </h3>
+                    <button onClick={() => { setSelectedMember(null); setMemberDetails(null); }} className="text-gray-400 hover:text-white">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  
+                  {loadingMemberDetails ? (
+                    <div className="p-8 text-center">
+                      <Loader2 className="w-6 h-6 text-green-500 animate-spin mx-auto" />
+                    </div>
+                  ) : memberDetails && (
+                    <div className="p-4 space-y-4">
+                      {/* Basic Info */}
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-heading text-xl">
+                          {memberDetails.username?.charAt(0)?.toUpperCase() || "?"}
+                        </div>
+                        <div>
+                          <h4 className="font-heading text-lg text-white">{memberDetails.username}</h4>
+                          <p className="font-body text-sm text-gray-400">{memberDetails.email}</p>
+                          <p className="font-body text-xs text-gray-500">
+                            Inscrit le {new Date(memberDetails.created_at).toLocaleDateString('fr-FR')}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Stats Grid */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-white/5 rounded-lg p-3 text-center">
+                          <p className="font-data text-xl text-cyan-400">{memberDetails.level}</p>
+                          <p className="font-body text-xs text-gray-500">Niveau</p>
+                        </div>
+                        <div className="bg-white/5 rounded-lg p-3 text-center">
+                          <p className="font-data text-xl text-yellow-400">{memberDetails.xp}</p>
+                          <p className="font-body text-xs text-gray-500">XP</p>
+                        </div>
+                        <div className="bg-white/5 rounded-lg p-3 text-center">
+                          <p className="font-data text-xl text-green-400">{memberDetails.stats?.predictions_count || 0}</p>
+                          <p className="font-body text-xs text-gray-500">Pronostics</p>
+                        </div>
+                        <div className="bg-white/5 rounded-lg p-3 text-center">
+                          <p className="font-data text-xl text-purple-400">{memberDetails.leagues?.length || 0}</p>
+                          <p className="font-body text-xs text-gray-500">Ligues</p>
+                        </div>
+                      </div>
+                      
+                      {/* Performance Stats */}
+                      <div className="bg-white/5 rounded-lg p-3">
+                        <h5 className="font-heading text-xs text-gray-400 uppercase mb-2">Performance</h5>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Poles exactes:</span>
+                            <span className="text-white">{memberDetails.stats?.correct_poles || 0}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Winners exacts:</span>
+                            <span className="text-white">{memberDetails.stats?.correct_winners || 0}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Top 10 parfaits:</span>
+                            <span className="text-white">{memberDetails.stats?.perfect_top10 || 0}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Courses:</span>
+                            <span className="text-white">{memberDetails.stats?.races_participated || 0}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Leagues */}
+                      {memberDetails.leagues?.length > 0 && (
+                        <div className="bg-white/5 rounded-lg p-3">
+                          <h5 className="font-heading text-xs text-gray-400 uppercase mb-2">Ligues</h5>
+                          <div className="space-y-1">
+                            {memberDetails.leagues.map(league => (
+                              <div key={league.id} className="flex justify-between text-sm">
+                                <span className="text-white">{league.name}</span>
+                                <span className="text-gray-500">{league.members_count} membres</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Members List */}
+            <div className="card-arcade overflow-hidden">
+              <div className="bg-gradient-to-r from-green-600/20 to-transparent px-4 py-3 border-b border-gray-700/50 flex items-center justify-between">
+                <h3 className="font-heading text-sm uppercase text-green-400 flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Membres inscrits ({membersList.length})
+                </h3>
+                <button onClick={fetchMembers} className="text-gray-400 hover:text-white">
+                  <RefreshCw className={`w-4 h-4 ${loadingMembers ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+              
+              {loadingMembers ? (
+                <div className="p-8 text-center">
+                  <Loader2 className="w-6 h-6 text-green-500 animate-spin mx-auto" />
+                </div>
+              ) : membersList.length === 0 ? (
+                <div className="p-8 text-center">
+                  <Users className="w-12 h-12 text-gray-600 mx-auto mb-2" />
+                  <p className="font-body text-gray-500">Aucun membre inscrit</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-800 max-h-96 overflow-y-auto">
+                  {membersList.map((member) => (
+                    <button
+                      key={member.id}
+                      onClick={() => { setSelectedMember(member.id); fetchMemberDetails(member.id); }}
+                      className="w-full p-4 flex items-center gap-3 hover:bg-white/5 transition-colors text-left"
+                    >
+                      <div className="w-10 h-10 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center text-white font-heading text-sm">
+                        {member.username?.charAt(0)?.toUpperCase() || "?"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-body text-sm text-white truncate">{member.username || "Sans pseudo"}</p>
+                        <p className="font-body text-xs text-gray-500 truncate">{member.email}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-data text-sm text-cyan-400">Niv. {member.level || 1}</p>
+                        <p className="font-body text-xs text-gray-500">{member.predictions_count || 0} pronos</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Notifications Panel */}
         {adminTab === "notifications" && (
