@@ -5,10 +5,13 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Switch } from "../components/ui/switch";
 import { Label } from "../components/ui/label";
+import { Textarea } from "../components/ui/textarea";
+import { Input } from "../components/ui/input";
 import { toast } from "sonner";
 import { 
   ChevronLeft, Check, Flag, Trophy, Shield, Calendar,
-  AlertTriangle, Timer, Save, Loader2, Target, Users, X, Zap, RefreshCw
+  AlertTriangle, Timer, Save, Loader2, Target, Users, X, Zap, RefreshCw,
+  Bell, Send, MessageSquare, Bug, Lightbulb, Info, Eye, EyeOff
 } from "lucide-react";
 
 const TEAM_COLORS = {
@@ -51,6 +54,19 @@ export default function AdminPage() {
   const [firstCornerLeader, setFirstCornerLeader] = useState(null);
   
   const [selectionMode, setSelectionMode] = useState("quali_pole");
+  
+  // Admin panel tabs
+  const [adminTab, setAdminTab] = useState("results"); // results, notifications, feedback
+  
+  // Notifications state
+  const [notifTitle, setNotifTitle] = useState("");
+  const [notifMessage, setNotifMessage] = useState("");
+  const [notifType, setNotifType] = useState("info");
+  const [sendingNotif, setSendingNotif] = useState(false);
+  
+  // Feedback state
+  const [feedbackList, setFeedbackList] = useState([]);
+  const [loadingFeedback, setLoadingFeedback] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -81,6 +97,59 @@ export default function AdminPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Fetch feedback when on feedback tab
+  useEffect(() => {
+    if (adminTab === "feedback" && isAdmin && feedbackList.length === 0) {
+      fetchFeedback();
+    }
+  }, [adminTab, isAdmin]);
+
+  const fetchFeedback = async () => {
+    setLoadingFeedback(true);
+    try {
+      const res = await apiClient.get("/admin/feedback");
+      setFeedbackList(res.data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingFeedback(false);
+    }
+  };
+
+  const sendNotification = async () => {
+    if (!notifTitle.trim() || !notifMessage.trim()) {
+      toast.error("Remplissez le titre et le message");
+      return;
+    }
+    
+    setSendingNotif(true);
+    try {
+      await apiClient.post("/admin/notifications", {
+        title: notifTitle.trim(),
+        message: notifMessage.trim(),
+        type: notifType
+      });
+      toast.success("Notification envoyée à tous les membres !");
+      setNotifTitle("");
+      setNotifMessage("");
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Erreur lors de l'envoi");
+    } finally {
+      setSendingNotif(false);
+    }
+  };
+
+  const markFeedbackRead = async (feedbackId) => {
+    try {
+      await apiClient.put(`/admin/feedback/${feedbackId}/read`);
+      setFeedbackList(prev => 
+        prev.map(f => f.id === feedbackId ? { ...f, read: true } : f)
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const selectRace = async (race) => {
     setSelectedRace(race);
@@ -341,6 +410,220 @@ export default function AdminPage() {
       </div>
 
       <div className="max-w-2xl mx-auto p-4 pb-32">
+        {/* Admin Tabs */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setAdminTab("results")}
+            className={`flex-1 p-3 rounded-xl font-heading text-sm uppercase transition-all ${
+              adminTab === "results" 
+                ? 'bg-red-500/20 border-2 border-red-500 text-red-400' 
+                : 'bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10'
+            }`}
+          >
+            <Trophy className="w-5 h-5 mx-auto mb-1" />
+            Résultats
+          </button>
+          <button
+            onClick={() => setAdminTab("notifications")}
+            className={`flex-1 p-3 rounded-xl font-heading text-sm uppercase transition-all ${
+              adminTab === "notifications" 
+                ? 'bg-cyan-500/20 border-2 border-cyan-500 text-cyan-400' 
+                : 'bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10'
+            }`}
+          >
+            <Bell className="w-5 h-5 mx-auto mb-1" />
+            Notifications
+          </button>
+          <button
+            onClick={() => setAdminTab("feedback")}
+            className={`flex-1 p-3 rounded-xl font-heading text-sm uppercase relative transition-all ${
+              adminTab === "feedback" 
+                ? 'bg-yellow-500/20 border-2 border-yellow-500 text-yellow-400' 
+                : 'bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10'
+            }`}
+          >
+            <MessageSquare className="w-5 h-5 mx-auto mb-1" />
+            Feedback
+            {feedbackList.filter(f => !f.read).length > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
+                {feedbackList.filter(f => !f.read).length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Notifications Panel */}
+        {adminTab === "notifications" && (
+          <div className="space-y-4">
+            <div className="card-arcade overflow-hidden">
+              <div className="bg-gradient-to-r from-cyan-600/20 to-transparent px-4 py-3 border-b border-gray-700/50">
+                <h3 className="font-heading text-sm uppercase text-cyan-400 flex items-center gap-2">
+                  <Bell className="w-4 h-4" />
+                  Envoyer une notification
+                </h3>
+              </div>
+              <div className="p-4 space-y-4">
+                {/* Notification Type */}
+                <div>
+                  <Label className="font-body text-sm text-gray-400 mb-2 block">Type</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: "info", label: "Info", icon: Info, color: "blue" },
+                      { id: "update", label: "Mise à jour", icon: Zap, color: "green" },
+                      { id: "important", label: "Important", icon: AlertTriangle, color: "yellow" }
+                    ].map((type) => {
+                      const Icon = type.icon;
+                      const isSelected = notifType === type.id;
+                      return (
+                        <button
+                          key={type.id}
+                          onClick={() => setNotifType(type.id)}
+                          className={`p-3 rounded-xl border-2 transition-all ${
+                            isSelected 
+                              ? `bg-${type.color}-500/20 border-${type.color}-500 text-${type.color}-400` 
+                              : 'bg-white/5 border-gray-700 text-gray-400 hover:bg-white/10'
+                          }`}
+                          style={isSelected ? { 
+                            backgroundColor: type.color === 'blue' ? 'rgba(59,130,246,0.2)' : 
+                                           type.color === 'green' ? 'rgba(34,197,94,0.2)' : 'rgba(234,179,8,0.2)',
+                            borderColor: type.color === 'blue' ? '#3b82f6' : 
+                                        type.color === 'green' ? '#22c55e' : '#eab308'
+                          } : {}}
+                        >
+                          <Icon className={`w-5 h-5 mx-auto mb-1`} 
+                                style={{ color: isSelected ? (type.color === 'blue' ? '#60a5fa' : type.color === 'green' ? '#4ade80' : '#facc15') : undefined }} />
+                          <p className="font-body text-xs">{type.label}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Title */}
+                <div>
+                  <Label className="font-body text-sm text-gray-400 mb-2 block">Titre</Label>
+                  <Input
+                    value={notifTitle}
+                    onChange={(e) => setNotifTitle(e.target.value)}
+                    placeholder="Ex: Nouvelle fonctionnalité disponible !"
+                    maxLength={100}
+                    className="bg-gray-900 border-gray-700 text-white"
+                  />
+                </div>
+
+                {/* Message */}
+                <div>
+                  <Label className="font-body text-sm text-gray-400 mb-2 block">Message</Label>
+                  <Textarea
+                    value={notifMessage}
+                    onChange={(e) => setNotifMessage(e.target.value)}
+                    placeholder="Détaillez votre message..."
+                    rows={4}
+                    maxLength={1000}
+                    className="bg-gray-900 border-gray-700 text-white resize-none"
+                  />
+                </div>
+
+                {/* Send Button */}
+                <Button
+                  onClick={sendNotification}
+                  disabled={!notifTitle.trim() || !notifMessage.trim() || sendingNotif}
+                  className="btn-racing w-full h-12"
+                >
+                  {sendingNotif ? (
+                    <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Envoi en cours...</>
+                  ) : (
+                    <><Send className="w-5 h-5 mr-2" /> Envoyer à tous les membres</>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Feedback Panel */}
+        {adminTab === "feedback" && (
+          <div className="space-y-4">
+            <div className="card-arcade overflow-hidden">
+              <div className="bg-gradient-to-r from-yellow-600/20 to-transparent px-4 py-3 border-b border-gray-700/50 flex items-center justify-between">
+                <h3 className="font-heading text-sm uppercase text-yellow-400 flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  Messages des utilisateurs
+                </h3>
+                <button onClick={fetchFeedback} className="text-gray-400 hover:text-white">
+                  <RefreshCw className={`w-4 h-4 ${loadingFeedback ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+              
+              {loadingFeedback ? (
+                <div className="p-8 text-center">
+                  <Loader2 className="w-6 h-6 text-yellow-500 animate-spin mx-auto" />
+                </div>
+              ) : feedbackList.length === 0 ? (
+                <div className="p-8 text-center">
+                  <MessageSquare className="w-12 h-12 text-gray-600 mx-auto mb-2" />
+                  <p className="font-body text-gray-500">Aucun feedback pour le moment</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-800">
+                  {feedbackList.map((feedback) => {
+                    const categoryConfig = {
+                      bug: { icon: Bug, color: "text-red-400", bg: "bg-red-500/20", label: "Bug" },
+                      suggestion: { icon: Lightbulb, color: "text-yellow-400", bg: "bg-yellow-500/20", label: "Suggestion" },
+                      feedback: { icon: MessageSquare, color: "text-cyan-400", bg: "bg-cyan-500/20", label: "Feedback" }
+                    };
+                    const config = categoryConfig[feedback.category] || categoryConfig.feedback;
+                    const Icon = config.icon;
+                    
+                    return (
+                      <div 
+                        key={feedback.id}
+                        className={`p-4 ${!feedback.read ? 'bg-yellow-500/5' : ''}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`w-8 h-8 rounded-lg ${config.bg} flex items-center justify-center flex-shrink-0`}>
+                            <Icon className={`w-4 h-4 ${config.color}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-body text-sm text-white font-semibold">{feedback.username}</span>
+                              <span className={`font-body text-xs px-2 py-0.5 rounded ${config.bg} ${config.color}`}>
+                                {config.label}
+                              </span>
+                              {!feedback.read && (
+                                <span className="w-2 h-2 bg-yellow-500 rounded-full" />
+                              )}
+                            </div>
+                            <p className="font-body text-sm text-gray-400 whitespace-pre-wrap">{feedback.message}</p>
+                            <div className="flex items-center justify-between mt-2">
+                              <span className="font-body text-[10px] text-gray-600">
+                                {new Date(feedback.created_at).toLocaleDateString('fr-FR', { 
+                                  day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
+                                })}
+                              </span>
+                              {!feedback.read && (
+                                <button
+                                  onClick={() => markFeedbackRead(feedback.id)}
+                                  className="font-body text-xs text-cyan-400 hover:text-cyan-300"
+                                >
+                                  Marquer comme lu
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Results Panel (Original Content) */}
+        {adminTab === "results" && (
+          <>
         {/* Race Selector */}
         <div className="card-arcade mb-6 overflow-hidden">
           <div className="bg-gradient-to-r from-cyan-600/20 to-transparent px-4 py-3 border-b border-gray-700/50">
@@ -611,10 +894,12 @@ export default function AdminPage() {
             )}
           </>
         )}
+          </>
+        )}
       </div>
 
       {/* Submit Button */}
-      {selectedRace && (
+      {adminTab === "results" && selectedRace && (
         <div className="fixed bottom-20 left-0 right-0 p-4 bg-gradient-to-t from-gray-900 via-gray-900/95 to-transparent">
           <div className="max-w-2xl mx-auto">
             <Button

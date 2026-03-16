@@ -6,9 +6,11 @@ import { toast } from "sonner";
 import { 
   Flag, Trophy, Clock, ChevronRight, Zap, Target,
   Calendar, MapPin, Users, Star, Gamepad2, Medal,
-  ChevronLeft, Info, Plus, MessageCircle
+  ChevronLeft, Info, Plus, MessageCircle, HelpCircle
 } from "lucide-react";
 import { AvatarDisplay } from "../components/AvatarDisplay";
+import NotificationBell from "../components/NotificationBell";
+import FeedbackModal from "../components/FeedbackModal";
 
 // GP Background images - will be expanded with more circuits
 const GP_BACKGROUNDS = {
@@ -34,6 +36,7 @@ export default function DashboardPage() {
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [avatars, setAvatars] = useState({});
   const sliderRef = useRef(null);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -147,6 +150,22 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-app-main pb-24" data-testid="dashboard-page">
+      {/* Top Bar with Notifications and Help */}
+      <div className="absolute top-0 left-0 right-0 z-20 p-3 flex items-center justify-between">
+        <div /> {/* Spacer */}
+        <div className="flex items-center gap-2">
+          <NotificationBell />
+          <button
+            onClick={() => setShowFeedbackModal(true)}
+            className="p-2 rounded-lg text-cyan-400 hover:text-white hover:bg-cyan-500/20 transition-colors"
+            data-testid="help-admin-btn"
+            title="Aider l'administrateur"
+          >
+            <HelpCircle className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
       {/* Hero Banner with F1 Car and Logo */}
       <div className="relative w-full h-56 overflow-hidden">
         <img 
@@ -503,7 +522,30 @@ export default function DashboardPage() {
             </Button>
           </div>
         )}
+
+        {/* Help Admin Button */}
+        <div 
+          onClick={() => setShowFeedbackModal(true)}
+          className="card-arcade p-4 cursor-pointer hover:ring-2 hover:ring-cyan-500/50 transition-all"
+          data-testid="help-admin-card"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-cyan-700 rounded-xl flex items-center justify-center shadow-lg">
+              <HelpCircle className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-heading text-sm text-white uppercase">Aider l'administrateur</h3>
+              <p className="font-body text-xs text-gray-400">
+                Signalez un bug, faites une suggestion ou partagez votre avis
+              </p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-cyan-400" />
+          </div>
+        </div>
       </div>
+
+      {/* Feedback Modal */}
+      <FeedbackModal isOpen={showFeedbackModal} onClose={() => setShowFeedbackModal(false)} />
     </div>
   );
 }

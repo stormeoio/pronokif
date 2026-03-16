@@ -705,6 +705,145 @@ async def get_user_public_profile(user_id: str, user=Depends(get_current_user)):
         }
     }
 
+# ==================== ADMIN EMAIL ====================
+ADMIN_EMAIL = "catalan.baptiste123@gmail.com"
+
+async def check_is_admin(user: dict) -> bool:
+    """Check if user is admin by email"""
+    return user.get("email", "").lower() == ADMIN_EMAIL.lower()
+
+# ==================== FEEDBACK SYSTEM ====================
+
+class FeedbackCreate(BaseModel):
+    category: str  # bug, suggestion, feedback
+    message: str
+
+@api_router.post("/feedback")
+async def submit_feedback(data: FeedbackCreate, user=Depends(get_current_user)):
+    """Submit feedback to admin"""
+    if not data.message.strip():
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+    
+    if len(data.message) > 2000:
+        raise HTTPException(status_code=400, detail="Message too long (max 2000 characters)")
+    
+    if data.category not in ["bug", "suggestion", "feedback"]:
+        raise HTTPException(status_code=400, detail="Invalid category")
+    
+    feedback = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "username": user.get("username", "Anonymous"),
+        "email": user.get("email"),
+        "category": data.category,
+        "message": data.message.strip(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "read": False
+    }
+    
+    await db.feedback.insert_one(feedback)
+    return {"message": "Feedback submitted successfully", "id": feedback["id"]}
+
+@api_router.get("/admin/feedback")
+async def get_all_feedback(user=Depends(get_current_user)):
+    """Get all feedback (admin only)"""
+    if not await check_is_admin(user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    feedback_list = await db.feedback.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    return feedback_list
+
+@api_router.put("/admin/feedback/{feedback_id}/read")
+async def mark_feedback_read(feedback_id: str, user=Depends(get_current_user)):
+    """Mark feedback as read (admin only)"""
+    if not await check_is_admin(user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    result = await db.feedback.update_one(
+        {"id": feedback_id},
+        {"$set": {"read": True}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    
+    return {"message": "Feedback marked as read"}
+
+# ==================== NOTIFICATIONS SYSTEM ====================
+
+class NotificationCreate(BaseModel):
+    title: str
+    message: str
+    type: str  # info, update, important
+
+@api_router.post("/admin/notifications")
+async def create_notification(data: NotificationCreate, user=Depends(get_current_user)):
+    """Create a notification for all users (admin only)"""
+    if not await check_is_admin(user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not data.title.strip() or not data.message.strip():
+        raise HTTPException(status_code=400, detail="Title and message cannot be empty")
+    
+    if data.type not in ["info", "update", "important"]:
+        raise HTTPException(status_code=400, detail="Invalid notification type")
+    
+    notification = {
+        "id": str(uuid.uuid4()),
+        "title": data.title.strip(),
+        "message": data.message.strip(),
+        "type": data.type,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": user["id"]
+    }
+    
+    await db.notifications.insert_one(notification)
+    
+    # Mark all users as having unread notifications
+    await db.users.update_many({}, {"$addToSet": {"unread_notifications": notification["id"]}})
+    
+    return {"message": "Notification sent to all users", "id": notification["id"]}
+
+@api_router.get("/notifications")
+async def get_notifications(user=Depends(get_current_user)):
+    """Get all notifications for the user"""
+    notifications = await db.notifications.find({}, {"_id": 0}).sort("created_at", -1).limit(50).to_list(50)
+    
+    # Get user's unread notifications
+    user_doc = await db.users.find_one({"id": user["id"]}, {"unread_notifications": 1})
+    unread_ids = set(user_doc.get("unread_notifications", []))
+    
+    # Add read status to each notification
+    for notif in notifications:
+        notif["is_read"] = notif["id"] not in unread_ids
+    
+    return notifications
+
+@api_router.get("/notifications/unread-count")
+async def get_unread_count(user=Depends(get_current_user)):
+    """Get count of unread notifications"""
+    user_doc = await db.users.find_one({"id": user["id"]}, {"unread_notifications": 1})
+    unread_count = len(user_doc.get("unread_notifications", []))
+    return {"count": unread_count}
+
+@api_router.put("/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str, user=Depends(get_current_user)):
+    """Mark a notification as read"""
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$pull": {"unread_notifications": notification_id}}
+    )
+    return {"message": "Notification marked as read"}
+
+@api_router.put("/notifications/read-all")
+async def mark_all_notifications_read(user=Depends(get_current_user)):
+    """Mark all notifications as read"""
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"unread_notifications": []}}
+    )
+    return {"message": "All notifications marked as read"}
+
 # ==================== RACE & DRIVER ENDPOINTS ====================
 
 @api_router.get("/drivers", response_model=List[DriverResponse])

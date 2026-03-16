@@ -115,6 +115,32 @@ PRONOKIF est une application de jeu de pronostics sur la Formule 1, permettant a
   - `GET /api/leagues/{league_id}/members` - Liste des membres
   - `GET /api/users/{user_id}/profile` - Profil public avec stats
 
+### ✅ Feedback Utilisateurs et Notifications Admin (Ajouté le 16/03/2026)
+- **Onglet "Aider l'administrateur"** (Dashboard)
+  - Carte visible en bas du dashboard
+  - Icône (?) en haut à droite du header
+  - Modal avec 3 catégories : Bug, Suggestion, Feedback
+  - Messages jusqu'à 2000 caractères
+  - Confirmation de succès après envoi
+- **Panel Admin - Gestion des Notifications** (`/admin`)
+  - 3 onglets : Résultats, Notifications, Feedback
+  - Créer et envoyer des notifications à tous les membres
+  - Types de notifications : Info, Mise à jour, Important
+  - Visualiser tous les feedbacks utilisateurs avec statut lu/non lu
+- **Système de Notifications pour les membres**
+  - Icône cloche avec badge (nombre de non-lues) en haut à droite
+  - Dropdown avec notifications récentes
+  - Page dédiée `/notifications` avec liste complète
+  - Marquer comme lu (individuel ou tout)
+- **APIs** :
+  - `POST /api/feedback` - Soumettre un feedback
+  - `GET /api/admin/feedback` - Voir tous les feedbacks (admin)
+  - `POST /api/admin/notifications` - Créer une notification (admin)
+  - `GET /api/notifications` - Liste des notifications
+  - `GET /api/notifications/unread-count` - Nombre de non-lues
+  - `PUT /api/notifications/{id}/read` - Marquer comme lu
+- **Admin** : Identifié par email `catalan.baptiste123@gmail.com`
+
 ## Architecture technique
 
 ### Backend (FastAPI + MongoDB)
