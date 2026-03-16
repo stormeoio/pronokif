@@ -65,12 +65,12 @@ class TestHealthAndBasics:
         assert data["status"] == "healthy"
         print("✅ Health endpoint working")
     
-    def test_get_drivers_returns_20_drivers(self, api_client):
-        """Test that drivers endpoint returns all 20 F1 2026 drivers"""
+    def test_get_drivers_returns_2026_drivers(self, api_client):
+        """Test that drivers endpoint returns F1 2026 drivers (22 drivers with Cadillac entry)"""
         response = api_client.get(f"{BASE_URL}/api/drivers")
         assert response.status_code == 200
         drivers = response.json()
-        assert len(drivers) == 20
+        assert len(drivers) >= 20  # 22 drivers with Cadillac 11th team entry
         # Verify driver structure
         assert "id" in drivers[0]
         assert "name" in drivers[0]

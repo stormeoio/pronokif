@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, apiClient } from "../App";
 import { Button } from "../components/ui/button";
 import { toast } from "sonner";
 import { 
   Flag, Trophy, Clock, ChevronRight, Zap, Target,
-  Calendar, MapPin, Users, Star, Gamepad2, Medal
+  Calendar, MapPin, Users, Star, Gamepad2, Medal,
+  ChevronLeft, Info
 } from "lucide-react";
 import { AvatarDisplay } from "../components/AvatarDisplay";
 
@@ -24,20 +25,29 @@ export default function DashboardPage() {
   
   const [loading, setLoading] = useState(true);
   const [nextRace, setNextRace] = useState(null);
+  const [upcomingRaces, setUpcomingRaces] = useState([]);
+  const [currentRaceIndex, setCurrentRaceIndex] = useState(0);
   const [league, setLeague] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const [myPrediction, setMyPrediction] = useState(null);
+  const [predictions, setPredictions] = useState({});
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [avatars, setAvatars] = useState({});
+  const sliderRef = useRef(null);
 
   const fetchData = useCallback(async () => {
     try {
-      const [raceRes, avatarsRes] = await Promise.all([
+      const [raceRes, upcomingRes, avatarsRes] = await Promise.all([
         apiClient.get("/races/next"),
+        apiClient.get("/races/upcoming"),
         apiClient.get("/avatars")
       ]);
       setNextRace(raceRes.data);
       setAvatars(avatarsRes.data);
+      
+      // Filter upcoming races that can still be predicted or are in progress
+      const upcoming = upcomingRes.data.filter(r => r.status !== "finished").slice(0, 8);
+      setUpcomingRaces(upcoming);
 
       if (user.current_league_id) {
         const [leagueRes, lbRes] = await Promise.all([
@@ -48,13 +58,19 @@ export default function DashboardPage() {
         setLeaderboard(lbRes.data.slice(0, 3));
       }
 
+      // Fetch predictions for all upcoming races
+      const predsPromises = upcoming.map(race => 
+        apiClient.get(`/predictions/race/${race.id}`).catch(() => ({ data: null }))
+      );
+      const predsResults = await Promise.all(predsPromises);
+      const predsMap = {};
+      upcoming.forEach((race, i) => {
+        predsMap[race.id] = predsResults[i].data;
+      });
+      setPredictions(predsMap);
+      
       if (raceRes.data) {
-        try {
-          const predRes = await apiClient.get(`/predictions/race/${raceRes.data.id}`);
-          setMyPrediction(predRes.data);
-        } catch {
-          setMyPrediction(null);
-        }
+        setMyPrediction(predsMap[raceRes.data.id] || null);
       }
     } catch (e) {
       console.error(e);
@@ -68,10 +84,11 @@ export default function DashboardPage() {
   }, [fetchData]);
 
   useEffect(() => {
-    if (!nextRace?.predictions_close_at) return;
+    const currentRace = upcomingRaces[currentRaceIndex];
+    if (!currentRace?.predictions_close_at) return;
     
     const updateCountdown = () => {
-      const diff = new Date(nextRace.predictions_close_at) - new Date();
+      const diff = new Date(currentRace.predictions_close_at) - new Date();
       if (diff <= 0) {
         setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         return;
@@ -87,7 +104,7 @@ export default function DashboardPage() {
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
-  }, [nextRace]);
+  }, [upcomingRaces, currentRaceIndex]);
 
   const getAvatarById = (avatarId) => {
     return avatars?.all?.find(a => a.id === avatarId) || null;
@@ -98,6 +115,21 @@ export default function DashboardPage() {
     if (name.includes('monaco')) return GP_BACKGROUNDS.monaco;
     return GP_BACKGROUNDS.default;
   };
+
+  const handlePrevRace = () => {
+    if (currentRaceIndex > 0) {
+      setCurrentRaceIndex(prev => prev - 1);
+    }
+  };
+
+  const handleNextRace = () => {
+    if (currentRaceIndex < upcomingRaces.length - 1) {
+      setCurrentRaceIndex(prev => prev + 1);
+    }
+  };
+
+  const currentRace = upcomingRaces[currentRaceIndex];
+  const currentPrediction = currentRace ? predictions[currentRace.id] : null;
 
   const myPosition = leaderboard.findIndex(e => e.user_id === user?.id) + 1;
 
@@ -167,69 +199,135 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Next Race Card - Main Feature */}
-        {nextRace && (
-          <div className="card-arcade overflow-hidden">
-            {/* GP Scenic Background */}
+        {/* Race Slider Card - Main Feature */}
+        {upcomingRaces.length > 0 && currentRace && (
+          <div className="card-arcade overflow-hidden" data-testid="race-slider">
+            {/* Slider Navigation Header */}
+            <div className="flex items-center justify-between px-4 py-2 bg-gradient-to-r from-cyan-900/30 to-transparent border-b border-cyan-500/20">
+              <button 
+                onClick={handlePrevRace}
+                disabled={currentRaceIndex === 0}
+                className={`p-2 rounded-lg transition-all ${
+                  currentRaceIndex === 0 
+                    ? 'text-gray-600 cursor-not-allowed' 
+                    : 'text-cyan-400 hover:bg-cyan-500/20 active:scale-95'
+                }`}
+                data-testid="prev-race-btn"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              
+              <div className="flex items-center gap-2">
+                {upcomingRaces.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentRaceIndex(i)}
+                    className={`w-2 h-2 rounded-full transition-all ${
+                      i === currentRaceIndex 
+                        ? 'bg-cyan-400 w-4' 
+                        : 'bg-gray-600 hover:bg-gray-500'
+                    }`}
+                    data-testid={`race-dot-${i}`}
+                  />
+                ))}
+              </div>
+
+              <button 
+                onClick={handleNextRace}
+                disabled={currentRaceIndex === upcomingRaces.length - 1}
+                className={`p-2 rounded-lg transition-all ${
+                  currentRaceIndex === upcomingRaces.length - 1 
+                    ? 'text-gray-600 cursor-not-allowed' 
+                    : 'text-cyan-400 hover:bg-cyan-500/20 active:scale-95'
+                }`}
+                data-testid="next-race-btn"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* GP Scenic Background - Clickable for details */}
             <div 
-              className="relative h-32 bg-cover bg-center"
-              style={{ backgroundImage: `url(${getGPBackground(nextRace.name)})` }}
+              className="relative h-32 bg-cover bg-center cursor-pointer group"
+              style={{ backgroundImage: `url(${getGPBackground(currentRace.name)})` }}
+              onClick={() => navigate(`/race/${currentRace.id}`)}
+              data-testid="race-card-clickable"
             >
               {/* Dark overlay for better text contrast */}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-[#0c1525]" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-[#0c1525] group-hover:from-black/40 transition-all" />
+              
+              {/* Info icon overlay */}
+              <div className="absolute top-3 left-3 bg-white/10 backdrop-blur-sm rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Info className="w-4 h-4 text-white" />
+              </div>
               
               {/* Sprint badge */}
-              {nextRace.is_sprint_weekend && (
+              {currentRace.is_sprint_weekend && (
                 <div className="absolute top-3 right-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-yellow-900 font-heading text-xs px-4 py-1 rounded-full shadow-lg animate-gold">
                   SPRINT WEEKEND
                 </div>
               )}
               
+              {/* Race index badge */}
+              <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-sm text-white font-heading text-xs px-2 py-1 rounded-full group-hover:hidden">
+                {currentRaceIndex + 1}/{upcomingRaces.length}
+              </div>
+              
               {/* Race Title Overlay */}
               <div className="absolute bottom-0 left-0 right-0 p-4">
                 <p className="font-body text-xs text-cyan-300 uppercase tracking-widest mb-1 drop-shadow-lg">
-                  Prochain Grand Prix
+                  {currentRaceIndex === 0 ? "Prochain Grand Prix" : "À venir"}
                 </p>
                 <h2 className="font-heading text-2xl text-white uppercase tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{textShadow: '0 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(251,191,36,0.4)'}}>
-                  {nextRace.name.replace(" Grand Prix", "")}
+                  {currentRace.name.replace(" Grand Prix", "")}
                 </h2>
                 <div className="flex items-center gap-4 mt-1">
                   <span className="font-body text-xs text-white flex items-center gap-1 drop-shadow-lg">
-                    <MapPin className="w-3 h-3 text-red-400" /> {nextRace.circuit}
+                    <MapPin className="w-3 h-3 text-red-400" /> {currentRace.circuit}
                   </span>
                   <span className="font-body text-xs text-white flex items-center gap-1 drop-shadow-lg">
-                    <Calendar className="w-3 h-3 text-blue-400" /> {new Date(nextRace.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                    <Calendar className="w-3 h-3 text-blue-400" /> {new Date(currentRace.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                   </span>
                 </div>
               </div>
             </div>
 
             {/* Countdown Section */}
-            <div className="p-4 border-t border-blue-500/30">
-              <p className="font-body text-xs text-center text-cyan-neon uppercase mb-3 tracking-wider flex items-center justify-center gap-2">
-                <Clock className="w-4 h-4" /> Clôture des pronos dans
-              </p>
-              <div className="flex justify-center gap-2">
-                {[
-                  { value: countdown.days, label: "JOURS" },
-                  { value: countdown.hours, label: "HEURES" },
-                  { value: countdown.minutes, label: "MIN" },
-                  { value: countdown.seconds, label: "SEC" }
-                ].map((item, i) => (
-                  <div key={i} className="countdown-digit w-16 h-16 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold">{String(item.value).padStart(2, '0')}</span>
-                    <span className="text-[8px] text-gray-400 tracking-wider">{item.label}</span>
-                  </div>
-                ))}
+            {currentRace.can_predict && (
+              <div className="p-4 border-t border-blue-500/30">
+                <p className="font-body text-xs text-center text-cyan-neon uppercase mb-3 tracking-wider flex items-center justify-center gap-2">
+                  <Clock className="w-4 h-4" /> Clôture des pronos dans
+                </p>
+                <div className="flex justify-center gap-2">
+                  {[
+                    { value: countdown.days, label: "JOURS" },
+                    { value: countdown.hours, label: "HEURES" },
+                    { value: countdown.minutes, label: "MIN" },
+                    { value: countdown.seconds, label: "SEC" }
+                  ].map((item, i) => (
+                    <div key={i} className="countdown-digit w-16 h-16 flex flex-col items-center justify-center">
+                      <span className="text-2xl font-bold">{String(item.value).padStart(2, '0')}</span>
+                      <span className="text-[8px] text-gray-400 tracking-wider">{item.label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+
+            {!currentRace.can_predict && (
+              <div className="p-4 border-t border-orange-500/30 bg-orange-500/10">
+                <p className="font-body text-sm text-center text-orange-400">
+                  Les pronostics sont fermés pour cette course
+                </p>
+              </div>
+            )}
 
             {/* Kerb Stripe Separator */}
             <div className="h-2 bg-kerb-stripe" />
 
             {/* Prediction Status & CTA */}
             <div className="p-4">
-              {myPrediction ? (
+              {currentPrediction ? (
                 <div className="flex items-center justify-between bg-green-500/10 border-2 border-green-500/50 rounded-xl p-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg">
@@ -240,20 +338,39 @@ export default function DashboardPage() {
                       <p className="font-body text-xs text-gray-400">Bonne chance pour ce GP</p>
                     </div>
                   </div>
-                  <Button onClick={() => navigate(`/predictions/${nextRace.id}`)} className="btn-gold text-sm px-5 py-2">
-                    Modifier
-                  </Button>
+                  {currentRace.can_predict && (
+                    <Button onClick={() => navigate(`/predictions/${currentRace.id}`)} className="btn-gold text-sm px-5 py-2">
+                      Modifier
+                    </Button>
+                  )}
                 </div>
-              ) : (
+              ) : currentRace.can_predict ? (
                 <Button 
-                  onClick={() => navigate(`/predictions/${nextRace.id}`)} 
+                  onClick={() => navigate(`/predictions/${currentRace.id}`)} 
                   className="btn-racing w-full h-14 text-lg animate-neon"
                   data-testid="make-predictions-btn"
                 >
                   <Target className="w-5 h-5 mr-2" />
                   FAIRE MES PRONOS
                 </Button>
+              ) : (
+                <div className="text-center py-2">
+                  <p className="font-body text-sm text-gray-500">Pronostics fermés</p>
+                </div>
               )}
+            </div>
+
+            {/* View Details Link */}
+            <div className="px-4 pb-4">
+              <button 
+                onClick={() => navigate(`/race/${currentRace.id}`)}
+                className="w-full flex items-center justify-center gap-2 text-cyan-400 hover:text-cyan-300 font-body text-sm py-2 rounded-lg hover:bg-cyan-500/10 transition-all"
+                data-testid="view-details-btn"
+              >
+                <Info className="w-4 h-4" />
+                Voir les détails du circuit
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
         )}

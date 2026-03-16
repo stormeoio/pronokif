@@ -20,6 +20,7 @@ import MiniGamesPage from "./pages/MiniGamesPage";
 import MissionsPage from "./pages/MissionsPage";
 import GlobalLeaderboardPage from "./pages/GlobalLeaderboardPage";
 import CustomPredictionsPage from "./pages/CustomPredictionsPage";
+import GrandPrixDetailPage from "./pages/GrandPrixDetailPage";
 
 // Components
 import BottomNav from "./components/BottomNav";
@@ -282,6 +283,12 @@ function AppRouter() {
       <Route path="/custom-predictions/:leagueId" element={
         <ProtectedRoute>
           <CustomPredictionsPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/race/:raceId" element={
+        <ProtectedRoute>
+          <GrandPrixDetailPage />
         </ProtectedRoute>
       } />
 

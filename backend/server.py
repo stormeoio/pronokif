@@ -700,6 +700,107 @@ async def get_race(race_id: str):
             }
     raise HTTPException(status_code=404, detail="Race not found")
 
+@api_router.get("/races/{race_id}/details")
+async def get_race_details(race_id: str):
+    """Get detailed information for a specific race including circuit info and session times"""
+    for race in F1_RACES_2026:
+        if race["id"] == race_id:
+            now = datetime.now(timezone.utc)
+            race_date = datetime.fromisoformat(race["date"] + "T" + race.get("race_time", "15:00") + ":00+00:00")
+            quali_date = datetime.fromisoformat(race["quali_date"] + "T" + race.get("quali_time", "14:00") + ":00+00:00")
+            fp1_datetime = datetime.fromisoformat(f"{race['fp1_date']}T{race['fp1_time']}:00+00:00")
+            predictions_close = get_predictions_close_time(race)
+            
+            if now < predictions_close:
+                status = "upcoming"
+            elif now < race_date:
+                status = "in_progress"
+            else:
+                status = "finished"
+            
+            # Get circuit details
+            circuit_name = race["circuit"]
+            circuit_info = F1_CIRCUITS.get(circuit_name, {})
+            
+            # Build session schedule
+            sessions = []
+            
+            # FP1
+            if race.get("fp1_date") and race.get("fp1_time"):
+                sessions.append({
+                    "name": "Essais Libres 1",
+                    "short_name": "FP1",
+                    "datetime": f"{race['fp1_date']}T{race['fp1_time']}:00+00:00"
+                })
+            
+            # FP2 (only for non-sprint weekends)
+            if not race.get("is_sprint") and race.get("fp2_date") and race.get("fp2_time"):
+                sessions.append({
+                    "name": "Essais Libres 2",
+                    "short_name": "FP2",
+                    "datetime": f"{race['fp2_date']}T{race['fp2_time']}:00+00:00"
+                })
+            
+            # Sprint Quali (for sprint weekends)
+            if race.get("is_sprint") and race.get("sprint_quali_date") and race.get("sprint_quali_time"):
+                sessions.append({
+                    "name": "Sprint Shootout",
+                    "short_name": "SQ",
+                    "datetime": f"{race['sprint_quali_date']}T{race['sprint_quali_time']}:00+00:00"
+                })
+            
+            # FP3 (only for non-sprint weekends)
+            if not race.get("is_sprint") and race.get("fp3_date") and race.get("fp3_time"):
+                sessions.append({
+                    "name": "Essais Libres 3",
+                    "short_name": "FP3",
+                    "datetime": f"{race['fp3_date']}T{race['fp3_time']}:00+00:00"
+                })
+            
+            # Sprint Race (for sprint weekends)
+            if race.get("is_sprint") and race.get("sprint_race_date") and race.get("sprint_race_time"):
+                sessions.append({
+                    "name": "Course Sprint",
+                    "short_name": "SPRINT",
+                    "datetime": f"{race['sprint_race_date']}T{race['sprint_race_time']}:00+00:00"
+                })
+            
+            # Qualifying
+            if race.get("quali_date") and race.get("quali_time"):
+                sessions.append({
+                    "name": "Qualifications",
+                    "short_name": "QUALI",
+                    "datetime": f"{race['quali_date']}T{race['quali_time']}:00+00:00"
+                })
+            
+            # Race
+            sessions.append({
+                "name": "Course",
+                "short_name": "COURSE",
+                "datetime": race_date.isoformat()
+            })
+            
+            # Sort sessions by datetime
+            sessions.sort(key=lambda x: x["datetime"])
+            
+            return {
+                "id": race["id"],
+                "name": race["name"],
+                "country": race["country"],
+                "status": status,
+                "is_sprint_weekend": race.get("is_sprint", False),
+                "predictions_close_at": predictions_close.isoformat(),
+                "circuit": {
+                    "name": circuit_name,
+                    "full_name": circuit_info.get("full_name", circuit_name),
+                    "length_km": circuit_info.get("length_km"),
+                    "turns": circuit_info.get("turns"),
+                    "laps": circuit_info.get("laps")
+                },
+                "sessions": sessions
+            }
+    raise HTTPException(status_code=404, detail="Race not found")
+
 # ==================== PREDICTION ENDPOINTS ====================
 
 @api_router.post("/predictions")
