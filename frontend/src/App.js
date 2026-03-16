@@ -21,6 +21,8 @@ import MissionsPage from "./pages/MissionsPage";
 import GlobalLeaderboardPage from "./pages/GlobalLeaderboardPage";
 import CustomPredictionsPage from "./pages/CustomPredictionsPage";
 import GrandPrixDetailPage from "./pages/GrandPrixDetailPage";
+import LeagueChatPage from "./pages/LeagueChatPage";
+import MemberProfilePage from "./pages/MemberProfilePage";
 
 // Components
 import BottomNav from "./components/BottomNav";
@@ -289,6 +291,18 @@ function AppRouter() {
       <Route path="/race/:raceId" element={
         <ProtectedRoute>
           <GrandPrixDetailPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/league/:leagueId/chat" element={
+        <ProtectedRoute>
+          <LeagueChatPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/profile/:userId" element={
+        <ProtectedRoute>
+          <MemberProfilePage />
         </ProtectedRoute>
       } />
 

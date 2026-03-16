@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { 
   Flag, Trophy, Clock, ChevronRight, Zap, Target,
   Calendar, MapPin, Users, Star, Gamepad2, Medal,
-  ChevronLeft, Info
+  ChevronLeft, Info, Plus, MessageCircle
 } from "lucide-react";
 import { AvatarDisplay } from "../components/AvatarDisplay";
 
@@ -411,29 +411,51 @@ export default function DashboardPage() {
                   <Trophy className="w-5 h-5 text-yellow-500" />
                   Mes Ligues
                 </h3>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => navigate("/leaderboard")} 
-                  className="text-cyan-400 font-body text-xs hover:text-cyan-300 hover:bg-cyan-500/10"
-                >
-                  Voir tout <ChevronRight className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => navigate(`/league/${league.id}/chat`)} 
+                    className="text-cyan-400 font-body text-xs hover:text-cyan-300 hover:bg-cyan-500/10"
+                    data-testid="league-chat-btn"
+                  >
+                    <MessageCircle className="w-4 h-4 mr-1" /> Chat
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => navigate("/league")} 
+                    className="text-green-400 font-body text-xs hover:text-green-300 hover:bg-green-500/10"
+                    data-testid="add-league-btn"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => navigate("/leaderboard")} 
+                    className="text-cyan-400 font-body text-xs hover:text-cyan-300 hover:bg-cyan-500/10"
+                  >
+                    Voir tout <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 
-            {/* Top 3 */}
+            {/* Top 3 - Clickable members */}
             <div className="p-4 space-y-2">
               {leaderboard.map((entry, i) => {
                 const isMe = entry.user_id === user?.id;
                 return (
                   <div 
                     key={entry.user_id}
-                    className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+                    onClick={() => navigate(`/profile/${entry.user_id}`)}
+                    className={`flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer ${
                       isMe 
-                        ? 'bg-blue-500/20 border border-blue-500/50 shadow-lg' 
+                        ? 'bg-blue-500/20 border border-blue-500/50 shadow-lg hover:bg-blue-500/30' 
                         : 'bg-white/5 hover:bg-white/10'
                     }`}
+                    data-testid={`leaderboard-member-${entry.user_id}`}
                   >
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-heading text-lg ${
                       i === 0 ? 'position-1' : i === 1 ? 'position-2' : i === 2 ? 'position-3' : 'bg-gray-700 text-gray-300'

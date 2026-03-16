@@ -5,7 +5,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { 
   Trophy, TrendingUp, TrendingDown, Minus, Users, 
-  Share2, Copy, Check, ChevronDown
+  Share2, Copy, Check, ChevronDown, MessageCircle, Plus
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -149,6 +149,24 @@ export default function LeaderboardPage() {
                 </p>
               </div>
               <div className="flex gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => navigate(`/league/${currentLeague.id}/chat`)} 
+                  className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10" 
+                  data-testid="chat-btn"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => navigate("/league")} 
+                  className="text-green-400 hover:text-green-300 hover:bg-green-500/10" 
+                  data-testid="add-league-btn"
+                >
+                  <Plus className="w-5 h-5" />
+                </Button>
                 <Button variant="ghost" size="icon" onClick={copyCode} className="text-gray-400 hover:text-white hover:bg-white/10" data-testid="copy-code-btn">
                   {copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}
                 </Button>
@@ -177,7 +195,8 @@ export default function LeaderboardPage() {
               return (
                 <div 
                   key={entry.user_id}
-                  className={`grid grid-cols-12 gap-2 items-center p-4 border-b border-gray-800 transition-colors hover:bg-white/5 ${
+                  onClick={() => navigate(`/profile/${entry.user_id}`)}
+                  className={`grid grid-cols-12 gap-2 items-center p-4 border-b border-gray-800 transition-colors hover:bg-white/5 cursor-pointer ${
                     isMe ? 'bg-orange-500/10' : ''
                   }`}
                   data-testid={`leaderboard-row-${index}`}

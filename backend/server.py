@@ -548,6 +548,163 @@ async def select_league(league_id: str, user=Depends(get_current_user)):
     await db.users.update_one({"id": user["id"]}, {"$set": {"current_league_id": league_id}})
     return {"message": "League selected", "league_id": league_id}
 
+# ==================== LEAGUE CHAT ====================
+
+class ChatMessage(BaseModel):
+    content: str
+
+@api_router.post("/leagues/{league_id}/messages")
+async def send_league_message(league_id: str, data: ChatMessage, user=Depends(get_current_user)):
+    """Send a message to the league chat"""
+    league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
+    if not league or user["id"] not in league["members"]:
+        raise HTTPException(status_code=403, detail="Not a member of this league")
+    
+    if not data.content.strip():
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+    
+    if len(data.content) > 500:
+        raise HTTPException(status_code=400, detail="Message too long (max 500 characters)")
+    
+    message = {
+        "id": str(uuid.uuid4()),
+        "league_id": league_id,
+        "user_id": user["id"],
+        "username": user.get("username", "Anonymous"),
+        "avatar_id": user.get("avatar_id"),
+        "custom_avatar_url": user.get("custom_avatar_url"),
+        "content": data.content.strip(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.league_messages.insert_one(message)
+    return {k: v for k, v in message.items() if k != "_id"}
+
+@api_router.get("/leagues/{league_id}/messages")
+async def get_league_messages(league_id: str, limit: int = 50, before: str = None, user=Depends(get_current_user)):
+    """Get messages from the league chat"""
+    league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
+    if not league or user["id"] not in league["members"]:
+        raise HTTPException(status_code=403, detail="Not a member of this league")
+    
+    query = {"league_id": league_id}
+    if before:
+        query["created_at"] = {"$lt": before}
+    
+    messages = await db.league_messages.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    
+    # Return in chronological order
+    return list(reversed(messages))
+
+@api_router.get("/leagues/{league_id}/members")
+async def get_league_members(league_id: str, user=Depends(get_current_user)):
+    """Get all members of a league with their basic info"""
+    league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
+    if not league or user["id"] not in league["members"]:
+        raise HTTPException(status_code=403, detail="Not a member of this league")
+    
+    members = []
+    for member_id in league["members"]:
+        member = await db.users.find_one({"id": member_id}, {"_id": 0, "password_hash": 0})
+        if member:
+            members.append({
+                "id": member["id"],
+                "username": member.get("username", "Anonymous"),
+                "avatar_id": member.get("avatar_id"),
+                "custom_avatar_url": member.get("custom_avatar_url"),
+                "level": member.get("level", 1),
+                "xp": member.get("xp", 0),
+                "is_owner": member["id"] == league["created_by"]
+            })
+    
+    return members
+
+# ==================== PUBLIC PROFILE ====================
+
+@api_router.get("/users/{user_id}/profile")
+async def get_user_public_profile(user_id: str, user=Depends(get_current_user)):
+    """Get public profile of a user"""
+    target_user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0, "email": 0})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get user stats
+    stats = await db.user_stats.find_one({"user_id": user_id}, {"_id": 0})
+    if not stats:
+        stats = get_default_user_stats()
+    
+    # Count predictions
+    total_predictions = await db.predictions.count_documents({"user_id": user_id})
+    
+    # Get leagues in common with the requesting user
+    user_leagues = await db.leagues.find({"members": user["id"]}, {"_id": 0}).to_list(100)
+    target_leagues = await db.leagues.find({"members": user_id}, {"_id": 0}).to_list(100)
+    
+    user_league_ids = {l["id"] for l in user_leagues}
+    common_leagues = []
+    
+    for league in target_leagues:
+        if league["id"] in user_league_ids:
+            # Get position in this league
+            leaderboard = await db.leaderboard.find({"league_id": league["id"]}, {"_id": 0}).to_list(100)
+            leaderboard.sort(key=lambda x: x.get("total_points", 0), reverse=True)
+            position = next((i + 1 for i, e in enumerate(leaderboard) if e["user_id"] == user_id), None)
+            total_points = next((e.get("total_points", 0) for e in leaderboard if e["user_id"] == user_id), 0)
+            
+            common_leagues.append({
+                "id": league["id"],
+                "name": league["name"],
+                "position": position,
+                "total_points": total_points,
+                "members_count": len(league["members"])
+            })
+    
+    # Get recent predictions (last 5)
+    recent_predictions = await db.predictions.find(
+        {"user_id": user_id}, 
+        {"_id": 0, "quali_top10": 0, "race_top10": 0, "sprint_quali_top10": 0, "sprint_race_top10": 0}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    
+    # Map race names
+    race_map = {r["id"]: r["name"] for r in F1_RACES_2026}
+    for pred in recent_predictions:
+        pred["race_name"] = race_map.get(pred["race_id"], pred["race_id"])
+    
+    # Get minigame best scores
+    reaction_best = await db.minigame_scores.find_one(
+        {"user_id": user_id, "game_type": "reaction"},
+        {"_id": 0},
+        sort=[("score", 1)]  # Lower is better for reaction time
+    )
+    batak_best = await db.minigame_scores.find_one(
+        {"user_id": user_id, "game_type": "batak"},
+        {"_id": 0},
+        sort=[("score", -1)]  # Higher is better for batak
+    )
+    
+    return {
+        "id": target_user["id"],
+        "username": target_user.get("username", "Anonymous"),
+        "avatar_id": target_user.get("avatar_id"),
+        "custom_avatar_url": target_user.get("custom_avatar_url"),
+        "level": target_user.get("level", 1),
+        "xp": target_user.get("xp", 0),
+        "created_at": target_user.get("created_at"),
+        "stats": {
+            "total_predictions": total_predictions,
+            "correct_poles": stats.get("correct_poles", 0),
+            "correct_winners": stats.get("correct_winners", 0),
+            "perfect_top10": stats.get("perfect_top10", 0),
+            "races_participated": stats.get("races_participated", 0)
+        },
+        "leagues": common_leagues,
+        "recent_predictions": recent_predictions,
+        "minigames": {
+            "reaction_best_ms": reaction_best.get("score") if reaction_best else None,
+            "batak_best_score": batak_best.get("score") if batak_best else None
+        }
+    }
+
 # ==================== RACE & DRIVER ENDPOINTS ====================
 
 @api_router.get("/drivers", response_model=List[DriverResponse])
