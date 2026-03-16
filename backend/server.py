@@ -110,9 +110,11 @@ class PredictionCreate(BaseModel):
     # Qualifications Race (Top 10)
     quali_pole: str
     quali_top10: List[str]  # Extended to Top 10
-    # Sprint Qualifications (Top 10) - only for sprint weekends
+    # Sprint Qualifications - only for sprint weekends
+    sprint_quali_pole: Optional[str] = None
     sprint_quali_top10: Optional[List[str]] = None
-    # Sprint Race (Top 10) - only for sprint weekends
+    # Sprint Race - only for sprint weekends
+    sprint_race_winner: Optional[str] = None
     sprint_race_top10: Optional[List[str]] = None
     # Main Race (Top 10)
     race_winner: str
@@ -1122,8 +1124,12 @@ async def create_prediction(data: PredictionCreate, user=Depends(get_current_use
     
     # Validate sprint if sprint weekend
     if race.get("is_sprint"):
+        if not data.sprint_quali_pole:
+            raise HTTPException(status_code=400, detail="Sprint quali pole required for sprint weekend")
         if not data.sprint_quali_top10 or len(data.sprint_quali_top10) != 10:
             raise HTTPException(status_code=400, detail="Sprint quali top 10 required for sprint weekend")
+        if not data.sprint_race_winner:
+            raise HTTPException(status_code=400, detail="Sprint race winner required for sprint weekend")
         if not data.sprint_race_top10 or len(data.sprint_race_top10) != 10:
             raise HTTPException(status_code=400, detail="Sprint race top 10 required for sprint weekend")
     
@@ -1133,7 +1139,9 @@ async def create_prediction(data: PredictionCreate, user=Depends(get_current_use
     prediction_data = {
         "quali_pole": data.quali_pole,
         "quali_top10": data.quali_top10,
+        "sprint_quali_pole": data.sprint_quali_pole if race.get("is_sprint") else None,
         "sprint_quali_top10": data.sprint_quali_top10 if race.get("is_sprint") else None,
+        "sprint_race_winner": data.sprint_race_winner if race.get("is_sprint") else None,
         "sprint_race_top10": data.sprint_race_top10 if race.get("is_sprint") else None,
         "race_winner": data.race_winner,
         "race_top10": data.race_top10,

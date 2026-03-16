@@ -41,7 +41,9 @@ export default function PredictionsPage() {
   const [raceTop10, setRaceTop10] = useState([]);
   
   // Sprint predictions (for sprint weekends)
+  const [sprintQualiPole, setSprintQualiPole] = useState(null);
   const [sprintQualiTop10, setSprintQualiTop10] = useState([]);
+  const [sprintRaceWinner, setSprintRaceWinner] = useState(null);
   const [sprintRaceTop10, setSprintRaceTop10] = useState([]);
   
   // Bonus bets state
@@ -73,7 +75,9 @@ export default function PredictionsPage() {
           setRaceWinner(predRes.data.race_winner);
           setRaceTop10(predRes.data.race_top10 || []);
           // Sprint predictions
+          setSprintQualiPole(predRes.data.sprint_quali_pole || null);
           setSprintQualiTop10(predRes.data.sprint_quali_top10 || []);
+          setSprintRaceWinner(predRes.data.sprint_race_winner || null);
           setSprintRaceTop10(predRes.data.sprint_race_top10 || []);
           // Bonus bets
           if (predRes.data.bonus_bets) {
@@ -98,6 +102,15 @@ export default function PredictionsPage() {
     fetchData();
   }, [fetchData]);
 
+  // Set initial selection mode based on race type
+  useEffect(() => {
+    if (race?.is_sprint_weekend && !existingPrediction) {
+      setSelectionMode("sprint_quali_pole");
+    } else if (!existingPrediction) {
+      setSelectionMode("quali_pole");
+    }
+  }, [race, existingPrediction]);
+
   const handleDriverSelect = (driverId) => {
     switch (selectionMode) {
       case "quali_pole":
@@ -112,13 +125,18 @@ export default function PredictionsPage() {
           const newTop10 = [...qualiTop10, driverId];
           setQualiTop10(newTop10);
           if (newTop10.length === 10) {
-            if (race?.is_sprint_weekend && sprintQualiTop10.length < 10) {
-              setSelectionMode("sprint_quali_top10");
+            if (race?.is_sprint_weekend && !sprintQualiPole) {
+              setSelectionMode("sprint_quali_pole");
             } else if (!raceWinner) {
               setSelectionMode("race_winner");
             }
           }
         }
+        break;
+
+      case "sprint_quali_pole":
+        setSprintQualiPole(driverId);
+        if (sprintQualiTop10.length < 10) setSelectionMode("sprint_quali_top10");
         break;
 
       case "sprint_quali_top10":
@@ -127,10 +145,15 @@ export default function PredictionsPage() {
         } else if (sprintQualiTop10.length < 10) {
           const newTop10 = [...sprintQualiTop10, driverId];
           setSprintQualiTop10(newTop10);
-          if (newTop10.length === 10 && sprintRaceTop10.length < 10) {
-            setSelectionMode("sprint_race_top10");
+          if (newTop10.length === 10 && !sprintRaceWinner) {
+            setSelectionMode("sprint_race_winner");
           }
         }
+        break;
+
+      case "sprint_race_winner":
+        setSprintRaceWinner(driverId);
+        if (sprintRaceTop10.length < 10) setSelectionMode("sprint_race_top10");
         break;
 
       case "sprint_race_top10":
@@ -185,7 +208,9 @@ export default function PredictionsPage() {
     switch (selectionMode) {
       case "quali_pole": return qualiPole === driverId;
       case "quali_top10": return qualiTop10.includes(driverId);
+      case "sprint_quali_pole": return sprintQualiPole === driverId;
       case "sprint_quali_top10": return sprintQualiTop10.includes(driverId);
+      case "sprint_race_winner": return sprintRaceWinner === driverId;
       case "sprint_race_top10": return sprintRaceTop10.includes(driverId);
       case "race_winner": return raceWinner === driverId;
       case "race_top10": return raceTop10.includes(driverId);
@@ -205,7 +230,12 @@ export default function PredictionsPage() {
   };
 
   // Check if all required predictions are complete
-  const isSprintComplete = !race?.is_sprint_weekend || (sprintQualiTop10.length === 10 && sprintRaceTop10.length === 10);
+  const isSprintComplete = !race?.is_sprint_weekend || (
+    sprintQualiPole && 
+    sprintQualiTop10.length === 10 && 
+    sprintRaceWinner && 
+    sprintRaceTop10.length === 10
+  );
   const isComplete = qualiPole && qualiTop10.length === 10 && raceWinner && raceTop10.length === 10 && isSprintComplete;
 
   const handleSubmit = async () => {
@@ -232,7 +262,9 @@ export default function PredictionsPage() {
 
       // Add sprint predictions if it's a sprint weekend
       if (race.is_sprint_weekend) {
+        payload.sprint_quali_pole = sprintQualiPole;
         payload.sprint_quali_top10 = sprintQualiTop10;
+        payload.sprint_race_winner = sprintRaceWinner;
         payload.sprint_race_top10 = sprintRaceTop10;
       }
 
@@ -251,20 +283,22 @@ export default function PredictionsPage() {
 
   // Define all selection steps
   const getSelectionSteps = () => {
-    const steps = [
-      { key: "quali_pole", label: "Pole", sublabel: "Qualif", icon: Flag, done: !!qualiPole, count: qualiPole ? 1 : 0, max: 1 },
-      { key: "quali_top10", label: "Top 10", sublabel: "Qualif", icon: Medal, done: qualiTop10.length === 10, count: qualiTop10.length, max: 10 },
-    ];
+    const steps = [];
 
-    // Add sprint steps if it's a sprint weekend
+    // Add sprint steps FIRST if it's a sprint weekend (Sprint happens before main quali/race)
     if (race?.is_sprint_weekend) {
       steps.push(
-        { key: "sprint_quali_top10", label: "Sprint Q", sublabel: "Sprint", icon: Zap, done: sprintQualiTop10.length === 10, count: sprintQualiTop10.length, max: 10, isSprint: true },
-        { key: "sprint_race_top10", label: "Sprint R", sublabel: "Sprint", icon: Zap, done: sprintRaceTop10.length === 10, count: sprintRaceTop10.length, max: 10, isSprint: true }
+        { key: "sprint_quali_pole", label: "Pole", sublabel: "Sprint Qualif", icon: Flag, done: !!sprintQualiPole, count: sprintQualiPole ? 1 : 0, max: 1, isSprint: true },
+        { key: "sprint_quali_top10", label: "Top 10", sublabel: "Sprint Qualif", icon: Medal, done: sprintQualiTop10.length === 10, count: sprintQualiTop10.length, max: 10, isSprint: true },
+        { key: "sprint_race_winner", label: "Winner", sublabel: "Sprint Course", icon: Trophy, done: !!sprintRaceWinner, count: sprintRaceWinner ? 1 : 0, max: 1, isSprint: true },
+        { key: "sprint_race_top10", label: "Top 10", sublabel: "Sprint Course", icon: Medal, done: sprintRaceTop10.length === 10, count: sprintRaceTop10.length, max: 10, isSprint: true }
       );
     }
 
+    // Main qualifying and race
     steps.push(
+      { key: "quali_pole", label: "Pole", sublabel: "Qualif", icon: Flag, done: !!qualiPole, count: qualiPole ? 1 : 0, max: 1 },
+      { key: "quali_top10", label: "Top 10", sublabel: "Qualif", icon: Medal, done: qualiTop10.length === 10, count: qualiTop10.length, max: 10 },
       { key: "race_winner", label: "Winner", sublabel: "Course", icon: Trophy, done: !!raceWinner, count: raceWinner ? 1 : 0, max: 1 },
       { key: "race_top10", label: "Top 10", sublabel: "Course", icon: Medal, done: raceTop10.length === 10, count: raceTop10.length, max: 10 },
       { key: "bonus", label: "Bonus", sublabel: "Paris", icon: Zap, done: true, count: 0, max: 0, isBonus: true }

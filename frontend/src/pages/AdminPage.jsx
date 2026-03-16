@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { 
   ChevronLeft, Check, Flag, Trophy, Shield, Calendar,
   AlertTriangle, Timer, Save, Loader2, Target, Users, X, Zap, RefreshCw,
-  Bell, Send, MessageSquare, Bug, Lightbulb, Info, Eye, EyeOff
+  Bell, Send, MessageSquare, Bug, Lightbulb, Info, Eye, EyeOff, Medal
 } from "lucide-react";
 
 const TEAM_COLORS = {
@@ -42,7 +42,9 @@ export default function AdminPage() {
   // Results state - Now Top 10
   const [qualiPole, setQualiPole] = useState(null);
   const [qualiTop10, setQualiTop10] = useState([]);
+  const [sprintQualiPole, setSprintQualiPole] = useState(null);
   const [sprintQualiTop10, setSprintQualiTop10] = useState([]);
+  const [sprintRaceWinner, setSprintRaceWinner] = useState(null);
   const [sprintRaceTop10, setSprintRaceTop10] = useState([]);
   const [raceWinner, setRaceWinner] = useState(null);
   const [raceTop10, setRaceTop10] = useState([]);
@@ -163,7 +165,9 @@ export default function AdminPage() {
           const r = res.data.results;
           setQualiPole(r.quali_pole);
           setQualiTop10(r.quali_top10 || []);
+          setSprintQualiPole(r.sprint_quali_pole || null);
           setSprintQualiTop10(r.sprint_quali_top10 || []);
+          setSprintRaceWinner(r.sprint_race_winner || null);
           setSprintRaceTop10(r.sprint_race_top10 || []);
           setRaceWinner(r.race_winner);
           setRaceTop10(r.race_top10 || []);
@@ -204,12 +208,18 @@ export default function AdminPage() {
           setQualiTop10([...qualiTop10, driverId]);
         }
         break;
+      case "sprint_quali_pole":
+        setSprintQualiPole(driverId);
+        break;
       case "sprint_quali_top10":
         if (sprintQualiTop10.includes(driverId)) {
           setSprintQualiTop10(sprintQualiTop10.filter(d => d !== driverId));
         } else if (sprintQualiTop10.length < 10) {
           setSprintQualiTop10([...sprintQualiTop10, driverId]);
         }
+        break;
+      case "sprint_race_winner":
+        setSprintRaceWinner(driverId);
         break;
       case "sprint_race_top10":
         if (sprintRaceTop10.includes(driverId)) {
@@ -250,7 +260,9 @@ export default function AdminPage() {
     switch (selectionMode) {
       case "quali_pole": return qualiPole === driverId;
       case "quali_top10": return qualiTop10.includes(driverId);
+      case "sprint_quali_pole": return sprintQualiPole === driverId;
       case "sprint_quali_top10": return sprintQualiTop10.includes(driverId);
+      case "sprint_race_winner": return sprintRaceWinner === driverId;
       case "sprint_race_top10": return sprintRaceTop10.includes(driverId);
       case "race_winner": return raceWinner === driverId;
       case "race_top10": return raceTop10.includes(driverId);
@@ -269,7 +281,12 @@ export default function AdminPage() {
     return null;
   };
 
-  const isSprintComplete = !selectedRace?.is_sprint || (sprintQualiTop10.length === 10 && sprintRaceTop10.length === 10);
+  const isSprintComplete = !selectedRace?.is_sprint || (
+    sprintQualiPole && 
+    sprintQualiTop10.length === 10 && 
+    sprintRaceWinner && 
+    sprintRaceTop10.length === 10
+  );
   const isComplete = qualiPole && qualiTop10.length === 10 && raceWinner && raceTop10.length === 10 && isSprintComplete;
 
   const handleSubmit = async () => {
@@ -293,7 +310,9 @@ export default function AdminPage() {
 
       // Add sprint results if sprint weekend
       if (selectedRace.is_sprint) {
+        payload.sprint_quali_pole = sprintQualiPole;
         payload.sprint_quali_top10 = sprintQualiTop10;
+        payload.sprint_race_winner = sprintRaceWinner;
         payload.sprint_race_top10 = sprintRaceTop10;
       }
 
@@ -343,8 +362,10 @@ export default function AdminPage() {
 
     if (selectedRace?.is_sprint) {
       steps.push(
-        { key: "sprint_quali_top10", label: "Sprint Q", icon: Zap, done: sprintQualiTop10.length === 10, count: sprintQualiTop10.length, max: 10, isSprint: true },
-        { key: "sprint_race_top10", label: "Sprint R", icon: Zap, done: sprintRaceTop10.length === 10, count: sprintRaceTop10.length, max: 10, isSprint: true }
+        { key: "sprint_quali_pole", label: "Pole SQ", icon: Flag, done: !!sprintQualiPole, count: sprintQualiPole ? 1 : 0, max: 1, isSprint: true },
+        { key: "sprint_quali_top10", label: "Top10 SQ", icon: Medal, done: sprintQualiTop10.length === 10, count: sprintQualiTop10.length, max: 10, isSprint: true },
+        { key: "sprint_race_winner", label: "Win SR", icon: Trophy, done: !!sprintRaceWinner, count: sprintRaceWinner ? 1 : 0, max: 1, isSprint: true },
+        { key: "sprint_race_top10", label: "Top10 SR", icon: Medal, done: sprintRaceTop10.length === 10, count: sprintRaceTop10.length, max: 10, isSprint: true }
       );
     }
 
@@ -832,7 +853,9 @@ export default function AdminPage() {
                   <p className="font-body text-gray-300">
                     {selectionMode === "quali_pole" && "Sélectionne le pilote en pole position"}
                     {selectionMode === "quali_top10" && `Sélectionne le Top 10 des qualifications (${qualiTop10.length}/10)`}
+                    {selectionMode === "sprint_quali_pole" && "Sélectionne le pilote en pole position des qualifs sprint"}
                     {selectionMode === "sprint_quali_top10" && `Sélectionne le Top 10 des qualifs sprint (${sprintQualiTop10.length}/10)`}
+                    {selectionMode === "sprint_race_winner" && "Sélectionne le vainqueur de la course sprint"}
                     {selectionMode === "sprint_race_top10" && `Sélectionne le Top 10 de la course sprint (${sprintRaceTop10.length}/10)`}
                     {selectionMode === "race_winner" && "Sélectionne le vainqueur de la course"}
                     {selectionMode === "race_top10" && `Sélectionne le Top 10 de la course (${raceTop10.length}/10)`}
