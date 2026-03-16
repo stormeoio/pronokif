@@ -355,11 +355,9 @@ export default function AdminPage() {
 
   // Selection steps
   const getSelectionSteps = () => {
-    const steps = [
-      { key: "quali_pole", label: "Pole", icon: Flag, done: !!qualiPole, count: qualiPole ? 1 : 0, max: 1 },
-      { key: "quali_top10", label: "Top 10 Q", icon: Trophy, done: qualiTop10.length === 10, count: qualiTop10.length, max: 10 },
-    ];
+    const steps = [];
 
+    // Add sprint steps FIRST if it's a sprint weekend (Sprint happens before main quali/race)
     if (selectedRace?.is_sprint) {
       steps.push(
         { key: "sprint_quali_pole", label: "Pole SQ", icon: Flag, done: !!sprintQualiPole, count: sprintQualiPole ? 1 : 0, max: 1, isSprint: true },
@@ -369,7 +367,10 @@ export default function AdminPage() {
       );
     }
 
+    // Main qualifying and race
     steps.push(
+      { key: "quali_pole", label: "Pole", icon: Flag, done: !!qualiPole, count: qualiPole ? 1 : 0, max: 1 },
+      { key: "quali_top10", label: "Top 10 Q", icon: Trophy, done: qualiTop10.length === 10, count: qualiTop10.length, max: 10 },
       { key: "race_winner", label: "Winner", icon: Trophy, done: !!raceWinner, count: raceWinner ? 1 : 0, max: 1 },
       { key: "race_top10", label: "Top 10 R", icon: Trophy, done: raceTop10.length === 10, count: raceTop10.length, max: 10 },
       { key: "bonus", label: "Bonus", icon: Zap, done: true, count: 0, max: 0, isBonus: true }
