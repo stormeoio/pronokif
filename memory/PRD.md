@@ -79,15 +79,31 @@ PRONOKIF est une application de jeu de pronostics sur la Formule 1, permettant a
 - Bandes kerb rouge/blanc
 - Navigation chrome en bas
 
+### ✅ Slider des Courses et Détails GP (Ajouté le 16/03/2026)
+- **Slider sur le Dashboard** : Carrousel permettant de naviguer entre les 8 prochaines courses
+  - Navigation par boutons gauche/droite et points de pagination
+  - Affiche le nom du GP, circuit, date et compte à rebours
+  - Badge "SPRINT WEEKEND" pour les weekends sprint
+  - Indicateur de pronos enregistrés/non enregistrés
+- **Page de Détails du Grand Prix** (`/race/:raceId`)
+  - Informations du circuit : nom complet, longueur (km), nombre de virages, nombre de tours
+  - Programme du weekend avec toutes les sessions (FP1, FP2/SQ, FP3/Sprint, Quali, Course)
+  - Horaires en heure française
+  - Bouton "FAIRE MES PRONOS" ou "Voir les résultats"
+- **API** : `GET /api/races/{race_id}/details` - Retourne les infos complètes du circuit et le programme des sessions
+
 ## Architecture technique
 
 ### Backend (FastAPI + MongoDB)
-- `/app/backend/server.py` - Routes principales
+- `/app/backend/server.py` - Routes principales, F1_CIRCUITS data, F1_RACES_2026 calendar
 - `/app/backend/features.py` - Missions, avatars, mini-jeux
 
 ### Frontend (React + TailwindCSS)
 - `/app/frontend/src/index.css` - Thème arcade global
-- `/app/frontend/src/pages/` - Pages de l'application
+- `/app/frontend/src/pages/DashboardPage.jsx` - Dashboard avec slider des courses
+- `/app/frontend/src/pages/GrandPrixDetailPage.jsx` - Page de détails du GP
+- `/app/frontend/src/pages/RaceCalendarPage.jsx` - Calendrier complet
+- `/app/frontend/src/pages/` - Autres pages de l'application
 - `/app/frontend/src/components/` - Composants réutilisables
 
 ### Collections MongoDB
