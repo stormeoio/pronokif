@@ -92,6 +92,29 @@ PRONOKIF est une application de jeu de pronostics sur la Formule 1, permettant a
   - Bouton "FAIRE MES PRONOS" ou "Voir les résultats"
 - **API** : `GET /api/races/{race_id}/details` - Retourne les infos complètes du circuit et le programme des sessions
 
+### ✅ Chat de Ligue, Ajout Ligue et Profils Membres (Ajouté le 16/03/2026)
+- **Chat de Ligue** (`/league/:leagueId/chat`)
+  - Messagerie entre membres de la ligue
+  - Auto-refresh toutes les 15 secondes
+  - Barre des membres cliquable avec avatars
+  - Messages limités à 500 caractères
+  - Affichage du pseudo, avatar et horodatage
+- **Bouton Ajouter une ligue** 
+  - Présent dans la section "Mes Ligues" du dashboard (+)
+  - Présent dans l'en-tête de la page Classement
+  - Redirige vers la page de création/rejoindre une ligue
+- **Profils des membres cliquables** (`/profile/:userId`)
+  - Accessible depuis le classement (dashboard et page classement) et le chat
+  - Statistiques : XP, niveau, nombre de pronos, poles et vainqueurs exacts
+  - Ligues en commun avec position et points
+  - Derniers pronostics (5 derniers GP)
+  - Meilleurs scores mini-jeux (réaction et Batak)
+- **APIs** :
+  - `POST /api/leagues/{league_id}/messages` - Envoyer un message
+  - `GET /api/leagues/{league_id}/messages` - Récupérer les messages
+  - `GET /api/leagues/{league_id}/members` - Liste des membres
+  - `GET /api/users/{user_id}/profile` - Profil public avec stats
+
 ## Architecture technique
 
 ### Backend (FastAPI + MongoDB)
