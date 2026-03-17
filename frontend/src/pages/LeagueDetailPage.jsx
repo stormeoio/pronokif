@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { 
   ChevronLeft, Users, Trophy, Crown, Medal, Award, 
   MessageCircle, Copy, Check, Star, User, Target,
-  Edit2, X, Save, FileText
+  Edit2, X, Save, FileText, LogOut, Share2, Loader2
 } from "lucide-react";
 
 export default function LeagueDetailPage() {
@@ -28,6 +28,10 @@ export default function LeagueDetailPage() {
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [saving, setSaving] = useState(false);
+  
+  // Leave league states
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -68,6 +72,53 @@ export default function LeagueDetailPage() {
   };
 
   const isOwner = league?.created_by === user.id;
+  
+  // Get the base URL for share links
+  const getShareUrl = () => {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/join/${league?.code}`;
+  };
+
+  const shareLeague = async () => {
+    if (!league) return;
+    
+    const shareUrl = getShareUrl();
+    const shareText = `Rejoins ma ligue F1 "${league.name}" sur PRONOKIF !`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({ 
+          title: `PRONOKIF - ${league.name}`, 
+          text: shareText,
+          url: shareUrl
+        });
+      } catch (e) {
+        if (e.name !== "AbortError") {
+          // Fallback to copy
+          copyCode();
+        }
+      }
+    } else {
+      // Fallback: open WhatsApp with link
+      const whatsappText = `${shareText}\n\n${shareUrl}`;
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappText)}`;
+      window.open(whatsappUrl, "_blank");
+    }
+  };
+
+  const leaveLeague = async () => {
+    setLeaving(true);
+    try {
+      await apiClient.post(`/leagues/${leagueId}/leave`);
+      toast.success("Tu as quitté la ligue");
+      navigate("/league");
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Erreur lors du départ");
+    } finally {
+      setLeaving(false);
+      setShowLeaveConfirm(false);
+    }
+  };
 
   const startEditing = () => {
     setEditName(league.name);
@@ -214,14 +265,24 @@ export default function LeagueDetailPage() {
                 </Button>
               </div>
             ) : (
-              <Button 
-                size="sm"
-                onClick={() => navigate(`/league/${leagueId}/chat`)}
-                className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30"
-              >
-                <MessageCircle className="w-4 h-4 mr-1" />
-                Chat
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  size="sm"
+                  onClick={shareLeague}
+                  className="bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30"
+                  title="Partager"
+                >
+                  <Share2 className="w-4 h-4" />
+                </Button>
+                <Button 
+                  size="sm"
+                  onClick={() => navigate(`/league/${leagueId}/chat`)}
+                  className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30"
+                >
+                  <MessageCircle className="w-4 h-4 mr-1" />
+                  Chat
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -418,7 +479,71 @@ export default function LeagueDetailPage() {
             })}
           </div>
         )}
+        
+        {/* Leave League Button */}
+        <div className="mt-8 pt-6 border-t border-gray-700/50">
+          <Button
+            onClick={() => setShowLeaveConfirm(true)}
+            variant="outline"
+            className="w-full border-red-500/50 text-red-400 hover:bg-red-500/20 hover:border-red-500"
+            data-testid="leave-league-btn"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Quitter la ligue
+          </Button>
+        </div>
       </div>
+      
+      {/* Leave Confirmation Modal */}
+      {showLeaveConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-md card-arcade overflow-hidden">
+            <div className="bg-gradient-to-r from-red-600/20 to-transparent px-4 py-3 border-b border-red-500/30">
+              <h3 className="font-heading text-sm uppercase text-red-400 flex items-center gap-2">
+                <LogOut className="w-4 h-4" />
+                Quitter la ligue
+              </h3>
+            </div>
+            <div className="p-4 space-y-4">
+              <p className="font-body text-gray-300">
+                Es-tu sûr(e) de vouloir quitter <span className="text-white font-semibold">{league.name}</span> ?
+              </p>
+              {isOwner && members.length === 1 && (
+                <p className="font-body text-sm text-yellow-400 bg-yellow-500/10 p-3 rounded-lg">
+                  ⚠️ Tu es le seul membre et le créateur de cette ligue. La quitter supprimera définitivement la ligue.
+                </p>
+              )}
+              {isOwner && members.length > 1 && (
+                <p className="font-body text-sm text-red-400 bg-red-500/10 p-3 rounded-lg">
+                  ⚠️ En tant que créateur, tu ne peux pas quitter tant qu'il y a d'autres membres. Tu dois d'abord supprimer la ligue.
+                </p>
+              )}
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setShowLeaveConfirm(false)}
+                  variant="outline"
+                  className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800"
+                  disabled={leaving}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  onClick={leaveLeague}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                  disabled={leaving || (isOwner && members.length > 1)}
+                  data-testid="confirm-leave-btn"
+                >
+                  {leaving ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Départ...</>
+                  ) : (
+                    <><LogOut className="w-4 h-4 mr-2" /> Quitter</>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

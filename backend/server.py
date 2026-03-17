@@ -668,6 +668,70 @@ async def update_league(league_id: str, data: LeagueUpdate, user=Depends(get_cur
     updated_league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     return LeagueResponse(**updated_league)
 
+@api_router.post("/leagues/{league_id}/leave")
+async def leave_league(league_id: str, user=Depends(get_current_user)):
+    """Leave a league"""
+    league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+    
+    if user["id"] not in league["members"]:
+        raise HTTPException(status_code=400, detail="You are not a member of this league")
+    
+    # Prevent owner from leaving if they are the only member or if there are other members
+    if league["created_by"] == user["id"]:
+        if len(league["members"]) > 1:
+            raise HTTPException(status_code=400, detail="En tant que créateur, tu dois d'abord transférer la propriété ou supprimer la ligue")
+        else:
+            # Owner is the only member, delete the league
+            await db.leagues.delete_one({"id": league_id})
+            await db.league_messages.delete_many({"league_id": league_id})
+            await db.leaderboard.delete_many({"league_id": league_id})
+            await db.chat_read_status.delete_many({"league_id": league_id})
+            
+            # Update user's current league if needed
+            if user.get("current_league_id") == league_id:
+                await db.users.update_one({"id": user["id"]}, {"$set": {"current_league_id": None}})
+            
+            return {"status": "success", "message": "La ligue a été supprimée car tu étais le seul membre"}
+    
+    # Remove user from league
+    await db.leagues.update_one(
+        {"id": league_id},
+        {"$pull": {"members": user["id"]}}
+    )
+    
+    # Remove from league leaderboard
+    await db.leaderboard.delete_one({"league_id": league_id, "user_id": user["id"]})
+    
+    # Remove chat read status
+    await db.chat_read_status.delete_one({"league_id": league_id, "user_id": user["id"]})
+    
+    # Update user's current league if needed
+    if user.get("current_league_id") == league_id:
+        # Set to another league or None
+        other_league = await db.leagues.find_one({"members": user["id"]}, {"_id": 0})
+        new_league_id = other_league["id"] if other_league else None
+        await db.users.update_one({"id": user["id"]}, {"$set": {"current_league_id": new_league_id}})
+    
+    return {"status": "success", "message": "Tu as quitté la ligue"}
+
+@api_router.get("/leagues/by-code/{code}")
+async def get_league_by_code(code: str):
+    """Get league info by invitation code (public endpoint for join links)"""
+    league = await db.leagues.find_one({"code": code.upper()}, {"_id": 0})
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+    
+    # Return limited info for preview
+    return {
+        "id": league["id"],
+        "name": league["name"],
+        "code": league["code"],
+        "members_count": len(league["members"]),
+        "description": league.get("description")
+    }
+
 # ==================== LEAGUE CHAT ====================
 
 class ChatMessage(BaseModel):

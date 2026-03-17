@@ -90,19 +90,55 @@ export default function LeaguePage() {
     }
   };
 
-  const shareCode = async () => {
-    if (!createdLeague) return;
-    
-    const shareText = `Rejoins ma ligue F1 "${createdLeague.name}" sur PRONOKIF ! Code: ${createdLeague.code}`;
+  // Get the base URL for share links
+  const getShareUrl = (code) => {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/join/${code}`;
+  };
+
+  const shareLeague = async (league) => {
+    const shareUrl = getShareUrl(league.code);
+    const shareText = `Rejoins ma ligue F1 "${league.name}" sur PRONOKIF !`;
     
     if (navigator.share) {
       try {
-        await navigator.share({ title: "PRONOKIF", text: shareText });
+        await navigator.share({ 
+          title: `PRONOKIF - ${league.name}`, 
+          text: shareText,
+          url: shareUrl
+        });
+      } catch (e) {
+        if (e.name !== "AbortError") {
+          copyCode(league.code);
+        }
+      }
+    } else {
+      // Fallback: open WhatsApp with link
+      const whatsappText = `${shareText}\n\n${shareUrl}`;
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappText)}`;
+      window.open(whatsappUrl, "_blank");
+    }
+  };
+
+  const shareCode = async () => {
+    if (!createdLeague) return;
+    
+    const shareUrl = getShareUrl(createdLeague.code);
+    const shareText = `Rejoins ma ligue F1 "${createdLeague.name}" sur PRONOKIF !`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({ 
+          title: `PRONOKIF - ${createdLeague.name}`, 
+          text: shareText,
+          url: shareUrl
+        });
       } catch (e) {
         if (e.name !== "AbortError") copyCode();
       }
     } else {
-      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+      const whatsappText = `${shareText}\n\n${shareUrl}`;
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappText)}`;
       window.open(whatsappUrl, "_blank");
     }
   };
@@ -221,6 +257,17 @@ export default function LeaguePage() {
                   </div>
                   
                   <div className="flex items-center gap-2">
+                    {/* Share button */}
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={(e) => { e.stopPropagation(); shareLeague(league); }}
+                      className="text-green-400 hover:text-green-300 hover:bg-green-500/10 h-8 w-8"
+                      title="Partager"
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </Button>
+                    
                     {/* Copy code button */}
                     <Button 
                       variant="ghost" 

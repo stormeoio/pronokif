@@ -24,6 +24,7 @@ import GrandPrixDetailPage from "./pages/GrandPrixDetailPage";
 import LeagueChatPage from "./pages/LeagueChatPage";
 import MemberProfilePage from "./pages/MemberProfilePage";
 import LeagueDetailPage from "./pages/LeagueDetailPage";
+import JoinLeaguePage from "./pages/JoinLeaguePage";
 
 // Components
 import BottomNav from "./components/BottomNav";
@@ -310,6 +311,12 @@ function AppRouter() {
       <Route path="/profile/:userId" element={
         <ProtectedRoute>
           <MemberProfilePage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/join/:code" element={
+        <ProtectedRoute>
+          <JoinLeaguePage />
         </ProtectedRoute>
       } />
 

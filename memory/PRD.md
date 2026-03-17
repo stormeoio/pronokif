@@ -24,6 +24,9 @@ PRONOKIF est une application de jeu de pronostics sur la Formule 1, permettant a
 - Chat de ligue avec notifications de messages non lus
 - **Modification nom et description par le créateur** (Ajouté 17/03/2026)
 - **Page de détails de ligue** avec classement et membres
+- **Quitter une ligue** - Chaque membre peut quitter une ligue (Ajouté 17/03/2026)
+- **Partage avec lien cliquable** - Bouton de partage génère un lien `/join/{code}` (Ajouté 17/03/2026)
+- **Page d'invitation** - `/join/:code` affiche une prévisualisation de la ligue avant de rejoindre
 
 ### Pronostics de Course - SYSTÈME SÉPARÉ
 **Endpoints séparés:**
@@ -131,6 +134,10 @@ Chaque élément compte individuellement:
 - `GET /api/admin/members/{id}/activity` - Historique de connexion
 - `DELETE /api/admin/members/{id}` - Suppression de compte
 
+### Endpoints Ligues (Ajoutés 17/03/2026)
+- `POST /api/leagues/{id}/leave` - Quitter une ligue
+- `GET /api/leagues/by-code/{code}` - Récupérer les infos d'une ligue par son code (pour la page d'invitation)
+
 ## Prochaines étapes (Backlog)
 
 ### P1 - Priorité haute
@@ -158,8 +165,12 @@ Chaque élément compte individuellement:
 - API admin/members: Comptage individuel des pronos
 - **API admin/members/{id}/activity**: Fonctionnel avec IP/User-Agent
 - **API DELETE admin/members/{id}**: Fonctionnel avec nettoyage complet
+- **API leagues/{id}/leave**: Fonctionnel (supprime la ligue si seul membre)
+- **API leagues/by-code/{code}**: Fonctionnel (endpoint public)
 - UI Admin bonus: Boutons visibles avec bordures colorées
 - UI Admin Membres: Onglets Info/Activité, bouton suppression
 - UI Mini-jeux: Contraste Entraînement/Compétition amélioré
 - UI Pronos: Bonus modifiables après validation
+- **UI League Detail**: Bouton partage (vert) + bouton quitter (rouge)
+- **UI Join Page**: Page d'invitation avec prévisualisation de la ligue
 - **Linting Python**: 0 erreurs (corrigé 17/03/2026)

@@ -85,16 +85,23 @@ export default function ProfilePage() {
   };
 
   const shareLeague = async (league) => {
-    const shareText = `Rejoins ma ligue F1 "${league.name}" sur PRONOKIF ! Code: ${league.code}`;
+    const baseUrl = window.location.origin;
+    const shareUrl = `${baseUrl}/join/${league.code}`;
+    const shareText = `Rejoins ma ligue F1 "${league.name}" sur PRONOKIF !`;
     
     if (navigator.share) {
       try {
-        await navigator.share({ title: "PRONOKIF", text: shareText });
+        await navigator.share({ 
+          title: `PRONOKIF - ${league.name}`, 
+          text: shareText,
+          url: shareUrl
+        });
       } catch (e) {
         if (e.name !== "AbortError") copyCode(league.code);
       }
     } else {
-      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+      const whatsappText = `${shareText}\n\n${shareUrl}`;
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappText)}`;
       window.open(whatsappUrl, "_blank");
     }
   };
