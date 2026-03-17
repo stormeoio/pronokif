@@ -159,7 +159,7 @@ function ProtectedRoute({ children }) {
 // App Layout with Bottom Nav
 function AppLayout({ children }) {
   const location = useLocation();
-  const hideNav = ["/auth", "/set-username", "/league"].includes(location.pathname);
+  const hideNav = ["/auth", "/set-username"].includes(location.pathname);
 
   return (
     <div className="min-h-screen bg-background">
