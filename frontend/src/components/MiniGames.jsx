@@ -184,14 +184,17 @@ export function ReactionGame({ onSubmit, attemptsRemaining, isTraining = false }
           )}
           {(gameState === "false_start" || gameState === "result") && (
             <>
-              <Button onClick={resetGame} variant="outline" className="flex-1 h-12">
+              <Button 
+                onClick={resetGame} 
+                className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white h-12"
+              >
                 <RotateCcw className="w-5 h-5 mr-2" />
                 Réessayer
               </Button>
               {gameState === "result" && (
                 <Button 
                   onClick={handleSubmit} 
-                  className="flex-1 btn-gaming h-12"
+                  className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white h-12"
                   disabled={!isTraining && attemptsRemaining === 0}
                 >
                   <Trophy className="w-5 h-5 mr-2" />
@@ -392,7 +395,10 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }) {
         {gameState === "result" && (
           <div className="flex flex-col gap-3">
             <div className="flex gap-3">
-              <Button onClick={resetGame} variant="outline" className="flex-1 h-12">
+              <Button 
+                onClick={resetGame} 
+                className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white h-12"
+              >
                 <RotateCcw className="w-5 h-5 mr-2" />
                 Réessayer
               </Button>
