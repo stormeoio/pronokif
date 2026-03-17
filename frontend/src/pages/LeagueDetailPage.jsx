@@ -364,7 +364,7 @@ export default function LeagueDetailPage() {
               return (
                 <button
                   key={member.id}
-                  onClick={() => navigate(`/member/${member.id}`)}
+                  onClick={() => navigate(`/profile/${member.id}`)}
                   className={`w-full p-3 rounded-lg border bg-gray-800/30 border-gray-700/50 hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all text-left ${isMe ? 'ring-2 ring-cyan-500/30' : ''}`}
                 >
                   <div className="flex items-center gap-3">
