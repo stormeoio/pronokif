@@ -712,8 +712,11 @@ async def get_user_public_profile(user_id: str, user=Depends(get_current_user)):
     if not stats:
         stats = get_default_user_stats()
     
-    # Count predictions
-    total_predictions = await db.predictions.count_documents({"user_id": user_id})
+    # Count individual predictions (not just documents)
+    total_predictions = await count_individual_predictions(user_id)
+    
+    # Count races participated (number of prediction documents)
+    races_participated = await db.predictions.count_documents({"user_id": user_id})
     
     # Get leagues in common with the requesting user
     user_leagues = await db.leagues.find({"members": user["id"]}, {"_id": 0}).to_list(100)
@@ -774,7 +777,7 @@ async def get_user_public_profile(user_id: str, user=Depends(get_current_user)):
             "correct_poles": stats.get("correct_poles", 0),
             "correct_winners": stats.get("correct_winners", 0),
             "perfect_top10": stats.get("perfect_top10", 0),
-            "races_participated": stats.get("races_participated", 0)
+            "races_participated": races_participated
         },
         "leagues": common_leagues,
         "recent_predictions": recent_predictions,
@@ -783,6 +786,43 @@ async def get_user_public_profile(user_id: str, user=Depends(get_current_user)):
             "batak_best_score": batak_best.get("score") if batak_best else None
         }
     }
+
+# ==================== HELPER: COUNT INDIVIDUAL PREDICTIONS ====================
+async def count_individual_predictions(user_id: str) -> int:
+    """Count individual prediction elements (not just documents) for a user.
+    Returns: Total count of individual predictions (8 max per classic race, 16 max per sprint race)
+    """
+    predictions = await db.predictions.find({"user_id": user_id}, {"_id": 0}).to_list(1000)
+    total_pronos = 0
+    
+    for pred in predictions:
+        # Classic race predictions
+        if pred.get("quali_pole"): total_pronos += 1
+        if pred.get("quali_top10") and len(pred.get("quali_top10", [])) > 0: total_pronos += 1
+        if pred.get("race_winner"): total_pronos += 1
+        if pred.get("race_top10") and len(pred.get("race_top10", [])) > 0: total_pronos += 1
+        # Bonus bets
+        if pred.get("bonus_bets"):
+            bb = pred["bonus_bets"]
+            if bb.get("safety_car") is not None: total_pronos += 1
+            if bb.get("dnf_drivers") and len(bb.get("dnf_drivers", [])) > 0: total_pronos += 1
+            if bb.get("fastest_lap"): total_pronos += 1
+            if bb.get("first_corner_leader"): total_pronos += 1
+        # Sprint predictions
+        if pred.get("sprint_quali_pole"): total_pronos += 1
+        if pred.get("sprint_quali_top10") and len(pred.get("sprint_quali_top10", [])) > 0: total_pronos += 1
+        if pred.get("sprint_race_winner"): total_pronos += 1
+        if pred.get("sprint_race_top10") and len(pred.get("sprint_race_top10", [])) > 0: total_pronos += 1
+        # Sprint bonus bets
+        if pred.get("sprint_bonus_bets"):
+            sbb = pred["sprint_bonus_bets"]
+            if sbb.get("safety_car") is not None: total_pronos += 1
+            if sbb.get("dnf_drivers") and len(sbb.get("dnf_drivers", [])) > 0: total_pronos += 1
+            if sbb.get("fastest_lap"): total_pronos += 1
+            if sbb.get("first_corner_leader"): total_pronos += 1
+    
+    return total_pronos
+
 
 # ==================== ADMIN EMAIL ====================
 ADMIN_EMAIL = "catalan.baptiste123@gmail.com"
@@ -860,36 +900,8 @@ async def get_all_members(user=Depends(get_current_user)):
     
     # Enrich with stats
     for member in members:
-        # Count individual predictions (not just documents)
-        predictions = await db.predictions.find({"user_id": member["id"]}, {"_id": 0}).to_list(1000)
-        total_pronos = 0
-        for pred in predictions:
-            # Classic race predictions
-            if pred.get("quali_pole"): total_pronos += 1
-            if pred.get("quali_top10") and len(pred.get("quali_top10", [])) > 0: total_pronos += 1
-            if pred.get("race_winner"): total_pronos += 1
-            if pred.get("race_top10") and len(pred.get("race_top10", [])) > 0: total_pronos += 1
-            # Bonus bets
-            if pred.get("bonus_bets"):
-                bb = pred["bonus_bets"]
-                if bb.get("safety_car") is not None: total_pronos += 1
-                if bb.get("dnf_drivers") and len(bb.get("dnf_drivers", [])) > 0: total_pronos += 1
-                if bb.get("fastest_lap"): total_pronos += 1
-                if bb.get("first_corner_leader"): total_pronos += 1
-            # Sprint predictions
-            if pred.get("sprint_quali_pole"): total_pronos += 1
-            if pred.get("sprint_quali_top10") and len(pred.get("sprint_quali_top10", [])) > 0: total_pronos += 1
-            if pred.get("sprint_race_winner"): total_pronos += 1
-            if pred.get("sprint_race_top10") and len(pred.get("sprint_race_top10", [])) > 0: total_pronos += 1
-            # Sprint bonus bets
-            if pred.get("sprint_bonus_bets"):
-                sbb = pred["sprint_bonus_bets"]
-                if sbb.get("safety_car") is not None: total_pronos += 1
-                if sbb.get("dnf_drivers") and len(sbb.get("dnf_drivers", [])) > 0: total_pronos += 1
-                if sbb.get("fastest_lap"): total_pronos += 1
-                if sbb.get("first_corner_leader"): total_pronos += 1
-        
-        member["predictions_count"] = total_pronos
+        # Use helper function to count individual predictions
+        member["predictions_count"] = await count_individual_predictions(member["id"])
         
         # Get leagues count
         leagues = await db.leagues.count_documents({"members": member["id"]})
@@ -912,34 +924,11 @@ async def get_member_details(member_id: str, user=Depends(get_current_user)):
     if not stats:
         stats = get_default_user_stats()
     
-    # Count individual predictions (not just documents)
-    predictions = await db.predictions.find({"user_id": member_id}, {"_id": 0}).to_list(1000)
-    predictions_count = 0
-    for pred in predictions:
-        # Classic race predictions
-        if pred.get("quali_pole"): predictions_count += 1
-        if pred.get("quali_top10") and len(pred.get("quali_top10", [])) > 0: predictions_count += 1
-        if pred.get("race_winner"): predictions_count += 1
-        if pred.get("race_top10") and len(pred.get("race_top10", [])) > 0: predictions_count += 1
-        # Bonus bets
-        if pred.get("bonus_bets"):
-            bb = pred["bonus_bets"]
-            if bb.get("safety_car") is not None: predictions_count += 1
-            if bb.get("dnf_drivers") and len(bb.get("dnf_drivers", [])) > 0: predictions_count += 1
-            if bb.get("fastest_lap"): predictions_count += 1
-            if bb.get("first_corner_leader"): predictions_count += 1
-        # Sprint predictions
-        if pred.get("sprint_quali_pole"): predictions_count += 1
-        if pred.get("sprint_quali_top10") and len(pred.get("sprint_quali_top10", [])) > 0: predictions_count += 1
-        if pred.get("sprint_race_winner"): predictions_count += 1
-        if pred.get("sprint_race_top10") and len(pred.get("sprint_race_top10", [])) > 0: predictions_count += 1
-        # Sprint bonus bets
-        if pred.get("sprint_bonus_bets"):
-            sbb = pred["sprint_bonus_bets"]
-            if sbb.get("safety_car") is not None: predictions_count += 1
-            if sbb.get("dnf_drivers") and len(sbb.get("dnf_drivers", [])) > 0: predictions_count += 1
-            if sbb.get("fastest_lap"): predictions_count += 1
-            if sbb.get("first_corner_leader"): predictions_count += 1
+    # Use helper function to count individual predictions
+    predictions_count = await count_individual_predictions(member_id)
+    
+    # Count races participated
+    races_participated = await db.predictions.count_documents({"user_id": member_id})
     
     # Get leagues
     leagues = await db.leagues.find({"members": member_id}, {"_id": 0}).to_list(100)
@@ -976,7 +965,7 @@ async def get_member_details(member_id: str, user=Depends(get_current_user)):
             "correct_poles": stats.get("correct_poles", 0),
             "correct_winners": stats.get("correct_winners", 0),
             "perfect_top10": stats.get("perfect_top10", 0),
-            "races_participated": stats.get("races_participated", 0)
+            "races_participated": races_participated
         },
         "leagues": [{"id": l["id"], "name": l["name"], "members_count": len(l["members"])} for l in leagues],
         "recent_predictions": recent_predictions,
@@ -1395,6 +1384,17 @@ async def get_my_prediction(race_id: str, user=Depends(get_current_user)):
 async def get_prediction_history(user=Depends(get_current_user)):
     predictions = await db.predictions.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
     return predictions
+
+@api_router.get("/predictions/stats")
+async def get_prediction_stats(user=Depends(get_current_user)):
+    """Get prediction statistics for the current user with individual counting"""
+    total_predictions = await count_individual_predictions(user["id"])
+    races_participated = await db.predictions.count_documents({"user_id": user["id"]})
+    
+    return {
+        "total_predictions": total_predictions,
+        "races_participated": races_participated
+    }
 
 # ==================== SEPARATE SPRINT/MAIN PREDICTIONS ====================
 

@@ -26,9 +26,10 @@ export default function ProfilePage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [leaguesRes, predictionsRes, avatarsRes, globalLbRes] = await Promise.all([
+      const [leaguesRes, predictionsRes, statsRes, avatarsRes, globalLbRes] = await Promise.all([
         apiClient.get("/leagues/my"),
         apiClient.get("/predictions/history"),
+        apiClient.get("/predictions/stats"),
         apiClient.get("/avatars"),
         apiClient.get("/leaderboard/global")
       ]);
@@ -37,7 +38,11 @@ export default function ProfilePage() {
       setPredictions(predictionsRes.data);
       setAvatars(avatarsRes.data);
       setGlobalPosition(globalLbRes.data.my_position);
-      setStats({ totalPredictions: predictionsRes.data.length, totalPoints: 0 });
+      setStats({ 
+        totalPredictions: statsRes.data.total_predictions, 
+        racesParticipated: statsRes.data.races_participated,
+        totalPoints: 0 
+      });
 
       if (user.current_league_id) {
         try {
