@@ -1396,6 +1396,87 @@ async def get_prediction_stats(user=Depends(get_current_user)):
         "races_participated": races_participated
     }
 
+@api_router.get("/predictions/points-history")
+async def get_points_history(user=Depends(get_current_user)):
+    """Get detailed points history for the user - breakdown by race"""
+    # Get all user predictions
+    predictions = await db.predictions.find({"user_id": user["id"]}, {"_id": 0}).to_list(100)
+    
+    history = []
+    race_map = {r["id"]: r for r in F1_RACES_2026}
+    
+    for pred in predictions:
+        race_id = pred.get("race_id")
+        race = race_map.get(race_id)
+        if not race:
+            continue
+        
+        # Get results for this race
+        result = await db.race_results.find_one({"race_id": race_id}, {"_id": 0})
+        
+        if result:
+            # Calculate points breakdown
+            points = calculate_points(pred, result.get("results", {}))
+            
+            history_entry = {
+                "race_id": race_id,
+                "race_name": race["name"],
+                "race_date": race.get("date"),
+                "is_sprint_weekend": race.get("is_sprint", False),
+                "has_results": True,
+                "points_breakdown": {
+                    "quali_pole": {"points": points["quali_pole"], "label": "Pole Position"},
+                    "quali_top10": {"points": points["quali_top10"], "label": "Top 10 Qualifications"},
+                    "race_winner": {"points": points["race_winner"], "label": "Vainqueur Course"},
+                    "race_top10": {"points": points["race_top10"], "label": "Top 10 Course"},
+                    "bonus": {"points": points["bonus"], "label": "Bonus (SC, DNF, Meilleur tour, Leader T1)"},
+                },
+                "sprint_breakdown": None,
+                "total_points": points["total"],
+                "xp_earned": points["xp_earned"],
+                "details": points["details"]
+            }
+            
+            # Add sprint breakdown if sprint weekend
+            if race.get("is_sprint"):
+                history_entry["sprint_breakdown"] = {
+                    "sprint_quali_top10": {"points": points["sprint_quali_top10"], "label": "Top 10 Qualif Sprint"},
+                    "sprint_race_top10": {"points": points["sprint_race_top10"], "label": "Top 10 Course Sprint"},
+                }
+            
+            history.append(history_entry)
+        else:
+            # No results yet - show prediction was made
+            history.append({
+                "race_id": race_id,
+                "race_name": race["name"],
+                "race_date": race.get("date"),
+                "is_sprint_weekend": race.get("is_sprint", False),
+                "has_results": False,
+                "points_breakdown": None,
+                "sprint_breakdown": None,
+                "total_points": 0,
+                "xp_earned": 0,
+                "details": ["En attente des résultats"]
+            })
+    
+    # Sort by race date (most recent first)
+    history.sort(key=lambda x: x.get("race_date", ""), reverse=True)
+    
+    # Calculate totals
+    total_points = sum(h["total_points"] for h in history)
+    total_xp = sum(h["xp_earned"] for h in history)
+    
+    return {
+        "history": history,
+        "summary": {
+            "total_points": total_points,
+            "total_xp": total_xp,
+            "races_with_results": len([h for h in history if h["has_results"]]),
+            "races_pending": len([h for h in history if not h["has_results"]])
+        }
+    }
+
 # ==================== SEPARATE SPRINT/MAIN PREDICTIONS ====================
 
 @api_router.post("/predictions/sprint")
