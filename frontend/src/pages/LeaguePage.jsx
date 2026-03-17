@@ -246,11 +246,11 @@ export default function LeaguePage() {
                       )}
                     </Button>
                     
-                    {/* Select button or go to league chat */}
+                    {/* Select button or go to league details */}
                     {user.current_league_id === league.id ? (
                       <Button 
                         size="sm"
-                        onClick={() => navigate(`/league/${league.id}/chat`)}
+                        onClick={() => navigate(`/league/${league.id}/details`)}
                         className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-white h-8 px-3"
                       >
                         <ChevronRight className="w-4 h-4" />

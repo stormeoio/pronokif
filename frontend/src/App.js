@@ -23,6 +23,7 @@ import CustomPredictionsPage from "./pages/CustomPredictionsPage";
 import GrandPrixDetailPage from "./pages/GrandPrixDetailPage";
 import LeagueChatPage from "./pages/LeagueChatPage";
 import MemberProfilePage from "./pages/MemberProfilePage";
+import LeagueDetailPage from "./pages/LeagueDetailPage";
 
 // Components
 import BottomNav from "./components/BottomNav";
@@ -297,6 +298,12 @@ function AppRouter() {
       <Route path="/league/:leagueId/chat" element={
         <ProtectedRoute>
           <LeagueChatPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/league/:leagueId/details" element={
+        <ProtectedRoute>
+          <LeagueDetailPage />
         </ProtectedRoute>
       } />
 
