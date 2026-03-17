@@ -102,7 +102,15 @@ Chaque élément compte individuellement:
 ### Navigation améliorée (Ajouté 17/03/2026)
 - **Menu hamburger** sur le Dashboard avec pages statiques
 - **Onglet "Ligues"** remplace "Notifs" dans la barre de navigation
+- **Onglet "Championnat"** remplace "Classement" dans la barre de navigation
 - **Cloche simplifiée** vers /notifications directement
+
+### Page Championnat F1 (Ajouté 17/03/2026)
+- Classement pilotes en temps réel avec numéro, équipe, points et victoires
+- Classement écuries (constructeurs) avec nationalité et points
+- Couleurs officielles des équipes F1
+- Mise à jour automatique via API Jolpica-F1 (gratuite, sans clé)
+- Bouton de rafraîchissement manuel
 
 ## Architecture technique
 
@@ -119,6 +127,8 @@ Chaque élément compte individuellement:
 - `/app/frontend/src/pages/LeagueDetailPage.jsx` - Détails de ligue (NOUVEAU)
 - `/app/frontend/src/pages/LeaguePage.jsx` - Hub des ligues (REFAIT)
 - `/app/frontend/src/pages/ProfilePage.jsx` - Historique des points
+- `/app/frontend/src/pages/ChampionshipPage.jsx` - Classements F1 temps réel (NOUVEAU)
+- `/app/frontend/src/pages/JoinLeaguePage.jsx` - Page d'invitation (NOUVEAU)
 - `/app/frontend/src/components/BottomNav.jsx` - Badge messages non lus
 - `/app/frontend/src/components/HamburgerMenu.jsx` - Menu latéral (NOUVEAU)
 

@@ -25,6 +25,7 @@ import LeagueChatPage from "./pages/LeagueChatPage";
 import MemberProfilePage from "./pages/MemberProfilePage";
 import LeagueDetailPage from "./pages/LeagueDetailPage";
 import JoinLeaguePage from "./pages/JoinLeaguePage";
+import ChampionshipPage from "./pages/ChampionshipPage";
 
 // Components
 import BottomNav from "./components/BottomNav";
@@ -227,6 +228,12 @@ function AppRouter() {
       <Route path="/leaderboard" element={
         <ProtectedRoute>
           <LeaderboardPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/championship" element={
+        <ProtectedRoute>
+          <ChampionshipPage />
         </ProtectedRoute>
       } />
 

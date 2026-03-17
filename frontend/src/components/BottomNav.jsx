@@ -1,12 +1,12 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Trophy, Target, User, Users, MessageCircle } from "lucide-react";
+import { Home, Trophy, Target, User, Users, MessageCircle, Flag } from "lucide-react";
 import { useAuth, apiClient } from "../App";
 import { useState, useEffect } from "react";
 
 const navItems = [
   { path: "/", icon: Home, label: "Accueil" },
   { path: "/predictions", icon: Target, label: "Pronos" },
-  { path: "/leaderboard", icon: Trophy, label: "Classement" },
+  { path: "/championship", icon: Flag, label: "Championnat" },
   { path: "/league", icon: Users, label: "Ligues" },
   { path: "/profile", icon: User, label: "Profil" },
 ];
