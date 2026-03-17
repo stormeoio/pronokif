@@ -11,6 +11,7 @@ import {
 import { AvatarDisplay } from "../components/AvatarDisplay";
 import NotificationBell from "../components/NotificationBell";
 import FeedbackModal from "../components/FeedbackModal";
+import HamburgerMenu from "../components/HamburgerMenu";
 
 // GP Background images - will be expanded with more circuits
 const GP_BACKGROUNDS = {
@@ -170,9 +171,9 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-app-main pb-24" data-testid="dashboard-page">
-      {/* Top Bar with Notifications and Help */}
+      {/* Top Bar with Menu, Notifications and Help */}
       <div className="absolute top-0 left-0 right-0 z-20 p-3 flex items-center justify-between">
-        <div /> {/* Spacer */}
+        <HamburgerMenu />
         <div className="flex items-center gap-2">
           <NotificationBell />
           <button
