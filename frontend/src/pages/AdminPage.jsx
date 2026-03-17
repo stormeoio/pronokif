@@ -736,13 +736,16 @@ export default function AdminPage() {
 
                 {/* Message */}
                 <div>
-                  <Label className="font-body text-sm text-gray-400 mb-2 block">Message</Label>
+                  <Label className="font-body text-sm text-gray-400 mb-2 block">
+                    Message
+                    <span className="text-gray-600 ml-2">({notifMessage.length}/5000)</span>
+                  </Label>
                   <Textarea
                     value={notifMessage}
                     onChange={(e) => setNotifMessage(e.target.value)}
                     placeholder="Détaillez votre message..."
-                    rows={4}
-                    maxLength={1000}
+                    rows={8}
+                    maxLength={5000}
                     className="bg-gray-900 border-gray-700 text-white resize-none"
                   />
                 </div>
