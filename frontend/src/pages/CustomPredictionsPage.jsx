@@ -19,7 +19,8 @@ export default function CustomPredictionsPage() {
   
   const [loading, setLoading] = useState(true);
   const [league, setLeague] = useState(null);
-  const [nextRace, setNextRace] = useState(null);
+  const [allRaces, setAllRaces] = useState([]);
+  const [selectedRace, setSelectedRace] = useState(null);
   const [predictions, setPredictions] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedPrediction, setSelectedPrediction] = useState(null);
@@ -33,18 +34,21 @@ export default function CustomPredictionsPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [leaguesRes, raceRes] = await Promise.all([
+      const [leaguesRes, racesRes] = await Promise.all([
         apiClient.get("/leagues/my"),
-        apiClient.get("/races/next")
+        apiClient.get("/races")
       ]);
 
       const currentLeague = leaguesRes.data.find(l => l.id === leagueId) || leaguesRes.data[0];
       setLeague(currentLeague);
-      setNextRace(raceRes.data);
-
-      if (currentLeague && raceRes.data) {
-        const predsRes = await apiClient.get(`/custom-predictions/to-answer/${currentLeague.id}/${raceRes.data.id}`);
-        setPredictions(predsRes.data);
+      
+      // Filter races that are upcoming or in progress
+      const upcomingRaces = racesRes.data.filter(r => r.status !== "finished");
+      setAllRaces(upcomingRaces);
+      
+      // Default to next race
+      if (upcomingRaces.length > 0) {
+        setSelectedRace(upcomingRaces[0]);
       }
     } catch (e) {
       console.error(e);
@@ -54,9 +58,26 @@ export default function CustomPredictionsPage() {
     }
   }, [leagueId]);
 
+  // Fetch predictions when race or league changes
+  const fetchPredictions = useCallback(async () => {
+    if (!league || !selectedRace) return;
+    
+    try {
+      const predsRes = await apiClient.get(`/custom-predictions/to-answer/${league.id}/${selectedRace.id}`);
+      setPredictions(predsRes.data);
+    } catch (e) {
+      console.error(e);
+      setPredictions([]);
+    }
+  }, [league, selectedRace]);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    fetchPredictions();
+  }, [fetchPredictions]);
 
   const handleCreatePrediction = async () => {
     if (!question.trim()) {
@@ -72,7 +93,7 @@ export default function CustomPredictionsPage() {
     setCreating(true);
     try {
       const payload = {
-        race_id: nextRace.id,
+        race_id: selectedRace.id,
         league_id: league.id,
         question: question.trim(),
         answer_type: answerType,
@@ -164,9 +185,9 @@ export default function CustomPredictionsPage() {
                 <MessageSquare className="w-5 h-5 text-pink-500" />
                 Pronos Perso
               </h1>
-              {league && nextRace && (
+              {league && (
                 <p className="font-body text-xs text-gray-400">
-                  {league.name} • {nextRace.name.replace(" Grand Prix", "")}
+                  {league.name}
                 </p>
               )}
             </div>
@@ -175,6 +196,27 @@ export default function CustomPredictionsPage() {
               Créer
             </Button>
           </div>
+          
+          {/* Race Selector */}
+          {allRaces.length > 0 && (
+            <div className="mt-3">
+              <Label className="text-xs text-gray-400 uppercase font-heading mb-1 block">Grand Prix</Label>
+              <select
+                value={selectedRace?.id || ""}
+                onChange={(e) => {
+                  const race = allRaces.find(r => r.id === e.target.value);
+                  setSelectedRace(race);
+                }}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-white font-body focus:border-pink-500 focus:outline-none"
+              >
+                {allRaces.map((race) => (
+                  <option key={race.id} value={race.id}>
+                    {race.name.replace(" Grand Prix", "")} {race.is_sprint_weekend ? "🏃" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </div>
 

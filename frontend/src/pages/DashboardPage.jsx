@@ -38,16 +38,19 @@ export default function DashboardPage() {
   const [avatars, setAvatars] = useState({});
   const sliderRef = useRef(null);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [unreadChatByLeague, setUnreadChatByLeague] = useState({});
 
   const fetchData = useCallback(async () => {
     try {
-      const [raceRes, upcomingRes, avatarsRes] = await Promise.all([
+      const [raceRes, upcomingRes, avatarsRes, unreadRes] = await Promise.all([
         apiClient.get("/races/next"),
         apiClient.get("/races/upcoming"),
-        apiClient.get("/avatars")
+        apiClient.get("/avatars"),
+        apiClient.get("/leagues/unread-messages").catch(() => ({ data: { by_league: {} } }))
       ]);
       setNextRace(raceRes.data);
       setAvatars(avatarsRes.data);
+      setUnreadChatByLeague(unreadRes.data.by_league || {});
       
       // Filter upcoming races that can still be predicted or are in progress
       const upcoming = upcomingRes.data.filter(r => r.status !== "finished").slice(0, 8);
@@ -489,10 +492,15 @@ export default function DashboardPage() {
                     variant="ghost" 
                     size="sm" 
                     onClick={() => navigate(`/league/${league.id}/chat`)} 
-                    className="text-cyan-400 font-body text-xs hover:text-cyan-300 hover:bg-cyan-500/10"
+                    className="text-cyan-400 font-body text-xs hover:text-cyan-300 hover:bg-cyan-500/10 relative"
                     data-testid="league-chat-btn"
                   >
                     <MessageCircle className="w-4 h-4 mr-1" /> Chat
+                    {unreadChatByLeague[league.id] > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-pink-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white animate-pulse">
+                        {unreadChatByLeague[league.id] > 9 ? '9+' : unreadChatByLeague[league.id]}
+                      </span>
+                    )}
                   </Button>
                   <Button 
                     variant="ghost" 

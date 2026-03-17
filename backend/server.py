@@ -533,6 +533,40 @@ async def get_my_leagues(user=Depends(get_current_user)):
     leagues = await db.leagues.find({"members": user["id"]}, {"_id": 0}).to_list(100)
     return [LeagueResponse(**league) for league in leagues]
 
+@api_router.get("/leagues/unread-messages")
+async def get_unread_messages_count(user=Depends(get_current_user)):
+    """Get count of unread messages for all user's leagues"""
+    leagues = await db.leagues.find({"members": user["id"]}, {"_id": 0}).to_list(100)
+    
+    unread_counts = {}
+    total_unread = 0
+    
+    for league in leagues:
+        # Get last read time for this league
+        read_status = await db.chat_read_status.find_one(
+            {"user_id": user["id"], "league_id": league["id"]},
+            {"_id": 0}
+        )
+        last_read = read_status.get("last_read_at") if read_status else None
+        
+        # Count messages after last read
+        query = {"league_id": league["id"]}
+        if last_read:
+            query["created_at"] = {"$gt": last_read}
+        
+        # Exclude own messages
+        query["user_id"] = {"$ne": user["id"]}
+        
+        count = await db.league_messages.count_documents(query)
+        if count > 0:
+            unread_counts[league["id"]] = count
+            total_unread += count
+    
+    return {
+        "total_unread": total_unread,
+        "by_league": unread_counts
+    }
+
 @api_router.get("/leagues/{league_id}", response_model=LeagueResponse)
 async def get_league(league_id: str, user=Depends(get_current_user)):
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
@@ -647,6 +681,22 @@ async def get_league_members(league_id: str, user=Depends(get_current_user)):
             })
     
     return members
+
+
+@api_router.post("/leagues/{league_id}/messages/read")
+async def mark_league_messages_read(league_id: str, user=Depends(get_current_user)):
+    """Mark all messages in a league as read for the current user"""
+    league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
+    if not league or user["id"] not in league["members"]:
+        raise HTTPException(status_code=403, detail="Not a member of this league")
+    
+    await db.chat_read_status.update_one(
+        {"user_id": user["id"], "league_id": league_id},
+        {"$set": {"last_read_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    return {"success": True}
+
 
 # ==================== PUBLIC PROFILE ====================
 
@@ -810,8 +860,36 @@ async def get_all_members(user=Depends(get_current_user)):
     
     # Enrich with stats
     for member in members:
-        # Count predictions
-        member["predictions_count"] = await db.predictions.count_documents({"user_id": member["id"]})
+        # Count individual predictions (not just documents)
+        predictions = await db.predictions.find({"user_id": member["id"]}, {"_id": 0}).to_list(1000)
+        total_pronos = 0
+        for pred in predictions:
+            # Classic race predictions
+            if pred.get("quali_pole"): total_pronos += 1
+            if pred.get("quali_top10") and len(pred.get("quali_top10", [])) > 0: total_pronos += 1
+            if pred.get("race_winner"): total_pronos += 1
+            if pred.get("race_top10") and len(pred.get("race_top10", [])) > 0: total_pronos += 1
+            # Bonus bets
+            if pred.get("bonus_bets"):
+                bb = pred["bonus_bets"]
+                if bb.get("safety_car") is not None: total_pronos += 1
+                if bb.get("dnf_drivers") and len(bb.get("dnf_drivers", [])) > 0: total_pronos += 1
+                if bb.get("fastest_lap"): total_pronos += 1
+                if bb.get("first_corner_leader"): total_pronos += 1
+            # Sprint predictions
+            if pred.get("sprint_quali_pole"): total_pronos += 1
+            if pred.get("sprint_quali_top10") and len(pred.get("sprint_quali_top10", [])) > 0: total_pronos += 1
+            if pred.get("sprint_race_winner"): total_pronos += 1
+            if pred.get("sprint_race_top10") and len(pred.get("sprint_race_top10", [])) > 0: total_pronos += 1
+            # Sprint bonus bets
+            if pred.get("sprint_bonus_bets"):
+                sbb = pred["sprint_bonus_bets"]
+                if sbb.get("safety_car") is not None: total_pronos += 1
+                if sbb.get("dnf_drivers") and len(sbb.get("dnf_drivers", [])) > 0: total_pronos += 1
+                if sbb.get("fastest_lap"): total_pronos += 1
+                if sbb.get("first_corner_leader"): total_pronos += 1
+        
+        member["predictions_count"] = total_pronos
         
         # Get leagues count
         leagues = await db.leagues.count_documents({"members": member["id"]})
@@ -834,8 +912,34 @@ async def get_member_details(member_id: str, user=Depends(get_current_user)):
     if not stats:
         stats = get_default_user_stats()
     
-    # Count predictions
-    predictions_count = await db.predictions.count_documents({"user_id": member_id})
+    # Count individual predictions (not just documents)
+    predictions = await db.predictions.find({"user_id": member_id}, {"_id": 0}).to_list(1000)
+    predictions_count = 0
+    for pred in predictions:
+        # Classic race predictions
+        if pred.get("quali_pole"): predictions_count += 1
+        if pred.get("quali_top10") and len(pred.get("quali_top10", [])) > 0: predictions_count += 1
+        if pred.get("race_winner"): predictions_count += 1
+        if pred.get("race_top10") and len(pred.get("race_top10", [])) > 0: predictions_count += 1
+        # Bonus bets
+        if pred.get("bonus_bets"):
+            bb = pred["bonus_bets"]
+            if bb.get("safety_car") is not None: predictions_count += 1
+            if bb.get("dnf_drivers") and len(bb.get("dnf_drivers", [])) > 0: predictions_count += 1
+            if bb.get("fastest_lap"): predictions_count += 1
+            if bb.get("first_corner_leader"): predictions_count += 1
+        # Sprint predictions
+        if pred.get("sprint_quali_pole"): predictions_count += 1
+        if pred.get("sprint_quali_top10") and len(pred.get("sprint_quali_top10", [])) > 0: predictions_count += 1
+        if pred.get("sprint_race_winner"): predictions_count += 1
+        if pred.get("sprint_race_top10") and len(pred.get("sprint_race_top10", [])) > 0: predictions_count += 1
+        # Sprint bonus bets
+        if pred.get("sprint_bonus_bets"):
+            sbb = pred["sprint_bonus_bets"]
+            if sbb.get("safety_car") is not None: predictions_count += 1
+            if sbb.get("dnf_drivers") and len(sbb.get("dnf_drivers", [])) > 0: predictions_count += 1
+            if sbb.get("fastest_lap"): predictions_count += 1
+            if sbb.get("first_corner_leader"): predictions_count += 1
     
     # Get leagues
     leagues = await db.leagues.find({"members": member_id}, {"_id": 0}).to_list(100)

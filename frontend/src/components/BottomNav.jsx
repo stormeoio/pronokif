@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Trophy, Target, User, Bell } from "lucide-react";
+import { Home, Trophy, Target, User, Bell, MessageCircle } from "lucide-react";
 import { useAuth, apiClient } from "../App";
 import { useState, useEffect } from "react";
 
@@ -16,12 +16,17 @@ export default function BottomNav() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
 
   useEffect(() => {
     const fetchUnread = async () => {
       try {
-        const res = await apiClient.get("/notifications/unread-count");
-        setUnreadCount(res.data.count);
+        const [notifRes, chatRes] = await Promise.all([
+          apiClient.get("/notifications/unread-count"),
+          apiClient.get("/leagues/unread-messages")
+        ]);
+        setUnreadCount(notifRes.data.count);
+        setUnreadChatCount(chatRes.data.total_unread);
       } catch (e) {
         // Ignore
       }
@@ -49,6 +54,7 @@ export default function BottomNav() {
             (item.path !== "/" && location.pathname.startsWith(item.path));
           const Icon = item.icon;
           const showBadge = item.path === "/notifications" && unreadCount > 0;
+          const showChatBadge = item.path === "/" && unreadChatCount > 0;
 
           return (
             <button
@@ -73,6 +79,12 @@ export default function BottomNav() {
                     <span className="font-data text-[10px] text-white font-bold">
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
+                  </div>
+                )}
+                {/* Chat Badge on Home */}
+                {showChatBadge && (
+                  <div className="absolute -top-2 -right-2 w-5 h-5 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg animate-pulse">
+                    <MessageCircle size={10} className="text-white" />
                   </div>
                 )}
               </div>

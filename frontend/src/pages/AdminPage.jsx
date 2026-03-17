@@ -629,7 +629,10 @@ export default function AdminPage() {
               <div className="bg-gradient-to-r from-green-600/20 to-transparent px-4 py-3 border-b border-gray-700/50 flex items-center justify-between">
                 <h3 className="font-heading text-sm uppercase text-green-400 flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  Membres inscrits ({membersList.length})
+                  Membres inscrits
+                  <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-data">
+                    {membersList.length}
+                  </span>
                 </h3>
                 <button onClick={fetchMembers} className="text-gray-400 hover:text-white">
                   <RefreshCw className={`w-4 h-4 ${loadingMembers ? 'animate-spin' : ''}`} />
@@ -957,56 +960,65 @@ export default function AdminPage() {
                 
                 <div className="grid grid-cols-2 gap-3">
                   {/* Safety Car */}
-                  <div className={`bonus-bet-card p-4 rounded-lg ${safetyCar ? 'selected' : ''}`}>
+                  <div className={`p-4 rounded-lg border-2 transition-all ${safetyCar ? 'border-yellow-500 bg-yellow-500/20' : 'border-gray-600 bg-gray-800/50'}`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <AlertTriangle className="w-5 h-5 text-yellow-500" />
-                        <Label className="font-body text-white text-sm">Safety Car</Label>
+                        <AlertTriangle className={`w-6 h-6 ${safetyCar ? 'text-yellow-400' : 'text-gray-500'}`} />
+                        <Label className="font-heading text-white text-sm uppercase">Safety Car</Label>
                       </div>
                       <Switch checked={safetyCar} onCheckedChange={setSafetyCar} />
                     </div>
+                    <p className={`font-data text-xs mt-2 ${safetyCar ? 'text-yellow-400' : 'text-gray-500'}`}>
+                      {safetyCar ? '✓ OUI' : '✗ NON'}
+                    </p>
                   </div>
 
                   {/* DNF Drivers */}
                   <button
                     onClick={() => setSelectionMode("dnf_select")}
-                    className={`bonus-bet-card p-4 rounded-lg text-left ${dnfDrivers.length > 0 ? 'selected' : ''}`}
+                    className={`p-4 rounded-lg text-left border-2 transition-all ${dnfDrivers.length > 0 ? 'border-red-500 bg-red-500/20' : 'border-gray-600 bg-gray-800/50 hover:border-red-500/50'}`}
                   >
-                    <Users className={`w-5 h-5 mb-1 ${dnfDrivers.length > 0 ? 'text-yellow-500' : 'text-gray-500'}`} />
-                    <p className="font-body text-sm text-white">DNF Pilotes</p>
-                    <p className="font-data text-xs text-gray-400">{dnfDrivers.length} sélectionné(s)</p>
+                    <div className="flex items-center gap-2">
+                      <Users className={`w-6 h-6 ${dnfDrivers.length > 0 ? 'text-red-400' : 'text-gray-500'}`} />
+                      <span className="font-heading text-white text-sm uppercase">DNF Pilotes</span>
+                    </div>
+                    <p className={`font-data text-xs mt-2 ${dnfDrivers.length > 0 ? 'text-red-400' : 'text-gray-500'}`}>
+                      {dnfDrivers.length} sélectionné(s) →
+                    </p>
                   </button>
                 </div>
 
                 {/* Fastest Lap */}
-                <div className="bonus-bet-card p-4 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
+                <div className="bonus-bet-card p-4 rounded-lg border-2 border-purple-500/30 bg-purple-500/10">
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Timer className="w-5 h-5 text-purple-500" />
-                      <span className="font-body text-white text-sm">Meilleur Tour</span>
+                      <Timer className="w-6 h-6 text-purple-400" />
+                      <span className="font-heading text-white text-base uppercase">Meilleur Tour</span>
                     </div>
+                    {fastestLap && <Check className="w-5 h-5 text-green-400" />}
                   </div>
                   <Button
                     onClick={() => setSelectionMode("fastest_lap")}
-                    className={`w-full ${fastestLap ? 'btn-gaming' : 'btn-gaming-blue'}`}
+                    className={`w-full h-12 text-base ${fastestLap ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white' : 'bg-purple-500/20 border-2 border-purple-500 text-purple-300 hover:bg-purple-500/30'}`}
                   >
-                    {fastestLap ? drivers.find(d => d.id === fastestLap)?.name : "Choisir un pilote"}
+                    {fastestLap ? drivers.find(d => d.id === fastestLap)?.name : "→ Choisir un pilote"}
                   </Button>
                 </div>
 
                 {/* First Corner Leader */}
-                <div className="bonus-bet-card p-4 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
+                <div className="bonus-bet-card p-4 rounded-lg border-2 border-cyan-500/30 bg-cyan-500/10">
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Target className="w-5 h-5 text-cyan-500" />
-                      <span className="font-body text-white text-sm">Leader 1er Virage</span>
+                      <Target className="w-6 h-6 text-cyan-400" />
+                      <span className="font-heading text-white text-base uppercase">Leader 1er Virage</span>
                     </div>
+                    {firstCornerLeader && <Check className="w-5 h-5 text-green-400" />}
                   </div>
                   <Button
                     onClick={() => setSelectionMode("first_corner")}
-                    className={`w-full ${firstCornerLeader ? 'btn-gaming' : 'btn-gaming-blue'}`}
+                    className={`w-full h-12 text-base ${firstCornerLeader ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white' : 'bg-cyan-500/20 border-2 border-cyan-500 text-cyan-300 hover:bg-cyan-500/30'}`}
                   >
-                    {firstCornerLeader ? drivers.find(d => d.id === firstCornerLeader)?.name : "Choisir un pilote"}
+                    {firstCornerLeader ? drivers.find(d => d.id === firstCornerLeader)?.name : "→ Choisir un pilote"}
                   </Button>
                 </div>
               </div>

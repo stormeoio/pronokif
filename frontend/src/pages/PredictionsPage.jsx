@@ -441,10 +441,11 @@ export default function PredictionsPage() {
             {steps.map((step) => {
               const Icon = step.icon;
               const isActive = selectionMode === step.key || (step.isBonus && showBonus);
+              const bonusModeKey = activeTab === "sprint" ? "sprint_bonus" : "bonus";
               return (
                 <button
                   key={step.key}
-                  onClick={() => !step.isBonus && setSelectionMode(step.key)}
+                  onClick={() => step.isBonus ? setSelectionMode(bonusModeKey) : setSelectionMode(step.key)}
                   className={`flex flex-col items-center p-2 rounded-xl min-w-[70px] transition-all ${
                     isActive 
                       ? (activeTab === "sprint" ? 'bg-yellow-500/20 border-2 border-yellow-500' : 'bg-blue-500/20 border-2 border-blue-500')

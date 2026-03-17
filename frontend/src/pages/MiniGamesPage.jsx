@@ -192,7 +192,9 @@ export default function MiniGamesPage() {
           <Button
             onClick={() => setMode("training")}
             className={`flex-1 h-12 font-heading uppercase ${
-              mode === "training" ? "btn-gaming-blue" : "bg-gray-800 text-gray-400"
+              mode === "training" 
+                ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white border-2 border-purple-400 shadow-[0_0_15px_rgba(147,51,234,0.5)]" 
+                : "bg-gray-800/50 text-gray-500 border-2 border-gray-700 hover:bg-gray-700/50 hover:text-gray-300"
             }`}
           >
             <Dumbbell className="w-5 h-5 mr-2" />
@@ -201,7 +203,9 @@ export default function MiniGamesPage() {
           <Button
             onClick={() => setMode("competition")}
             className={`flex-1 h-12 font-heading uppercase ${
-              mode === "competition" ? "btn-gaming" : "bg-gray-800 text-gray-400"
+              mode === "competition" 
+                ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-2 border-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.5)]" 
+                : "bg-gray-800/50 text-gray-500 border-2 border-gray-700 hover:bg-gray-700/50 hover:text-gray-300"
             }`}
             disabled={leagues.length === 0}
           >

@@ -43,6 +43,9 @@ export default function LeagueChatPage() {
       setMessages(messagesRes.data);
       setMembers(membersRes.data);
       setAvatars(avatarsRes.data);
+      
+      // Mark messages as read
+      await apiClient.post(`/leagues/${leagueId}/messages/read`).catch(() => {});
     } catch (e) {
       console.error(e);
       toast.error("Erreur lors du chargement du chat");
