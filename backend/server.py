@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -463,19 +463,25 @@ async def register(data: UserCreate):
     ))
 
 @api_router.post("/auth/login", response_model=TokenResponse)
-async def login(data: UserLogin):
+async def login(data: UserLogin, request: Request):
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if not user or not verify_password(data.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    # Record login session
+    # Extract IP and user agent from request
+    client_ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
+    if client_ip and "," in client_ip:
+        client_ip = client_ip.split(",")[0].strip()
+    user_agent = request.headers.get("user-agent", "unknown")
+    
+    # Record login session with IP and user agent
     session = {
         "id": str(uuid.uuid4()),
         "user_id": user["id"],
         "login_at": datetime.now(timezone.utc).isoformat(),
         "logout_at": None,
-        "user_agent": None,  # Could be extracted from request headers
-        "ip_address": None   # Could be extracted from request
+        "user_agent": user_agent,
+        "ip_address": client_ip
     }
     await db.user_sessions.insert_one(session)
     
@@ -773,7 +779,7 @@ async def get_user_public_profile(user_id: str, user=Depends(get_current_user)):
     user_leagues = await db.leagues.find({"members": user["id"]}, {"_id": 0}).to_list(100)
     target_leagues = await db.leagues.find({"members": user_id}, {"_id": 0}).to_list(100)
     
-    user_league_ids = {l["id"] for l in user_leagues}
+    user_league_ids = {league["id"] for league in user_leagues}
     common_leagues = []
     
     for league in target_leagues:
@@ -848,29 +854,45 @@ async def count_individual_predictions(user_id: str) -> int:
     
     for pred in predictions:
         # Classic race predictions
-        if pred.get("quali_pole"): total_pronos += 1
-        if pred.get("quali_top10") and len(pred.get("quali_top10", [])) > 0: total_pronos += 1
-        if pred.get("race_winner"): total_pronos += 1
-        if pred.get("race_top10") and len(pred.get("race_top10", [])) > 0: total_pronos += 1
+        if pred.get("quali_pole"):
+            total_pronos += 1
+        if pred.get("quali_top10") and len(pred.get("quali_top10", [])) > 0:
+            total_pronos += 1
+        if pred.get("race_winner"):
+            total_pronos += 1
+        if pred.get("race_top10") and len(pred.get("race_top10", [])) > 0:
+            total_pronos += 1
         # Bonus bets
         if pred.get("bonus_bets"):
             bb = pred["bonus_bets"]
-            if bb.get("safety_car") is not None: total_pronos += 1
-            if bb.get("dnf_drivers") and len(bb.get("dnf_drivers", [])) > 0: total_pronos += 1
-            if bb.get("fastest_lap"): total_pronos += 1
-            if bb.get("first_corner_leader"): total_pronos += 1
+            if bb.get("safety_car") is not None:
+                total_pronos += 1
+            if bb.get("dnf_drivers") and len(bb.get("dnf_drivers", [])) > 0:
+                total_pronos += 1
+            if bb.get("fastest_lap"):
+                total_pronos += 1
+            if bb.get("first_corner_leader"):
+                total_pronos += 1
         # Sprint predictions
-        if pred.get("sprint_quali_pole"): total_pronos += 1
-        if pred.get("sprint_quali_top10") and len(pred.get("sprint_quali_top10", [])) > 0: total_pronos += 1
-        if pred.get("sprint_race_winner"): total_pronos += 1
-        if pred.get("sprint_race_top10") and len(pred.get("sprint_race_top10", [])) > 0: total_pronos += 1
+        if pred.get("sprint_quali_pole"):
+            total_pronos += 1
+        if pred.get("sprint_quali_top10") and len(pred.get("sprint_quali_top10", [])) > 0:
+            total_pronos += 1
+        if pred.get("sprint_race_winner"):
+            total_pronos += 1
+        if pred.get("sprint_race_top10") and len(pred.get("sprint_race_top10", [])) > 0:
+            total_pronos += 1
         # Sprint bonus bets
         if pred.get("sprint_bonus_bets"):
             sbb = pred["sprint_bonus_bets"]
-            if sbb.get("safety_car") is not None: total_pronos += 1
-            if sbb.get("dnf_drivers") and len(sbb.get("dnf_drivers", [])) > 0: total_pronos += 1
-            if sbb.get("fastest_lap"): total_pronos += 1
-            if sbb.get("first_corner_leader"): total_pronos += 1
+            if sbb.get("safety_car") is not None:
+                total_pronos += 1
+            if sbb.get("dnf_drivers") and len(sbb.get("dnf_drivers", [])) > 0:
+                total_pronos += 1
+            if sbb.get("fastest_lap"):
+                total_pronos += 1
+            if sbb.get("first_corner_leader"):
+                total_pronos += 1
     
     return total_pronos
 
@@ -1018,10 +1040,82 @@ async def get_member_details(member_id: str, user=Depends(get_current_user)):
             "perfect_top10": stats.get("perfect_top10", 0),
             "races_participated": races_participated
         },
-        "leagues": [{"id": l["id"], "name": l["name"], "members_count": len(l["members"])} for l in leagues],
+        "leagues": [{"id": league["id"], "name": league["name"], "members_count": len(league["members"])} for league in leagues],
         "recent_predictions": recent_predictions,
         "minigame_scores": minigame_scores
     }
+
+@api_router.get("/admin/members/{member_id}/activity")
+async def get_member_activity(member_id: str, user=Depends(get_current_user)):
+    """Get login activity history for a specific member (admin only)"""
+    if not await check_is_admin(user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    member = await db.users.find_one({"id": member_id}, {"_id": 0, "password_hash": 0})
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+    
+    # Get login sessions
+    sessions = await db.user_sessions.find(
+        {"user_id": member_id},
+        {"_id": 0}
+    ).sort("login_at", -1).limit(50).to_list(50)
+    
+    return {
+        "member_id": member_id,
+        "username": member.get("username", "Anonymous"),
+        "last_login_at": member.get("last_login_at"),
+        "sessions": sessions
+    }
+
+@api_router.delete("/admin/members/{member_id}")
+async def delete_member(member_id: str, user=Depends(get_current_user)):
+    """Delete a member account (admin only)"""
+    if not await check_is_admin(user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Prevent admin from deleting themselves
+    if member_id == user["id"]:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    member = await db.users.find_one({"id": member_id}, {"_id": 0})
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+    
+    # Remove user from all leagues
+    await db.leagues.update_many(
+        {"members": member_id},
+        {"$pull": {"members": member_id}}
+    )
+    
+    # Remove from leaderboard entries
+    await db.leaderboard.delete_many({"user_id": member_id})
+    
+    # Delete user predictions
+    await db.predictions.delete_many({"user_id": member_id})
+    
+    # Delete user stats
+    await db.user_stats.delete_one({"user_id": member_id})
+    
+    # Delete user sessions
+    await db.user_sessions.delete_many({"user_id": member_id})
+    
+    # Delete user minigame scores
+    await db.minigame_scores.delete_many({"user_id": member_id})
+    
+    # Delete chat read status
+    await db.chat_read_status.delete_many({"user_id": member_id})
+    
+    # Delete notification read status
+    await db.notification_reads.delete_many({"user_id": member_id})
+    
+    # Delete feedback from this user
+    await db.feedback.delete_many({"user_id": member_id})
+    
+    # Finally delete the user
+    await db.users.delete_one({"id": member_id})
+    
+    return {"status": "success", "message": f"Member {member.get('username', member.get('email'))} deleted successfully"}
 
 # ==================== NOTIFICATIONS SYSTEM ====================
 
@@ -1267,8 +1361,6 @@ async def get_race_details(race_id: str):
         if race["id"] == race_id:
             now = datetime.now(timezone.utc)
             race_date = datetime.fromisoformat(race["date"] + "T" + race.get("race_time", "15:00") + ":00+00:00")
-            quali_date = datetime.fromisoformat(race["quali_date"] + "T" + race.get("quali_time", "14:00") + ":00+00:00")
-            fp1_datetime = datetime.fromisoformat(f"{race['fp1_date']}T{race['fp1_time']}:00+00:00")
             predictions_close = get_predictions_close_time(race)
             
             if now < predictions_close:
@@ -2039,36 +2131,6 @@ async def sync_results_from_openf1(race_id: str, user=Depends(get_current_user))
     except Exception as e:
         logging.error(f"OpenF1 API error: {e}")
         return {"status": "error", "message": str(e), "manual_entry_required": True}
-
-# ==================== NOTIFICATIONS ====================
-
-async def create_notification(user_id: str, message: str, notif_type: str):
-    notification = {
-        "id": str(uuid.uuid4()), "user_id": user_id, "message": message,
-        "type": notif_type, "read": False, "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.notifications.insert_one(notification)
-    return notification
-
-@api_router.get("/notifications")
-async def get_notifications(user=Depends(get_current_user)):
-    notifications = await db.notifications.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(50)
-    return notifications
-
-@api_router.get("/notifications/unread-count")
-async def get_unread_count(user=Depends(get_current_user)):
-    count = await db.notifications.count_documents({"user_id": user["id"], "read": False})
-    return {"count": count}
-
-@api_router.post("/notifications/{notification_id}/read")
-async def mark_notification_read(notification_id: str, user=Depends(get_current_user)):
-    await db.notifications.update_one({"id": notification_id, "user_id": user["id"]}, {"$set": {"read": True}})
-    return {"message": "Marked as read"}
-
-@api_router.post("/notifications/read-all")
-async def mark_all_notifications_read(user=Depends(get_current_user)):
-    await db.notifications.update_many({"user_id": user["id"]}, {"$set": {"read": True}})
-    return {"message": "All marked as read"}
 
 @api_router.post("/admin/send-reminders")
 async def send_reminder_notifications(user=Depends(get_current_user)):

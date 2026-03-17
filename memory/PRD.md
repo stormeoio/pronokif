@@ -16,11 +16,14 @@ PRONOKIF est une application de jeu de pronostics sur la Formule 1, permettant a
 - Inscription/Connexion par email
 - JWT tokens
 - Gestion du profil utilisateur
+- **Historique de connexion** avec IP et User-Agent (Ajouté 17/03/2026)
 
 ### Ligues
 - Création de ligue avec code d'invitation
 - Rejoindre une ligue existante
 - Chat de ligue avec notifications de messages non lus
+- **Modification nom et description par le créateur** (Ajouté 17/03/2026)
+- **Page de détails de ligue** avec classement et membres
 
 ### Pronostics de Course - SYSTÈME SÉPARÉ
 **Endpoints séparés:**
@@ -80,9 +83,12 @@ Chaque élément compte individuellement:
 - RÉSULTATS : Entrée des résultats officiels, synchronisation OpenF1
   - **Boutons bonus améliorés** (Meilleur Tour, Leader 1er Virage avec bordures colorées)
   - Safety Car avec état visible (✓ OUI / ✗ NON)
-- NOTIFS : Envoi de notifications à tous les membres
+- NOTIFS : Envoi de notifications à tous les membres (limite 5000 caractères)
 - FEEDBACK : Visualisation des retours utilisateurs
-- **MEMBRES** : Liste avec **compteur temps réel** (badge vert)
+- **MEMBRES** : Liste complète avec **compteur temps réel** (badge vert)
+  - **Onglet Infos**: Niveau, XP, pronostics, ligues, performance
+  - **Onglet Activité**: Historique des connexions (Date, IP, User-Agent)
+  - **Bouton Supprimer le compte** avec confirmation
 
 ### Notifications Chat (Mis à jour 17/03/2026)
 - Indicateur de messages non lus sur l'icône Accueil (navigation)
@@ -90,26 +96,40 @@ Chaque élément compte individuellement:
 - Marquage automatique comme lu à l'ouverture du chat
 - Endpoints: `/api/leagues/unread-messages`, `/api/leagues/{id}/messages/read`
 
+### Navigation améliorée (Ajouté 17/03/2026)
+- **Menu hamburger** sur le Dashboard avec pages statiques
+- **Onglet "Ligues"** remplace "Notifs" dans la barre de navigation
+- **Cloche simplifiée** vers /notifications directement
+
 ## Architecture technique
 
 ### Backend (FastAPI + MongoDB)
-- `/app/backend/server.py` - Routes principales (~2600 lignes)
+- `/app/backend/server.py` - Routes principales (~2850 lignes)
 - `/app/backend/features.py` - Missions, avatars, mini-jeux
 
 ### Frontend (React + TailwindCSS)
 - `/app/frontend/src/pages/DashboardPage.jsx` - Dashboard avec slider et badge chat
 - `/app/frontend/src/pages/PredictionsPage.jsx` - Onglets Sprint/Course, bonus modifiables
-- `/app/frontend/src/pages/AdminPage.jsx` - 4 onglets, boutons bonus visibles
+- `/app/frontend/src/pages/AdminPage.jsx` - 4 onglets, gestion membres complète
 - `/app/frontend/src/pages/CustomPredictionsPage.jsx` - Sélecteur GP
 - `/app/frontend/src/pages/MiniGamesPage.jsx` - Boutons mode contrastés
+- `/app/frontend/src/pages/LeagueDetailPage.jsx` - Détails de ligue (NOUVEAU)
+- `/app/frontend/src/pages/LeaguePage.jsx` - Hub des ligues (REFAIT)
+- `/app/frontend/src/pages/ProfilePage.jsx` - Historique des points
 - `/app/frontend/src/components/BottomNav.jsx` - Badge messages non lus
+- `/app/frontend/src/components/HamburgerMenu.jsx` - Menu latéral (NOUVEAU)
 
 ### Collections MongoDB
 - users, leagues, races, drivers
 - predictions, custom_predictions
 - missions, user_achievements
 - minigame_scores, notifications, feedback
-- **chat_read_status** (nouveau)
+- **user_sessions** (historique connexions)
+- **chat_read_status**
+
+### Endpoints Admin (Ajoutés 17/03/2026)
+- `GET /api/admin/members/{id}/activity` - Historique de connexion
+- `DELETE /api/admin/members/{id}` - Suppression de compte
 
 ## Prochaines étapes (Backlog)
 
@@ -120,7 +140,6 @@ Chaque élément compte individuellement:
 - Animations d'entrée sur les cartes
 - Notifications push
 - Badges visuels pour missions accomplies
-- Historique détaillé des points
 - Bonus de série (streak) pour pronostics consécutifs
 
 ### P3 - Nice to have
@@ -131,12 +150,16 @@ Chaque élément compte individuellement:
 ## Notes techniques
 - Les images de fond GP sont stockées comme URLs
 - L'API OpenF1 est utilisée pour récupérer les résultats officiels
-- `server.py` dépasse 2600 lignes - refactoring recommandé
+- `server.py` ~2850 lignes - **refactoring fortement recommandé** pour séparer routes/modèles/services
 
 ## Tests validés (17/03/2026)
 - API unread-messages: Fonctionnel
 - API mark-read: Fonctionnel
 - API admin/members: Comptage individuel des pronos
+- **API admin/members/{id}/activity**: Fonctionnel avec IP/User-Agent
+- **API DELETE admin/members/{id}**: Fonctionnel avec nettoyage complet
 - UI Admin bonus: Boutons visibles avec bordures colorées
+- UI Admin Membres: Onglets Info/Activité, bouton suppression
 - UI Mini-jeux: Contraste Entraînement/Compétition amélioré
 - UI Pronos: Bonus modifiables après validation
+- **Linting Python**: 0 erreurs (corrigé 17/03/2026)
