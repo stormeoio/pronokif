@@ -416,16 +416,57 @@ export default function AdminPage() {
     try {
       const res = await apiClient.post(`/admin/sync-results/${selectedRace.id}`);
       
-      if (res.data.status === "success") {
+      if (res.data.status === "success" || res.data.status === "partial") {
         const fetched = res.data.fetched_data;
+        
+        // Qualifying results
+        if (fetched.quali_pole) setQualiPole(fetched.quali_pole);
+        if (fetched.quali_top10?.length) setQualiTop10(fetched.quali_top10);
+        
+        // Sprint results (if applicable)
+        if (fetched.sprint_quali_pole) setSprintQualiPole(fetched.sprint_quali_pole);
+        if (fetched.sprint_quali_top10?.length) setSprintQualiTop10(fetched.sprint_quali_top10);
+        if (fetched.sprint_race_winner) setSprintRaceWinner(fetched.sprint_race_winner);
+        if (fetched.sprint_race_top10?.length) setSprintRaceTop10(fetched.sprint_race_top10);
+        
+        // Race results
         if (fetched.race_winner) setRaceWinner(fetched.race_winner);
         if (fetched.race_top10?.length) setRaceTop10(fetched.race_top10);
-        toast.success("Données récupérées depuis OpenF1 ! Vérifiez et complétez les champs manquants.");
+        
+        // Bonus data
+        if (fetched.bonus) {
+          if (fetched.bonus.safety_car !== null && fetched.bonus.safety_car !== undefined) {
+            setSafetyCar(fetched.bonus.safety_car);
+          }
+          if (fetched.bonus.dnf_drivers?.length) {
+            setDnfDrivers(fetched.bonus.dnf_drivers);
+          }
+          if (fetched.bonus.fastest_lap) {
+            setFastestLap(fetched.bonus.fastest_lap);
+          }
+          if (fetched.bonus.first_corner_leader) {
+            setFirstCornerLeader(fetched.bonus.first_corner_leader);
+          }
+        }
+        
+        // Show success message with details
+        const successItems = res.data.success_items || [];
+        if (successItems.length > 0) {
+          toast.success(`Données récupérées automatiquement !\n${successItems.join(', ')}`, { duration: 5000 });
+        } else {
+          toast.warning("Aucune donnée disponible via l'API. Saisie manuelle requise.");
+        }
+        
+        // Show errors if any
+        if (res.data.errors?.length > 0) {
+          console.log("Sync errors:", res.data.errors);
+        }
       } else {
         toast.warning(res.data.message || "Données non disponibles, saisie manuelle requise.");
       }
     } catch (error) {
-      toast.error("Erreur lors de la synchronisation avec OpenF1");
+      console.error("Sync error:", error);
+      toast.error("Erreur lors de la synchronisation avec les APIs");
     } finally {
       setSyncing(false);
     }

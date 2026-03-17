@@ -83,8 +83,11 @@ Chaque élément compte individuellement:
 
 ### Administration (Mis à jour 17/03/2026)
 **4 onglets:**
-- RÉSULTATS : Entrée des résultats officiels, synchronisation OpenF1
-  - **Boutons bonus améliorés** (Meilleur Tour, Leader 1er Virage avec bordures colorées)
+- RÉSULTATS : Entrée des résultats officiels, **synchronisation automatique complète via APIs**
+  - **Synchronisation automatisée** via Jolpica-F1 + OpenF1 APIs (AMÉLIORÉ)
+  - Récupère automatiquement : Pole, Top 10 qualifs, Vainqueur, Top 10 course, Sprint
+  - Récupère automatiquement : **Safety Car, DNF, Meilleur tour, Leader 1er virage**
+  - Boutons bonus améliorés (Meilleur Tour, Leader 1er Virage avec bordures colorées)
   - Safety Car avec état visible (✓ OUI / ✗ NON)
 - NOTIFS : Envoi de notifications à tous les membres (limite 5000 caractères)
 - FEEDBACK : Visualisation des retours utilisateurs
@@ -184,6 +187,10 @@ Chaque élément compte individuellement:
 - **API DELETE admin/members/{id}**: Fonctionnel avec nettoyage complet
 - **API leagues/{id}/leave**: Fonctionnel (supprime la ligue si seul membre)
 - **API leagues/by-code/{code}**: Fonctionnel (endpoint public)
+- **API admin/sync-results/{race_id}**: ENTIÈREMENT AUTOMATISÉ
+  - Récupère: Pole, Top 10 qualifs, Vainqueur, Top 10 course, Meilleur tour
+  - Récupère: Safety Car (OUI/NON), DNF (liste pilotes), Leader 1er virage
+  - Récupère: Sprint (pole SQ, top10 SQ, winner sprint, top10 sprint)
 - UI Admin bonus: Boutons visibles avec bordures colorées
 - UI Admin Membres: Onglets Info/Activité, bouton suppression
 - UI Mini-jeux: Contraste Entraînement/Compétition amélioré

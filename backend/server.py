@@ -43,6 +43,8 @@ security = HTTPBearer()
 
 # OpenF1 API Base URL
 OPENF1_API = "https://api.openf1.org/v1"
+# Jolpica F1 API (Ergast successor) - for official results
+JOLPICA_API = "https://api.jolpi.ca/ergast/f1"
 
 # Helper function to calculate predictions close time (15 min before FP1)
 def get_predictions_close_time(race: dict) -> datetime:
@@ -2120,81 +2122,276 @@ async def get_admin_results(race_id: str, user=Depends(get_current_user)):
 
 @api_router.post("/admin/sync-results/{race_id}")
 async def sync_results_from_openf1(race_id: str, user=Depends(get_current_user)):
-    """Fetch results from OpenF1 API"""
-    user_leagues = await db.leagues.find({"created_by": user["id"]}, {"_id": 0}).to_list(100)
-    if not user_leagues:
-        raise HTTPException(status_code=403, detail="Access denied")
+    """Fetch all results from Jolpica and OpenF1 APIs - includes quali, race, sprint, DNF, safety car, fastest lap"""
+    if not await check_is_admin(user):
+        raise HTTPException(status_code=403, detail="Admin access required")
     
     # Find race info
     race = next((r for r in F1_RACES_2026 if r["id"] == race_id), None)
     if not race:
         raise HTTPException(status_code=404, detail="Race not found")
     
+    # Map circuit names to Jolpica round numbers (we need to figure out the round)
+    race_date = race.get("date", "")
+    year = race_date.split("-")[0] if race_date else "2026"
+    
+    # Create driver number to ID mapping
+    number_to_id = {d["number"]: d["id"] for d in F1_DRIVERS_2026}
+    driver_id_to_name = {d["id"]: d["name"] for d in F1_DRIVERS_2026}
+    
+    fetched_data = {
+        "quali_pole": None,
+        "quali_top10": [],
+        "sprint_quali_pole": None,
+        "sprint_quali_top10": [],
+        "sprint_race_winner": None,
+        "sprint_race_top10": [],
+        "race_winner": None,
+        "race_top10": [],
+        "bonus": {
+            "safety_car": None,
+            "dnf_drivers": [],
+            "fastest_lap": None,
+            "first_corner_leader": None,
+            "sprint_first_corner_leader": None
+        }
+    }
+    
+    errors = []
+    
     try:
-        async with httpx.AsyncClient(timeout=30) as client:
-            # Get session info for this race
-            # OpenF1 uses meeting_key, we need to map race to meeting
-            # For now, return instructions since we need the actual meeting_key
+        async with httpx.AsyncClient(timeout=60) as client:
+            # Step 1: Get race schedule from Jolpica to find the round number
+            schedule_resp = await client.get(f"{JOLPICA_API}/{year}.json")
+            round_number = None
             
-            # Try to get latest session data
-            sessions_resp = await client.get(f"{OPENF1_API}/sessions", params={
-                "year": 2026,
-                "circuit_short_name": race["circuit"].split()[0][:3].upper()
-            })
+            if schedule_resp.status_code == 200:
+                schedule_data = schedule_resp.json()
+                races_list = schedule_data.get("MRData", {}).get("RaceTable", {}).get("Races", [])
+                
+                # Match by date or circuit name
+                circuit_name = race.get("circuit", "").lower()
+                for r in races_list:
+                    r_circuit = r.get("Circuit", {}).get("circuitId", "").lower()
+                    r_date = r.get("date", "")
+                    if race_date == r_date or circuit_name in r_circuit or r_circuit in circuit_name:
+                        round_number = r.get("round")
+                        break
             
-            if sessions_resp.status_code != 200:
-                return {"status": "error", "message": "Could not fetch sessions from OpenF1", "manual_entry_required": True}
+            if not round_number:
+                # Try matching by race name
+                race_name = race.get("name", "").lower().replace("grand prix", "").strip()
+                for r in races_list:
+                    r_name = r.get("raceName", "").lower().replace("grand prix", "").strip()
+                    if race_name in r_name or r_name in race_name:
+                        round_number = r.get("round")
+                        break
             
-            sessions = sessions_resp.json()
-            if not sessions:
-                return {"status": "no_data", "message": "No session data available yet", "manual_entry_required": True}
+            if not round_number:
+                errors.append(f"Could not find round number for {race.get('name')}")
+            else:
+                # Step 2: Fetch qualifying results
+                try:
+                    quali_resp = await client.get(f"{JOLPICA_API}/{year}/{round_number}/qualifying.json")
+                    if quali_resp.status_code == 200:
+                        quali_data = quali_resp.json()
+                        quali_results = quali_data.get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0].get("QualifyingResults", [])
+                        
+                        if quali_results:
+                            # Pole position (P1)
+                            pole_driver = quali_results[0].get("Driver", {})
+                            pole_number = pole_driver.get("permanentNumber")
+                            if pole_number:
+                                fetched_data["quali_pole"] = number_to_id.get(int(pole_number))
+                            
+                            # Top 10
+                            for i, result in enumerate(quali_results[:10]):
+                                driver_num = result.get("Driver", {}).get("permanentNumber")
+                                if driver_num:
+                                    driver_id = number_to_id.get(int(driver_num))
+                                    if driver_id:
+                                        fetched_data["quali_top10"].append(driver_id)
+                except Exception as e:
+                    errors.append(f"Qualifying: {str(e)}")
+                
+                # Step 3: Fetch race results
+                try:
+                    race_resp = await client.get(f"{JOLPICA_API}/{year}/{round_number}/results.json")
+                    if race_resp.status_code == 200:
+                        race_data = race_resp.json()
+                        race_results = race_data.get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0].get("Results", [])
+                        
+                        if race_results:
+                            # Race winner
+                            winner = race_results[0].get("Driver", {})
+                            winner_num = winner.get("permanentNumber")
+                            if winner_num:
+                                fetched_data["race_winner"] = number_to_id.get(int(winner_num))
+                            
+                            # Top 10
+                            for result in race_results[:10]:
+                                driver_num = result.get("Driver", {}).get("permanentNumber")
+                                if driver_num:
+                                    driver_id = number_to_id.get(int(driver_num))
+                                    if driver_id:
+                                        fetched_data["race_top10"].append(driver_id)
+                            
+                            # DNF drivers (status not "Finished" and not laps related like "+1 Lap")
+                            dnf_statuses = ["Accident", "Collision", "Engine", "Gearbox", "Hydraulics", 
+                                           "Brakes", "Suspension", "Electrical", "Retired", "Mechanical",
+                                           "Power Unit", "Oil leak", "Water leak", "Overheating", "Spun off"]
+                            for result in race_results:
+                                status = result.get("status", "")
+                                if any(dnf in status for dnf in dnf_statuses):
+                                    driver_num = result.get("Driver", {}).get("permanentNumber")
+                                    if driver_num:
+                                        driver_id = number_to_id.get(int(driver_num))
+                                        if driver_id:
+                                            fetched_data["bonus"]["dnf_drivers"].append(driver_id)
+                            
+                            # Fastest lap
+                            for result in race_results:
+                                fastest_lap = result.get("FastestLap", {})
+                                if fastest_lap.get("rank") == "1":
+                                    driver_num = result.get("Driver", {}).get("permanentNumber")
+                                    if driver_num:
+                                        fetched_data["bonus"]["fastest_lap"] = number_to_id.get(int(driver_num))
+                                    break
+                except Exception as e:
+                    errors.append(f"Race: {str(e)}")
+                
+                # Step 4: Fetch sprint results if it's a sprint weekend
+                if race.get("is_sprint"):
+                    try:
+                        sprint_resp = await client.get(f"{JOLPICA_API}/{year}/{round_number}/sprint.json")
+                        if sprint_resp.status_code == 200:
+                            sprint_data = sprint_resp.json()
+                            sprint_results = sprint_data.get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0].get("SprintResults", [])
+                            
+                            if sprint_results:
+                                # Sprint winner
+                                sprint_winner = sprint_results[0].get("Driver", {})
+                                sprint_winner_num = sprint_winner.get("permanentNumber")
+                                if sprint_winner_num:
+                                    fetched_data["sprint_race_winner"] = number_to_id.get(int(sprint_winner_num))
+                                
+                                # Sprint Top 10
+                                for result in sprint_results[:10]:
+                                    driver_num = result.get("Driver", {}).get("permanentNumber")
+                                    if driver_num:
+                                        driver_id = number_to_id.get(int(driver_num))
+                                        if driver_id:
+                                            fetched_data["sprint_race_top10"].append(driver_id)
+                    except Exception as e:
+                        errors.append(f"Sprint: {str(e)}")
             
-            # Get race session
-            race_session = next((s for s in sessions if s.get("session_name") == "Race"), None)
-            if not race_session:
-                return {"status": "no_race", "message": "Race session not found", "manual_entry_required": True}
-            
-            session_key = race_session.get("session_key")
-            
-            # Get position data
-            positions_resp = await client.get(f"{OPENF1_API}/position", params={
-                "session_key": session_key
-            })
-            
-            if positions_resp.status_code != 200:
-                return {"status": "error", "message": "Could not fetch positions", "manual_entry_required": True}
-            
-            positions = positions_resp.json()
-            
-            # Get final positions (last entry for each driver)
-            final_positions = {}
-            for pos in positions:
-                driver_num = pos.get("driver_number")
-                if driver_num:
-                    final_positions[driver_num] = pos.get("position")
-            
-            # Sort by position to get top 10
-            sorted_drivers = sorted(final_positions.items(), key=lambda x: x[1] if x[1] else 999)
-            top_10_numbers = [d[0] for d in sorted_drivers[:10]]
-            
-            # Map driver numbers to our driver IDs
-            number_to_id = {d["number"]: d["id"] for d in F1_DRIVERS_2026}
-            race_top10 = [number_to_id.get(n, f"unknown_{n}") for n in top_10_numbers]
-            race_winner = race_top10[0] if race_top10 else None
-            
-            return {
-                "status": "success",
-                "fetched_data": {
-                    "race_winner": race_winner,
-                    "race_top10": race_top10,
-                    "session_key": session_key
-                },
-                "message": "Data fetched. Please verify and complete missing fields (quali, bonus) manually."
-            }
-            
+            # Step 5: Try OpenF1 for additional data (safety car, first corner leader)
+            try:
+                # Get meetings from OpenF1 to find this race
+                meetings_resp = await client.get(f"{OPENF1_API}/meetings", params={"year": int(year)})
+                if meetings_resp.status_code == 200:
+                    meetings = meetings_resp.json()
+                    
+                    # Find matching meeting
+                    circuit_name = race.get("circuit", "").lower()
+                    race_name = race.get("name", "").lower()
+                    meeting = None
+                    
+                    for m in meetings:
+                        m_name = (m.get("meeting_name", "") + " " + m.get("circuit_short_name", "")).lower()
+                        if any(word in m_name for word in circuit_name.split()[:2]) or \
+                           any(word in m_name for word in race_name.replace("grand prix", "").split()[:2]):
+                            meeting = m
+                            break
+                    
+                    if meeting:
+                        meeting_key = meeting.get("meeting_key")
+                        
+                        # Get sessions for this meeting
+                        sessions_resp = await client.get(f"{OPENF1_API}/sessions", params={"meeting_key": meeting_key})
+                        if sessions_resp.status_code == 200:
+                            sessions = sessions_resp.json()
+                            
+                            race_session = next((s for s in sessions if s.get("session_name") == "Race"), None)
+                            sprint_session = next((s for s in sessions if s.get("session_name") == "Sprint"), None)
+                            
+                            # Get race car data to check for safety car
+                            if race_session:
+                                session_key = race_session.get("session_key")
+                                
+                                # Check for safety car in race control messages
+                                rc_resp = await client.get(f"{OPENF1_API}/race_control", params={"session_key": session_key})
+                                if rc_resp.status_code == 200:
+                                    rc_messages = rc_resp.json()
+                                    for msg in rc_messages:
+                                        category = msg.get("category", "").lower()
+                                        message = msg.get("message", "").lower()
+                                        if "safety car" in category or "safety car" in message or "safetycar" in message:
+                                            fetched_data["bonus"]["safety_car"] = True
+                                            break
+                                    
+                                    # If no safety car found in messages, set to False (not None)
+                                    if fetched_data["bonus"]["safety_car"] is None:
+                                        fetched_data["bonus"]["safety_car"] = False
+                                
+                                # Get positions for first corner leader
+                                pos_resp = await client.get(f"{OPENF1_API}/position", params={"session_key": session_key})
+                                if pos_resp.status_code == 200:
+                                    positions = pos_resp.json()
+                                    # Find first position after race start (position 1 after initial positions)
+                                    p1_positions = [p for p in positions if p.get("position") == 1]
+                                    if len(p1_positions) > 1:
+                                        # The second P1 entry is likely after first corner
+                                        first_corner_leader_num = p1_positions[1].get("driver_number")
+                                        if first_corner_leader_num:
+                                            fetched_data["bonus"]["first_corner_leader"] = number_to_id.get(first_corner_leader_num)
+                            
+                            # Get sprint first corner leader
+                            if sprint_session:
+                                session_key = sprint_session.get("session_key")
+                                pos_resp = await client.get(f"{OPENF1_API}/position", params={"session_key": session_key})
+                                if pos_resp.status_code == 200:
+                                    positions = pos_resp.json()
+                                    p1_positions = [p for p in positions if p.get("position") == 1]
+                                    if len(p1_positions) > 1:
+                                        sprint_leader_num = p1_positions[1].get("driver_number")
+                                        if sprint_leader_num:
+                                            fetched_data["bonus"]["sprint_first_corner_leader"] = number_to_id.get(sprint_leader_num)
+            except Exception as e:
+                errors.append(f"OpenF1 data: {str(e)}")
+    
     except Exception as e:
-        logging.error(f"OpenF1 API error: {e}")
+        logging.error(f"API sync error: {e}")
         return {"status": "error", "message": str(e), "manual_entry_required": True}
+    
+    # Calculate what was successfully fetched
+    success_items = []
+    if fetched_data["quali_pole"]:
+        success_items.append("Pole position")
+    if len(fetched_data["quali_top10"]) == 10:
+        success_items.append("Top 10 qualifs")
+    if fetched_data["race_winner"]:
+        success_items.append("Vainqueur course")
+    if len(fetched_data["race_top10"]) == 10:
+        success_items.append("Top 10 course")
+    if fetched_data["bonus"]["fastest_lap"]:
+        success_items.append("Meilleur tour")
+    if fetched_data["bonus"]["safety_car"] is not None:
+        success_items.append(f"Safety Car: {'OUI' if fetched_data['bonus']['safety_car'] else 'NON'}")
+    if fetched_data["bonus"]["dnf_drivers"]:
+        success_items.append(f"DNF: {len(fetched_data['bonus']['dnf_drivers'])} pilotes")
+    if fetched_data["bonus"]["first_corner_leader"]:
+        success_items.append("Leader 1er virage")
+    if fetched_data["sprint_race_winner"]:
+        success_items.append("Vainqueur sprint")
+    
+    return {
+        "status": "success" if success_items else "partial",
+        "fetched_data": fetched_data,
+        "success_items": success_items,
+        "errors": errors,
+        "message": f"Récupéré: {', '.join(success_items) if success_items else 'Aucune donnée'}"
+    }
 
 @api_router.post("/admin/send-reminders")
 async def send_reminder_notifications(user=Depends(get_current_user)):
