@@ -21,30 +21,63 @@ export default function FeedbackModal({ isOpen, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!message.trim() || sending) return;
+    e.stopPropagation();
+    
+    // Double-check validation
+    const trimmedMessage = message.trim();
+    if (!trimmedMessage || sending) return;
+    
+    // Validate message length
+    if (trimmedMessage.length > 2000) {
+      toast.error("Message trop long (max 2000 caractères)");
+      return;
+    }
 
     setSending(true);
     try {
-      await apiClient.post("/feedback", { category, message: message.trim() });
-      setSent(true);
-      setTimeout(() => {
-        onClose();
-        setSent(false);
-        setMessage("");
-        setCategory("feedback");
-      }, 2000);
+      const response = await apiClient.post("/feedback", { 
+        category, 
+        message: trimmedMessage 
+      });
+      
+      if (response.data) {
+        setSent(true);
+        toast.success("Message envoyé avec succès !");
+        setTimeout(() => {
+          handleClose();
+        }, 2000);
+      }
     } catch (err) {
-      toast.error(err.response?.data?.detail || "Erreur lors de l'envoi");
-    } finally {
+      console.error("Feedback submit error:", err);
+      const errorMessage = err.response?.data?.detail || "Erreur lors de l'envoi. Veuillez réessayer.";
+      toast.error(errorMessage);
       setSending(false);
     }
+  };
+
+  const handleClose = () => {
+    setSent(false);
+    setSending(false);
+    setMessage("");
+    setCategory("feedback");
+    onClose();
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" data-testid="feedback-modal">
-      <div className="w-full max-w-lg card-arcade overflow-hidden animate-in fade-in zoom-in duration-200">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" 
+      data-testid="feedback-modal"
+      onClick={(e) => {
+        // Close on backdrop click
+        if (e.target === e.currentTarget) handleClose();
+      }}
+    >
+      <div 
+        className="w-full max-w-lg card-arcade overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="bg-gradient-to-r from-cyan-600/30 to-transparent p-4 border-b border-cyan-500/30">
           <div className="flex items-center justify-between">
@@ -60,9 +93,10 @@ export default function FeedbackModal({ isOpen, onClose }) {
               </div>
             </div>
             <button 
-              onClick={onClose}
+              onClick={handleClose}
               className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
               data-testid="close-feedback-modal"
+              type="button"
             >
               <X className="w-5 h-5" />
             </button>
@@ -82,7 +116,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
           </div>
         ) : (
           /* Form */
-          <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          <div className="p-4 space-y-4">
             {/* Info Text */}
             <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
               <p className="font-body text-sm text-gray-300">
@@ -148,9 +182,10 @@ export default function FeedbackModal({ isOpen, onClose }) {
 
             {/* Submit Button */}
             <Button
-              type="submit"
+              type="button"
+              onClick={handleSubmit}
               disabled={!message.trim() || sending}
-              className="btn-racing w-full h-12"
+              className="w-full h-12 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-heading"
               data-testid="submit-feedback"
             >
               {sending ? (
@@ -165,7 +200,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
                 </>
               )}
             </Button>
-          </form>
+          </div>
         )}
 
         <div className="h-2 bg-kerb-stripe" />
