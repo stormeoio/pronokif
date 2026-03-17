@@ -106,11 +106,18 @@ Chaque élément compte individuellement:
 - **Cloche simplifiée** vers /notifications directement
 
 ### Page Championnat F1 (Ajouté 17/03/2026)
-- Classement pilotes en temps réel avec numéro, équipe, points et victoires
-- Classement écuries (constructeurs) avec nationalité et points
+- **Onglet Pilotes** : Classement en temps réel avec numéro, équipe, points et victoires
+- **Onglet Écuries** : Classement constructeurs avec nationalité et points
+- **Onglet Résultats** (NOUVEAU) :
+  - Sélecteur de Grand Prix (courses terminées uniquement)
+  - Sous-onglets : Course, Qualifications, Sprint (si applicable), Essais, Bonus
+  - Classement Course : Top 10 avec points et temps
+  - Classement Qualifications : Top 10 avec temps Q3/Q2/Q1
+  - Classement Sprint : Top 10 avec points
+  - Essais Libres : FP1, FP2, FP3 avec meilleurs temps
+  - Bonus : Meilleur tour en course, Leader au 1er virage
 - Couleurs officielles des équipes F1
-- Mise à jour automatique via API Jolpica-F1 (gratuite, sans clé)
-- Bouton de rafraîchissement manuel
+- Mise à jour automatique via API Jolpica-F1 + OpenF1 (gratuites, sans clé)
 
 ## Architecture technique
 
