@@ -2,10 +2,12 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth, apiClient } from "../App";
 import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
 import { toast } from "sonner";
 import { 
   ChevronLeft, Users, Trophy, Crown, Medal, Award, 
-  MessageCircle, Copy, Check, Star, User, Target
+  MessageCircle, Copy, Check, Star, User, Target,
+  Edit2, X, Save, FileText
 } from "lucide-react";
 
 export default function LeagueDetailPage() {
@@ -20,6 +22,12 @@ export default function LeagueDetailPage() {
   const [avatars, setAvatars] = useState({});
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState("leaderboard"); // leaderboard, members
+  
+  // Edit mode states
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -56,6 +64,42 @@ export default function LeagueDetailPage() {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("Impossible de copier");
+    }
+  };
+
+  const isOwner = league?.created_by === user.id;
+
+  const startEditing = () => {
+    setEditName(league.name);
+    setEditDescription(league.description || "");
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditName("");
+    setEditDescription("");
+  };
+
+  const saveChanges = async () => {
+    if (!editName.trim()) {
+      toast.error("Le nom ne peut pas être vide");
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      const res = await apiClient.put(`/leagues/${leagueId}`, {
+        name: editName.trim(),
+        description: editDescription.trim() || null
+      });
+      setLeague(res.data);
+      setIsEditing(false);
+      toast.success("Ligue mise à jour !");
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Erreur lors de la mise à jour");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -110,10 +154,28 @@ export default function LeagueDetailPage() {
               <ChevronLeft className="w-6 h-6" />
             </Button>
             <div className="flex-1">
-              <h1 className="font-heading text-xl uppercase tracking-tight text-white flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-yellow-500" />
-                {league.name}
-              </h1>
+              {isEditing ? (
+                <Input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="font-heading text-xl bg-gray-800 border-yellow-500 h-9"
+                  placeholder="Nom de la ligue"
+                />
+              ) : (
+                <h1 className="font-heading text-xl uppercase tracking-tight text-white flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-yellow-500" />
+                  {league.name}
+                  {isOwner && !isEditing && (
+                    <button 
+                      onClick={startEditing}
+                      className="ml-2 p-1 text-gray-500 hover:text-yellow-400 transition-colors"
+                      title="Modifier la ligue"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </h1>
+              )}
               <div className="flex items-center gap-3 mt-1">
                 <span className="font-body text-xs text-gray-400 flex items-center gap-1">
                   <Users className="w-3 h-3" />
@@ -128,20 +190,78 @@ export default function LeagueDetailPage() {
                 </button>
               </div>
             </div>
-            <Button 
-              size="sm"
-              onClick={() => navigate(`/league/${leagueId}/chat`)}
-              className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30"
-            >
-              <MessageCircle className="w-4 h-4 mr-1" />
-              Chat
-            </Button>
+            {isEditing ? (
+              <div className="flex gap-2">
+                <Button 
+                  size="sm"
+                  onClick={cancelEditing}
+                  className="bg-gray-700 hover:bg-gray-600 text-white"
+                  disabled={saving}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+                <Button 
+                  size="sm"
+                  onClick={saveChanges}
+                  className="bg-green-600 hover:bg-green-500 text-white"
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <Button 
+                size="sm"
+                onClick={() => navigate(`/league/${leagueId}/chat`)}
+                className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30"
+              >
+                <MessageCircle className="w-4 h-4 mr-1" />
+                Chat
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Tab Toggle */}
+      {/* Description Section */}
       <div className="max-w-2xl mx-auto px-4 pt-4">
+        {isEditing ? (
+          <div className="card-arcade p-4 mb-4">
+            <label className="font-heading text-xs text-gray-400 uppercase mb-2 block flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Description de la ligue
+            </label>
+            <textarea
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white font-body text-sm resize-none focus:border-yellow-500 focus:outline-none"
+              rows={3}
+              placeholder="Décris ta ligue en quelques mots... (optionnel)"
+              maxLength={500}
+            />
+            <p className="text-right text-xs text-gray-500 mt-1">{editDescription.length}/500</p>
+          </div>
+        ) : league.description ? (
+          <div className="card-arcade p-4 mb-4 border-l-4 border-yellow-500/50">
+            <p className="font-body text-sm text-gray-300 leading-relaxed">{league.description}</p>
+          </div>
+        ) : isOwner ? (
+          <button 
+            onClick={startEditing}
+            className="w-full card-arcade p-4 mb-4 border-dashed border-2 border-gray-700 hover:border-yellow-500/50 transition-colors text-center group"
+          >
+            <FileText className="w-6 h-6 text-gray-600 group-hover:text-yellow-500 mx-auto mb-2 transition-colors" />
+            <p className="font-body text-sm text-gray-500 group-hover:text-gray-400 transition-colors">
+              Ajouter une description à ta ligue
+            </p>
+          </button>
+        ) : null}
+
+        {/* Tab Toggle */}
         <div className="flex gap-2 p-1 bg-gray-800/50 rounded-lg">
           <button
             onClick={() => setActiveTab("leaderboard")}

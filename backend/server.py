@@ -95,9 +95,14 @@ class TokenResponse(BaseModel):
 
 class LeagueCreate(BaseModel):
     name: str
+    description: Optional[str] = None
 
 class LeagueJoin(BaseModel):
     code: str
+
+class LeagueUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
 
 class LeagueResponse(BaseModel):
     id: str
@@ -106,6 +111,7 @@ class LeagueResponse(BaseModel):
     created_by: str
     members: List[str]
     created_at: str
+    description: Optional[str] = None
 
 # Extended prediction models for Top 10 + Sprint
 class BonusBets(BaseModel):
@@ -610,6 +616,33 @@ async def select_league(league_id: str, user=Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="League not found or not a member")
     await db.users.update_one({"id": user["id"]}, {"$set": {"current_league_id": league_id}})
     return {"message": "League selected", "league_id": league_id}
+
+@api_router.put("/leagues/{league_id}")
+async def update_league(league_id: str, data: LeagueUpdate, user=Depends(get_current_user)):
+    """Update league name and/or description (owner only)"""
+    league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+    
+    # Check if user is the owner
+    if league["created_by"] != user["id"]:
+        raise HTTPException(status_code=403, detail="Only the league owner can update the league")
+    
+    # Build update dict
+    update_data = {}
+    if data.name is not None and data.name.strip():
+        update_data["name"] = data.name.strip()
+    if data.description is not None:
+        update_data["description"] = data.description.strip() if data.description.strip() else None
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No data to update")
+    
+    await db.leagues.update_one({"id": league_id}, {"$set": update_data})
+    
+    # Return updated league
+    updated_league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
+    return LeagueResponse(**updated_league)
 
 # ==================== LEAGUE CHAT ====================
 
