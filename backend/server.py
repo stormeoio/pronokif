@@ -467,6 +467,24 @@ async def login(data: UserLogin):
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if not user or not verify_password(data.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Record login session
+    session = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "login_at": datetime.now(timezone.utc).isoformat(),
+        "logout_at": None,
+        "user_agent": None,  # Could be extracted from request headers
+        "ip_address": None   # Could be extracted from request
+    }
+    await db.user_sessions.insert_one(session)
+    
+    # Update last login
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"last_login_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
     token = create_token(user["id"])
     return TokenResponse(access_token=token, user=UserResponse(
         id=user["id"], email=user["email"], username=user.get("username"),
