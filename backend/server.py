@@ -734,6 +734,78 @@ async def get_league_by_code(code: str):
         "description": league.get("description")
     }
 
+@api_router.delete("/leagues/{league_id}")
+async def delete_league(league_id: str, user=Depends(get_current_user)):
+    """Delete a league (creator only)"""
+    league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+    
+    if league["created_by"] != user["id"]:
+        raise HTTPException(status_code=403, detail="Seul le créateur peut supprimer la ligue")
+    
+    # Update all members' current_league_id if needed
+    for member_id in league["members"]:
+        member = await db.users.find_one({"id": member_id}, {"_id": 0})
+        if member and member.get("current_league_id") == league_id:
+            # Find another league for this user
+            other_league = await db.leagues.find_one(
+                {"members": member_id, "id": {"$ne": league_id}}, 
+                {"_id": 0}
+            )
+            new_league_id = other_league["id"] if other_league else None
+            await db.users.update_one(
+                {"id": member_id}, 
+                {"$set": {"current_league_id": new_league_id}}
+            )
+    
+    # Delete all related data
+    await db.league_messages.delete_many({"league_id": league_id})
+    await db.leaderboard.delete_many({"league_id": league_id})
+    await db.chat_read_status.delete_many({"league_id": league_id})
+    
+    # Delete the league
+    await db.leagues.delete_one({"id": league_id})
+    
+    return {"status": "success", "message": f"La ligue '{league['name']}' a été supprimée"}
+
+class TransferOwnershipRequest(BaseModel):
+    new_owner_id: str
+
+@api_router.post("/leagues/{league_id}/transfer")
+async def transfer_league_ownership(league_id: str, data: TransferOwnershipRequest, user=Depends(get_current_user)):
+    """Transfer league ownership to another member (creator only)"""
+    league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+    
+    if league["created_by"] != user["id"]:
+        raise HTTPException(status_code=403, detail="Seul le créateur peut transférer la propriété")
+    
+    if data.new_owner_id == user["id"]:
+        raise HTTPException(status_code=400, detail="Tu es déjà le propriétaire")
+    
+    if data.new_owner_id not in league["members"]:
+        raise HTTPException(status_code=400, detail="Le nouveau propriétaire doit être membre de la ligue")
+    
+    # Get new owner info
+    new_owner = await db.users.find_one({"id": data.new_owner_id}, {"_id": 0})
+    if not new_owner:
+        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+    
+    # Transfer ownership
+    await db.leagues.update_one(
+        {"id": league_id},
+        {"$set": {"created_by": data.new_owner_id}}
+    )
+    
+    new_owner_name = new_owner.get("username") or new_owner.get("email", "").split("@")[0]
+    return {
+        "status": "success", 
+        "message": f"La propriété a été transférée à {new_owner_name}",
+        "new_owner_id": data.new_owner_id
+    }
+
 # ==================== LEAGUE CHAT ====================
 
 class ChatMessage(BaseModel):

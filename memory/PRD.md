@@ -27,6 +27,8 @@ PRONOKIF est une application de jeu de pronostics sur la Formule 1, permettant a
 - **Quitter une ligue** - Chaque membre peut quitter une ligue (Ajouté 17/03/2026)
 - **Partage avec lien cliquable** - Bouton de partage génère un lien `/join/{code}` (Ajouté 17/03/2026)
 - **Page d'invitation** - `/join/:code` affiche une prévisualisation de la ligue avant de rejoindre
+- **Supprimer une ligue** - Le créateur peut supprimer sa ligue (avec confirmation) (Ajouté 17/03/2026)
+- **Transférer la propriété** - Le créateur peut désigner un nouveau propriétaire parmi les membres (Ajouté 17/03/2026)
 
 ### Pronostics de Course - SYSTÈME SÉPARÉ
 **Endpoints séparés:**
@@ -157,6 +159,8 @@ Chaque élément compte individuellement:
 ### Endpoints Ligues (Ajoutés 17/03/2026)
 - `POST /api/leagues/{id}/leave` - Quitter une ligue
 - `GET /api/leagues/by-code/{code}` - Récupérer les infos d'une ligue par son code (pour la page d'invitation)
+- `DELETE /api/leagues/{id}` - Supprimer une ligue (créateur uniquement)
+- `POST /api/leagues/{id}/transfer` - Transférer la propriété à un autre membre
 
 ## Prochaines étapes (Backlog)
 
