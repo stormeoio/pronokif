@@ -174,8 +174,9 @@ export function ReactionGame({ onSubmit, attemptsRemaining, isTraining = false }
           {gameState === "idle" && (
             <Button 
               onClick={startSequence} 
-              className="flex-1 btn-gaming h-12"
+              className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white font-heading h-12 text-base"
               disabled={!isTraining && attemptsRemaining === 0}
+              data-testid="reaction-start-btn"
             >
               <Play className="w-5 h-5 mr-2" />
               DÉMARRER
