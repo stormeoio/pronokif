@@ -193,12 +193,15 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-          {league && (
-            <div className="text-right hidden sm:block">
-              <p className="font-body text-[9px] text-gray-500 uppercase tracking-wider">Ligue</p>
-              <p className="font-heading text-xs text-cyan-400">{league.name}</p>
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            {league && (
+              <div className="text-right hidden sm:block">
+                <p className="font-body text-[9px] text-gray-500 uppercase tracking-wider">Ligue</p>
+                <p className="font-heading text-xs text-cyan-400">{league.name}</p>
+              </div>
+            )}
+            <ChevronRight className="w-4 h-4 text-gray-500" />
+          </div>
         </div>
       </div>
 
