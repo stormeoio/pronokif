@@ -42,8 +42,9 @@ export default function PredictionsPage() {
   const [sprintQualiTop10, setSprintQualiTop10] = useState([]);
   const [sprintRaceWinner, setSprintRaceWinner] = useState(null);
   const [sprintRaceTop10, setSprintRaceTop10] = useState([]);
-  const [sprintSafetyCar, setSprintSafetyCar] = useState(false);
+  const [sprintSafetyCar, setSprintSafetyCar] = useState(null); // null = not selected, true/false = selected
   const [sprintDnfDrivers, setSprintDnfDrivers] = useState([]);
+  const [sprintNoDnf, setSprintNoDnf] = useState(false);
   const [sprintFastestLap, setSprintFastestLap] = useState(null);
   const [sprintFirstCorner, setSprintFirstCorner] = useState(null);
   
@@ -52,8 +53,9 @@ export default function PredictionsPage() {
   const [qualiTop10, setQualiTop10] = useState([]);
   const [raceWinner, setRaceWinner] = useState(null);
   const [raceTop10, setRaceTop10] = useState([]);
-  const [safetyCar, setSafetyCar] = useState(false);
+  const [safetyCar, setSafetyCar] = useState(null); // null = not selected, true/false = selected
   const [dnfDrivers, setDnfDrivers] = useState([]);
+  const [noDnf, setNoDnf] = useState(false);
   const [fastestLapDriver, setFastestLapDriver] = useState(null);
   const [firstCornerLeader, setFirstCornerLeader] = useState(null);
   
@@ -80,8 +82,9 @@ export default function PredictionsPage() {
           setRaceWinner(predRes.data.race_winner || null);
           setRaceTop10(predRes.data.race_top10 || []);
           if (predRes.data.bonus_bets) {
-            setSafetyCar(predRes.data.bonus_bets.safety_car || false);
+            setSafetyCar(predRes.data.bonus_bets.safety_car ?? null);
             setDnfDrivers(predRes.data.bonus_bets.dnf_drivers || []);
+            setNoDnf(predRes.data.bonus_bets.no_dnf || false);
             setFastestLapDriver(predRes.data.bonus_bets.fastest_lap_driver || null);
             setFirstCornerLeader(predRes.data.bonus_bets.first_corner_leader || null);
           }
@@ -91,8 +94,9 @@ export default function PredictionsPage() {
           setSprintRaceWinner(predRes.data.sprint_race_winner || null);
           setSprintRaceTop10(predRes.data.sprint_race_top10 || []);
           if (predRes.data.sprint_bonus_bets) {
-            setSprintSafetyCar(predRes.data.sprint_bonus_bets.safety_car || false);
+            setSprintSafetyCar(predRes.data.sprint_bonus_bets.safety_car ?? null);
             setSprintDnfDrivers(predRes.data.sprint_bonus_bets.dnf_drivers || []);
+            setSprintNoDnf(predRes.data.sprint_bonus_bets.no_dnf || false);
             setSprintFastestLap(predRes.data.sprint_bonus_bets.fastest_lap_driver || null);
             setSprintFirstCorner(predRes.data.sprint_bonus_bets.first_corner_leader || null);
           }
@@ -168,9 +172,13 @@ export default function PredictionsPage() {
         break;
       case "sprint_fastest_lap":
         setSprintFastestLap(driverId === sprintFastestLap ? null : driverId);
+        // Return to bonus screen after selection
+        setSelectionMode("sprint_bonus");
         break;
       case "sprint_first_corner":
         setSprintFirstCorner(driverId === sprintFirstCorner ? null : driverId);
+        // Return to bonus screen after selection
+        setSelectionMode("sprint_bonus");
         break;
       case "sprint_dnf_select":
         if (sprintDnfDrivers.includes(driverId)) {
@@ -214,9 +222,13 @@ export default function PredictionsPage() {
         break;
       case "fastest_lap":
         setFastestLapDriver(driverId === fastestLapDriver ? null : driverId);
+        // Return to bonus screen after selection
+        setSelectionMode("bonus");
         break;
       case "first_corner":
         setFirstCornerLeader(driverId === firstCornerLeader ? null : driverId);
+        // Return to bonus screen after selection
+        setSelectionMode("bonus");
         break;
       case "dnf_select":
         if (dnfDrivers.includes(driverId)) {
@@ -259,6 +271,10 @@ export default function PredictionsPage() {
   // Check completion
   const isSprintComplete = sprintQualiPole && sprintQualiTop10.length === 10 && sprintRaceWinner && sprintRaceTop10.length === 10;
   const isMainComplete = qualiPole && qualiTop10.length === 10 && raceWinner && raceTop10.length === 10;
+  
+  // Check if all bonuses are completed
+  const isSprintBonusComplete = sprintSafetyCar !== null && sprintFastestLap && sprintFirstCorner && (sprintNoDnf || sprintDnfDrivers.length > 0);
+  const isMainBonusComplete = safetyCar !== null && fastestLapDriver && firstCornerLeader && (noDnf || dnfDrivers.length > 0);
 
   const handleSaveSprint = async () => {
     if (!isSprintComplete) {
@@ -276,7 +292,8 @@ export default function PredictionsPage() {
         sprint_race_top10: sprintRaceTop10,
         sprint_bonus_bets: {
           safety_car: sprintSafetyCar,
-          dnf_drivers: sprintDnfDrivers,
+          dnf_drivers: sprintNoDnf ? [] : sprintDnfDrivers,
+          no_dnf: sprintNoDnf,
           fastest_lap_driver: sprintFastestLap,
           first_corner_leader: sprintFirstCorner
         }
@@ -305,7 +322,8 @@ export default function PredictionsPage() {
         race_top10: raceTop10,
         bonus_bets: {
           safety_car: safetyCar,
-          dnf_drivers: dnfDrivers,
+          dnf_drivers: noDnf ? [] : dnfDrivers,
+          no_dnf: noDnf,
           fastest_lap_driver: fastestLapDriver,
           first_corner_leader: firstCornerLeader
         }
@@ -324,7 +342,7 @@ export default function PredictionsPage() {
     { key: "sprint_quali_top10", label: "Top 10", sublabel: "Sprint Q", icon: Medal, done: sprintQualiTop10.length === 10, count: sprintQualiTop10.length, max: 10 },
     { key: "sprint_race_winner", label: "Winner", sublabel: "Sprint", icon: Trophy, done: !!sprintRaceWinner, count: sprintRaceWinner ? 1 : 0, max: 1 },
     { key: "sprint_race_top10", label: "Top 10", sublabel: "Sprint", icon: Medal, done: sprintRaceTop10.length === 10, count: sprintRaceTop10.length, max: 10 },
-    { key: "sprint_bonus", label: "Bonus", sublabel: "Sprint", icon: Zap, done: true, count: 0, max: 0, isBonus: true }
+    { key: "sprint_bonus", label: "Bonus", sublabel: "Sprint", icon: Zap, done: isSprintBonusComplete, count: 0, max: 0, isBonus: true }
   ];
 
   const getMainSteps = () => [
@@ -332,7 +350,7 @@ export default function PredictionsPage() {
     { key: "quali_top10", label: "Top 10", sublabel: "Qualif", icon: Medal, done: qualiTop10.length === 10, count: qualiTop10.length, max: 10 },
     { key: "race_winner", label: "Winner", sublabel: "Course", icon: Trophy, done: !!raceWinner, count: raceWinner ? 1 : 0, max: 1 },
     { key: "race_top10", label: "Top 10", sublabel: "Course", icon: Medal, done: raceTop10.length === 10, count: raceTop10.length, max: 10 },
-    { key: "bonus", label: "Bonus", sublabel: "Paris", icon: Zap, done: true, count: 0, max: 0, isBonus: true }
+    { key: "bonus", label: "Bonus", sublabel: "Paris", icon: Zap, done: isMainBonusComplete, count: 0, max: 0, isBonus: true }
   ];
 
   const showBonus = activeTab === "sprint" ? selectionMode === "sprint_bonus" : selectionMode === "bonus";
@@ -571,18 +589,56 @@ export default function PredictionsPage() {
                 </button>
 
                 {/* DNF */}
-                <button
-                  onClick={() => setSelectionMode(activeTab === "sprint" ? "sprint_dnf_select" : "dnf_select")}
-                  className="w-full flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all"
-                >
-                  <div className="flex items-center gap-3">
-                    <X className="w-5 h-5 text-red-400" />
-                    <span className="font-body text-white">Abandons</span>
+                <div className="p-3 bg-white/5 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <X className="w-5 h-5 text-red-400" />
+                      <span className="font-body text-white">Abandons (DNF)</span>
+                    </div>
                   </div>
-                  <span className="font-body text-sm text-cyan-400">
-                    {(activeTab === "sprint" ? sprintDnfDrivers : dnfDrivers).length}/5 sélectionnés →
-                  </span>
-                </button>
+                  
+                  {/* No DNF toggle */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        if (activeTab === "sprint") {
+                          setSprintNoDnf(true);
+                          setSprintDnfDrivers([]);
+                        } else {
+                          setNoDnf(true);
+                          setDnfDrivers([]);
+                        }
+                      }}
+                      className={`flex-1 px-3 py-2 rounded-lg font-heading text-sm transition-all ${
+                        (activeTab === "sprint" ? sprintNoDnf : noDnf)
+                          ? 'bg-green-500 text-white' : 'bg-white/10 text-gray-400 hover:bg-white/20'
+                      }`}
+                    >
+                      Pas de DNF
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (activeTab === "sprint") {
+                          setSprintNoDnf(false);
+                        } else {
+                          setNoDnf(false);
+                        }
+                        setSelectionMode(activeTab === "sprint" ? "sprint_dnf_select" : "dnf_select");
+                      }}
+                      className={`flex-1 px-3 py-2 rounded-lg font-heading text-sm transition-all ${
+                        !(activeTab === "sprint" ? sprintNoDnf : noDnf) && (activeTab === "sprint" ? sprintDnfDrivers : dnfDrivers).length > 0
+                          ? 'bg-red-500 text-white' 
+                          : !(activeTab === "sprint" ? sprintNoDnf : noDnf)
+                            ? 'bg-white/10 text-gray-400 hover:bg-white/20'
+                            : 'bg-white/10 text-gray-400 hover:bg-white/20'
+                      }`}
+                    >
+                      {(activeTab === "sprint" ? sprintDnfDrivers : dnfDrivers).length > 0 
+                        ? `${(activeTab === "sprint" ? sprintDnfDrivers : dnfDrivers).length} pilote(s)`
+                        : "Sélectionner →"}
+                    </button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -641,6 +697,19 @@ export default function PredictionsPage() {
                 </button>
               );
             })}
+          </div>
+        )}
+
+        {/* Back to Bonus button for DNF selection mode */}
+        {(selectionMode === "dnf_select" || selectionMode === "sprint_dnf_select") && (
+          <div className="mt-4">
+            <Button
+              onClick={() => setSelectionMode(activeTab === "sprint" ? "sprint_bonus" : "bonus")}
+              className="w-full h-12 bg-cyan-500/20 border-2 border-cyan-500 text-cyan-400 hover:bg-cyan-500/30 font-heading"
+            >
+              <Check className="w-5 h-5 mr-2" />
+              Valider et retour aux bonus
+            </Button>
           </div>
         )}
       </div>
