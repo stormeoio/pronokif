@@ -104,11 +104,13 @@ Chaque élément compte individuellement:
 - Marquage automatique comme lu à l'ouverture du chat
 - Endpoints: `/api/leagues/unread-messages`, `/api/leagues/{id}/messages/read`
 
-### Navigation améliorée (Ajouté 17/03/2026)
+### Navigation améliorée (Mis à jour 18/03/2026)
 - **Menu hamburger** sur le Dashboard avec pages statiques
 - **Onglet "Ligues"** remplace "Notifs" dans la barre de navigation
 - **Onglet "Championnat"** remplace "Classement" dans la barre de navigation
+- **Onglet "Mini-jeux"** remplace "Profil" dans la barre de navigation (NOUVEAU 18/03/2026)
 - **Cloche simplifiée** vers /notifications directement
+- **Bannière profil compacte** en haut du dashboard, cliquable vers /profile (NOUVEAU 18/03/2026)
 
 ### Page Championnat F1 (Ajouté 17/03/2026)
 - **Onglet Pilotes** : Classement en temps réel avec numéro, équipe, points et victoires
@@ -183,7 +185,7 @@ Chaque élément compte individuellement:
 - L'API OpenF1 est utilisée pour récupérer les résultats officiels
 - `server.py` ~2850 lignes - **refactoring fortement recommandé** pour séparer routes/modèles/services
 
-## Tests validés (17/03/2026)
+## Tests validés (18/03/2026)
 - API unread-messages: Fonctionnel
 - API mark-read: Fonctionnel
 - API admin/members: Comptage individuel des pronos
@@ -202,3 +204,5 @@ Chaque élément compte individuellement:
 - **UI League Detail**: Bouton partage (vert) + bouton quitter (rouge)
 - **UI Join Page**: Page d'invitation avec prévisualisation de la ligue
 - **Linting Python**: 0 erreurs (corrigé 17/03/2026)
+- **UI Dashboard**: Nouvelle disposition avec bannière profil en haut (testé 18/03/2026)
+- **UI BottomNav**: Onglet Mini-jeux fonctionnel (testé 18/03/2026)

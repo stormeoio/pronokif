@@ -2,10 +2,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, apiClient } from "../App";
 import { Button } from "../components/ui/button";
-import { toast } from "sonner";
 import { 
   Flag, Trophy, Clock, ChevronRight, Zap, Target,
-  Calendar, MapPin, Users, Star, Medal,
+  Calendar, MapPin, Users, Star,
   ChevronLeft, Info, Plus, MessageCircle, HelpCircle
 } from "lucide-react";
 import { AvatarDisplay } from "../components/AvatarDisplay";
@@ -171,10 +170,47 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-app-main pb-24" data-testid="dashboard-page">
+      {/* Compact Profile Banner - Clickable to go to profile */}
+      <div 
+        onClick={() => navigate("/profile")}
+        className="relative z-20 bg-gradient-to-r from-[#0a1628] via-[#0c1a30] to-[#0a1628] cursor-pointer hover:from-[#0c1a30] hover:via-[#0f1f3a] hover:to-[#0c1a30] transition-all border-b border-cyan-500/20"
+        data-testid="profile-banner"
+      >
+        <div className="max-w-2xl mx-auto px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="ring-2 ring-yellow-500 rounded-full p-0.5">
+              <AvatarDisplay avatar={getAvatarById(user?.avatar_id)} customUrl={user?.custom_avatar_url} size="sm" />
+            </div>
+            <div>
+              <p className="font-heading text-sm text-white uppercase tracking-wide">{user?.username}</p>
+              <div className="flex items-center gap-2">
+                <span className="font-body text-[10px] text-white bg-gradient-to-r from-blue-600 to-blue-800 px-1.5 py-0.5 rounded-full shadow">
+                  Niv. {user?.level || 1}
+                </span>
+                <span className="font-data text-[10px] text-yellow-400 flex items-center gap-1">
+                  <Zap className="w-3 h-3 fill-yellow-500 text-yellow-400" /> {user?.xp || 0} XP
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {league && (
+              <div className="text-right hidden sm:block">
+                <p className="font-body text-[9px] text-gray-500 uppercase tracking-wider">Ligue</p>
+                <p className="font-heading text-xs text-cyan-400">{league.name}</p>
+              </div>
+            )}
+            <ChevronRight className="w-5 h-5 text-cyan-400" />
+          </div>
+        </div>
+      </div>
+
       {/* Top Bar with Menu, Notifications and Help */}
-      <div className="absolute top-0 left-0 right-0 z-20 p-3 flex items-center justify-between">
-        <HamburgerMenu />
-        <div className="flex items-center gap-2">
+      <div className="absolute top-0 left-0 right-0 z-30 p-3 flex items-center justify-between pointer-events-none">
+        <div className="pointer-events-auto">
+          <HamburgerMenu />
+        </div>
+        <div className="flex items-center gap-2 pointer-events-auto">
           <NotificationBell />
           <button
             onClick={() => setShowFeedbackModal(true)}
@@ -210,35 +246,6 @@ export default function DashboardPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 -mt-8 space-y-4 relative z-10">
-        
-        {/* User Info Card - Brushed Aluminum Style */}
-        <div className="card-brushed-aluminum p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="ring-2 ring-yellow-500 rounded-full p-0.5">
-                <AvatarDisplay avatar={getAvatarById(user?.avatar_id)} customUrl={user?.custom_avatar_url} size="md" />
-              </div>
-              <div>
-                <p className="font-heading text-lg text-gray-800 uppercase tracking-wide">{user?.username}</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="font-body text-xs text-white bg-gradient-to-r from-blue-600 to-blue-800 px-2 py-0.5 rounded-full shadow">
-                    Niv. {user?.level || 1}
-                  </span>
-                  <span className="font-data text-xs text-yellow-700 flex items-center gap-1">
-                    <Zap className="w-3 h-3 fill-yellow-500 text-yellow-600" /> {user?.xp || 0} XP
-                  </span>
-                </div>
-              </div>
-            </div>
-            {league && (
-              <div className="text-right">
-                <p className="font-body text-[10px] text-gray-500 uppercase tracking-wider">Ligue</p>
-                <p className="font-heading text-sm text-blue-700">{league.name}</p>
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* Race Slider Card - Main Feature */}
         {upcomingRaces.length > 0 && currentRace && (
           <div className="card-arcade overflow-hidden" data-testid="race-slider">
@@ -451,32 +458,6 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
-
-        {/* Quick Actions - Brushed Aluminum Style */}
-        <div className="grid grid-cols-2 gap-3">
-          <button 
-            onClick={() => navigate("/minigames")} 
-            className="card-brushed-aluminum p-4 text-left hover:scale-[1.02] transition-transform active:scale-[0.98]"
-            data-testid="minigames-btn"
-          >
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center mb-3 shadow-lg">
-              <Gamepad2 className="w-6 h-6 text-white" />
-            </div>
-            <p className="font-heading text-sm text-gray-800 uppercase">Mini-Jeux</p>
-            <p className="font-body text-xs text-gray-500">Reaction & Batak</p>
-          </button>
-          <button 
-            onClick={() => navigate("/missions")} 
-            className="card-brushed-aluminum p-4 text-left hover:scale-[1.02] transition-transform active:scale-[0.98]"
-            data-testid="missions-btn"
-          >
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-700 flex items-center justify-center mb-3 shadow-lg">
-              <Medal className="w-6 h-6 text-white" />
-            </div>
-            <p className="font-heading text-sm text-gray-800 uppercase">Missions</p>
-            <p className="font-body text-xs text-gray-500">Gagne de l'XP</p>
-          </button>
-        </div>
 
         {/* League Leaderboard - Dark Panel Style */}
         {league && leaderboard.length > 0 && (
