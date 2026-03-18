@@ -30,7 +30,7 @@ export default function NotificationBell() {
   return (
     <button
       onClick={handleClick}
-      className="relative p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+      className="relative p-2 rounded-lg text-cyan-400 hover:text-white hover:bg-cyan-500/20 transition-colors"
       data-testid="notification-bell"
     >
       <Bell className="w-5 h-5" />

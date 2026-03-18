@@ -5,7 +5,7 @@ import { Button } from "../components/ui/button";
 import { 
   Flag, Trophy, Clock, ChevronRight, Zap, Target,
   Calendar, MapPin, Users, Star,
-  ChevronLeft, Info, Plus, MessageCircle, HelpCircle
+  ChevronLeft, Info, Plus, MessageCircle, HelpCircle, Share2
 } from "lucide-react";
 import { AvatarDisplay } from "../components/AvatarDisplay";
 import NotificationBell from "../components/NotificationBell";
@@ -29,8 +29,7 @@ export default function DashboardPage() {
   const [nextRace, setNextRace] = useState(null);
   const [upcomingRaces, setUpcomingRaces] = useState([]);
   const [currentRaceIndex, setCurrentRaceIndex] = useState(0);
-  const [league, setLeague] = useState(null);
-  const [leaderboard, setLeaderboard] = useState([]);
+  const [userLeagues, setUserLeagues] = useState([]);
   const [myPrediction, setMyPrediction] = useState(null);
   const [predictions, setPredictions] = useState({});
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -42,28 +41,21 @@ export default function DashboardPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [raceRes, upcomingRes, avatarsRes, unreadRes] = await Promise.all([
+      const [raceRes, upcomingRes, avatarsRes, unreadRes, leaguesRes] = await Promise.all([
         apiClient.get("/races/next"),
         apiClient.get("/races/upcoming"),
         apiClient.get("/avatars"),
-        apiClient.get("/leagues/unread-messages").catch(() => ({ data: { by_league: {} } }))
+        apiClient.get("/leagues/unread-messages").catch(() => ({ data: { by_league: {} } })),
+        apiClient.get("/leagues/my").catch(() => ({ data: [] }))
       ]);
       setNextRace(raceRes.data);
       setAvatars(avatarsRes.data);
       setUnreadChatByLeague(unreadRes.data.by_league || {});
+      setUserLeagues(leaguesRes.data || []);
       
-      // Filter upcoming races that can still be predicted or are in progress
-      const upcoming = upcomingRes.data.filter(r => r.status !== "finished").slice(0, 8);
+      // Get all upcoming races (full season)
+      const upcoming = upcomingRes.data.filter(r => r.status !== "finished");
       setUpcomingRaces(upcoming);
-
-      if (user.current_league_id) {
-        const [leagueRes, lbRes] = await Promise.all([
-          apiClient.get(`/leagues/${user.current_league_id}`),
-          apiClient.get(`/leagues/${user.current_league_id}/leaderboard`)
-        ]);
-        setLeague(leagueRes.data);
-        setLeaderboard(lbRes.data.slice(0, 3));
-      }
 
       // Fetch predictions for all upcoming races
       const predsPromises = upcoming.map(race => 
@@ -84,7 +76,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [user.current_league_id]);
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -154,8 +146,6 @@ export default function DashboardPage() {
   const currentRace = upcomingRaces[currentRaceIndex];
   const currentPrediction = currentRace ? predictions[currentRace.id] : null;
 
-  const myPosition = leaderboard.findIndex(e => e.user_id === user?.id) + 1;
-
   if (loading) {
     return (
       <div className="min-h-screen bg-app-main p-4 pt-6">
@@ -178,9 +168,7 @@ export default function DashboardPage() {
       >
         <div className="max-w-2xl mx-auto px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="ring-2 ring-yellow-500 rounded-full p-0.5">
-              <AvatarDisplay avatar={getAvatarById(user?.avatar_id)} customUrl={user?.custom_avatar_url} size="sm" />
-            </div>
+            <AvatarDisplay avatar={getAvatarById(user?.avatar_id)} customUrl={user?.custom_avatar_url} size="sm" />
             <div>
               <p className="font-heading text-sm text-white uppercase tracking-wide">{user?.username}</p>
               <div className="flex items-center gap-2">
@@ -194,10 +182,10 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {league && (
+            {userLeagues.length > 0 && (
               <div className="text-right hidden sm:block">
                 <p className="font-body text-[9px] text-gray-500 uppercase tracking-wider">Ligue</p>
-                <p className="font-heading text-xs text-cyan-400">{league.name}</p>
+                <p className="font-heading text-xs text-cyan-400">{userLeagues.find(l => l.id === user?.current_league_id)?.name || userLeagues[0]?.name}</p>
               </div>
             )}
             <div className="flex items-center gap-1 bg-cyan-500/20 px-2 py-1 rounded-full">
@@ -236,57 +224,60 @@ export default function DashboardPage() {
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#050a14] to-transparent" />
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 -mt-4 space-y-4 relative z-10">
+      <div className="max-w-2xl mx-auto px-4 -mt-2 space-y-4 relative z-10">
         {/* Race Slider Card - Main Feature */}
         {upcomingRaces.length > 0 && currentRace && (
           <div className="card-arcade overflow-hidden" data-testid="race-slider">
             {/* Slider Navigation Header */}
-            <div className="flex items-center justify-between px-4 py-2 bg-gradient-to-r from-cyan-900/30 to-transparent border-b border-cyan-500/20">
+            <div className="flex items-center justify-between px-3 py-1.5 bg-gradient-to-r from-cyan-900/30 to-transparent border-b border-cyan-500/20">
               <button 
                 onClick={handlePrevRace}
                 disabled={currentRaceIndex === 0}
-                className={`p-2 rounded-lg transition-all ${
+                className={`p-1.5 rounded-lg transition-all ${
                   currentRaceIndex === 0 
                     ? 'text-gray-600 cursor-not-allowed' 
                     : 'text-cyan-400 hover:bg-cyan-500/20 active:scale-95'
                 }`}
                 data-testid="prev-race-btn"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4" />
               </button>
               
-              <div className="flex items-center gap-2">
-                {upcomingRaces.map((_, i) => (
+              <div className="flex items-center gap-1.5">
+                {upcomingRaces.slice(0, 12).map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setCurrentRaceIndex(i)}
-                    className={`w-2 h-2 rounded-full transition-all ${
+                    className={`w-1.5 h-1.5 rounded-full transition-all ${
                       i === currentRaceIndex 
-                        ? 'bg-cyan-400 w-4' 
+                        ? 'bg-cyan-400 w-3' 
                         : 'bg-gray-600 hover:bg-gray-500'
                     }`}
                     data-testid={`race-dot-${i}`}
                   />
                 ))}
+                {upcomingRaces.length > 12 && (
+                  <span className="text-[9px] text-gray-500 ml-1">+{upcomingRaces.length - 12}</span>
+                )}
               </div>
 
               <button 
                 onClick={handleNextRace}
                 disabled={currentRaceIndex === upcomingRaces.length - 1}
-                className={`p-2 rounded-lg transition-all ${
+                className={`p-1.5 rounded-lg transition-all ${
                   currentRaceIndex === upcomingRaces.length - 1 
                     ? 'text-gray-600 cursor-not-allowed' 
                     : 'text-cyan-400 hover:bg-cyan-500/20 active:scale-95'
                 }`}
                 data-testid="next-race-btn"
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
 
             {/* GP Scenic Background - Clickable for details */}
             <div 
-              className="relative h-32 bg-cover bg-center cursor-pointer group"
+              className="relative h-24 bg-cover bg-center cursor-pointer group"
               style={{ backgroundImage: `url(${getGPBackground(currentRace.name)})` }}
               onClick={() => navigate(`/race/${currentRace.id}`)}
               data-testid="race-card-clickable"
@@ -317,18 +308,18 @@ export default function DashboardPage() {
               </div>
               
               {/* Race Title Overlay */}
-              <div className="absolute bottom-0 left-0 right-0 p-4">
-                <p className="font-body text-xs text-cyan-300 uppercase tracking-widest mb-1 drop-shadow-lg">
+              <div className="absolute bottom-0 left-0 right-0 p-3">
+                <p className="font-body text-[10px] text-cyan-300 uppercase tracking-widest mb-0.5 drop-shadow-lg">
                   {currentRaceIndex === 0 ? "Prochain Grand Prix" : "À venir"}
                 </p>
-                <h2 className="font-heading text-2xl text-white uppercase tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{textShadow: '0 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(251,191,36,0.4)'}}>
+                <h2 className="font-heading text-xl text-white uppercase tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{textShadow: '0 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(251,191,36,0.4)'}}>
                   {currentRace.name.replace(" Grand Prix", "")}
                 </h2>
-                <div className="flex items-center gap-4 mt-1">
-                  <span className="font-body text-xs text-white flex items-center gap-1 drop-shadow-lg">
+                <div className="flex items-center gap-3 mt-0.5">
+                  <span className="font-body text-[10px] text-white flex items-center gap-1 drop-shadow-lg">
                     <MapPin className="w-3 h-3 text-red-400" /> {currentRace.circuit}
                   </span>
-                  <span className="font-body text-xs text-white flex items-center gap-1 drop-shadow-lg">
+                  <span className="font-body text-[10px] text-white flex items-center gap-1 drop-shadow-lg">
                     <Calendar className="w-3 h-3 text-blue-400" /> {new Date(currentRace.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                   </span>
                 </div>
@@ -450,100 +441,98 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* League Leaderboard - Dark Panel Style */}
-        {league && leaderboard.length > 0 && (
+        {/* My Leagues List */}
+        {userLeagues.length > 0 && (
           <div className="card-arcade overflow-hidden">
             {/* Header */}
-            <div className="bg-gradient-to-r from-yellow-600/20 to-transparent p-4 border-b border-yellow-500/30">
+            <div className="bg-gradient-to-r from-yellow-600/20 to-transparent p-3 border-b border-yellow-500/30">
               <div className="flex items-center justify-between">
-                <h3 className="font-heading text-lg text-white uppercase flex items-center gap-2">
+                <h3 className="font-heading text-base text-white uppercase flex items-center gap-2">
                   <Trophy className="w-5 h-5 text-yellow-500" />
                   Mes Ligues
                 </h3>
-                <div className="flex items-center gap-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => navigate(`/league/${league.id}/chat`)} 
-                    className="text-cyan-400 font-body text-xs hover:text-cyan-300 hover:bg-cyan-500/10 relative"
-                    data-testid="league-chat-btn"
-                  >
-                    <MessageCircle className="w-4 h-4 mr-1" /> Chat
-                    {unreadChatByLeague[league.id] > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-pink-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white animate-pulse">
-                        {unreadChatByLeague[league.id] > 9 ? '9+' : unreadChatByLeague[league.id]}
-                      </span>
-                    )}
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => navigate("/league")} 
-                    className="text-green-400 font-body text-xs hover:text-green-300 hover:bg-green-500/10"
-                    data-testid="add-league-btn"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => navigate("/leaderboard")} 
-                    className="text-cyan-400 font-body text-xs hover:text-cyan-300 hover:bg-cyan-500/10"
-                  >
-                    Voir tout <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => navigate("/league")} 
+                  className="text-green-400 font-body text-xs hover:text-green-300 hover:bg-green-500/10"
+                  data-testid="add-league-btn"
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Ajouter
+                </Button>
               </div>
             </div>
 
-            {/* Top 3 - Clickable members */}
-            <div className="p-4 space-y-2">
-              {leaderboard.map((entry, i) => {
-                const isMe = entry.user_id === user?.id;
+            {/* Leagues List */}
+            <div className="p-3 space-y-2">
+              {userLeagues.map((leagueItem) => {
+                const unreadCount = unreadChatByLeague[leagueItem.id] || 0;
+                const isActive = leagueItem.id === user?.current_league_id;
+                
+                const handleShare = (e) => {
+                  e.stopPropagation();
+                  const shareUrl = `${window.location.origin}/join/${leagueItem.code}`;
+                  if (navigator.share) {
+                    navigator.share({ title: `Rejoins ${leagueItem.name} sur PRONOKIF!`, url: shareUrl });
+                  } else {
+                    navigator.clipboard.writeText(shareUrl);
+                    // Toast would be nice here but we'll keep it simple
+                  }
+                };
+
                 return (
                   <div 
-                    key={entry.user_id}
-                    onClick={() => navigate(`/profile/${entry.user_id}`)}
+                    key={leagueItem.id}
+                    onClick={() => navigate(`/league/${leagueItem.id}/details`)}
                     className={`flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer ${
-                      isMe 
-                        ? 'bg-blue-500/20 border border-blue-500/50 shadow-lg hover:bg-blue-500/30' 
+                      isActive 
+                        ? 'bg-yellow-500/10 border border-yellow-500/30 hover:bg-yellow-500/20' 
                         : 'bg-white/5 hover:bg-white/10'
                     }`}
-                    data-testid={`leaderboard-member-${entry.user_id}`}
+                    data-testid={`league-item-${leagueItem.id}`}
                   >
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-heading text-lg ${
-                      i === 0 ? 'position-1' : i === 1 ? 'position-2' : i === 2 ? 'position-3' : 'bg-gray-700 text-gray-300'
-                    }`}>
-                      {i + 1}
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-500 to-yellow-700 flex items-center justify-center shadow">
+                      <Users className="w-5 h-5 text-white" />
                     </div>
-                    <AvatarDisplay avatar={getAvatarById(entry.avatar_id)} size="sm" />
-                    <span className={`font-body text-sm flex-1 ${isMe ? 'text-white font-semibold' : 'text-gray-300'}`}>
-                      {entry.username}
-                      {isMe && <Star className="w-3 h-3 inline ml-1 text-yellow-500 fill-yellow-500" />}
-                    </span>
-                    <span className="font-data text-sm text-cyan-400 font-semibold">
-                      {entry.total_points} <span className="text-xs text-gray-500">pts</span>
-                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-heading text-sm text-white uppercase truncate flex items-center gap-1">
+                        {leagueItem.name}
+                        {isActive && <Star className="w-3 h-3 text-yellow-500 fill-yellow-500 flex-shrink-0" />}
+                      </p>
+                      <p className="font-body text-xs text-gray-400">{leagueItem.member_count || leagueItem.members?.length || 0} membres</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/league/${leagueItem.id}/chat`); }}
+                        className="p-2 rounded-lg text-cyan-400 hover:bg-cyan-500/20 transition-colors relative"
+                        data-testid={`league-chat-${leagueItem.id}`}
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        {unreadCount > 0 && (
+                          <span className="absolute -top-1 -right-1 w-4 h-4 bg-pink-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                          </span>
+                        )}
+                      </button>
+                      <button
+                        onClick={handleShare}
+                        className="p-2 rounded-lg text-green-400 hover:bg-green-500/20 transition-colors"
+                        data-testid={`league-share-${leagueItem.id}`}
+                      >
+                        <Share2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
             </div>
-
-            {myPosition > 3 && (
-              <div className="px-4 pb-4">
-                <div className="flex items-center justify-between bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
-                  <span className="font-body text-sm text-gray-400">Ta position</span>
-                  <span className="font-heading text-xl text-blue-400">#{myPosition}</span>
-                </div>
-              </div>
-            )}
 
             <div className="h-2 bg-kerb-stripe" />
           </div>
         )}
 
         {/* No League CTA */}
-        {!league && (
+        {userLeagues.length === 0 && (
           <div className="card-gold p-6 text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-xl">
               <Users className="w-8 h-8 text-yellow-900" />
