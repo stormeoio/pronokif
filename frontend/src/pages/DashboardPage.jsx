@@ -200,7 +200,8 @@ export default function DashboardPage() {
                 <p className="font-heading text-xs text-cyan-400">{league.name}</p>
               </div>
             )}
-            <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center">
+            <div className="flex items-center gap-1 bg-cyan-500/20 px-2 py-1 rounded-full">
+              <span className="font-body text-xs text-cyan-400 uppercase tracking-wide">Profil</span>
               <ChevronRight className="w-4 h-4 text-cyan-400" />
             </div>
           </div>
