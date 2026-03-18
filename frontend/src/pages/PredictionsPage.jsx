@@ -6,7 +6,7 @@ import { Card, CardContent } from "../components/ui/card";
 import { toast } from "sonner";
 import { 
   ChevronLeft, Check, Flag, Clock, AlertCircle,
-  Trophy, Medal, Zap, AlertTriangle, Timer, Target, Users, X
+  Trophy, Medal, Zap, AlertTriangle, Timer, Target, Users, X, Gamepad2
 } from "lucide-react";
 
 // Team colors mapping
@@ -61,6 +61,9 @@ export default function PredictionsPage() {
   
   // Current selection mode
   const [selectionMode, setSelectionMode] = useState("quali_pole");
+  
+  // Mini-games completion state
+  const [minigamesComplete, setMinigamesComplete] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -70,6 +73,19 @@ export default function PredictionsPage() {
       ]);
       setRace(raceRes.data);
       setDrivers(driversRes.data);
+      
+      // Check mini-games completion (3 competition attempts each)
+      try {
+        const [reactionRes, batakRes] = await Promise.all([
+          apiClient.get("/minigames/reaction/scores").catch(() => ({ data: [] })),
+          apiClient.get("/minigames/batak/scores").catch(() => ({ data: [] }))
+        ]);
+        const reactionCompetitionAttempts = reactionRes.data.filter(s => s.mode === "competition").length;
+        const batakCompetitionAttempts = batakRes.data.filter(s => s.mode === "competition").length;
+        setMinigamesComplete(reactionCompetitionAttempts >= 3 && batakCompetitionAttempts >= 3);
+      } catch {
+        setMinigamesComplete(false);
+      }
       
       // Load existing predictions
       try {
@@ -342,7 +358,8 @@ export default function PredictionsPage() {
     { key: "sprint_quali_top10", label: "Top 10", sublabel: "Sprint Q", icon: Medal, done: sprintQualiTop10.length === 10, count: sprintQualiTop10.length, max: 10 },
     { key: "sprint_race_winner", label: "Winner", sublabel: "Sprint", icon: Trophy, done: !!sprintRaceWinner, count: sprintRaceWinner ? 1 : 0, max: 1 },
     { key: "sprint_race_top10", label: "Top 10", sublabel: "Sprint", icon: Medal, done: sprintRaceTop10.length === 10, count: sprintRaceTop10.length, max: 10 },
-    { key: "sprint_bonus", label: "Bonus", sublabel: "Sprint", icon: Zap, done: isSprintBonusComplete, count: 0, max: 0, isBonus: true }
+    { key: "sprint_bonus", label: "Bonus", sublabel: "Sprint", icon: Zap, done: isSprintBonusComplete, count: 0, max: 0, isBonus: true },
+    { key: "minigames", label: "Jeux", sublabel: "Mini", icon: Gamepad2, done: minigamesComplete, count: 0, max: 0, isMinigames: true }
   ];
 
   const getMainSteps = () => [
@@ -350,7 +367,8 @@ export default function PredictionsPage() {
     { key: "quali_top10", label: "Top 10", sublabel: "Qualif", icon: Medal, done: qualiTop10.length === 10, count: qualiTop10.length, max: 10 },
     { key: "race_winner", label: "Winner", sublabel: "Course", icon: Trophy, done: !!raceWinner, count: raceWinner ? 1 : 0, max: 1 },
     { key: "race_top10", label: "Top 10", sublabel: "Course", icon: Medal, done: raceTop10.length === 10, count: raceTop10.length, max: 10 },
-    { key: "bonus", label: "Bonus", sublabel: "Paris", icon: Zap, done: isMainBonusComplete, count: 0, max: 0, isBonus: true }
+    { key: "bonus", label: "Bonus", sublabel: "Paris", icon: Zap, done: isMainBonusComplete, count: 0, max: 0, isBonus: true },
+    { key: "minigames", label: "Jeux", sublabel: "Mini", icon: Gamepad2, done: minigamesComplete, count: 0, max: 0, isMinigames: true }
   ];
 
   const showBonus = activeTab === "sprint" ? selectionMode === "sprint_bonus" : selectionMode === "bonus";
@@ -460,29 +478,53 @@ export default function PredictionsPage() {
               const Icon = step.icon;
               const isActive = selectionMode === step.key || (step.isBonus && showBonus);
               const bonusModeKey = activeTab === "sprint" ? "sprint_bonus" : "bonus";
+              
+              const handleStepClick = () => {
+                if (step.isMinigames) {
+                  navigate("/minigames");
+                } else if (step.isBonus) {
+                  setSelectionMode(bonusModeKey);
+                } else {
+                  setSelectionMode(step.key);
+                }
+              };
+              
               return (
                 <button
                   key={step.key}
-                  onClick={() => step.isBonus ? setSelectionMode(bonusModeKey) : setSelectionMode(step.key)}
-                  className={`flex flex-col items-center p-2 rounded-xl min-w-[70px] transition-all ${
-                    isActive 
-                      ? (activeTab === "sprint" ? 'bg-yellow-500/20 border-2 border-yellow-500' : 'bg-blue-500/20 border-2 border-blue-500')
-                      : step.done 
+                  onClick={handleStepClick}
+                  className={`flex flex-col items-center p-2 rounded-xl min-w-[60px] transition-all ${
+                    step.isMinigames
+                      ? step.done 
                         ? 'bg-green-500/10 border-2 border-green-500/50' 
-                        : 'bg-white/5 border-2 border-gray-700'
+                        : 'bg-purple-500/10 border-2 border-purple-500/50'
+                      : isActive 
+                        ? (activeTab === "sprint" ? 'bg-yellow-500/20 border-2 border-yellow-500' : 'bg-blue-500/20 border-2 border-blue-500')
+                        : step.done 
+                          ? 'bg-green-500/10 border-2 border-green-500/50' 
+                          : 'bg-white/5 border-2 border-gray-700'
                   }`}
                   data-testid={`step-${step.key}`}
                 >
                   <Icon className={`w-5 h-5 mb-1 ${
-                    isActive ? (activeTab === "sprint" ? 'text-yellow-400' : 'text-blue-400') : step.done ? 'text-green-400' : 'text-gray-500'
+                    step.isMinigames 
+                      ? step.done ? 'text-green-400' : 'text-purple-400'
+                      : isActive ? (activeTab === "sprint" ? 'text-yellow-400' : 'text-blue-400') : step.done ? 'text-green-400' : 'text-gray-500'
                   }`} />
                   <span className={`font-heading text-[10px] ${
-                    isActive ? 'text-white' : step.done ? 'text-green-400' : 'text-gray-500'
+                    step.isMinigames
+                      ? step.done ? 'text-green-400' : 'text-purple-400'
+                      : isActive ? 'text-white' : step.done ? 'text-green-400' : 'text-gray-500'
                   }`}>{step.label}</span>
                   <span className="font-body text-[8px] text-gray-500">{step.sublabel}</span>
-                  {!step.isBonus && (
+                  {!step.isBonus && !step.isMinigames && (
                     <span className={`font-data text-xs mt-1 ${step.done ? 'text-green-400' : 'text-gray-400'}`}>
                       {step.count}/{step.max}
+                    </span>
+                  )}
+                  {step.isMinigames && (
+                    <span className={`font-data text-[9px] mt-1 ${step.done ? 'text-green-400' : 'text-purple-400'}`}>
+                      {step.done ? '✓' : '→'}
                     </span>
                   )}
                 </button>
