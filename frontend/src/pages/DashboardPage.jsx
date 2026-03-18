@@ -193,38 +193,23 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            {league && (
-              <div className="text-right hidden sm:block">
-                <p className="font-body text-[9px] text-gray-500 uppercase tracking-wider">Ligue</p>
-                <p className="font-heading text-xs text-cyan-400">{league.name}</p>
-              </div>
-            )}
-            <ChevronRight className="w-5 h-5 text-cyan-400" />
-          </div>
-        </div>
-      </div>
-
-      {/* Top Bar with Menu, Notifications and Help */}
-      <div className="absolute top-0 left-0 right-0 z-30 p-3 flex items-center justify-between pointer-events-none">
-        <div className="pointer-events-auto">
-          <HamburgerMenu />
-        </div>
-        <div className="flex items-center gap-2 pointer-events-auto">
-          <NotificationBell />
-          <button
-            onClick={() => setShowFeedbackModal(true)}
-            className="p-2 rounded-lg text-cyan-400 hover:text-white hover:bg-cyan-500/20 transition-colors"
-            data-testid="help-admin-btn"
-            title="Aider l'administrateur"
-          >
-            <HelpCircle className="w-5 h-5" />
-          </button>
+          {league && (
+            <div className="text-right hidden sm:block">
+              <p className="font-body text-[9px] text-gray-500 uppercase tracking-wider">Ligue</p>
+              <p className="font-heading text-xs text-cyan-400">{league.name}</p>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Hero Banner with F1 Car and Logo */}
       <div className="relative w-full h-56 overflow-hidden">
+        {/* Top Bar with Menu and Notifications - positioned on the F1 image */}
+        <div className="absolute top-0 left-0 right-0 z-20 p-3 flex items-center justify-between">
+          <HamburgerMenu />
+          <NotificationBell />
+        </div>
+        
         <img 
           src={HERO_BANNER} 
           alt="PRONOKIF" 
