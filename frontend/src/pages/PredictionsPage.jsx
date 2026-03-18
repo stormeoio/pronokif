@@ -570,66 +570,79 @@ export default function PredictionsPage() {
           </div>
         </div>
 
-        {/* Step Navigation */}
-        <div className="overflow-x-auto pb-2 -mx-4 px-4">
-          <div className="flex gap-2 min-w-max">
-            {steps.map((step) => {
-              const Icon = step.icon;
-              const isActive = selectionMode === step.key || (step.isBonus && showBonus);
-              const bonusModeKey = activeTab === "sprint" ? "sprint_bonus" : "bonus";
-              
-              const handleStepClick = () => {
-                if (step.isMinigames) {
-                  navigate("/minigames");
-                } else if (step.isBonus) {
-                  setSelectionMode(bonusModeKey);
-                } else {
-                  setSelectionMode(step.key);
-                }
-              };
-              
-              return (
-                <button
-                  key={step.key}
-                  onClick={handleStepClick}
-                  className={`flex flex-col items-center p-2 rounded-xl min-w-[60px] transition-all ${
-                    step.isMinigames
-                      ? step.done 
-                        ? 'bg-green-500/10 border-2 border-green-500/50' 
-                        : 'bg-purple-500/10 border-2 border-purple-500/50'
-                      : isActive 
-                        ? (activeTab === "sprint" ? 'bg-yellow-500/20 border-2 border-yellow-500' : 'bg-blue-500/20 border-2 border-blue-500')
-                        : step.done 
-                          ? 'bg-green-500/10 border-2 border-green-500/50' 
-                          : 'bg-white/5 border-2 border-gray-700'
-                  }`}
-                  data-testid={`step-${step.key}`}
-                >
-                  <Icon className={`w-5 h-5 mb-1 ${
-                    step.isMinigames 
-                      ? step.done ? 'text-green-400' : 'text-purple-400'
-                      : isActive ? (activeTab === "sprint" ? 'text-yellow-400' : 'text-blue-400') : step.done ? 'text-green-400' : 'text-gray-500'
-                  }`} />
-                  <span className={`font-heading text-[10px] ${
-                    step.isMinigames
-                      ? step.done ? 'text-green-400' : 'text-purple-400'
-                      : isActive ? 'text-white' : step.done ? 'text-green-400' : 'text-gray-500'
-                  }`}>{step.label}</span>
-                  <span className="font-body text-[8px] text-gray-500">{step.sublabel}</span>
-                  {!step.isBonus && !step.isMinigames && (
-                    <span className={`font-data text-xs mt-1 ${step.done ? 'text-green-400' : 'text-gray-400'}`}>
-                      {step.count}/{step.max}
-                    </span>
-                  )}
-                  {step.isMinigames && (
-                    <span className={`font-data text-[9px] mt-1 ${step.done ? 'text-green-400' : 'text-purple-400'}`}>
-                      {step.done ? '✓' : '→'}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+        {/* Step Navigation - Grid Layout */}
+        <div className="grid grid-cols-3 gap-2">
+          {steps.map((step) => {
+            const Icon = step.icon;
+            const isActive = selectionMode === step.key || (step.isBonus && showBonus);
+            const bonusModeKey = activeTab === "sprint" ? "sprint_bonus" : "bonus";
+            
+            const handleStepClick = () => {
+              if (step.isMinigames) {
+                navigate("/minigames");
+              } else if (step.isBonus) {
+                setSelectionMode(bonusModeKey);
+              } else {
+                setSelectionMode(step.key);
+              }
+            };
+            
+            // Determine colors based on state
+            let bgClass, borderClass, iconClass, labelClass;
+            
+            if (step.isMinigames || step.isBonus) {
+              // Bonus and Minigames: green when done, purple when not done
+              if (step.done) {
+                bgClass = 'bg-green-500/20';
+                borderClass = 'border-green-500';
+                iconClass = 'text-green-400';
+                labelClass = 'text-green-400';
+              } else {
+                bgClass = 'bg-purple-500/10';
+                borderClass = 'border-purple-500/50';
+                iconClass = 'text-purple-400';
+                labelClass = 'text-purple-400';
+              }
+            } else if (isActive) {
+              bgClass = activeTab === "sprint" ? 'bg-yellow-500/20' : 'bg-blue-500/20';
+              borderClass = activeTab === "sprint" ? 'border-yellow-500' : 'border-blue-500';
+              iconClass = activeTab === "sprint" ? 'text-yellow-400' : 'text-blue-400';
+              labelClass = 'text-white';
+            } else if (step.done) {
+              bgClass = 'bg-green-500/10';
+              borderClass = 'border-green-500/50';
+              iconClass = 'text-green-400';
+              labelClass = 'text-green-400';
+            } else {
+              bgClass = 'bg-white/5';
+              borderClass = 'border-gray-700';
+              iconClass = 'text-gray-500';
+              labelClass = 'text-gray-500';
+            }
+            
+            return (
+              <button
+                key={step.key}
+                onClick={handleStepClick}
+                className={`flex flex-col items-center p-2 rounded-xl transition-all border-2 ${bgClass} ${borderClass}`}
+                data-testid={`step-${step.key}`}
+              >
+                <Icon className={`w-5 h-5 mb-1 ${iconClass}`} />
+                <span className={`font-heading text-[10px] ${labelClass}`}>{step.label}</span>
+                <span className="font-body text-[8px] text-gray-500">{step.sublabel}</span>
+                {!step.isBonus && !step.isMinigames && (
+                  <span className={`font-data text-xs mt-1 ${step.done ? 'text-green-400' : 'text-gray-400'}`}>
+                    {step.count}/{step.max}
+                  </span>
+                )}
+                {(step.isBonus || step.isMinigames) && (
+                  <span className={`font-data text-[9px] mt-1 ${step.done ? 'text-green-400' : 'text-purple-400'}`}>
+                    {step.done ? '✓' : '→'}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Selection Info */}
@@ -873,7 +886,7 @@ export default function PredictionsPage() {
             ) : (activeTab === "sprint" ? isSprintComplete : isMainComplete) ? (
               <>
                 <Check className="w-5 h-5 mr-2" />
-                Enregistrer {activeTab === "sprint" ? "Sprint" : "Course"}
+                Enregistrer Pronos
               </>
             ) : (
               "Complète tous les pronostics"

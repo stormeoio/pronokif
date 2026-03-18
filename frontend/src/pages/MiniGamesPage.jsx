@@ -17,7 +17,6 @@ export default function MiniGamesPage() {
   
   const [loading, setLoading] = useState(true);
   const [leagues, setLeagues] = useState([]);
-  const [selectedLeague, setSelectedLeague] = useState(null);
   const [nextRace, setNextRace] = useState(null);
   const [activeTab, setActiveTab] = useState("reaction"); // reaction, batak
   const [mode, setMode] = useState("training"); // training, competition
@@ -45,10 +44,6 @@ export default function MiniGamesPage() {
       setNextRace(raceRes.data);
       setAvatars(avatarsRes.data);
 
-      if (leaguesRes.data.length > 0) {
-        setSelectedLeague(leaguesRes.data[0]);
-      }
-
       // Fetch global leaderboards
       const [globalReactionRes, globalBatakRes] = await Promise.all([
         apiClient.get("/minigames/global-leaderboard/reaction"),
@@ -64,14 +59,14 @@ export default function MiniGamesPage() {
     }
   }, []);
 
-  const fetchLeagueData = useCallback(async () => {
-    if (!selectedLeague || !nextRace) return;
+  const fetchCompetitionData = useCallback(async () => {
+    if (!nextRace) return;
 
     try {
-      // Fetch attempts
+      // Fetch attempts using "global" as league_id (results are shared across all leagues)
       const [reactionAttemptsRes, batakAttemptsRes] = await Promise.all([
-        apiClient.get(`/minigames/attempts/reaction/${selectedLeague.id}/${nextRace.id}`),
-        apiClient.get(`/minigames/attempts/batak/${selectedLeague.id}/${nextRace.id}`)
+        apiClient.get(`/minigames/attempts/reaction/global/${nextRace.id}`),
+        apiClient.get(`/minigames/attempts/batak/global/${nextRace.id}`)
       ]);
 
       setReactionAttempts({
@@ -83,41 +78,42 @@ export default function MiniGamesPage() {
         remaining: batakAttemptsRes.data.attempts_remaining
       });
 
-      // Fetch leaderboards
-      const [reactionLbRes, batakLbRes] = await Promise.all([
-        apiClient.get(`/minigames/leaderboard/reaction/${selectedLeague.id}/${nextRace.id}`),
-        apiClient.get(`/minigames/leaderboard/batak/${selectedLeague.id}/${nextRace.id}`)
-      ]);
-
-      setReactionLeaderboard(reactionLbRes.data.leaderboard || []);
-      setBatakLeaderboard(batakLbRes.data.leaderboard || []);
+      // Fetch leaderboards for all leagues (using first league or global)
+      if (leagues.length > 0) {
+        const [reactionLbRes, batakLbRes] = await Promise.all([
+          apiClient.get(`/minigames/leaderboard/reaction/${leagues[0].id}/${nextRace.id}`),
+          apiClient.get(`/minigames/leaderboard/batak/${leagues[0].id}/${nextRace.id}`)
+        ]);
+        setReactionLeaderboard(reactionLbRes.data.leaderboard || []);
+        setBatakLeaderboard(batakLbRes.data.leaderboard || []);
+      }
     } catch (e) {
       console.error(e);
     }
-  }, [selectedLeague, nextRace]);
+  }, [nextRace, leagues]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
   useEffect(() => {
-    if (selectedLeague && nextRace) {
-      fetchLeagueData();
+    if (nextRace) {
+      fetchCompetitionData();
     }
-  }, [selectedLeague, nextRace, fetchLeagueData]);
+  }, [nextRace, fetchCompetitionData]);
 
   const handleReactionSubmit = async (reactionTime, isTraining) => {
     try {
       await apiClient.post("/minigames/reaction", {
         race_id: nextRace.id,
-        league_id: selectedLeague?.id || "training",
+        league_id: "global",
         reaction_time_ms: reactionTime,
         is_training: isTraining
       });
 
       if (!isTraining) {
         toast.success(`Temps enregistré: ${reactionTime}ms`);
-        fetchLeagueData();
+        fetchCompetitionData();
       } else {
         toast.success(`Temps: ${reactionTime}ms (Entraînement)`);
       }
@@ -130,7 +126,7 @@ export default function MiniGamesPage() {
     try {
       await apiClient.post("/minigames/batak", {
         race_id: nextRace.id,
-        league_id: selectedLeague?.id || "training",
+        league_id: "global",
         score,
         time_seconds: timeSeconds,
         is_training: isTraining
@@ -138,7 +134,7 @@ export default function MiniGamesPage() {
 
       if (!isTraining) {
         toast.success(`Score enregistré: ${score} cibles`);
-        fetchLeagueData();
+        fetchCompetitionData();
       } else {
         toast.success(`Score: ${score} cibles (Entraînement)`);
       }
@@ -187,6 +183,21 @@ export default function MiniGamesPage() {
       </div>
 
       <div className="max-w-2xl mx-auto p-4 space-y-6">
+        {/* Info Card - Récompenses (moved to top) */}
+        <Card className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 border-yellow-500/30">
+          <CardContent className="p-4">
+            <h3 className="font-heading text-sm uppercase text-yellow-500 mb-2 flex items-center gap-2">
+              <Trophy className="w-4 h-4" /> Récompenses
+            </h3>
+            <ul className="font-body text-xs text-gray-400 space-y-1">
+              <li>• Mode compétition: 3 essais par jeu et par weekend</li>
+              <li>• Le gagnant de chaque jeu dans la ligue gagne <span className="text-orange-400">+2 points</span></li>
+              <li>• XP gagné à chaque partie jouée</li>
+              <li>• Mode entraînement illimité pour s'améliorer!</li>
+            </ul>
+          </CardContent>
+        </Card>
+
         {/* Mode Toggle */}
         <div className="flex gap-2">
           <Button
@@ -207,28 +218,11 @@ export default function MiniGamesPage() {
                 ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-2 border-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.5)]" 
                 : "bg-gray-800/50 text-gray-500 border-2 border-gray-700 hover:bg-gray-700/50 hover:text-gray-300"
             }`}
-            disabled={leagues.length === 0}
           >
             <Trophy className="w-5 h-5 mr-2" />
             Compétition
           </Button>
         </div>
-
-        {/* League selector (competition mode) */}
-        {mode === "competition" && leagues.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto no-scrollbar">
-            {leagues.map(league => (
-              <Button
-                key={league.id}
-                onClick={() => setSelectedLeague(league)}
-                variant={selectedLeague?.id === league.id ? "default" : "outline"}
-                className={`flex-shrink-0 ${selectedLeague?.id === league.id ? "btn-gaming" : ""}`}
-              >
-                {league.name}
-              </Button>
-            ))}
-          </div>
-        )}
 
         {/* Game Tabs */}
         <div className="flex gap-2">
@@ -368,21 +362,6 @@ export default function MiniGamesPage() {
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Info Card */}
-        <Card className="bg-gray-800/30 border-gray-700">
-          <CardContent className="p-4">
-            <h3 className="font-heading text-sm uppercase text-yellow-500 mb-2 flex items-center gap-2">
-              <Trophy className="w-4 h-4" /> Récompenses
-            </h3>
-            <ul className="font-body text-xs text-gray-400 space-y-1">
-              <li>• Mode compétition: 3 essais par jeu et par weekend</li>
-              <li>• Le gagnant de chaque jeu dans la ligue gagne <span className="text-orange-400">+2 points</span></li>
-              <li>• XP gagné à chaque partie jouée</li>
-              <li>• Mode entraînement illimité pour s'améliorer!</li>
-            </ul>
           </CardContent>
         </Card>
       </div>

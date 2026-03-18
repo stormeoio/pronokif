@@ -53,7 +53,7 @@ export default function HamburgerMenu() {
         </div>
 
         {/* Menu Content */}
-        <div className="overflow-y-auto h-[calc(100%-60px)]">
+        <div className="overflow-y-auto h-[calc(100%-60px)] pb-24">
           {!activeSection ? (
             // Main Menu
             <div className="p-2">
@@ -78,7 +78,7 @@ export default function HamburgerMenu() {
             </div>
           ) : (
             // Section Content
-            <div className="p-4">
+            <div className="p-4 pb-32">
               <button
                 onClick={() => setActiveSection(null)}
                 className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 mb-4 font-body text-sm"
