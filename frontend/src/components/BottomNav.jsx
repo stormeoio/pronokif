@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Trophy, Target, User, Users, MessageCircle, Flag } from "lucide-react";
+import { Home, Trophy, Target, User, Users, MessageCircle, Flag, Gamepad2 } from "lucide-react";
 import { useAuth, apiClient } from "../App";
 import { useState, useEffect } from "react";
 
@@ -8,7 +8,7 @@ const navItems = [
   { path: "/predictions", icon: Target, label: "Pronos" },
   { path: "/championship", icon: Flag, label: "Championnat" },
   { path: "/league", icon: Users, label: "Ligues" },
-  { path: "/profile", icon: User, label: "Profil" },
+  { path: "/minigames", icon: Gamepad2, label: "Mini-jeux" },
 ];
 
 export default function BottomNav() {

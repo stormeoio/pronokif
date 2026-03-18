@@ -5,7 +5,7 @@ import { Button } from "../components/ui/button";
 import { toast } from "sonner";
 import { 
   Flag, Trophy, Clock, ChevronRight, Zap, Target,
-  Calendar, MapPin, Users, Star, Gamepad2, Medal,
+  Calendar, MapPin, Users, Star, Medal,
   ChevronLeft, Info, Plus, MessageCircle, HelpCircle
 } from "lucide-react";
 import { AvatarDisplay } from "../components/AvatarDisplay";
