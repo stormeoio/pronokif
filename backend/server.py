@@ -1661,6 +1661,27 @@ async def get_my_prediction(race_id: str, user=Depends(get_current_user)):
     prediction = await db.predictions.find_one({"user_id": user["id"], "race_id": race_id}, {"_id": 0})
     return prediction
 
+@api_router.delete("/predictions/race/{race_id}")
+async def delete_my_prediction(race_id: str, user=Depends(get_current_user)):
+    """Delete user's prediction for a specific race"""
+    # Check if race exists
+    race = next((r for r in F1_RACES_2026 if r["id"] == race_id), None)
+    if not race:
+        raise HTTPException(status_code=404, detail="Course non trouvée")
+    
+    # Check if predictions are still open (can only delete if not closed)
+    close_time = get_predictions_close_time(race)
+    if datetime.now(timezone.utc) >= close_time:
+        raise HTTPException(status_code=400, detail="Les pronostics sont clôturés, suppression impossible")
+    
+    # Delete the prediction
+    result = await db.predictions.delete_one({"user_id": user["id"], "race_id": race_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Aucun pronostic trouvé pour cette course")
+    
+    return {"message": "Pronostics supprimés avec succès"}
+
 @api_router.get("/predictions/history")
 async def get_prediction_history(user=Depends(get_current_user)):
     predictions = await db.predictions.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)

@@ -6,7 +6,7 @@ import { Card, CardContent } from "../components/ui/card";
 import { toast } from "sonner";
 import { 
   ChevronLeft, Check, Flag, Clock, AlertCircle,
-  Trophy, Medal, Zap, AlertTriangle, Timer, Target, Users, X, Gamepad2
+  Trophy, Medal, Zap, AlertTriangle, Timer, Target, Users, X, Gamepad2, Trash2
 } from "lucide-react";
 
 // Team colors mapping
@@ -64,6 +64,52 @@ export default function PredictionsPage() {
   
   // Mini-games completion state
   const [minigamesComplete, setMinigamesComplete] = useState(false);
+  
+  // Delete confirmation state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeletePredictions = async () => {
+    setDeleting(true);
+    try {
+      await apiClient.delete(`/predictions/race/${raceId}`);
+      toast.success("Pronostics supprimés !");
+      
+      // Reset all states
+      setExistingPrediction(null);
+      setQualiPole(null);
+      setQualiTop10([]);
+      setRaceWinner(null);
+      setRaceTop10([]);
+      setSafetyCar(null);
+      setDnfDrivers([]);
+      setNoDnf(false);
+      setFastestLapDriver(null);
+      setFirstCornerLeader(null);
+      setSprintQualiPole(null);
+      setSprintQualiTop10([]);
+      setSprintRaceWinner(null);
+      setSprintRaceTop10([]);
+      setSprintSafetyCar(null);
+      setSprintDnfDrivers([]);
+      setSprintNoDnf(false);
+      setSprintFastestLap(null);
+      setSprintFirstCorner(null);
+      
+      // Reset selection mode
+      if (race?.is_sprint_weekend) {
+        setSelectionMode("sprint_quali_pole");
+      } else {
+        setSelectionMode("quali_pole");
+      }
+      
+      setShowDeleteConfirm(false);
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Erreur lors de la suppression");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -402,16 +448,69 @@ export default function PredictionsPage() {
 
   return (
     <div className="min-h-screen bg-app-main pb-32" data-testid="predictions-page">
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0a1628] border border-red-500/30 rounded-2xl p-6 max-w-sm w-full">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+                <Trash2 className="w-6 h-6 text-red-400" />
+              </div>
+              <div>
+                <h3 className="font-heading text-lg text-white uppercase">Supprimer</h3>
+                <p className="font-body text-xs text-gray-400">Cette action est irréversible</p>
+              </div>
+            </div>
+            
+            <p className="font-body text-sm text-gray-300 mb-6">
+              Veux-tu vraiment supprimer tous tes pronostics pour le <strong className="text-white">{race.name}</strong> ?
+            </p>
+            
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setShowDeleteConfirm(false)}
+                variant="outline"
+                className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800"
+                disabled={deleting}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleDeletePredictions}
+                className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                disabled={deleting}
+              >
+                {deleting ? "Suppression..." : "Supprimer"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-gradient-to-b from-[#0a1628] to-transparent p-4">
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="p-2 text-cyan-400" data-testid="back-btn">
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          <div>
-            <p className="font-body text-xs text-cyan-400 uppercase tracking-widest">Pronostics</p>
-            <h1 className="font-heading text-xl text-white uppercase">{race.name.replace(" Grand Prix", "")}</h1>
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate(-1)} className="p-2 text-cyan-400" data-testid="back-btn">
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <div>
+              <p className="font-body text-xs text-cyan-400 uppercase tracking-widest">Pronostics</p>
+              <h1 className="font-heading text-xl text-white uppercase">{race.name.replace(" Grand Prix", "")}</h1>
+            </div>
           </div>
+          
+          {/* Delete button - only show if there are existing predictions and predictions are still open */}
+          {existingPrediction && (canPredictMain || canPredictSprint) && (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="p-2 rounded-lg text-red-400 hover:bg-red-500/20 transition-colors"
+              data-testid="delete-predictions-btn"
+              title="Supprimer mes pronostics"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </div>
 
