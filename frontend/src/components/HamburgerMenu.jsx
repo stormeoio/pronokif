@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, X, Shield, FileText, Mail, BookOpen, ChevronRight, ExternalLink } from "lucide-react";
+import { Menu, X, Shield, FileText, Mail, BookOpen, ChevronRight, ExternalLink, Trophy, Calculator } from "lucide-react";
 import { Button } from "./ui/button";
 
 export default function HamburgerMenu() {
@@ -8,6 +8,8 @@ export default function HamburgerMenu() {
 
   const menuItems = [
     { id: "tutorial", icon: BookOpen, label: "Tutoriel", color: "text-cyan-400" },
+    { id: "rules", icon: Trophy, label: "Règles du jeu", color: "text-orange-400" },
+    { id: "scoring", icon: Calculator, label: "Barème des points", color: "text-purple-400" },
     { id: "privacy", icon: Shield, label: "Confidentialité", color: "text-green-400" },
     { id: "legal", icon: FileText, label: "Mentions légales", color: "text-yellow-400" },
     { id: "contact", icon: Mail, label: "Contact", color: "text-pink-400" },
@@ -86,6 +88,8 @@ export default function HamburgerMenu() {
               </button>
 
               {activeSection === "tutorial" && <TutorialContent />}
+              {activeSection === "rules" && <RulesContent />}
+              {activeSection === "scoring" && <ScoringContent />}
               {activeSection === "privacy" && <PrivacyContent />}
               {activeSection === "legal" && <LegalContent />}
               {activeSection === "contact" && <ContactContent />}
@@ -149,6 +153,203 @@ function TutorialContent() {
             <p className="font-body text-xs text-gray-300 leading-relaxed">{step.description}</p>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// Rules Content
+function RulesContent() {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center">
+          <Trophy className="w-6 h-6 text-white" />
+        </div>
+        <div>
+          <h3 className="font-heading text-lg text-white uppercase">Règles du jeu</h3>
+          <p className="font-body text-xs text-gray-400">Comment ça marche</p>
+        </div>
+      </div>
+
+      <div className="space-y-4 font-body text-sm text-gray-300 leading-relaxed">
+        <section className="bg-gray-800/50 rounded-lg p-3 border border-orange-500/20">
+          <h4 className="font-heading text-sm text-orange-400 mb-2">Principe général</h4>
+          <p>PRONOKIF est un jeu de pronostics F1. Avant chaque Grand Prix, tu dois prédire les résultats des qualifications et de la course. Plus tes pronostics sont précis, plus tu gagnes de points !</p>
+        </section>
+
+        <section className="bg-gray-800/50 rounded-lg p-3 border border-orange-500/20">
+          <h4 className="font-heading text-sm text-orange-400 mb-2">Pronostics obligatoires</h4>
+          <ul className="space-y-2 text-gray-400">
+            <li className="flex items-start gap-2">
+              <span className="text-orange-400">•</span>
+              <span><strong className="text-white">Pole Position</strong> : Pronostique le pilote qui sera en pole</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-orange-400">•</span>
+              <span><strong className="text-white">Top 10 Qualifs</strong> : Pronostique les 10 premiers des qualifications dans l'ordre</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-orange-400">•</span>
+              <span><strong className="text-white">Vainqueur</strong> : Pronostique le vainqueur de la course</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-orange-400">•</span>
+              <span><strong className="text-white">Top 10 Course</strong> : Pronostique les 10 premiers de la course dans l'ordre</span>
+            </li>
+          </ul>
+        </section>
+
+        <section className="bg-gray-800/50 rounded-lg p-3 border border-orange-500/20">
+          <h4 className="font-heading text-sm text-orange-400 mb-2">Pronostics bonus</h4>
+          <ul className="space-y-2 text-gray-400">
+            <li className="flex items-start gap-2">
+              <span className="text-yellow-400">⚡</span>
+              <span><strong className="text-white">Safety Car</strong> : Y aura-t-il un Safety Car pendant la course ?</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-yellow-400">⚡</span>
+              <span><strong className="text-white">Meilleur tour</strong> : Quel pilote réalisera le meilleur tour ?</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-yellow-400">⚡</span>
+              <span><strong className="text-white">Leader T1</strong> : Qui sera en tête au premier virage ?</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-yellow-400">⚡</span>
+              <span><strong className="text-white">Abandons (DNF)</strong> : Quels pilotes abandonneront ? (ou "Pas de DNF")</span>
+            </li>
+          </ul>
+        </section>
+
+        <section className="bg-gray-800/50 rounded-lg p-3 border border-orange-500/20">
+          <h4 className="font-heading text-sm text-orange-400 mb-2">Weekends Sprint</h4>
+          <p className="text-gray-400">Lors des weekends avec Sprint, tu as <strong className="text-white">deux séries de pronostics</strong> à faire :</p>
+          <ul className="mt-2 space-y-1 text-gray-400">
+            <li>• Sprint : Clôture 15 min avant Sprint Qualifs (SQ1)</li>
+            <li>• Course principale : Clôture 15 min avant Qualifs (Q1)</li>
+          </ul>
+        </section>
+
+        <section className="bg-gray-800/50 rounded-lg p-3 border border-orange-500/20">
+          <h4 className="font-heading text-sm text-orange-400 mb-2">Dates limites</h4>
+          <p className="text-gray-400">Les pronostics doivent être enregistrés <strong className="text-white">15 minutes avant le début de la première session</strong> concernée (Q1 pour la course, SQ1 pour le sprint).</p>
+          <p className="mt-2 text-red-400 text-xs">⚠️ Après la clôture, les pronostics ne peuvent plus être modifiés !</p>
+        </section>
+
+        <section className="bg-gray-800/50 rounded-lg p-3 border border-orange-500/20">
+          <h4 className="font-heading text-sm text-orange-400 mb-2">Ligues</h4>
+          <p className="text-gray-400">Crée ou rejoins une ligue pour défier tes amis ! Le classement de chaque ligue est indépendant. Tu peux appartenir à plusieurs ligues simultanément.</p>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+// Scoring Content
+function ScoringContent() {
+  const mainScoring = [
+    { category: "Qualifications", items: [
+      { label: "Pole Position exacte", points: "+5 pts" },
+      { label: "Pilote dans le Top 10 (bonne position)", points: "+3 pts" },
+      { label: "Pilote dans le Top 10 (mauvaise position)", points: "+1 pt" },
+    ]},
+    { category: "Course", items: [
+      { label: "Vainqueur exact", points: "+5 pts" },
+      { label: "Pilote dans le Top 10 (bonne position)", points: "+3 pts" },
+      { label: "Pilote dans le Top 10 (mauvaise position)", points: "+1 pt" },
+    ]},
+  ];
+
+  const bonusScoring = [
+    { label: "Safety Car (bonne réponse)", points: "+3 pts" },
+    { label: "Meilleur tour exact", points: "+5 pts" },
+    { label: "Leader 1er virage exact", points: "+5 pts" },
+    { label: "Abandon correct (par pilote)", points: "+3 pts" },
+    { label: "\"Pas de DNF\" correct", points: "+5 pts" },
+  ];
+
+  const specialScoring = [
+    { label: "Top 10 Qualifs parfait (10/10 bonnes positions)", points: "+10 pts BONUS" },
+    { label: "Top 10 Course parfait (10/10 bonnes positions)", points: "+10 pts BONUS" },
+    { label: "Meilleur score mini-jeu de la ligue", points: "+2 pts" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center">
+          <Calculator className="w-6 h-6 text-white" />
+        </div>
+        <div>
+          <h3 className="font-heading text-lg text-white uppercase">Barème des points</h3>
+          <p className="font-body text-xs text-gray-400">Comment sont calculés les points</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {/* Main Scoring */}
+        {mainScoring.map((section, idx) => (
+          <div key={idx} className="bg-gray-800/50 rounded-lg p-3 border border-purple-500/20">
+            <h4 className="font-heading text-sm text-purple-400 mb-3">{section.category}</h4>
+            <div className="space-y-2">
+              {section.items.map((item, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <span className="font-body text-xs text-gray-300">{item.label}</span>
+                  <span className="font-data text-sm text-cyan-400 font-semibold">{item.points}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* Bonus Scoring */}
+        <div className="bg-gray-800/50 rounded-lg p-3 border border-yellow-500/20">
+          <h4 className="font-heading text-sm text-yellow-400 mb-3">Paris Bonus</h4>
+          <div className="space-y-2">
+            {bonusScoring.map((item, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <span className="font-body text-xs text-gray-300">{item.label}</span>
+                <span className="font-data text-sm text-yellow-400 font-semibold">{item.points}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Special Bonuses */}
+        <div className="bg-gradient-to-br from-cyan-900/30 to-purple-900/30 rounded-lg p-3 border border-cyan-500/30">
+          <h4 className="font-heading text-sm text-cyan-400 mb-3">Bonus Spéciaux</h4>
+          <div className="space-y-2">
+            {specialScoring.map((item, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <span className="font-body text-xs text-gray-300">{item.label}</span>
+                <span className="font-data text-sm text-green-400 font-semibold">{item.points}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Sprint Note */}
+        <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/30">
+          <p className="font-body text-xs text-gray-400">
+            <span className="text-orange-400 font-semibold">Weekend Sprint :</span> Le même barème s'applique pour les pronostics Sprint (Sprint Qualifs + Sprint Race + Bonus Sprint).
+          </p>
+        </div>
+
+        {/* Max Points Example */}
+        <div className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 rounded-lg p-3 border border-yellow-500/30">
+          <h4 className="font-heading text-sm text-yellow-400 mb-2">Points maximum par GP (course classique)</h4>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="text-gray-400">Qualifs (Pole + Top 10 parfait)</div>
+            <div className="text-right text-cyan-400 font-semibold">45 pts</div>
+            <div className="text-gray-400">Course (Winner + Top 10 parfait)</div>
+            <div className="text-right text-cyan-400 font-semibold">45 pts</div>
+            <div className="text-gray-400">Bonus (SC + FL + T1 + DNF)</div>
+            <div className="text-right text-yellow-400 font-semibold">~20 pts</div>
+            <div className="text-gray-400 font-semibold border-t border-gray-700 pt-1">Total possible</div>
+            <div className="text-right text-green-400 font-bold border-t border-gray-700 pt-1">~110 pts</div>
+          </div>
+        </div>
       </div>
     </div>
   );
