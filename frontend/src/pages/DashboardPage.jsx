@@ -245,7 +245,7 @@ export default function DashboardPage() {
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#050a14] to-transparent" />
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 -mt-8 space-y-4 relative z-10">
+      <div className="max-w-2xl mx-auto px-4 -mt-4 space-y-4 relative z-10">
         {/* Race Slider Card - Main Feature */}
         {upcomingRaces.length > 0 && currentRace && (
           <div className="card-arcade overflow-hidden" data-testid="race-slider">
@@ -393,19 +393,19 @@ export default function DashboardPage() {
             ) : (
               /* Classic Weekend - Single countdown */
               currentRace.can_predict && (
-                <div className="p-4 border-t border-blue-500/30">
-                  <p className="font-body text-xs text-center text-cyan-neon uppercase mb-3 tracking-wider flex items-center justify-center gap-2">
+                <div className="p-3 border-t border-blue-500/30">
+                  <p className="font-body text-xs text-center text-cyan-neon uppercase mb-2 tracking-wider flex items-center justify-center gap-2">
                     <Clock className="w-4 h-4" /> Clôture 15 min avant Q1
                   </p>
                   <div className="flex justify-center gap-2">
                     {[
-                      { value: countdown.days, label: "JOURS" },
-                      { value: countdown.hours, label: "HEURES" },
-                      { value: countdown.minutes, label: "MIN" },
-                      { value: countdown.seconds, label: "SEC" }
+                      { value: countdown.days, label: "J" },
+                      { value: countdown.hours, label: "H" },
+                      { value: countdown.minutes, label: "M" },
+                      { value: countdown.seconds, label: "S" }
                     ].map((item, i) => (
-                      <div key={i} className="countdown-digit w-16 h-16 flex flex-col items-center justify-center">
-                        <span className="text-2xl font-bold">{String(item.value).padStart(2, '0')}</span>
+                      <div key={i} className="countdown-digit w-12 h-12 flex flex-col items-center justify-center">
+                        <span className="text-lg font-bold">{String(item.value).padStart(2, '0')}</span>
                         <span className="text-[8px] text-gray-400 tracking-wider">{item.label}</span>
                       </div>
                     ))}
