@@ -200,7 +200,7 @@ export default function DashboardPage() {
                 <p className="font-heading text-xs text-cyan-400">{league.name}</p>
               </div>
             )}
-            <ChevronRight className="w-4 h-4 text-gray-500" />
+            <ChevronRight className="w-5 h-5 text-cyan-400" />
           </div>
         </div>
       </div>
