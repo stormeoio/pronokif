@@ -3195,6 +3195,243 @@ async def get_custom_predictions_to_answer(league_id: str, race_id: str, user=De
     
     return predictions
 
+# ==================== DRIVER DETAILS ====================
+
+from drivers_data import get_driver_details, get_all_drivers_detailed, F1_DRIVERS_DETAILED_2026
+
+# Driver photo URLs - Official F1 headshots in race suits
+DRIVER_PHOTOS = {
+    "norris": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LANNOR01_Lando_Norris/lannor01.png.transform/1col/image.png",
+    "piastri": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/O/OSCPIA01_Oscar_Piastri/oscpia01.png.transform/1col/image.png",
+    "russell": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/G/GEORUS01_George_Russell/georus01.png.transform/1col/image.png",
+    "antonelli": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/A/ANDANT01_Andrea_Kimi_Antonelli/andant01.png.transform/1col/image.png",
+    "leclerc": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/C/CHALEC01_Charles_Leclerc/chalec01.png.transform/1col/image.png",
+    "hamilton": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LEWHAM01_Lewis_Hamilton/lewham01.png.transform/1col/image.png",
+    "verstappen": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png.transform/1col/image.png",
+    "hadjar": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/I/ISAHAD01_Isack_Hadjar/isahad01.png.transform/1col/image.png",
+    "sainz": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/C/CARSAI01_Carlos_Sainz/carsai01.png.transform/1col/image.png",
+    "albon": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/A/ALEALB01_Alexander_Albon/alealb01.png.transform/1col/image.png",
+    "lawson": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LIALAW01_Liam_Lawson/lialaw01.png.transform/1col/image.png",
+    "lindblad": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/A/ARVLIN01_Arvid_Lindblad/arvlin01.png.transform/1col/image.png",
+    "alonso": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/F/FERALO01_Fernando_Alonso/feralo01.png.transform/1col/image.png",
+    "stroll": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LANSTR01_Lance_Stroll/lanstr01.png.transform/1col/image.png",
+    "ocon": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/E/ESTOCO01_Esteban_Ocon/estoco01.png.transform/1col/image.png",
+    "bearman": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/O/OLIBEA01_Oliver_Bearman/olibea01.png.transform/1col/image.png",
+    "gasly": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/P/PIEGAS01_Pierre_Gasly/piegas01.png.transform/1col/image.png",
+    "colapinto": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/F/FRACOL01_Franco_Colapinto/fracol01.png.transform/1col/image.png",
+    "hulkenberg": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/N/NICHUL01_Nico_Hulkenberg/nichul01.png.transform/1col/image.png",
+    "bortoleto": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/G/GABBOR01_Gabriel_Bortoleto/gabbor01.png.transform/1col/image.png",
+    "perez": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/S/SERPER01_Sergio_Perez/serper01.png.transform/1col/image.png",
+    "bottas": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/V/VALBOT01_Valtteri_Bottas/valbot01.png.transform/1col/image.png",
+}
+
+def generate_driver_facts(driver: dict, next_race: dict = None) -> list:
+    """Generate 10 random interesting facts about the driver for the next GP"""
+    facts = []
+    
+    f1_stats = driver.get("palmares", {}).get("f1", {})
+    junior = driver.get("palmares", {}).get("junior", [])
+    contract = driver.get("contract", {})
+    
+    # Fact pool - we'll randomly select 10 from these
+    all_facts = []
+    
+    # Career stats facts
+    if f1_stats.get("world_championships", 0) > 0:
+        all_facts.append({
+            "type": "achievement",
+            "title": "Champion du Monde",
+            "text": f"{driver['first_name']} a remporté {f1_stats['world_championships']} titre(s) mondial(aux) en F1.",
+            "icon": "trophy"
+        })
+    
+    if f1_stats.get("wins", 0) > 0:
+        all_facts.append({
+            "type": "stat",
+            "title": "Victoires en F1",
+            "text": f"Total de {f1_stats['wins']} victoire(s) en Grand Prix.",
+            "icon": "flag"
+        })
+    
+    if f1_stats.get("podiums", 0) > 0:
+        all_facts.append({
+            "type": "stat",
+            "title": "Podiums",
+            "text": f"{f1_stats['podiums']} podium(s) au total dans sa carrière F1.",
+            "icon": "medal"
+        })
+    
+    if f1_stats.get("poles", 0) > 0:
+        all_facts.append({
+            "type": "stat",
+            "title": "Pole Positions",
+            "text": f"{f1_stats['poles']} pole position(s) en qualifications.",
+            "icon": "zap"
+        })
+    
+    if f1_stats.get("fastest_laps", 0) > 0:
+        all_facts.append({
+            "type": "stat",
+            "title": "Meilleurs Tours",
+            "text": f"{f1_stats['fastest_laps']} meilleur(s) tour(s) en course.",
+            "icon": "timer"
+        })
+    
+    # Junior career facts
+    for junior_season in junior[:3]:
+        if junior_season.get("position") == 1:
+            all_facts.append({
+                "type": "junior",
+                "title": f"Champion {junior_season['series']}",
+                "text": f"Champion de {junior_season['series']} en {junior_season['year']} avec {junior_season.get('team', 'N/A')}.",
+                "icon": "award"
+            })
+    
+    # Contract facts
+    if contract.get("end_year"):
+        years_left = contract["end_year"] - 2026
+        if years_left > 0:
+            all_facts.append({
+                "type": "contract",
+                "title": "Contrat actuel",
+                "text": f"Sous contrat avec {driver['team']} jusqu'en {contract['end_year']} ({years_left} an(s) restant(s)).",
+                "icon": "file"
+            })
+    
+    if contract.get("salary_estimate"):
+        all_facts.append({
+            "type": "contract",
+            "title": "Salaire estimé",
+            "text": f"Rémunération estimée : {contract['salary_estimate']}.",
+            "icon": "dollar"
+        })
+    
+    # Personal facts
+    age = 2026 - int(driver.get("date_of_birth", "2000-01-01").split("-")[0])
+    all_facts.append({
+        "type": "personal",
+        "title": "Âge",
+        "text": f"{driver['first_name']} a {age} ans (né le {driver.get('date_of_birth', 'N/A')}).",
+        "icon": "calendar"
+    })
+    
+    all_facts.append({
+        "type": "personal",
+        "title": "Nationalité",
+        "text": f"Représente {driver.get('country_name', driver.get('country', 'N/A'))} en Formule 1.",
+        "icon": "flag"
+    })
+    
+    all_facts.append({
+        "type": "personal",
+        "title": "Lieu de naissance",
+        "text": f"Né à {driver.get('place_of_birth', 'N/A')}.",
+        "icon": "map"
+    })
+    
+    if driver.get("height_cm"):
+        all_facts.append({
+            "type": "physical",
+            "title": "Taille",
+            "text": f"Mesure {driver['height_cm']} cm.",
+            "icon": "ruler"
+        })
+    
+    # Team facts
+    all_facts.append({
+        "type": "team",
+        "title": "Équipe actuelle",
+        "text": f"Pilote pour {driver['team']} avec le numéro {driver.get('number', 'N/A')}.",
+        "icon": "car"
+    })
+    
+    if f1_stats.get("first_team"):
+        all_facts.append({
+            "type": "career",
+            "title": "Débuts en F1",
+            "text": f"A débuté en F1 avec {f1_stats['first_team']} ({f1_stats.get('seasons', 'N/A')}).",
+            "icon": "play"
+        })
+    
+    # Experience facts
+    if f1_stats.get("entries", 0) > 0:
+        all_facts.append({
+            "type": "experience",
+            "title": "Expérience",
+            "text": f"{f1_stats['entries']} Grand(s) Prix disputé(s) en carrière.",
+            "icon": "target"
+        })
+    
+    # Points facts
+    if f1_stats.get("points", 0) > 0:
+        all_facts.append({
+            "type": "stat",
+            "title": "Points en carrière",
+            "text": f"Total de {f1_stats['points']} points marqués en F1.",
+            "icon": "hash"
+        })
+    
+    # License points
+    if driver.get("license_points"):
+        all_facts.append({
+            "type": "misc",
+            "title": "Points de permis",
+            "text": f"Actuellement {driver['license_points']}/12 points sur sa super-licence.",
+            "icon": "shield"
+        })
+    
+    # Contract notes
+    if contract.get("notes"):
+        all_facts.append({
+            "type": "info",
+            "title": "Info contrat",
+            "text": contract["notes"],
+            "icon": "info"
+        })
+    
+    # Randomly select 10 facts (or all if less than 10)
+    random.shuffle(all_facts)
+    return all_facts[:10]
+
+@api_router.get("/drivers/{driver_id}/details")
+async def get_driver_detail_endpoint(driver_id: str):
+    """Get detailed information about a specific driver"""
+    driver = get_driver_details(driver_id)
+    
+    if not driver:
+        # Try to find by code (VER, HAM, etc.)
+        for d in F1_DRIVERS_DETAILED_2026.values():
+            if d.get("code", "").lower() == driver_id.lower():
+                driver = d
+                break
+    
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver not found")
+    
+    # Add photo URL
+    driver["photo_url"] = DRIVER_PHOTOS.get(driver["id"], DRIVER_PHOTOS.get("norris"))
+    
+    # Get next race for context
+    next_race = await db.races.find_one(
+        {"status": {"$in": ["upcoming", "active"]}},
+        {"_id": 0},
+        sort=[("date", 1)]
+    )
+    
+    # Generate interesting facts
+    driver["useful_facts"] = generate_driver_facts(driver, next_race)
+    
+    return driver
+
+@api_router.get("/drivers/all")
+async def get_all_drivers_endpoint():
+    """Get all drivers with basic info"""
+    drivers = get_all_drivers_detailed()
+    # Add photo URLs
+    for driver in drivers:
+        driver["photo_url"] = DRIVER_PHOTOS.get(driver["id"], DRIVER_PHOTOS.get("norris"))
+    return drivers
+
 # ==================== HEALTH CHECK ====================
 
 @api_router.get("/health")

@@ -26,6 +26,7 @@ import MemberProfilePage from "./pages/MemberProfilePage";
 import LeagueDetailPage from "./pages/LeagueDetailPage";
 import JoinLeaguePage from "./pages/JoinLeaguePage";
 import ChampionshipPage from "./pages/ChampionshipPage";
+import DriverDetailPage from "./pages/DriverDetailPage";
 
 // Components
 import BottomNav from "./components/BottomNav";
@@ -324,6 +325,12 @@ function AppRouter() {
       <Route path="/join/:code" element={
         <ProtectedRoute>
           <JoinLeaguePage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/driver/:driverId" element={
+        <ProtectedRoute>
+          <DriverDetailPage />
         </ProtectedRoute>
       } />
 

@@ -363,11 +363,26 @@ export default function ChampionshipPage() {
                 const constructor = entry.Constructors?.[0];
                 const teamColor = getTeamColor(constructor?.constructorId);
                 
+                // Map driverId to our driver data IDs
+                const driverIdMap = {
+                  "norris": "norris", "piastri": "piastri", "russell": "russell",
+                  "leclerc": "leclerc", "hamilton": "hamilton", "verstappen": "verstappen",
+                  "sainz": "sainz", "albon": "albon", "lawson": "lawson",
+                  "alonso": "alonso", "stroll": "stroll", "ocon": "ocon",
+                  "bearman": "bearman", "gasly": "gasly", "colapinto": "colapinto",
+                  "hulkenberg": "hulkenberg", "bortoleto": "bortoleto", "perez": "perez",
+                  "bottas": "bottas", "antonelli": "antonelli", "hadjar": "hadjar",
+                  "lindblad": "lindblad", "max_verstappen": "verstappen",
+                };
+                const mappedDriverId = driverIdMap[driver.driverId] || driver.familyName?.toLowerCase();
+                
                 return (
                   <div 
                     key={driver.driverId}
-                    className={`p-3 rounded-lg border transition-all ${getRankStyle(entry.position)}`}
+                    onClick={() => navigate(`/driver/${mappedDriverId}`)}
+                    className={`p-3 rounded-lg border transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${getRankStyle(entry.position)}`}
                     style={{ borderLeftWidth: '4px', borderLeftColor: teamColor }}
+                    data-testid={`driver-row-${driver.driverId}`}
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 flex items-center justify-center">
@@ -387,11 +402,14 @@ export default function ChampionshipPage() {
                           {constructor?.name || "Unknown Team"}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className={`font-data text-xl ${parseInt(entry.position) <= 3 ? 'text-yellow-400' : 'text-white'}`}>
-                          {entry.points}
-                        </p>
-                        <p className="font-body text-[10px] text-gray-500 uppercase">pts</p>
+                      <div className="text-right flex items-center gap-2">
+                        <div>
+                          <p className={`font-data text-xl ${parseInt(entry.position) <= 3 ? 'text-yellow-400' : 'text-white'}`}>
+                            {entry.points}
+                          </p>
+                          <p className="font-body text-[10px] text-gray-500 uppercase">pts</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-600" />
                       </div>
                     </div>
                     {parseInt(entry.wins) > 0 && (
