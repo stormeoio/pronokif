@@ -4,7 +4,7 @@ import { Button } from "../components/ui/button";
 import { toast } from "sonner";
 import { 
   Flag, Trophy, RefreshCw, Loader2, Medal, Award, Crown, Car,
-  Calendar, Clock, ChevronDown, ChevronRight, Zap, Timer, Target
+  Calendar, Clock, ChevronDown, ChevronRight, Zap, Timer, Target, GitCompare
 } from "lucide-react";
 
 // APIs
@@ -297,6 +297,15 @@ export default function ChampionshipPage() {
               className="text-gray-400 hover:text-white hover:bg-white/10"
             >
               <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/compare")}
+              className="text-cyan-400 hover:text-white hover:bg-cyan-500/20"
+              title="Comparer des pilotes"
+            >
+              <GitCompare className="w-5 h-5" />
             </Button>
           </div>
           

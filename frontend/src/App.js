@@ -27,6 +27,7 @@ import LeagueDetailPage from "./pages/LeagueDetailPage";
 import JoinLeaguePage from "./pages/JoinLeaguePage";
 import ChampionshipPage from "./pages/ChampionshipPage";
 import DriverDetailPage from "./pages/DriverDetailPage";
+import DriverComparisonPage from "./pages/DriverComparisonPage";
 
 // Components
 import BottomNav from "./components/BottomNav";
@@ -331,6 +332,12 @@ function AppRouter() {
       <Route path="/driver/:driverId" element={
         <ProtectedRoute>
           <DriverDetailPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/compare" element={
+        <ProtectedRoute>
+          <DriverComparisonPage />
         </ProtectedRoute>
       } />
 

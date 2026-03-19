@@ -131,12 +131,25 @@ Chaque élément compte individuellement:
 - **URL** : `/driver/:driverId`
 - **Photo officielle** du pilote en combinaison (CDN F1)
 - **En-tête** : Photo circulaire avec bordure couleur équipe, badge pays, numéro, statistiques rapides
+- **Bouton Comparer** : Ouvre le comparateur avec le pilote pré-sélectionné
 - **3 onglets** :
   - **Pilote** : Informations personnelles (nom, date/lieu naissance, taille, poids) + Contrat (équipe, dates, salaire estimé, notes) + Réseaux sociaux
   - **Palmarès** : Statistiques F1 (titres, victoires, podiums, poles, meilleurs tours, points) + Carrière junior (F2, F3, etc.)
   - **Infos** : 10 faits aléatoires et pertinents générés dynamiquement pour aider aux pronostics
 - **Données des 22 pilotes** stockées dans `/app/backend/drivers_data.py`
 - **API** : `GET /api/drivers/{driver_id}/details`
+
+### Comparateur de Pilotes (NOUVEAU 19/03/2026)
+- **URL** : `/compare` ou `/compare?d1={driver1}&d2={driver2}`
+- **Sélecteurs de pilotes** avec photos et dropdown
+- **Bouton Inverser** pour échanger les pilotes
+- **Cartes pilotes** cliquables vers leur fiche détaillée
+- **Statistiques F1 comparées** avec barres visuelles colorées (couleurs des équipes) :
+  - Titres mondiaux, Victoires, Podiums, Poles, Meilleurs tours, Points, Grands Prix
+- **Section Efficacité** : Taux de victoire, podium, pole et points/course
+- **Verdict rapide** généré automatiquement
+- **API** : `GET /api/drivers/compare?driver1={id}&driver2={id}`
+- **Accessible depuis** : Page Championnat (icône), Fiche Pilote (bouton Comparer)
 
 ## Architecture technique
 
@@ -180,6 +193,7 @@ Chaque élément compte individuellement:
 ### Endpoints Pilotes (NOUVEAU 19/03/2026)
 - `GET /api/drivers/{driver_id}/details` - Retourne les données complètes d'un pilote (infos perso, contrat, palmarès, faits utiles, photo)
 - `GET /api/drivers/all` - Liste tous les pilotes avec infos de base
+- `GET /api/drivers/compare?driver1={id}&driver2={id}` - Compare deux pilotes avec stats, taux d'efficacité et verdict
 
 ## Prochaines étapes (Backlog)
 
@@ -230,8 +244,16 @@ Chaque élément compte individuellement:
   - Photo URL depuis CDN F1 officiel
   - Génère 10 faits utiles aléatoires
   - Contient palmarès F1 + junior + contrat + réseaux sociaux
+- **API drivers/compare**: Fonctionnel
+  - Compare 2 pilotes avec stats, taux d'efficacité, verdict automatique
 - **UI Fiche Pilote**: 100% fonctionnel
   - Navigation depuis ChampionshipPage
   - 3 onglets (Pilote, Palmarès, Infos) interactifs
   - Photo et couleur équipe affichées
   - Bouton retour vers Championnat
+  - Bouton Comparer vers le comparateur
+- **UI Comparateur**: 100% fonctionnel
+  - Sélecteurs de pilotes avec photos
+  - Barres de comparaison colorées
+  - Section efficacité avec taux
+  - Verdict automatique

@@ -6,7 +6,7 @@ import {
   ArrowLeft, Trophy, Medal, Award, Flag, Zap, Timer, Calendar, 
   FileText, DollarSign, MapPin, Ruler, Car, Play, Target, Hash,
   Shield, Info, User, History, Lightbulb, ChevronRight, Star,
-  Instagram, Twitter, Loader2
+  Instagram, Twitter, Loader2, GitCompare
 } from "lucide-react";
 
 // Team colors mapping
@@ -119,6 +119,16 @@ export default function DriverDetailPage() {
           data-testid="back-button"
         >
           <ArrowLeft className="w-5 h-5" />
+        </button>
+
+        {/* Compare button */}
+        <button
+          onClick={() => navigate(`/compare?d1=${driver.id}`)}
+          className="absolute top-4 left-16 z-20 p-2 bg-cyan-500/80 backdrop-blur-sm rounded-full text-white hover:bg-cyan-600 transition-colors"
+          data-testid="compare-button"
+          title="Comparer avec un autre pilote"
+        >
+          <GitCompare className="w-5 h-5" />
         </button>
 
         {/* Team number badge */}

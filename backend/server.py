@@ -3432,6 +3432,84 @@ async def get_all_drivers_endpoint():
         driver["photo_url"] = DRIVER_PHOTOS.get(driver["id"], DRIVER_PHOTOS.get("norris"))
     return drivers
 
+@api_router.get("/drivers/compare")
+async def compare_drivers(driver1: str, driver2: str):
+    """Compare two drivers side by side"""
+    d1 = get_driver_details(driver1)
+    d2 = get_driver_details(driver2)
+    
+    if not d1 or not d2:
+        raise HTTPException(status_code=404, detail="One or both drivers not found")
+    
+    # Add photo URLs
+    d1["photo_url"] = DRIVER_PHOTOS.get(d1["id"], DRIVER_PHOTOS.get("norris"))
+    d2["photo_url"] = DRIVER_PHOTOS.get(d2["id"], DRIVER_PHOTOS.get("norris"))
+    
+    # Get F1 stats for comparison
+    d1_f1 = d1.get("palmares", {}).get("f1", {})
+    d2_f1 = d2.get("palmares", {}).get("f1", {})
+    
+    # Calculate comparison metrics
+    comparison = {
+        "driver1": d1,
+        "driver2": d2,
+        "stats_comparison": {
+            "world_championships": {
+                "driver1": d1_f1.get("world_championships", 0),
+                "driver2": d2_f1.get("world_championships", 0),
+                "winner": "driver1" if d1_f1.get("world_championships", 0) > d2_f1.get("world_championships", 0) else "driver2" if d2_f1.get("world_championships", 0) > d1_f1.get("world_championships", 0) else "tie"
+            },
+            "wins": {
+                "driver1": d1_f1.get("wins", 0),
+                "driver2": d2_f1.get("wins", 0),
+                "winner": "driver1" if d1_f1.get("wins", 0) > d2_f1.get("wins", 0) else "driver2" if d2_f1.get("wins", 0) > d1_f1.get("wins", 0) else "tie"
+            },
+            "podiums": {
+                "driver1": d1_f1.get("podiums", 0),
+                "driver2": d2_f1.get("podiums", 0),
+                "winner": "driver1" if d1_f1.get("podiums", 0) > d2_f1.get("podiums", 0) else "driver2" if d2_f1.get("podiums", 0) > d1_f1.get("podiums", 0) else "tie"
+            },
+            "poles": {
+                "driver1": d1_f1.get("poles", 0),
+                "driver2": d2_f1.get("poles", 0),
+                "winner": "driver1" if d1_f1.get("poles", 0) > d2_f1.get("poles", 0) else "driver2" if d2_f1.get("poles", 0) > d1_f1.get("poles", 0) else "tie"
+            },
+            "fastest_laps": {
+                "driver1": d1_f1.get("fastest_laps", 0),
+                "driver2": d2_f1.get("fastest_laps", 0),
+                "winner": "driver1" if d1_f1.get("fastest_laps", 0) > d2_f1.get("fastest_laps", 0) else "driver2" if d2_f1.get("fastest_laps", 0) > d1_f1.get("fastest_laps", 0) else "tie"
+            },
+            "points": {
+                "driver1": d1_f1.get("points", 0),
+                "driver2": d2_f1.get("points", 0),
+                "winner": "driver1" if d1_f1.get("points", 0) > d2_f1.get("points", 0) else "driver2" if d2_f1.get("points", 0) > d1_f1.get("points", 0) else "tie"
+            },
+            "entries": {
+                "driver1": d1_f1.get("entries", 0),
+                "driver2": d2_f1.get("entries", 0),
+                "winner": "driver1" if d1_f1.get("entries", 0) > d2_f1.get("entries", 0) else "driver2" if d2_f1.get("entries", 0) > d1_f1.get("entries", 0) else "tie"
+            }
+        },
+        "win_rate": {
+            "driver1": round((d1_f1.get("wins", 0) / max(d1_f1.get("entries", 1), 1)) * 100, 1),
+            "driver2": round((d2_f1.get("wins", 0) / max(d2_f1.get("entries", 1), 1)) * 100, 1)
+        },
+        "podium_rate": {
+            "driver1": round((d1_f1.get("podiums", 0) / max(d1_f1.get("entries", 1), 1)) * 100, 1),
+            "driver2": round((d2_f1.get("podiums", 0) / max(d2_f1.get("entries", 1), 1)) * 100, 1)
+        },
+        "pole_rate": {
+            "driver1": round((d1_f1.get("poles", 0) / max(d1_f1.get("entries", 1), 1)) * 100, 1),
+            "driver2": round((d2_f1.get("poles", 0) / max(d2_f1.get("entries", 1), 1)) * 100, 1)
+        },
+        "points_per_race": {
+            "driver1": round(d1_f1.get("points", 0) / max(d1_f1.get("entries", 1), 1), 2),
+            "driver2": round(d2_f1.get("points", 0) / max(d2_f1.get("entries", 1), 1), 2)
+        }
+    }
+    
+    return comparison
+
 # ==================== HEALTH CHECK ====================
 
 @api_router.get("/health")
