@@ -277,13 +277,13 @@ export default function DashboardPage() {
 
             {/* GP Scenic Background - Clickable for details */}
             <div 
-              className="relative h-24 bg-cover bg-center cursor-pointer group"
+              className="relative h-40 bg-cover bg-center cursor-pointer group"
               style={{ backgroundImage: `url(${getGPBackground(currentRace.name)})` }}
               onClick={() => navigate(`/race/${currentRace.id}`)}
               data-testid="race-card-clickable"
             >
               {/* Dark overlay for better text contrast */}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-[#0c1525] group-hover:from-black/40 transition-all" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-[#0c1525] group-hover:from-black/30 transition-all" />
               
               {/* Info/Horaires link - positioned on the right */}
               <button 
@@ -308,18 +308,18 @@ export default function DashboardPage() {
               </div>
               
               {/* Race Title Overlay */}
-              <div className="absolute bottom-0 left-0 right-0 p-3">
-                <p className="font-body text-[10px] text-cyan-300 uppercase tracking-widest mb-0.5 drop-shadow-lg">
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                <p className="font-body text-xs text-cyan-300 uppercase tracking-widest mb-1 drop-shadow-lg">
                   {currentRaceIndex === 0 ? "Prochain Grand Prix" : "À venir"}
                 </p>
-                <h2 className="font-heading text-xl text-white uppercase tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{textShadow: '0 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(251,191,36,0.4)'}}>
+                <h2 className="font-heading text-2xl text-white uppercase tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{textShadow: '0 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(251,191,36,0.4)'}}>
                   {currentRace.name.replace(" Grand Prix", "")}
                 </h2>
-                <div className="flex items-center gap-3 mt-0.5">
-                  <span className="font-body text-[10px] text-white flex items-center gap-1 drop-shadow-lg">
+                <div className="flex items-center gap-4 mt-1">
+                  <span className="font-body text-xs text-white flex items-center gap-1 drop-shadow-lg">
                     <MapPin className="w-3 h-3 text-red-400" /> {currentRace.circuit}
                   </span>
-                  <span className="font-body text-[10px] text-white flex items-center gap-1 drop-shadow-lg">
+                  <span className="font-body text-xs text-white flex items-center gap-1 drop-shadow-lg">
                     <Calendar className="w-3 h-3 text-blue-400" /> {new Date(currentRace.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                   </span>
                 </div>
