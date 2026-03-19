@@ -114,6 +114,7 @@ Chaque élément compte individuellement:
 
 ### Page Championnat F1 (Ajouté 17/03/2026)
 - **Onglet Pilotes** : Classement en temps réel avec numéro, équipe, points et victoires
+  - **Lignes cliquables** : Navigation vers la fiche pilote détaillée (NOUVEAU 19/03/2026)
 - **Onglet Écuries** : Classement constructeurs avec nationalité et points
 - **Onglet Résultats** (NOUVEAU) :
   - Sélecteur de Grand Prix (courses terminées uniquement)
@@ -125,6 +126,17 @@ Chaque élément compte individuellement:
   - Bonus : Meilleur tour en course, Leader au 1er virage
 - Couleurs officielles des équipes F1
 - Mise à jour automatique via API Jolpica-F1 + OpenF1 (gratuites, sans clé)
+
+### Fiche Pilote Détaillée (NOUVEAU 19/03/2026)
+- **URL** : `/driver/:driverId`
+- **Photo officielle** du pilote en combinaison (CDN F1)
+- **En-tête** : Photo circulaire avec bordure couleur équipe, badge pays, numéro, statistiques rapides
+- **3 onglets** :
+  - **Pilote** : Informations personnelles (nom, date/lieu naissance, taille, poids) + Contrat (équipe, dates, salaire estimé, notes) + Réseaux sociaux
+  - **Palmarès** : Statistiques F1 (titres, victoires, podiums, poles, meilleurs tours, points) + Carrière junior (F2, F3, etc.)
+  - **Infos** : 10 faits aléatoires et pertinents générés dynamiquement pour aider aux pronostics
+- **Données des 22 pilotes** stockées dans `/app/backend/drivers_data.py`
+- **API** : `GET /api/drivers/{driver_id}/details`
 
 ## Architecture technique
 
@@ -141,7 +153,8 @@ Chaque élément compte individuellement:
 - `/app/frontend/src/pages/LeagueDetailPage.jsx` - Détails de ligue (NOUVEAU)
 - `/app/frontend/src/pages/LeaguePage.jsx` - Hub des ligues (REFAIT)
 - `/app/frontend/src/pages/ProfilePage.jsx` - Historique des points
-- `/app/frontend/src/pages/ChampionshipPage.jsx` - Classements F1 temps réel (NOUVEAU)
+- `/app/frontend/src/pages/ChampionshipPage.jsx` - Classements F1 temps réel, lignes cliquables
+- `/app/frontend/src/pages/DriverDetailPage.jsx` - Fiche pilote détaillée avec 3 onglets (NOUVEAU 19/03/2026)
 - `/app/frontend/src/pages/JoinLeaguePage.jsx` - Page d'invitation (NOUVEAU)
 - `/app/frontend/src/components/BottomNav.jsx` - Badge messages non lus
 - `/app/frontend/src/components/HamburgerMenu.jsx` - Menu latéral (NOUVEAU)
@@ -163,6 +176,10 @@ Chaque élément compte individuellement:
 - `GET /api/leagues/by-code/{code}` - Récupérer les infos d'une ligue par son code (pour la page d'invitation)
 - `DELETE /api/leagues/{id}` - Supprimer une ligue (créateur uniquement)
 - `POST /api/leagues/{id}/transfer` - Transférer la propriété à un autre membre
+
+### Endpoints Pilotes (NOUVEAU 19/03/2026)
+- `GET /api/drivers/{driver_id}/details` - Retourne les données complètes d'un pilote (infos perso, contrat, palmarès, faits utiles, photo)
+- `GET /api/drivers/all` - Liste tous les pilotes avec infos de base
 
 ## Prochaines étapes (Backlog)
 
@@ -206,3 +223,15 @@ Chaque élément compte individuellement:
 - **Linting Python**: 0 erreurs (corrigé 17/03/2026)
 - **UI Dashboard**: Nouvelle disposition avec bannière profil en haut (testé 18/03/2026)
 - **UI BottomNav**: Onglet Mini-jeux fonctionnel (testé 18/03/2026)
+
+## Tests validés (19/03/2026)
+- **API drivers/{driver_id}/details**: 100% fonctionnel - 11 tests backend passés
+  - Retourne données complètes pour les 22 pilotes
+  - Photo URL depuis CDN F1 officiel
+  - Génère 10 faits utiles aléatoires
+  - Contient palmarès F1 + junior + contrat + réseaux sociaux
+- **UI Fiche Pilote**: 100% fonctionnel
+  - Navigation depuis ChampionshipPage
+  - 3 onglets (Pilote, Palmarès, Infos) interactifs
+  - Photo et couleur équipe affichées
+  - Bouton retour vers Championnat
