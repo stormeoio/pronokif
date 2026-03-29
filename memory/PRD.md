@@ -83,7 +83,7 @@ Chaque élément compte individuellement:
 - Classement global de l'application
 - Classement mini-jeux
 
-### Administration (Mis à jour 17/03/2026)
+### Administration (Mis à jour 29/03/2026)
 **4 onglets:**
 - RÉSULTATS : Entrée des résultats officiels, **synchronisation automatique complète via APIs**
   - **Synchronisation automatisée** via Jolpica-F1 + OpenF1 APIs (AMÉLIORÉ)
@@ -91,12 +91,26 @@ Chaque élément compte individuellement:
   - Récupère automatiquement : **Safety Car, DNF, Meilleur tour, Leader 1er virage**
   - Boutons bonus améliorés (Meilleur Tour, Leader 1er Virage avec bordures colorées)
   - Safety Car avec état visible (✓ OUI / ✗ NON)
+  - **NOUVEAU: Tâche de synchronisation automatique toutes les heures**
 - NOTIFS : Envoi de notifications à tous les membres (limite 5000 caractères)
 - FEEDBACK : Visualisation des retours utilisateurs
 - **MEMBRES** : Liste complète avec **compteur temps réel** (badge vert)
   - **Onglet Infos**: Niveau, XP, pronostics, ligues, performance
   - **Onglet Activité**: Historique des connexions (Date, IP, User-Agent)
   - **Bouton Supprimer le compte** avec confirmation
+
+### Synchronisation Automatique des Résultats (NOUVEAU 29/03/2026)
+- **Tâche de fond** : Vérifie automatiquement toutes les heures les courses terminées
+- **Fonctionnement** : 
+  - Détecte les courses dont la date est passée mais sans résultats
+  - Récupère les données depuis Jolpica-F1 et OpenF1
+  - Sauvegarde les résultats et calcule les points des pronostics
+  - Envoie des notifications aux utilisateurs
+- **Endpoints d'administration** :
+  - `GET /api/admin/sync-status` : Voir l'état de toutes les courses (synced/pending/upcoming)
+  - `POST /api/admin/sync-all-pending` : Forcer la synchronisation de toutes les courses en attente
+  - `POST /api/admin/auto-sync-results/{race_id}` : Synchroniser une course spécifique
+- **Logs** : `[Auto-Sync]` dans les logs du backend pour le suivi
 
 ### Notifications Chat (Mis à jour 17/03/2026)
 - Indicateur de messages non lus sur l'icône Accueil (navigation)

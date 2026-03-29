@@ -5,6 +5,7 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+import asyncio
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional, Dict, Any
@@ -3793,6 +3794,176 @@ async def compare_drivers(driver1: str, driver2: str):
     
     return comparison
 
+# ==================== SYNC STATUS ENDPOINTS ====================
+
+@api_router.post("/admin/sync-all-pending")
+async def sync_all_pending_races(user=Depends(get_current_user)):
+    """Manually trigger sync for all races that should have results but don't"""
+    user_leagues = await db.leagues.find({"created_by": user["id"]}, {"_id": 0}).to_list(100)
+    is_admin = await check_is_admin(user)
+    if not user_leagues and not is_admin:
+        raise HTTPException(status_code=403, detail="Admin or league creator access required")
+    
+    now = datetime.now(timezone.utc)
+    synced = []
+    failed = []
+    
+    for race in F1_RACES_2026:
+        race_date = datetime.fromisoformat(race["date"] + "T18:00:00+00:00")
+        
+        if now > race_date:
+            result_doc = await db.race_results.find_one({"race_id": race["id"]}, {"_id": 0})
+            has_results = result_doc and result_doc.get("results", {}).get("race_winner")
+            
+            if not has_results:
+                sync_result = await sync_race_from_api(race)
+                if sync_result.get("success"):
+                    synced.append({"race": race["name"], "winner": sync_result.get("winner")})
+                else:
+                    failed.append({"race": race["name"], "error": sync_result.get("error")})
+    
+    return {
+        "message": f"Sync completed: {len(synced)} synced, {len(failed)} failed",
+        "synced": synced,
+        "failed": failed
+    }
+
+@api_router.get("/admin/sync-status")
+async def get_sync_status(user=Depends(get_current_user)):
+    """Get status of auto-sync and pending races"""
+    user_leagues = await db.leagues.find({"created_by": user["id"]}, {"_id": 0}).to_list(100)
+    is_admin = await check_is_admin(user)
+    if not user_leagues and not is_admin:
+        raise HTTPException(status_code=403, detail="Admin or league creator access required")
+    
+    now = datetime.now(timezone.utc)
+    races_status = []
+    
+    for race in F1_RACES_2026:
+        race_date = datetime.fromisoformat(race["date"] + "T15:00:00+00:00")
+        result_doc = await db.race_results.find_one({"race_id": race["id"]}, {"_id": 0})
+        has_results = result_doc and result_doc.get("results", {}).get("race_winner")
+        
+        status = "upcoming"
+        if has_results:
+            status = "synced"
+        elif now > race_date:
+            status = "pending_sync"
+        
+        races_status.append({
+            "id": race["id"],
+            "name": race["name"],
+            "date": race["date"],
+            "status": status,
+            "has_results": has_results,
+            "auto_synced": result_doc.get("auto_synced", False) if result_doc else False
+        })
+    
+    return {
+        "auto_sync_enabled": True,
+        "sync_interval_hours": 1,
+        "races": races_status,
+        "summary": {
+            "synced": len([r for r in races_status if r["status"] == "synced"]),
+            "pending": len([r for r in races_status if r["status"] == "pending_sync"]),
+            "upcoming": len([r for r in races_status if r["status"] == "upcoming"])
+        }
+    }
+
+async def sync_race_from_api(race: dict) -> dict:
+    """Sync a single race from external APIs"""
+    race_id = race["id"]
+    race_date = race.get("date", "")
+    year = race_date.split("-")[0] if race_date else "2026"
+    
+    number_to_id = {d["number"]: d["id"] for d in F1_DRIVERS_2026}
+    
+    fetched_data = {
+        "quali_pole": None, "quali_top10": [], "sprint_quali_top10": [],
+        "sprint_race_top10": [], "race_winner": None, "race_top10": [],
+        "bonus": {"safety_car": None, "dnf_drivers": [], "fastest_lap": None, "first_corner_leader": None}
+    }
+    
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            # Get round number
+            schedule_resp = await client.get(f"{JOLPICA_API}/{year}.json")
+            round_number = None
+            
+            if schedule_resp.status_code == 200:
+                races_list = schedule_resp.json().get("MRData", {}).get("RaceTable", {}).get("Races", [])
+                circuit_name = race.get("circuit", "").lower()
+                race_name = race.get("name", "").lower().replace("grand prix", "").strip()
+                
+                for r in races_list:
+                    r_circuit = r.get("Circuit", {}).get("circuitId", "").lower()
+                    r_name = r.get("raceName", "").lower().replace("grand prix", "").strip()
+                    if race_date == r.get("date", "") or circuit_name in r_circuit or race_name in r_name:
+                        round_number = r.get("round")
+                        break
+            
+            if not round_number:
+                return {"success": False, "error": "Round not found"}
+            
+            # Fetch qualifying
+            quali_resp = await client.get(f"{JOLPICA_API}/{year}/{round_number}/qualifying.json")
+            if quali_resp.status_code == 200:
+                quali_results = quali_resp.json().get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0].get("QualifyingResults", [])
+                if quali_results:
+                    pole_num = quali_results[0].get("Driver", {}).get("permanentNumber")
+                    if pole_num: fetched_data["quali_pole"] = number_to_id.get(int(pole_num))
+                    for result in quali_results[:10]:
+                        d_num = result.get("Driver", {}).get("permanentNumber")
+                        if d_num and number_to_id.get(int(d_num)):
+                            fetched_data["quali_top10"].append(number_to_id.get(int(d_num)))
+            
+            # Fetch race
+            race_resp = await client.get(f"{JOLPICA_API}/{year}/{round_number}/results.json")
+            if race_resp.status_code == 200:
+                race_results = race_resp.json().get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0].get("Results", [])
+                if race_results:
+                    winner_num = race_results[0].get("Driver", {}).get("permanentNumber")
+                    if winner_num: fetched_data["race_winner"] = number_to_id.get(int(winner_num))
+                    for result in race_results[:10]:
+                        d_num = result.get("Driver", {}).get("permanentNumber")
+                        if d_num and number_to_id.get(int(d_num)):
+                            fetched_data["race_top10"].append(number_to_id.get(int(d_num)))
+                    
+                    # DNF and fastest lap
+                    dnf_statuses = ["Accident", "Collision", "Engine", "Gearbox", "Hydraulics", "Retired", "Mechanical"]
+                    for result in race_results:
+                        if any(s in result.get("status", "") for s in dnf_statuses):
+                            d_num = result.get("Driver", {}).get("permanentNumber")
+                            if d_num and number_to_id.get(int(d_num)):
+                                fetched_data["bonus"]["dnf_drivers"].append(number_to_id.get(int(d_num)))
+                        if result.get("FastestLap", {}).get("rank") == "1":
+                            d_num = result.get("Driver", {}).get("permanentNumber")
+                            if d_num: fetched_data["bonus"]["fastest_lap"] = number_to_id.get(int(d_num))
+        
+        # Save if we have a winner
+        if fetched_data["race_winner"]:
+            await db.race_results.update_one(
+                {"race_id": race_id},
+                {"$set": {"race_id": race_id, "results": fetched_data, 
+                          "entered_at": datetime.now(timezone.utc).isoformat(), "auto_synced": True}},
+                upsert=True
+            )
+            
+            # Calculate points
+            predictions = await db.predictions.find({"race_id": race_id}, {"_id": 0}).to_list(1000)
+            for pred in predictions:
+                try:
+                    points = calculate_points(pred, fetched_data)
+                    await db.users.update_one({"id": pred["user_id"]}, {"$inc": {"xp": points["xp_earned"]}})
+                    await send_user_notification(pred["user_id"], f"Résultats {race['name']}: +{points['total']} pts!", "results")
+                except: pass
+            
+            return {"success": True, "winner": fetched_data["race_winner"]}
+        
+        return {"success": False, "error": "No winner found"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
 # ==================== HEALTH CHECK ====================
 
 @api_router.get("/health")
@@ -3813,6 +3984,69 @@ app.add_middleware(
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# ==================== AUTO-SYNC SCHEDULER ====================
+
+AUTO_SYNC_INTERVAL_HOURS = 1  # Check every hour
+auto_sync_task = None
+
+async def auto_sync_race_results():
+    """Background task to automatically sync results for completed races"""
+    while True:
+        try:
+            await asyncio.sleep(AUTO_SYNC_INTERVAL_HOURS * 3600)  # Wait 1 hour
+            
+            now = datetime.now(timezone.utc)
+            logger.info(f"[Auto-Sync] Starting automatic results synchronization at {now.isoformat()}")
+            
+            synced_races = []
+            
+            for race in F1_RACES_2026:
+                race_id = race["id"]
+                race_date = datetime.fromisoformat(race["date"] + "T18:00:00+00:00")  # 3 hours after typical race start
+                
+                # Only sync if race is past and we don't have results yet
+                if now > race_date:
+                    result_doc = await db.race_results.find_one({"race_id": race_id}, {"_id": 0})
+                    has_results = result_doc and result_doc.get("results", {}).get("race_winner")
+                    
+                    if not has_results:
+                        # Try to sync this race
+                        try:
+                            sync_result = await sync_race_from_api(race)
+                            if sync_result.get("success"):
+                                synced_races.append(race["name"])
+                                logger.info(f"[Auto-Sync] Successfully synced {race['name']}")
+                            else:
+                                logger.warning(f"[Auto-Sync] Could not sync {race['name']}: {sync_result.get('error')}")
+                        except Exception as e:
+                            logger.error(f"[Auto-Sync] Error syncing {race['name']}: {e}")
+            
+            if synced_races:
+                logger.info(f"[Auto-Sync] Completed. Synced races: {', '.join(synced_races)}")
+            else:
+                logger.info("[Auto-Sync] No new races to sync")
+                
+        except asyncio.CancelledError:
+            logger.info("[Auto-Sync] Background task cancelled")
+            break
+        except Exception as e:
+            logger.error(f"[Auto-Sync] Unexpected error: {e}")
+            await asyncio.sleep(300)  # Wait 5 min on error before retry
+
+@app.on_event("startup")
+async def startup_event():
+    global auto_sync_task
+    # Start the auto-sync background task
+    auto_sync_task = asyncio.create_task(auto_sync_race_results())
+    logger.info("[Auto-Sync] Background synchronization task started")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    global auto_sync_task
+    if auto_sync_task:
+        auto_sync_task.cancel()
+        try:
+            await auto_sync_task
+        except asyncio.CancelledError:
+            pass
     client.close()
