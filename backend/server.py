@@ -272,6 +272,23 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 def generate_league_code() -> str:
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
+async def send_user_notification(user_id: str, message: str, notif_type: str = "info"):
+    """Internal helper to send notification to a specific user"""
+    notification = {
+        "id": str(uuid.uuid4()),
+        "title": notif_type.replace("_", " ").title(),
+        "message": message,
+        "type": notif_type,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "user_id": user_id,
+        "is_personal": True
+    }
+    await db.notifications.insert_one(notification)
+    await db.users.update_one(
+        {"id": user_id},
+        {"$addToSet": {"unread_notifications": notification["id"]}}
+    )
+
 # ==================== F1 DATA ====================
 
 F1_DRIVERS_2026 = [
@@ -1346,14 +1363,18 @@ async def get_races():
         quali_date = datetime.fromisoformat(race["quali_date"] + "T14:00:00+00:00")
         predictions_close = quali_date - timedelta(hours=1)
         
-        if now < predictions_close:
+        result_doc = await db.race_results.find_one({"race_id": race["id"]}, {"_id": 0})
+        has_results = result_doc and result_doc.get("results") and result_doc.get("results", {}).get("race_winner")
+        
+        # Status determination: if results exist, race is finished
+        if has_results:
+            status = "finished"
+        elif now < predictions_close:
             status = "upcoming"
         elif now < race_date:
             status = "in_progress"
         else:
             status = "finished"
-        
-        result_doc = await db.race_results.find_one({"race_id": race["id"]}, {"_id": 0})
         
         race_response = {
             "id": race["id"], "name": race["name"], "circuit": race["circuit"],
@@ -2163,10 +2184,10 @@ async def set_race_results(race_id: str, data: RaceResultsInput, user=Depends(ge
             new_level = (new_xp // 100) + 1
             if new_level > user_data.get("level", 1):
                 await db.users.update_one({"id": pred["user_id"]}, {"$set": {"level": new_level}})
-                await create_notification(pred["user_id"], f"Niveau {new_level} atteint !", "level_up")
+                await send_user_notification(pred["user_id"], f"Niveau {new_level} atteint !", "level_up")
             
             race_name = next((r["name"] for r in F1_RACES_2026 if r["id"] == race_id), race_id)
-            await create_notification(pred["user_id"], f"Résultats {race_name}: +{points['total']} pts!", "results")
+            await send_user_notification(pred["user_id"], f"Résultats {race_name}: +{points['total']} pts!", "results")
             
             leagues = await db.leagues.find({"members": pred["user_id"]}, {"_id": 0}).to_list(100)
             for league in leagues:
@@ -2216,8 +2237,11 @@ async def get_admin_results(race_id: str, user=Depends(get_current_user)):
 @api_router.post("/admin/sync-results/{race_id}")
 async def sync_results_from_openf1(race_id: str, user=Depends(get_current_user)):
     """Fetch all results from Jolpica and OpenF1 APIs - includes quali, race, sprint, DNF, safety car, fastest lap"""
-    if not await check_is_admin(user):
-        raise HTTPException(status_code=403, detail="Admin access required")
+    # Allow league creators OR admin to sync results
+    user_leagues = await db.leagues.find({"created_by": user["id"]}, {"_id": 0}).to_list(100)
+    is_admin = await check_is_admin(user)
+    if not user_leagues and not is_admin:
+        raise HTTPException(status_code=403, detail="Admin or league creator access required")
     
     # Find race info
     race = next((r for r in F1_RACES_2026 if r["id"] == race_id), None)
@@ -2507,10 +2531,269 @@ async def send_reminder_notifications(user=Depends(get_current_user)):
                     continue
                 existing = await db.predictions.find_one({"user_id": u["id"], "race_id": race["id"]})
                 if not existing:
-                    await create_notification(u["id"], f"Rappel: Pronos {race['name']} ferment dans 24h!", "reminder")
+                    await send_user_notification(u["id"], f"Rappel: Pronos {race['name']} ferment dans 24h!", "reminder")
                     notifications_sent += 1
     
     return {"message": f"{notifications_sent} reminders sent"}
+
+@api_router.post("/admin/auto-sync-results/{race_id}")
+async def auto_sync_and_save_results(race_id: str, user=Depends(get_current_user)):
+    """Automatically fetch results from APIs and save them to database"""
+    user_leagues = await db.leagues.find({"created_by": user["id"]}, {"_id": 0}).to_list(100)
+    is_admin = await check_is_admin(user)
+    if not user_leagues and not is_admin:
+        raise HTTPException(status_code=403, detail="Admin or league creator access required")
+    
+    # Find race info
+    race = next((r for r in F1_RACES_2026 if r["id"] == race_id), None)
+    if not race:
+        raise HTTPException(status_code=404, detail="Race not found")
+    
+    # Get the sync data
+    race_date = race.get("date", "")
+    year = race_date.split("-")[0] if race_date else "2026"
+    
+    number_to_id = {d["number"]: d["id"] for d in F1_DRIVERS_2026}
+    
+    fetched_data = {
+        "quali_pole": None,
+        "quali_top10": [],
+        "sprint_quali_top10": [],
+        "sprint_race_top10": [],
+        "race_winner": None,
+        "race_top10": [],
+        "bonus": {
+            "safety_car": None,
+            "dnf_drivers": [],
+            "fastest_lap": None,
+            "first_corner_leader": None
+        }
+    }
+    
+    errors = []
+    round_number = None
+    
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            # Get round number from schedule
+            schedule_resp = await client.get(f"{JOLPICA_API}/{year}.json")
+            
+            if schedule_resp.status_code == 200:
+                schedule_data = schedule_resp.json()
+                races_list = schedule_data.get("MRData", {}).get("RaceTable", {}).get("Races", [])
+                
+                circuit_name = race.get("circuit", "").lower()
+                race_name = race.get("name", "").lower().replace("grand prix", "").strip()
+                
+                for r in races_list:
+                    r_circuit = r.get("Circuit", {}).get("circuitId", "").lower()
+                    r_name = r.get("raceName", "").lower().replace("grand prix", "").strip()
+                    r_date = r.get("date", "")
+                    
+                    if race_date == r_date or circuit_name in r_circuit or r_circuit in circuit_name or \
+                       race_name in r_name or r_name in race_name:
+                        round_number = r.get("round")
+                        break
+            
+            if not round_number:
+                return {"status": "error", "message": f"Could not find round number for {race.get('name')}", "errors": ["Round not found"]}
+            
+            # Fetch qualifying
+            try:
+                quali_resp = await client.get(f"{JOLPICA_API}/{year}/{round_number}/qualifying.json")
+                if quali_resp.status_code == 200:
+                    quali_data = quali_resp.json()
+                    quali_results = quali_data.get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0].get("QualifyingResults", [])
+                    
+                    if quali_results:
+                        pole_num = quali_results[0].get("Driver", {}).get("permanentNumber")
+                        if pole_num:
+                            fetched_data["quali_pole"] = number_to_id.get(int(pole_num))
+                        
+                        for result in quali_results[:10]:
+                            driver_num = result.get("Driver", {}).get("permanentNumber")
+                            if driver_num:
+                                driver_id = number_to_id.get(int(driver_num))
+                                if driver_id:
+                                    fetched_data["quali_top10"].append(driver_id)
+            except Exception as e:
+                errors.append(f"Qualifying: {str(e)}")
+            
+            # Fetch race results
+            try:
+                race_resp = await client.get(f"{JOLPICA_API}/{year}/{round_number}/results.json")
+                if race_resp.status_code == 200:
+                    race_data = race_resp.json()
+                    race_results = race_data.get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0].get("Results", [])
+                    
+                    if race_results:
+                        winner_num = race_results[0].get("Driver", {}).get("permanentNumber")
+                        if winner_num:
+                            fetched_data["race_winner"] = number_to_id.get(int(winner_num))
+                        
+                        for result in race_results[:10]:
+                            driver_num = result.get("Driver", {}).get("permanentNumber")
+                            if driver_num:
+                                driver_id = number_to_id.get(int(driver_num))
+                                if driver_id:
+                                    fetched_data["race_top10"].append(driver_id)
+                        
+                        # DNF drivers
+                        dnf_statuses = ["Accident", "Collision", "Engine", "Gearbox", "Hydraulics", 
+                                       "Brakes", "Suspension", "Electrical", "Retired", "Mechanical",
+                                       "Power Unit", "Oil leak", "Water leak", "Overheating", "Spun off"]
+                        for result in race_results:
+                            status = result.get("status", "")
+                            if any(dnf in status for dnf in dnf_statuses):
+                                driver_num = result.get("Driver", {}).get("permanentNumber")
+                                if driver_num:
+                                    driver_id = number_to_id.get(int(driver_num))
+                                    if driver_id:
+                                        fetched_data["bonus"]["dnf_drivers"].append(driver_id)
+                        
+                        # Fastest lap
+                        for result in race_results:
+                            fastest_lap = result.get("FastestLap", {})
+                            if fastest_lap.get("rank") == "1":
+                                driver_num = result.get("Driver", {}).get("permanentNumber")
+                                if driver_num:
+                                    fetched_data["bonus"]["fastest_lap"] = number_to_id.get(int(driver_num))
+                                break
+            except Exception as e:
+                errors.append(f"Race: {str(e)}")
+            
+            # Fetch sprint if applicable
+            if race.get("is_sprint"):
+                try:
+                    sprint_resp = await client.get(f"{JOLPICA_API}/{year}/{round_number}/sprint.json")
+                    if sprint_resp.status_code == 200:
+                        sprint_data = sprint_resp.json()
+                        sprint_results = sprint_data.get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0].get("SprintResults", [])
+                        
+                        if sprint_results:
+                            for result in sprint_results[:10]:
+                                driver_num = result.get("Driver", {}).get("permanentNumber")
+                                if driver_num:
+                                    driver_id = number_to_id.get(int(driver_num))
+                                    if driver_id:
+                                        fetched_data["sprint_race_top10"].append(driver_id)
+                except Exception as e:
+                    errors.append(f"Sprint: {str(e)}")
+            
+            # OpenF1 for safety car
+            try:
+                meetings_resp = await client.get(f"{OPENF1_API}/meetings", params={"year": int(year)})
+                if meetings_resp.status_code == 200:
+                    meetings = meetings_resp.json()
+                    circuit_name = race.get("circuit", "").lower()
+                    race_name = race.get("name", "").lower()
+                    
+                    meeting = None
+                    for m in meetings:
+                        m_name = (m.get("meeting_name", "") + " " + m.get("circuit_short_name", "")).lower()
+                        if any(word in m_name for word in circuit_name.split()[:2]) or \
+                           any(word in m_name for word in race_name.replace("grand prix", "").split()[:2]):
+                            meeting = m
+                            break
+                    
+                    if meeting:
+                        meeting_key = meeting.get("meeting_key")
+                        sessions_resp = await client.get(f"{OPENF1_API}/sessions", params={"meeting_key": meeting_key})
+                        if sessions_resp.status_code == 200:
+                            sessions = sessions_resp.json()
+                            race_session = next((s for s in sessions if s.get("session_name") == "Race"), None)
+                            
+                            if race_session:
+                                session_key = race_session.get("session_key")
+                                rc_resp = await client.get(f"{OPENF1_API}/race_control", params={"session_key": session_key})
+                                if rc_resp.status_code == 200:
+                                    rc_messages = rc_resp.json()
+                                    for msg in rc_messages:
+                                        category = msg.get("category", "").lower()
+                                        message = msg.get("message", "").lower()
+                                        if "safety car" in category or "safety car" in message:
+                                            fetched_data["bonus"]["safety_car"] = True
+                                            break
+                                    if fetched_data["bonus"]["safety_car"] is None:
+                                        fetched_data["bonus"]["safety_car"] = False
+                                
+                                # First corner leader
+                                pos_resp = await client.get(f"{OPENF1_API}/position", params={"session_key": session_key})
+                                if pos_resp.status_code == 200:
+                                    positions = pos_resp.json()
+                                    p1_positions = [p for p in positions if p.get("position") == 1]
+                                    if len(p1_positions) > 1:
+                                        first_corner_leader_num = p1_positions[1].get("driver_number")
+                                        if first_corner_leader_num:
+                                            fetched_data["bonus"]["first_corner_leader"] = number_to_id.get(first_corner_leader_num)
+            except Exception as e:
+                errors.append(f"OpenF1: {str(e)}")
+    
+    except Exception as e:
+        return {"status": "error", "message": str(e), "errors": [str(e)]}
+    
+    # Now save the results to database
+    if fetched_data["race_winner"] or len(fetched_data["race_top10"]) > 0:
+        results = {
+            "quali_pole": fetched_data["quali_pole"],
+            "quali_top10": fetched_data["quali_top10"],
+            "sprint_quali_top10": fetched_data["sprint_quali_top10"],
+            "sprint_race_top10": fetched_data["sprint_race_top10"],
+            "race_winner": fetched_data["race_winner"],
+            "race_top10": fetched_data["race_top10"],
+            "bonus": fetched_data["bonus"]
+        }
+        
+        await db.race_results.update_one(
+            {"race_id": race_id},
+            {"$set": {"race_id": race_id, "results": results, "entered_by": user["id"], 
+                      "entered_at": datetime.now(timezone.utc).isoformat(), "auto_synced": True}},
+            upsert=True
+        )
+        
+        # Calculate points for all predictions
+        predictions = await db.predictions.find({"race_id": race_id}, {"_id": 0}).to_list(1000)
+        points_calculated = 0
+        
+        for pred in predictions:
+            points = calculate_points(pred, results)
+            await db.users.update_one({"id": pred["user_id"]}, {"$inc": {"xp": points["xp_earned"]}})
+            
+            user_data = await db.users.find_one({"id": pred["user_id"]}, {"_id": 0})
+            if user_data:
+                new_xp = user_data.get("xp", 0) + points["xp_earned"]
+                new_level = (new_xp // 100) + 1
+                if new_level > user_data.get("level", 1):
+                    await db.users.update_one({"id": pred["user_id"]}, {"$set": {"level": new_level}})
+                    await send_user_notification(pred["user_id"], f"Niveau {new_level} atteint !", "level_up")
+                
+                await send_user_notification(pred["user_id"], f"Résultats {race['name']}: +{points['total']} pts!", "results")
+                points_calculated += 1
+        
+        success_items = []
+        if fetched_data["quali_pole"]: success_items.append("Pole position")
+        if len(fetched_data["quali_top10"]) == 10: success_items.append("Top 10 qualifs")
+        if fetched_data["race_winner"]: success_items.append("Vainqueur course")
+        if len(fetched_data["race_top10"]) == 10: success_items.append("Top 10 course")
+        if fetched_data["bonus"]["fastest_lap"]: success_items.append("Meilleur tour")
+        if fetched_data["bonus"]["safety_car"] is not None: success_items.append(f"Safety Car: {'OUI' if fetched_data['bonus']['safety_car'] else 'NON'}")
+        if fetched_data["bonus"]["dnf_drivers"]: success_items.append(f"DNF: {len(fetched_data['bonus']['dnf_drivers'])} pilotes")
+        
+        return {
+            "status": "success",
+            "message": f"Résultats synchronisés et sauvegardés! {points_calculated} pronostics calculés.",
+            "fetched_data": fetched_data,
+            "success_items": success_items,
+            "errors": errors,
+            "points_calculated": points_calculated
+        }
+    else:
+        return {
+            "status": "partial",
+            "message": "Données récupérées mais aucun vainqueur trouvé. Résultats non sauvegardés.",
+            "fetched_data": fetched_data,
+            "errors": errors
+        }
 
 # ==================== AVATARS ====================
 
@@ -2656,7 +2939,7 @@ async def claim_mission_reward(mission_id: str, user=Depends(get_current_user)):
     })
     
     # Notification
-    await create_notification(
+    await send_user_notification(
         user["id"],
         f"Mission '{mission['name']}' complétée ! +{xp_reward} XP",
         "mission_complete"
@@ -2664,7 +2947,7 @@ async def claim_mission_reward(mission_id: str, user=Depends(get_current_user)):
     
     level_up = new_level > user_data.get("level", 1)
     if level_up:
-        await create_notification(user["id"], f"Niveau {new_level} atteint !", "level_up")
+        await send_user_notification(user["id"], f"Niveau {new_level} atteint !", "level_up")
     
     return {
         "message": "Mission claimed",
@@ -3129,7 +3412,7 @@ async def award_minigame_winners(race_id: str, user=Depends(get_current_user)):
             
             # Notification
             game_name = "Reaction Time" if game_type == "reaction" else "Batak"
-            await create_notification(
+            await send_user_notification(
                 winner_id,
                 f"Tu as gagné le mini-jeu {game_name} dans {league['name']} ! +2 points",
                 "minigame_win"
