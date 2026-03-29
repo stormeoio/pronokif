@@ -225,6 +225,11 @@ class RaceResponse(BaseModel):
     status: str
     is_sprint_weekend: bool = False
     results: Optional[dict] = None
+    race_time: Optional[str] = None
+    quali_time: Optional[str] = None
+    sprint_quali_time: Optional[str] = None
+    sprint_race_time: Optional[str] = None
+    timezone: Optional[str] = "Europe/Paris"
 
 class DriverResponse(BaseModel):
     id: str
@@ -346,114 +351,115 @@ F1_CIRCUITS = {
     "Yas Marina": {"full_name": "Yas Marina Circuit", "length_km": 5.281, "turns": 16, "laps": 58},
 }
 
-# F1 2026 Calendar with Sprint weekends marked, FP1 times and full session schedule
+# F1 2026 Calendar with Sprint weekends marked - ALL TIMES IN PARIS TIMEZONE (CET/CEST)
+# Note: UTC+1 (hiver) / UTC+2 (été, dernier dimanche de mars au dernier dimanche d'octobre)
 F1_RACES_2026 = [
     {"id": "australia-2026", "name": "Australian Grand Prix", "circuit": "Albert Park", "country": "Australia", 
-     "date": "2026-03-08", "quali_date": "2026-03-07", "fp1_date": "2026-03-06", "fp1_time": "01:30", 
-     "fp2_date": "2026-03-06", "fp2_time": "05:00", "fp3_date": "2026-03-07", "fp3_time": "01:30",
-     "quali_time": "05:00", "race_time": "04:00", "is_sprint": False},
+     "date": "2026-03-08", "quali_date": "2026-03-07", "fp1_date": "2026-03-06", "fp1_time": "02:30", 
+     "fp2_date": "2026-03-06", "fp2_time": "06:00", "fp3_date": "2026-03-07", "fp3_time": "02:30",
+     "quali_time": "06:00", "race_time": "05:00", "timezone": "Europe/Paris", "is_sprint": False},
     {"id": "china-2026", "name": "Chinese Grand Prix", "circuit": "Shanghai", "country": "China", 
-     "date": "2026-03-15", "quali_date": "2026-03-13", "fp1_date": "2026-03-13", "fp1_time": "03:30", 
-     "sprint_quali_date": "2026-03-13", "sprint_quali_time": "07:30",
-     "sprint_race_date": "2026-03-14", "sprint_race_time": "03:00",
-     "quali_time": "07:00", "race_time": "07:00", "is_sprint": True},
+     "date": "2026-03-15", "quali_date": "2026-03-13", "fp1_date": "2026-03-13", "fp1_time": "04:30", 
+     "sprint_quali_date": "2026-03-13", "sprint_quali_time": "08:30",
+     "sprint_race_date": "2026-03-14", "sprint_race_time": "04:00",
+     "quali_time": "08:00", "race_time": "08:00", "timezone": "Europe/Paris", "is_sprint": True},
     {"id": "japan-2026", "name": "Japanese Grand Prix", "circuit": "Suzuka", "country": "Japan", 
-     "date": "2026-03-29", "quali_date": "2026-03-28", "fp1_date": "2026-03-27", "fp1_time": "02:30", 
-     "fp2_date": "2026-03-27", "fp2_time": "06:00", "fp3_date": "2026-03-28", "fp3_time": "02:30",
-     "quali_time": "06:00", "race_time": "05:00", "is_sprint": False},
+     "date": "2026-03-29", "quali_date": "2026-03-28", "fp1_date": "2026-03-27", "fp1_time": "04:30", 
+     "fp2_date": "2026-03-27", "fp2_time": "08:00", "fp3_date": "2026-03-28", "fp3_time": "04:30",
+     "quali_time": "08:00", "race_time": "07:00", "timezone": "Europe/Paris", "is_sprint": False},
     {"id": "bahrain-2026", "name": "Bahrain Grand Prix", "circuit": "Sakhir", "country": "Bahrain", 
-     "date": "2026-04-05", "quali_date": "2026-04-04", "fp1_date": "2026-04-03", "fp1_time": "11:30", 
-     "fp2_date": "2026-04-03", "fp2_time": "15:00", "fp3_date": "2026-04-04", "fp3_time": "12:30",
-     "quali_time": "16:00", "race_time": "15:00", "is_sprint": False},
+     "date": "2026-04-05", "quali_date": "2026-04-04", "fp1_date": "2026-04-03", "fp1_time": "14:30", 
+     "fp2_date": "2026-04-03", "fp2_time": "18:00", "fp3_date": "2026-04-04", "fp3_time": "15:30",
+     "quali_time": "19:00", "race_time": "18:00", "timezone": "Europe/Paris", "is_sprint": False},
     {"id": "saudi-2026", "name": "Saudi Arabian Grand Prix", "circuit": "Jeddah", "country": "Saudi Arabia", 
-     "date": "2026-04-19", "quali_date": "2026-04-18", "fp1_date": "2026-04-17", "fp1_time": "13:30", 
-     "fp2_date": "2026-04-17", "fp2_time": "17:00", "fp3_date": "2026-04-18", "fp3_time": "13:30",
-     "quali_time": "17:00", "race_time": "17:00", "is_sprint": False},
+     "date": "2026-04-19", "quali_date": "2026-04-18", "fp1_date": "2026-04-17", "fp1_time": "15:30", 
+     "fp2_date": "2026-04-17", "fp2_time": "19:00", "fp3_date": "2026-04-18", "fp3_time": "15:30",
+     "quali_time": "19:00", "race_time": "19:00", "timezone": "Europe/Paris", "is_sprint": False},
     {"id": "miami-2026", "name": "Miami Grand Prix", "circuit": "Miami", "country": "USA", 
-     "date": "2026-05-03", "quali_date": "2026-05-01", "fp1_date": "2026-05-01", "fp1_time": "18:30", 
-     "sprint_quali_date": "2026-05-01", "sprint_quali_time": "22:30",
-     "sprint_race_date": "2026-05-02", "sprint_race_time": "16:00",
-     "quali_time": "20:00", "race_time": "20:00", "is_sprint": True},
+     "date": "2026-05-03", "quali_date": "2026-05-01", "fp1_date": "2026-05-01", "fp1_time": "20:30", 
+     "sprint_quali_date": "2026-05-02", "sprint_quali_time": "00:30",
+     "sprint_race_date": "2026-05-02", "sprint_race_time": "18:00",
+     "quali_time": "22:00", "race_time": "22:00", "timezone": "Europe/Paris", "is_sprint": True},
     {"id": "emilia-2026", "name": "Emilia Romagna Grand Prix", "circuit": "Imola", "country": "Italy", 
-     "date": "2026-05-17", "quali_date": "2026-05-16", "fp1_date": "2026-05-15", "fp1_time": "11:30", 
-     "fp2_date": "2026-05-15", "fp2_time": "15:00", "fp3_date": "2026-05-16", "fp3_time": "10:30",
-     "quali_time": "14:00", "race_time": "13:00", "is_sprint": False},
+     "date": "2026-05-17", "quali_date": "2026-05-16", "fp1_date": "2026-05-15", "fp1_time": "13:30", 
+     "fp2_date": "2026-05-15", "fp2_time": "17:00", "fp3_date": "2026-05-16", "fp3_time": "12:30",
+     "quali_time": "16:00", "race_time": "15:00", "timezone": "Europe/Paris", "is_sprint": False},
     {"id": "monaco-2026", "name": "Monaco Grand Prix", "circuit": "Monaco", "country": "Monaco", 
-     "date": "2026-05-24", "quali_date": "2026-05-23", "fp1_date": "2026-05-22", "fp1_time": "11:30", 
-     "fp2_date": "2026-05-22", "fp2_time": "15:00", "fp3_date": "2026-05-23", "fp3_time": "10:30",
-     "quali_time": "14:00", "race_time": "13:00", "is_sprint": False},
+     "date": "2026-05-24", "quali_date": "2026-05-23", "fp1_date": "2026-05-22", "fp1_time": "13:30", 
+     "fp2_date": "2026-05-22", "fp2_time": "17:00", "fp3_date": "2026-05-23", "fp3_time": "12:30",
+     "quali_time": "16:00", "race_time": "15:00", "timezone": "Europe/Paris", "is_sprint": False},
     {"id": "spain-2026", "name": "Spanish Grand Prix", "circuit": "Barcelona", "country": "Spain", 
-     "date": "2026-06-07", "quali_date": "2026-06-06", "fp1_date": "2026-06-05", "fp1_time": "11:30", 
-     "fp2_date": "2026-06-05", "fp2_time": "15:00", "fp3_date": "2026-06-06", "fp3_time": "10:30",
-     "quali_time": "14:00", "race_time": "13:00", "is_sprint": False},
+     "date": "2026-06-07", "quali_date": "2026-06-06", "fp1_date": "2026-06-05", "fp1_time": "13:30", 
+     "fp2_date": "2026-06-05", "fp2_time": "17:00", "fp3_date": "2026-06-06", "fp3_time": "12:30",
+     "quali_time": "16:00", "race_time": "15:00", "timezone": "Europe/Paris", "is_sprint": False},
     {"id": "canada-2026", "name": "Canadian Grand Prix", "circuit": "Montreal", "country": "Canada", 
-     "date": "2026-06-21", "quali_date": "2026-06-20", "fp1_date": "2026-06-19", "fp1_time": "17:30", 
-     "fp2_date": "2026-06-19", "fp2_time": "21:00", "fp3_date": "2026-06-20", "fp3_time": "16:30",
-     "quali_time": "20:00", "race_time": "18:00", "is_sprint": False},
+     "date": "2026-06-21", "quali_date": "2026-06-20", "fp1_date": "2026-06-19", "fp1_time": "19:30", 
+     "fp2_date": "2026-06-19", "fp2_time": "23:00", "fp3_date": "2026-06-20", "fp3_time": "18:30",
+     "quali_time": "22:00", "race_time": "20:00", "timezone": "Europe/Paris", "is_sprint": False},
     {"id": "austria-2026", "name": "Austrian Grand Prix", "circuit": "Red Bull Ring", "country": "Austria", 
-     "date": "2026-07-05", "quali_date": "2026-07-03", "fp1_date": "2026-07-03", "fp1_time": "10:30", 
-     "sprint_quali_date": "2026-07-03", "sprint_quali_time": "14:30",
-     "sprint_race_date": "2026-07-04", "sprint_race_time": "10:00",
-     "quali_time": "14:00", "race_time": "13:00", "is_sprint": True},
+     "date": "2026-07-05", "quali_date": "2026-07-03", "fp1_date": "2026-07-03", "fp1_time": "12:30", 
+     "sprint_quali_date": "2026-07-03", "sprint_quali_time": "16:30",
+     "sprint_race_date": "2026-07-04", "sprint_race_time": "12:00",
+     "quali_time": "16:00", "race_time": "15:00", "timezone": "Europe/Paris", "is_sprint": True},
     {"id": "silverstone-2026", "name": "British Grand Prix", "circuit": "Silverstone", "country": "UK", 
-     "date": "2026-07-19", "quali_date": "2026-07-18", "fp1_date": "2026-07-17", "fp1_time": "11:30", 
-     "fp2_date": "2026-07-17", "fp2_time": "15:00", "fp3_date": "2026-07-18", "fp3_time": "10:30",
-     "quali_time": "14:00", "race_time": "14:00", "is_sprint": False},
+     "date": "2026-07-19", "quali_date": "2026-07-18", "fp1_date": "2026-07-17", "fp1_time": "13:30", 
+     "fp2_date": "2026-07-17", "fp2_time": "17:00", "fp3_date": "2026-07-18", "fp3_time": "12:30",
+     "quali_time": "16:00", "race_time": "16:00", "timezone": "Europe/Paris", "is_sprint": False},
     {"id": "belgium-2026", "name": "Belgian Grand Prix", "circuit": "Spa-Francorchamps", "country": "Belgium", 
-     "date": "2026-08-02", "quali_date": "2026-08-01", "fp1_date": "2026-07-31", "fp1_time": "11:30", 
-     "fp2_date": "2026-07-31", "fp2_time": "15:00", "fp3_date": "2026-08-01", "fp3_time": "10:30",
-     "quali_time": "14:00", "race_time": "13:00", "is_sprint": False},
+     "date": "2026-08-02", "quali_date": "2026-08-01", "fp1_date": "2026-07-31", "fp1_time": "13:30", 
+     "fp2_date": "2026-07-31", "fp2_time": "17:00", "fp3_date": "2026-08-01", "fp3_time": "12:30",
+     "quali_time": "16:00", "race_time": "15:00", "timezone": "Europe/Paris", "is_sprint": False},
     {"id": "hungary-2026", "name": "Hungarian Grand Prix", "circuit": "Hungaroring", "country": "Hungary", 
-     "date": "2026-08-16", "quali_date": "2026-08-15", "fp1_date": "2026-08-14", "fp1_time": "11:30", 
-     "fp2_date": "2026-08-14", "fp2_time": "15:00", "fp3_date": "2026-08-15", "fp3_time": "10:30",
-     "quali_time": "14:00", "race_time": "13:00", "is_sprint": False},
+     "date": "2026-08-16", "quali_date": "2026-08-15", "fp1_date": "2026-08-14", "fp1_time": "13:30", 
+     "fp2_date": "2026-08-14", "fp2_time": "17:00", "fp3_date": "2026-08-15", "fp3_time": "12:30",
+     "quali_time": "16:00", "race_time": "15:00", "timezone": "Europe/Paris", "is_sprint": False},
     {"id": "netherlands-2026", "name": "Dutch Grand Prix", "circuit": "Zandvoort", "country": "Netherlands", 
-     "date": "2026-08-30", "quali_date": "2026-08-29", "fp1_date": "2026-08-28", "fp1_time": "10:30", 
-     "fp2_date": "2026-08-28", "fp2_time": "14:00", "fp3_date": "2026-08-29", "fp3_time": "09:30",
-     "quali_time": "13:00", "race_time": "13:00", "is_sprint": False},
+     "date": "2026-08-30", "quali_date": "2026-08-29", "fp1_date": "2026-08-28", "fp1_time": "12:30", 
+     "fp2_date": "2026-08-28", "fp2_time": "16:00", "fp3_date": "2026-08-29", "fp3_time": "11:30",
+     "quali_time": "15:00", "race_time": "15:00", "timezone": "Europe/Paris", "is_sprint": False},
     {"id": "monza-2026", "name": "Italian Grand Prix", "circuit": "Monza", "country": "Italy", 
-     "date": "2026-09-06", "quali_date": "2026-09-05", "fp1_date": "2026-09-04", "fp1_time": "11:30", 
-     "fp2_date": "2026-09-04", "fp2_time": "15:00", "fp3_date": "2026-09-05", "fp3_time": "10:30",
-     "quali_time": "14:00", "race_time": "13:00", "is_sprint": False},
+     "date": "2026-09-06", "quali_date": "2026-09-05", "fp1_date": "2026-09-04", "fp1_time": "13:30", 
+     "fp2_date": "2026-09-04", "fp2_time": "17:00", "fp3_date": "2026-09-05", "fp3_time": "12:30",
+     "quali_time": "16:00", "race_time": "15:00", "timezone": "Europe/Paris", "is_sprint": False},
     {"id": "madrid-2026", "name": "Madrid Grand Prix", "circuit": "Madrid", "country": "Spain", 
-     "date": "2026-09-13", "quali_date": "2026-09-12", "fp1_date": "2026-09-11", "fp1_time": "12:30", 
-     "fp2_date": "2026-09-11", "fp2_time": "16:00", "fp3_date": "2026-09-12", "fp3_time": "11:30",
-     "quali_time": "15:00", "race_time": "14:00", "is_sprint": False},
+     "date": "2026-09-13", "quali_date": "2026-09-12", "fp1_date": "2026-09-11", "fp1_time": "14:30", 
+     "fp2_date": "2026-09-11", "fp2_time": "18:00", "fp3_date": "2026-09-12", "fp3_time": "13:30",
+     "quali_time": "17:00", "race_time": "16:00", "timezone": "Europe/Paris", "is_sprint": False},
     {"id": "azerbaijan-2026", "name": "Azerbaijan Grand Prix", "circuit": "Baku", "country": "Azerbaijan", 
-     "date": "2026-09-20", "quali_date": "2026-09-19", "fp1_date": "2026-09-18", "fp1_time": "09:30", 
-     "fp2_date": "2026-09-18", "fp2_time": "13:00", "fp3_date": "2026-09-19", "fp3_time": "08:30",
-     "quali_time": "12:00", "race_time": "11:00", "is_sprint": False},
+     "date": "2026-09-20", "quali_date": "2026-09-19", "fp1_date": "2026-09-18", "fp1_time": "11:30", 
+     "fp2_date": "2026-09-18", "fp2_time": "15:00", "fp3_date": "2026-09-19", "fp3_time": "10:30",
+     "quali_time": "14:00", "race_time": "13:00", "timezone": "Europe/Paris", "is_sprint": False},
     {"id": "singapore-2026", "name": "Singapore Grand Prix", "circuit": "Marina Bay", "country": "Singapore", 
-     "date": "2026-10-04", "quali_date": "2026-10-03", "fp1_date": "2026-10-02", "fp1_time": "09:30", 
-     "fp2_date": "2026-10-02", "fp2_time": "13:00", "fp3_date": "2026-10-03", "fp3_time": "09:30",
-     "quali_time": "13:00", "race_time": "12:00", "is_sprint": False},
+     "date": "2026-10-04", "quali_date": "2026-10-03", "fp1_date": "2026-10-02", "fp1_time": "11:30", 
+     "fp2_date": "2026-10-02", "fp2_time": "15:00", "fp3_date": "2026-10-03", "fp3_time": "11:30",
+     "quali_time": "15:00", "race_time": "14:00", "timezone": "Europe/Paris", "is_sprint": False},
     {"id": "austin-2026", "name": "US Grand Prix", "circuit": "COTA", "country": "USA", 
-     "date": "2026-10-18", "quali_date": "2026-10-16", "fp1_date": "2026-10-16", "fp1_time": "17:30", 
-     "sprint_quali_date": "2026-10-16", "sprint_quali_time": "21:30",
-     "sprint_race_date": "2026-10-17", "sprint_race_time": "18:00",
-     "quali_time": "22:00", "race_time": "19:00", "is_sprint": True},
+     "date": "2026-10-18", "quali_date": "2026-10-16", "fp1_date": "2026-10-16", "fp1_time": "19:30", 
+     "sprint_quali_date": "2026-10-16", "sprint_quali_time": "23:30",
+     "sprint_race_date": "2026-10-17", "sprint_race_time": "20:00",
+     "quali_time": "00:00", "race_time": "21:00", "timezone": "Europe/Paris", "is_sprint": True},
     {"id": "mexico-2026", "name": "Mexico City Grand Prix", "circuit": "Hermanos Rodríguez", "country": "Mexico", 
-     "date": "2026-10-25", "quali_date": "2026-10-24", "fp1_date": "2026-10-23", "fp1_time": "18:30", 
-     "fp2_date": "2026-10-23", "fp2_time": "22:00", "fp3_date": "2026-10-24", "fp3_time": "17:30",
-     "quali_time": "21:00", "race_time": "20:00", "is_sprint": False},
+     "date": "2026-10-25", "quali_date": "2026-10-24", "fp1_date": "2026-10-23", "fp1_time": "20:30", 
+     "fp2_date": "2026-10-24", "fp2_time": "00:00", "fp3_date": "2026-10-24", "fp3_time": "19:30",
+     "quali_time": "23:00", "race_time": "21:00", "timezone": "Europe/Paris", "is_sprint": False},
     {"id": "brazil-2026", "name": "São Paulo Grand Prix", "circuit": "Interlagos", "country": "Brazil", 
-     "date": "2026-11-08", "quali_date": "2026-11-06", "fp1_date": "2026-11-06", "fp1_time": "14:30", 
-     "sprint_quali_date": "2026-11-06", "sprint_quali_time": "18:30",
-     "sprint_race_date": "2026-11-07", "sprint_race_time": "14:00",
-     "quali_time": "18:00", "race_time": "17:00", "is_sprint": True},
+     "date": "2026-11-08", "quali_date": "2026-11-06", "fp1_date": "2026-11-06", "fp1_time": "15:30", 
+     "sprint_quali_date": "2026-11-06", "sprint_quali_time": "19:30",
+     "sprint_race_date": "2026-11-07", "sprint_race_time": "15:00",
+     "quali_time": "19:00", "race_time": "18:00", "timezone": "Europe/Paris", "is_sprint": True},
     {"id": "vegas-2026", "name": "Las Vegas Grand Prix", "circuit": "Las Vegas", "country": "USA", 
-     "date": "2026-11-21", "quali_date": "2026-11-20", "fp1_date": "2026-11-19", "fp1_time": "02:30", 
-     "fp2_date": "2026-11-19", "fp2_time": "06:00", "fp3_date": "2026-11-20", "fp3_time": "02:30",
-     "quali_time": "06:00", "race_time": "06:00", "is_sprint": False},
+     "date": "2026-11-21", "quali_date": "2026-11-20", "fp1_date": "2026-11-19", "fp1_time": "03:30", 
+     "fp2_date": "2026-11-19", "fp2_time": "07:00", "fp3_date": "2026-11-20", "fp3_time": "03:30",
+     "quali_time": "07:00", "race_time": "07:00", "timezone": "Europe/Paris", "is_sprint": False},
     {"id": "qatar-2026", "name": "Qatar Grand Prix", "circuit": "Lusail", "country": "Qatar", 
-     "date": "2026-11-29", "quali_date": "2026-11-27", "fp1_date": "2026-11-27", "fp1_time": "13:30", 
-     "sprint_quali_date": "2026-11-27", "sprint_quali_time": "17:30",
-     "sprint_race_date": "2026-11-28", "sprint_race_time": "14:00",
-     "quali_time": "18:00", "race_time": "16:00", "is_sprint": True},
+     "date": "2026-11-29", "quali_date": "2026-11-27", "fp1_date": "2026-11-27", "fp1_time": "14:30", 
+     "sprint_quali_date": "2026-11-27", "sprint_quali_time": "18:30",
+     "sprint_race_date": "2026-11-28", "sprint_race_time": "15:00",
+     "quali_time": "19:00", "race_time": "17:00", "timezone": "Europe/Paris", "is_sprint": True},
     {"id": "abudhabi-2026", "name": "Abu Dhabi Grand Prix", "circuit": "Yas Marina", "country": "UAE", 
-     "date": "2026-12-06", "quali_date": "2026-12-05", "fp1_date": "2026-12-04", "fp1_time": "09:30", 
-     "fp2_date": "2026-12-04", "fp2_time": "13:00", "fp3_date": "2026-12-05", "fp3_time": "10:30",
-     "quali_time": "14:00", "race_time": "13:00", "is_sprint": False},
+     "date": "2026-12-06", "quali_date": "2026-12-05", "fp1_date": "2026-12-04", "fp1_time": "10:30", 
+     "fp2_date": "2026-12-04", "fp2_time": "14:00", "fp3_date": "2026-12-05", "fp3_time": "11:30",
+     "quali_time": "15:00", "race_time": "14:00", "timezone": "Europe/Paris", "is_sprint": False},
 ]
 
 # ==================== AUTH ENDPOINTS ====================
@@ -1360,8 +1366,12 @@ async def get_races():
     races = []
     
     for race in F1_RACES_2026:
-        race_date = datetime.fromisoformat(race["date"] + "T15:00:00+00:00")
-        quali_date = datetime.fromisoformat(race["quali_date"] + "T14:00:00+00:00")
+        # Use the specific times from calendar (Paris timezone converted to UTC for internal processing)
+        race_time = race.get("race_time", "15:00")
+        quali_time = race.get("quali_time", "14:00")
+        
+        race_date = datetime.fromisoformat(race["date"] + "T" + race_time + ":00+00:00")
+        quali_date = datetime.fromisoformat(race["quali_date"] + "T" + quali_time + ":00+00:00")
         predictions_close = quali_date - timedelta(hours=1)
         
         result_doc = await db.race_results.find_one({"race_id": race["id"]}, {"_id": 0})
@@ -1383,12 +1393,19 @@ async def get_races():
             "quali_date": quali_date.isoformat(),
             "predictions_close_at": predictions_close.isoformat(),
             "status": status, "is_sprint_weekend": race.get("is_sprint", False),
-            "results": result_doc.get("results") if result_doc else None
+            "results": result_doc.get("results") if result_doc else None,
+            "race_time": race_time,
+            "quali_time": quali_time,
+            "timezone": race.get("timezone", "Europe/Paris")
         }
         
         if race.get("is_sprint"):
-            race_response["sprint_quali_date"] = race.get("sprint_quali_date", "") + "T10:00:00+00:00"
-            race_response["sprint_race_date"] = race.get("sprint_race_date", "") + "T14:00:00+00:00"
+            sprint_quali_time = race.get("sprint_quali_time", "10:00")
+            sprint_race_time = race.get("sprint_race_time", "14:00")
+            race_response["sprint_quali_date"] = race.get("sprint_quali_date", "") + "T" + sprint_quali_time + ":00+00:00"
+            race_response["sprint_race_date"] = race.get("sprint_race_date", "") + "T" + sprint_race_time + ":00+00:00"
+            race_response["sprint_quali_time"] = sprint_quali_time
+            race_response["sprint_race_time"] = sprint_race_time
         
         races.append(RaceResponse(**race_response))
     
@@ -3949,14 +3966,37 @@ async def sync_race_from_api(race: dict) -> dict:
                 upsert=True
             )
             
-            # Calculate points
+            # Calculate points and update leaderboard
             predictions = await db.predictions.find({"race_id": race_id}, {"_id": 0}).to_list(1000)
             for pred in predictions:
                 try:
                     points = calculate_points(pred, fetched_data)
+                    
+                    # Update user XP
                     await db.users.update_one({"id": pred["user_id"]}, {"$inc": {"xp": points["xp_earned"]}})
+                    
+                    # Send notification
                     await send_user_notification(pred["user_id"], f"Résultats {race['name']}: +{points['total']} pts!", "results")
-                except: pass
+                    
+                    # Update leaderboard for all leagues the user is in
+                    leagues = await db.leagues.find({"members": pred["user_id"]}, {"_id": 0}).to_list(100)
+                    for league in leagues:
+                        entry = await db.leaderboard.find_one({"league_id": league["id"], "user_id": pred["user_id"]})
+                        if entry:
+                            all_entries = await db.leaderboard.find({"league_id": league["id"]}, {"_id": 0}).to_list(100)
+                            all_entries.sort(key=lambda x: x.get("total_points", 0), reverse=True)
+                            current_pos = next((i+1 for i, e in enumerate(all_entries) if e["user_id"] == pred["user_id"]), len(all_entries))
+                            
+                            await db.leaderboard.update_one(
+                                {"id": entry["id"]},
+                                {"$inc": {"total_points": points["total"]},
+                                 "$set": {"last_race_points": points["total"], "previous_position": current_pos}}
+                            )
+                except Exception as e:
+                    pass
+            
+            # Lock predictions
+            await db.predictions.update_many({"race_id": race_id}, {"$set": {"locked": True}})
             
             return {"success": True, "winner": fetched_data["race_winner"]}
         
