@@ -16,19 +16,19 @@ PRONOKIF est une application de jeu de pronostics sur la Formule 1, permettant a
 - Inscription/Connexion par email
 - JWT tokens
 - Gestion du profil utilisateur
-- **Historique de connexion** avec IP et User-Agent (Ajouté 17/03/2026)
+- **Historique de connexion** avec IP et User-Agent
 
 ### Ligues
 - Création de ligue avec code d'invitation
 - Rejoindre une ligue existante
 - Chat de ligue avec notifications de messages non lus
-- **Modification nom et description par le créateur** (Ajouté 17/03/2026)
+- **Modification nom et description par le créateur**
 - **Page de détails de ligue** avec classement et membres
-- **Quitter une ligue** - Chaque membre peut quitter une ligue (Ajouté 17/03/2026)
-- **Partage avec lien cliquable** - Bouton de partage génère un lien `/join/{code}` (Ajouté 17/03/2026)
+- **Quitter une ligue** - Chaque membre peut quitter une ligue
+- **Partage avec lien cliquable** - Bouton de partage génère un lien `/join/{code}`
 - **Page d'invitation** - `/join/:code` affiche une prévisualisation de la ligue avant de rejoindre
-- **Supprimer une ligue** - Le créateur peut supprimer sa ligue (avec confirmation) (Ajouté 17/03/2026)
-- **Transférer la propriété** - Le créateur peut désigner un nouveau propriétaire parmi les membres (Ajouté 17/03/2026)
+- **Supprimer une ligue** - Le créateur peut supprimer sa ligue (avec confirmation)
+- **Transférer la propriété** - Le créateur peut désigner un nouveau propriétaire parmi les membres
 
 ### Pronostics de Course - SYSTÈME SÉPARÉ
 **Endpoints séparés:**
@@ -49,12 +49,19 @@ PRONOKIF est une application de jeu de pronostics sur la Formule 1, permettant a
 - Meilleur Tour (sélection pilote)
 - Leader 1er Virage (sélection pilote)
 
-### Pronos Personnalisés (Mis à jour 17/03/2026)
-- Sélecteur de GP pour choisir la course cible
-- Création de questions personnalisées par les membres
-- Types: Oui/Non, Choix multiples, Texte libre
+### Système de Points - AUDITÉ ET VALIDÉ (04/04/2026)
+**Flux de calcul :**
+1. `calculate_points()` : Calcule points pour qualifs, sprint, course, bonus + XP
+2. `sync_race_from_api()` : Met à jour `db.leaderboard` avec `total_points`, `last_race_points`, `previous_position`
+3. Endpoints `/leagues/{id}/leaderboard` et `/leaderboard/global` : Retournent les données dynamiquement
 
-### Comptage des Pronostics (Mis à jour 17/03/2026)
+**Tests validés :**
+- Création d'entrée leaderboard à la création de ligue ✅
+- Mise à jour dynamique des points ✅
+- Affichage `last_race_points` ✅
+- Classement global trié correctement ✅
+
+### Comptage des Pronostics
 Chaque élément compte individuellement:
 - Pole qualifications = 1 prono
 - TOP 10 qualifications = 1 prono
@@ -83,15 +90,13 @@ Chaque élément compte individuellement:
 - Classement global de l'application
 - Classement mini-jeux
 
-### Administration (Mis à jour 29/03/2026)
+### Administration
 **4 onglets:**
 - RÉSULTATS : Entrée des résultats officiels, **synchronisation automatique complète via APIs**
-  - **Synchronisation automatisée** via Jolpica-F1 + OpenF1 APIs (AMÉLIORÉ)
+  - **Synchronisation automatisée** via Jolpica-F1 + OpenF1 APIs
   - Récupère automatiquement : Pole, Top 10 qualifs, Vainqueur, Top 10 course, Sprint
   - Récupère automatiquement : **Safety Car, DNF, Meilleur tour, Leader 1er virage**
-  - Boutons bonus améliorés (Meilleur Tour, Leader 1er Virage avec bordures colorées)
-  - Safety Car avec état visible (✓ OUI / ✗ NON)
-  - **NOUVEAU: Tâche de synchronisation automatique toutes les heures**
+  - **Tâche de synchronisation automatique toutes les heures**
 - NOTIFS : Envoi de notifications à tous les membres (limite 5000 caractères)
 - FEEDBACK : Visualisation des retours utilisateurs
 - **MEMBRES** : Liste complète avec **compteur temps réel** (badge vert)
@@ -99,175 +104,78 @@ Chaque élément compte individuellement:
   - **Onglet Activité**: Historique des connexions (Date, IP, User-Agent)
   - **Bouton Supprimer le compte** avec confirmation
 
-### Synchronisation Automatique des Résultats (NOUVEAU 29/03/2026)
+### Synchronisation Automatique des Résultats
 - **Tâche de fond** : Vérifie automatiquement toutes les heures les courses terminées
-- **Fonctionnement** : 
-  - Détecte les courses dont la date est passée mais sans résultats
-  - Récupère les données depuis Jolpica-F1 et OpenF1
-  - Sauvegarde les résultats et calcule les points des pronostics
-  - Envoie des notifications aux utilisateurs
 - **Endpoints d'administration** :
-  - `GET /api/admin/sync-status` : Voir l'état de toutes les courses (synced/pending/upcoming)
-  - `POST /api/admin/sync-all-pending` : Forcer la synchronisation de toutes les courses en attente
+  - `GET /api/admin/sync-status` : Voir l'état de toutes les courses
+  - `POST /api/admin/sync-all-pending` : Forcer la synchronisation
   - `POST /api/admin/auto-sync-results/{race_id}` : Synchroniser une course spécifique
-- **Logs** : `[Auto-Sync]` dans les logs du backend pour le suivi
 
-### Notifications Chat (Mis à jour 17/03/2026)
-- Indicateur de messages non lus sur l'icône Accueil (navigation)
-- Badge sur le bouton Chat dans le dashboard
-- Marquage automatique comme lu à l'ouverture du chat
-- Endpoints: `/api/leagues/unread-messages`, `/api/leagues/{id}/messages/read`
-
-### Navigation améliorée (Mis à jour 18/03/2026)
-- **Menu hamburger** sur le Dashboard avec pages statiques
-- **Onglet "Ligues"** remplace "Notifs" dans la barre de navigation
-- **Onglet "Championnat"** remplace "Classement" dans la barre de navigation
-- **Onglet "Mini-jeux"** remplace "Profil" dans la barre de navigation (NOUVEAU 18/03/2026)
-- **Cloche simplifiée** vers /notifications directement
-- **Bannière profil compacte** en haut du dashboard, cliquable vers /profile (NOUVEAU 18/03/2026)
-
-### Page Championnat F1 (Ajouté 17/03/2026)
-- **Onglet Pilotes** : Classement en temps réel avec numéro, équipe, points et victoires
-  - **Lignes cliquables** : Navigation vers la fiche pilote détaillée (NOUVEAU 19/03/2026)
-- **Onglet Écuries** : Classement constructeurs avec nationalité et points
-- **Onglet Résultats** (NOUVEAU) :
-  - Sélecteur de Grand Prix (courses terminées uniquement)
-  - Sous-onglets : Course, Qualifications, Sprint (si applicable), Essais, Bonus
-  - Classement Course : Top 10 avec points et temps
-  - Classement Qualifications : Top 10 avec temps Q3/Q2/Q1
-  - Classement Sprint : Top 10 avec points
-  - Essais Libres : FP1, FP2, FP3 avec meilleurs temps
-  - Bonus : Meilleur tour en course, Leader au 1er virage
-- Couleurs officielles des équipes F1
-- Mise à jour automatique via API Jolpica-F1 + OpenF1 (gratuites, sans clé)
-
-### Fiche Pilote Détaillée (NOUVEAU 19/03/2026)
+### Fiche Pilote Détaillée
 - **URL** : `/driver/:driverId`
 - **Photo officielle** du pilote en combinaison (CDN F1)
-- **En-tête** : Photo circulaire avec bordure couleur équipe, badge pays, numéro, statistiques rapides
+- **3 onglets** : Pilote, Palmarès, Infos
 - **Bouton Comparer** : Ouvre le comparateur avec le pilote pré-sélectionné
-- **3 onglets** :
-  - **Pilote** : Informations personnelles (nom, date/lieu naissance, taille, poids) + Contrat (équipe, dates, salaire estimé, notes) + Réseaux sociaux
-  - **Palmarès** : Statistiques F1 (titres, victoires, podiums, poles, meilleurs tours, points) + Carrière junior (F2, F3, etc.)
-  - **Infos** : 10 faits aléatoires et pertinents générés dynamiquement pour aider aux pronostics
-- **Données des 22 pilotes** stockées dans `/app/backend/drivers_data.py`
 - **API** : `GET /api/drivers/{driver_id}/details`
 
-### Comparateur de Pilotes (NOUVEAU 19/03/2026)
+### Comparateur de Pilotes
 - **URL** : `/compare` ou `/compare?d1={driver1}&d2={driver2}`
-- **Sélecteurs de pilotes** avec photos et dropdown
-- **Bouton Inverser** pour échanger les pilotes
-- **Cartes pilotes** cliquables vers leur fiche détaillée
-- **Statistiques F1 comparées** avec barres visuelles colorées (couleurs des équipes) :
-  - Titres mondiaux, Victoires, Podiums, Poles, Meilleurs tours, Points, Grands Prix
+- **Statistiques F1 comparées** avec barres visuelles colorées
 - **Section Efficacité** : Taux de victoire, podium, pole et points/course
-- **Verdict rapide** généré automatiquement
 - **API** : `GET /api/drivers/compare?driver1={id}&driver2={id}`
-- **Accessible depuis** : Page Championnat (icône), Fiche Pilote (bouton Comparer)
 
 ## Architecture technique
 
 ### Backend (FastAPI + MongoDB)
-- `/app/backend/server.py` - Routes principales (~2850 lignes)
-- `/app/backend/features.py` - Missions, avatars, mini-jeux
+- `/app/backend/server.py` - Fichier monolithique (~4100 lignes) **⚠️ REFACTORING NÉCESSAIRE**
+- `/app/backend/drivers_data.py` - Données statiques des pilotes
 
 ### Frontend (React + TailwindCSS)
 - `/app/frontend/src/pages/DashboardPage.jsx` - Dashboard avec slider et badge chat
-- `/app/frontend/src/pages/PredictionsPage.jsx` - Onglets Sprint/Course, bonus modifiables
-- `/app/frontend/src/pages/AdminPage.jsx` - 4 onglets, gestion membres complète
-- `/app/frontend/src/pages/CustomPredictionsPage.jsx` - Sélecteur GP
-- `/app/frontend/src/pages/MiniGamesPage.jsx` - Boutons mode contrastés
-- `/app/frontend/src/pages/LeagueDetailPage.jsx` - Détails de ligue (NOUVEAU)
-- `/app/frontend/src/pages/LeaguePage.jsx` - Hub des ligues (REFAIT)
-- `/app/frontend/src/pages/ProfilePage.jsx` - Historique des points
-- `/app/frontend/src/pages/ChampionshipPage.jsx` - Classements F1 temps réel, lignes cliquables
-- `/app/frontend/src/pages/DriverDetailPage.jsx` - Fiche pilote détaillée avec 3 onglets (NOUVEAU 19/03/2026)
-- `/app/frontend/src/pages/JoinLeaguePage.jsx` - Page d'invitation (NOUVEAU)
-- `/app/frontend/src/components/BottomNav.jsx` - Badge messages non lus
-- `/app/frontend/src/components/HamburgerMenu.jsx` - Menu latéral (NOUVEAU)
+- `/app/frontend/src/pages/PredictionsPage.jsx` - Onglets Sprint/Course
+- `/app/frontend/src/pages/AdminPage.jsx` - 4 onglets, gestion membres
+- `/app/frontend/src/pages/LeaderboardPage.jsx` - Classement de ligue
+- `/app/frontend/src/pages/ChampionshipPage.jsx` - Classements F1 temps réel
+- `/app/frontend/src/pages/DriverDetailPage.jsx` - Fiche pilote
+- `/app/frontend/src/pages/DriverComparisonPage.jsx` - Comparateur
 
 ### Collections MongoDB
 - users, leagues, races, drivers
 - predictions, custom_predictions
 - missions, user_achievements
 - minigame_scores, notifications, feedback
+- **leaderboard** (classements par ligue)
 - **user_sessions** (historique connexions)
 - **chat_read_status**
 
-### Endpoints Admin (Ajoutés 17/03/2026)
-- `GET /api/admin/members/{id}/activity` - Historique de connexion
-- `DELETE /api/admin/members/{id}` - Suppression de compte
-
-### Endpoints Ligues (Ajoutés 17/03/2026)
-- `POST /api/leagues/{id}/leave` - Quitter une ligue
-- `GET /api/leagues/by-code/{code}` - Récupérer les infos d'une ligue par son code (pour la page d'invitation)
-- `DELETE /api/leagues/{id}` - Supprimer une ligue (créateur uniquement)
-- `POST /api/leagues/{id}/transfer` - Transférer la propriété à un autre membre
-
-### Endpoints Pilotes (NOUVEAU 19/03/2026)
-- `GET /api/drivers/{driver_id}/details` - Retourne les données complètes d'un pilote (infos perso, contrat, palmarès, faits utiles, photo)
-- `GET /api/drivers/all` - Liste tous les pilotes avec infos de base
-- `GET /api/drivers/compare?driver1={id}&driver2={id}` - Compare deux pilotes avec stats, taux d'efficacité et verdict
-
 ## Prochaines étapes (Backlog)
 
+### P0 - Priorité critique
+- **Correctifs de sécurité Phase 1** : JWT_SECRET via env, CORS strict, validation mot de passe
+
 ### P1 - Priorité haute
-- Générer des images de fond pour chaque GP (Silverstone, Spa, Monza, etc.)
+- Fonctionnalité "Mot de passe oublié" via Resend (⏳ En attente clé API)
+- Images de fond dynamiques pour chaque GP
 
 ### P2 - Améliorations futures
+- **Refactoring backend** : Diviser `server.py` en routes, modèles, services
 - Animations d'entrée sur les cartes
-- Notifications push
 - Badges visuels pour missions accomplies
 - Bonus de série (streak) pour pronostics consécutifs
 
 ### P3 - Nice to have
+- Notifications push
 - Mode sombre/clair toggle
 - Statistiques détaillées de performance
-- Partage sur réseaux sociaux
+
+## Tests validés (04/04/2026)
+- **Audit système de points** : COMPLET ET VALIDÉ
+  - Backend : `calculate_points()`, endpoints leaderboard - OK
+  - Mise à jour dynamique : Points 0 → 42 avec last_race 18 - OK
+  - Classement global : Tri correct par points - OK
+  - Frontend : Affichage cohérent sur toutes les pages - OK
 
 ## Notes techniques
 - Les images de fond GP sont stockées comme URLs
 - L'API OpenF1 est utilisée pour récupérer les résultats officiels
-- `server.py` ~2850 lignes - **refactoring fortement recommandé** pour séparer routes/modèles/services
-
-## Tests validés (18/03/2026)
-- API unread-messages: Fonctionnel
-- API mark-read: Fonctionnel
-- API admin/members: Comptage individuel des pronos
-- **API admin/members/{id}/activity**: Fonctionnel avec IP/User-Agent
-- **API DELETE admin/members/{id}**: Fonctionnel avec nettoyage complet
-- **API leagues/{id}/leave**: Fonctionnel (supprime la ligue si seul membre)
-- **API leagues/by-code/{code}**: Fonctionnel (endpoint public)
-- **API admin/sync-results/{race_id}**: ENTIÈREMENT AUTOMATISÉ
-  - Récupère: Pole, Top 10 qualifs, Vainqueur, Top 10 course, Meilleur tour
-  - Récupère: Safety Car (OUI/NON), DNF (liste pilotes), Leader 1er virage
-  - Récupère: Sprint (pole SQ, top10 SQ, winner sprint, top10 sprint)
-- UI Admin bonus: Boutons visibles avec bordures colorées
-- UI Admin Membres: Onglets Info/Activité, bouton suppression
-- UI Mini-jeux: Contraste Entraînement/Compétition amélioré
-- UI Pronos: Bonus modifiables après validation
-- **UI League Detail**: Bouton partage (vert) + bouton quitter (rouge)
-- **UI Join Page**: Page d'invitation avec prévisualisation de la ligue
-- **Linting Python**: 0 erreurs (corrigé 17/03/2026)
-- **UI Dashboard**: Nouvelle disposition avec bannière profil en haut (testé 18/03/2026)
-- **UI BottomNav**: Onglet Mini-jeux fonctionnel (testé 18/03/2026)
-
-## Tests validés (19/03/2026)
-- **API drivers/{driver_id}/details**: 100% fonctionnel - 11 tests backend passés
-  - Retourne données complètes pour les 22 pilotes
-  - Photo URL depuis CDN F1 officiel
-  - Génère 10 faits utiles aléatoires
-  - Contient palmarès F1 + junior + contrat + réseaux sociaux
-- **API drivers/compare**: Fonctionnel
-  - Compare 2 pilotes avec stats, taux d'efficacité, verdict automatique
-- **UI Fiche Pilote**: 100% fonctionnel
-  - Navigation depuis ChampionshipPage
-  - 3 onglets (Pilote, Palmarès, Infos) interactifs
-  - Photo et couleur équipe affichées
-  - Bouton retour vers Championnat
-  - Bouton Comparer vers le comparateur
-- **UI Comparateur**: 100% fonctionnel
-  - Sélecteurs de pilotes avec photos
-  - Barres de comparaison colorées
-  - Section efficacité avec taux
-  - Verdict automatique
+- `server.py` ~4100 lignes - **refactoring fortement recommandé**
