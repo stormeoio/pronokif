@@ -2,85 +2,41 @@
 
 ## Current Status
 
-The backend refactoring has been **partially completed**. The following modules have been extracted and are ready for use:
+The backend refactoring has been **significantly completed (Phase 2)**. Most route modules have been extracted.
 
 ### ✅ Completed Modules
 
-1. **config.py** - Database connection and configuration
-   - MongoDB connection
-   - JWT settings
-   - Scoring rules
-   - API URLs
+#### Configuration & Models
+1. **config.py** - Database connection, JWT settings, scoring rules, API URLs
+2. **models/schemas.py** - All Pydantic models (Auth, League, Prediction, Race, Admin)
+3. **data/f1_data.py** - F1_DRIVERS_2026, F1_CIRCUITS, F1_RACES_2026
 
-2. **models/schemas.py** - All Pydantic models
-   - Auth models (UserCreate, UserLogin, TokenResponse, etc.)
-   - League models (LeagueCreate, LeagueResponse, etc.)
-   - Prediction models (PredictionCreate, BonusBets, etc.)
-   - Race and Driver models
-   - Admin models
+#### Services
+4. **services/auth.py** - Auth utilities (hash_password, verify_password, create_token, get_current_user, etc.)
+5. **services/scoring.py** - calculate_points()
 
-3. **data/f1_data.py** - Static F1 data
-   - F1_DRIVERS_2026
-   - F1_CIRCUITS
-   - F1_RACES_2026
+#### Routes (Extracted - Ready for integration)
+6. **routes/auth.py** - /auth/* endpoints
+7. **routes/leagues.py** - /leagues/* endpoints (CRUD, chat, members)
+8. **routes/predictions.py** - /predictions/* endpoints (main, sprint, custom)
+9. **routes/races.py** - /races/*, /drivers/* endpoints
+10. **routes/minigames.py** - /minigames/* endpoints
 
-4. **services/auth.py** - Authentication utilities
-   - hash_password()
-   - verify_password()
-   - create_token()
-   - get_current_user()
-   - generate_league_code()
-   - send_user_notification()
-   - check_is_admin()
+### 🔄 Remaining Modules (Still in server.py)
 
-5. **services/scoring.py** - Points calculation
-   - calculate_points()
-
-6. **routes/auth.py** - Authentication endpoints
-   - POST /auth/register
-   - POST /auth/login
-   - GET /auth/me
-   - POST /auth/username
-
-### 🔄 Pending Modules (Still in server.py)
-
-The following modules need to be extracted from `server.py`:
-
-1. **routes/leagues.py** (~500 lines)
-   - League CRUD operations
-   - Chat functionality
-   - Member management
-
-2. **routes/predictions.py** (~500 lines)
-   - Prediction creation/update
-   - Custom predictions
-   - Sprint/Main race predictions
-
-3. **routes/races.py** (~600 lines)
-   - Race listing and details
-   - Driver information
-   - Results display
-
-4. **routes/admin.py** (~800 lines)
-   - Results management
-   - Sync functionality
+1. **routes/admin.py** (~800 lines)
+   - Results management & sync
    - Member administration
    - Feedback management
 
-5. **routes/minigames.py** (~400 lines)
-   - Reaction time game
-   - Batak game
-   - Leaderboards
-
-6. **routes/user.py** (~400 lines)
+2. **routes/user.py** (~400 lines)
    - Profile management
    - Avatars
    - Missions and stats
 
-7. **services/sync.py**
+3. **services/sync.py**
    - sync_race_from_api()
    - Auto-sync scheduler
-   - OpenF1 integration
 
 ## How to Complete the Migration
 

@@ -180,25 +180,30 @@ Chaque élément compte individuellement:
 - L'API OpenF1 est utilisée pour récupérer les résultats officiels
 - `server.py` ~4100 lignes - **refactoring Phase 1 complétée (04/04/2026)**
 
-## Refactoring Backend (Phase 1 - Complétée 04/04/2026)
+## Refactoring Backend (Phase 2 - Complétée 04/04/2026)
 
-### Modules créés :
+### Modules créés et fonctionnels :
 ```
 /app/backend/
-├── config.py           # DB + JWT + constantes ✓
-├── models/schemas.py   # Tous les Pydantic models ✓
-├── data/f1_data.py     # F1_DRIVERS_2026, F1_RACES_2026 ✓
-├── services/auth.py    # Auth utilities ✓
-├── services/scoring.py # calculate_points() ✓
-├── routes/auth.py      # Template prêt ✓
-└── REFACTORING_GUIDE.md # Documentation migration ✓
+├── config.py              # DB + JWT + constantes ✓
+├── models/schemas.py      # Tous les Pydantic models ✓
+├── data/f1_data.py        # F1_DRIVERS_2026, F1_RACES_2026 ✓
+├── services/
+│   ├── auth.py            # Auth utilities ✓
+│   └── scoring.py         # calculate_points() ✓
+├── routes/
+│   ├── auth.py            # /auth/* ✓
+│   ├── leagues.py         # /leagues/* ✓ (350 lignes)
+│   ├── predictions.py     # /predictions/* ✓ (400 lignes)
+│   ├── races.py           # /races/*, /drivers/* ✓ (250 lignes)
+│   └── minigames.py       # /minigames/* ✓ (200 lignes)
+└── REFACTORING_GUIDE.md   # Documentation migration ✓
 ```
 
 ### Modules restants (dans server.py) :
-- routes/leagues.py (~500 lignes)
-- routes/predictions.py (~500 lignes)
-- routes/races.py (~600 lignes)
-- routes/admin.py (~800 lignes)
-- routes/minigames.py (~400 lignes)
-- routes/user.py (~400 lignes)
-- services/sync.py (auto-sync scheduler)
+- routes/admin.py (~800 lignes) - Sync, membres admin, feedback
+- routes/user.py (~400 lignes) - Profil, avatars, missions
+- services/sync.py - Auto-sync scheduler
+
+### Prochaine étape :
+Intégrer les routeurs extraits dans server.py pour réduire la taille du fichier principal de ~4100 à ~2000 lignes.
