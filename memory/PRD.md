@@ -178,4 +178,27 @@ Chaque élément compte individuellement:
 ## Notes techniques
 - Les images de fond GP sont stockées comme URLs
 - L'API OpenF1 est utilisée pour récupérer les résultats officiels
-- `server.py` ~4100 lignes - **refactoring fortement recommandé**
+- `server.py` ~4100 lignes - **refactoring Phase 1 complétée (04/04/2026)**
+
+## Refactoring Backend (Phase 1 - Complétée 04/04/2026)
+
+### Modules créés :
+```
+/app/backend/
+├── config.py           # DB + JWT + constantes ✓
+├── models/schemas.py   # Tous les Pydantic models ✓
+├── data/f1_data.py     # F1_DRIVERS_2026, F1_RACES_2026 ✓
+├── services/auth.py    # Auth utilities ✓
+├── services/scoring.py # calculate_points() ✓
+├── routes/auth.py      # Template prêt ✓
+└── REFACTORING_GUIDE.md # Documentation migration ✓
+```
+
+### Modules restants (dans server.py) :
+- routes/leagues.py (~500 lignes)
+- routes/predictions.py (~500 lignes)
+- routes/races.py (~600 lignes)
+- routes/admin.py (~800 lignes)
+- routes/minigames.py (~400 lignes)
+- routes/user.py (~400 lignes)
+- services/sync.py (auto-sync scheduler)
