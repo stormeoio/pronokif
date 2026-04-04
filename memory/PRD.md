@@ -180,30 +180,32 @@ Chaque élément compte individuellement:
 - L'API OpenF1 est utilisée pour récupérer les résultats officiels
 - `server.py` ~4100 lignes - **refactoring Phase 1 complétée (04/04/2026)**
 
-## Refactoring Backend (Phase 2 - Complétée 04/04/2026)
+## Refactoring Backend (Phase 2 - COMPLÉTÉ 04/04/2026)
 
-### Modules créés et fonctionnels :
+### Résultat : 4092 → 2210 lignes (-46%)
+
+### Modules intégrés et fonctionnels :
 ```
 /app/backend/
-├── config.py              # DB + JWT + constantes ✓
-├── models/schemas.py      # Tous les Pydantic models ✓
-├── data/f1_data.py        # F1_DRIVERS_2026, F1_RACES_2026 ✓
+├── server.py          # 2210 lignes (point d'entrée + admin/user/sync)
+├── config.py          # DB + JWT + constantes ✓
+├── models/schemas.py  # Tous les Pydantic models ✓
+├── data/f1_data.py    # F1_DRIVERS_2026, F1_RACES_2026 ✓
 ├── services/
-│   ├── auth.py            # Auth utilities ✓
-│   └── scoring.py         # calculate_points() ✓
+│   ├── auth.py        # Auth utilities ✓
+│   └── scoring.py     # calculate_points() ✓
 ├── routes/
-│   ├── auth.py            # /auth/* ✓
-│   ├── leagues.py         # /leagues/* ✓ (350 lignes)
-│   ├── predictions.py     # /predictions/* ✓ (400 lignes)
-│   ├── races.py           # /races/*, /drivers/* ✓ (250 lignes)
-│   └── minigames.py       # /minigames/* ✓ (200 lignes)
-└── REFACTORING_GUIDE.md   # Documentation migration ✓
+│   ├── auth.py        # /auth/* ✓ INTÉGRÉ
+│   ├── leagues.py     # /leagues/* ✓ INTÉGRÉ
+│   ├── predictions.py # /predictions/* ✓ INTÉGRÉ
+│   ├── races.py       # /races/*, /drivers/* ✓ INTÉGRÉ
+│   └── minigames.py   # /minigames/* ✓ INTÉGRÉ
+└── REFACTORING_GUIDE.md
 ```
 
-### Modules restants (dans server.py) :
-- routes/admin.py (~800 lignes) - Sync, membres admin, feedback
-- routes/user.py (~400 lignes) - Profil, avatars, missions
-- services/sync.py - Auto-sync scheduler
-
-### Prochaine étape :
-Intégrer les routeurs extraits dans server.py pour réduire la taille du fichier principal de ~4100 à ~2000 lignes.
+### Encore dans server.py (~1000 lignes) :
+- Admin endpoints (feedback, membres, résultats, sync)
+- User endpoints (profil, avatars, missions, stats)
+- Leaderboard global
+- Driver details et comparateur
+- Auto-sync scheduler
