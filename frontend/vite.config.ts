@@ -50,10 +50,13 @@ export default defineConfig(({ mode }) => {
       coverage: {
         provider: "v8",
         reporter: ["text", "html"],
+        include: ["src/**/*.{ts,tsx}"],
         exclude: [
           "**/*.d.ts",
           "src/main.tsx",
+          "src/test/**",
           "src/components/ui/**",
+          "src/types/**",
         ],
       },
     },
