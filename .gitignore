@@ -1,100 +1,88 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# IDE and editors
-.idea/
-.vscode/
-
-# Dependencies
+# ═══════════════════════════════════════ DEPENDENCIES ═══════════════════════════
 node_modules/
-/node_modules
-/.pnp
+.pnp
 .pnp.js
 .yarn/install-state.gz
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
 
-# Testing
-/coverage
-
-# Next.js
-/.next/
-/out/
-next-env.d.ts
-*.tsbuildinfo
-
-# Production builds
+# ═══════════════════════════════════════ BUILD OUTPUT ═══════════════════════════
 /build
 dist/
-dist
+*.tsbuildinfo
+frontend/build/
 
-# Environment files (comprehensive coverage)
-
-*token.json*
-*credentials.json*
-
-# Logs and debug files
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-dump.rdb
-
-# System files
-.DS_Store
-*.pem
-
-# Python
-__pycache__/
-*pyc*
-venv/
-.venv/
-
-# Development tools
-chainlit.md
-.chainlit
-.ipynb_checkpoints/
-.ac
-
-# Deployment
-.vercel
-
-# Data and databases
-agenthub/agents/youtube/db
-
-# Archive files and large assets
-**/*.zip
-**/*.tar.gz
-**/*.tar
-**/*.tgz
-*.pack
-*.deb
-*.dylib
-
-# Build caches
-.cache/
-
-# Mobile development
-android-sdk/ frontend/node_modules/.cache/default-development/0.pack
-frontend/node_modules/.cache/default-development/0.pack
-frontend/node_modules/.cache/default-development/2.pack
-# Local backup of the v0 codebase — never commit
-_v0 bapt/
-pronokif
-
-# Environment and credential files
+# ═══════════════════════════════════════ ENVIRONMENT ════════════════════════════
 .env
 .env.local
 .env.*.local
 .env.development
 .env.production
 .env.staging
-*.env
 !.env.example
 !.env.template
-credentials.json
+
+# ═══════════════════════════════════════ CREDENTIALS ════════════════════════════
+*token.json*
+*credentials.json*
 *.pem
 *.key
 .credentials
+
+# ═══════════════════════════════════════ PYTHON ═════════════════════════════════
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# ═══════════════════════════════════════ IDE / OS ═══════════════════════════════
+.idea/
+.vscode/
+.DS_Store
+*.swp
+*.swo
+
+# ═══════════════════════════════════════ LOGS ═══════════════════════════════════
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dump.rdb
+
+# ═══════════════════════════════════════ TESTING ════════════════════════════════
+/coverage
+frontend/coverage/
+
+# ═══════════════════════════════════════ ARCHIVES ═══════════════════════════════
+*.zip
+*.tar.gz
+*.tar
+*.tgz
+
+# ═══════════════════════════════════════ DOCS / AUDIT ARTIFACTS ═════════════════
+# Generated HTML reports and planning docs (keep source .md in docs/ if needed)
+/docs/
+/docs_A2/
+/BRIEF_ASSISTANT.html
+/PLAN_REFACTO.md
+/AUDIT_0.1.md
+/00_READ_ME_FIRST.md
+/API_INTEGRATIONS_COSTS.md
+/DB_ANALYSIS_REPORT.md
+/EXECUTIVE_SUMMARY.md
+/INFRASTRUCTURE_REQUIREMENTS.md
+/ROADMAP_12MONTH.md
+/UI_UX_AUDIT.md
+/SECURITY_AUDIT.md
+/test_result.md
+
+# ═══════════════════════════════════════ LOCAL BACKUPS ══════════════════════════
+_v0/
+_v0\ bapt/
+bapt/
+pronokif
+
+# ═══════════════════════════════════════ MISC ═══════════════════════════════════
+.cache/
+.chainlit
+.ipynb_checkpoints/
+.vercel
