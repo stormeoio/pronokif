@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2, Users, RefreshCw } from "lucide-react";
 import { DeleteConfirmModal, MemberDetailsModal } from "./MembersSubComponents";
-import { api, apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 
 interface MemberListItem {
   id: number;
@@ -65,8 +65,8 @@ export default function MembersTab() {
     setMemberDetailTab("info");
     setMemberActivity(null);
     try {
-      const res = await apiClient.get(`/admin/members/${memberId}`);
-      setMemberDetails(res.data);
+      const data = await api.admin.member(String(memberId));
+      setMemberDetails(data as MemberDetails);
     } catch (error: unknown) {
       console.error(error);
       toast.error("Erreur lors du chargement des details");
@@ -78,8 +78,8 @@ export default function MembersTab() {
   const fetchMemberActivity = async (memberId: number | null) => {
     setLoadingActivity(true);
     try {
-      const res = await apiClient.get(`/admin/members/${memberId}/activity`);
-      setMemberActivity(res.data);
+      const data = await api.admin.memberActivity(String(memberId));
+      setMemberActivity(data as unknown as MemberActivity);
     } catch (error: unknown) {
       console.error(error);
       toast.error("Erreur lors du chargement de l'activite");
@@ -91,7 +91,7 @@ export default function MembersTab() {
   const deleteMember = async (memberId: number | null) => {
     setDeletingMember(true);
     try {
-      await apiClient.delete(`/admin/members/${memberId}`);
+      await api.admin.deleteMember(String(memberId));
       toast.success("Membre supprime avec succes");
       setSelectedMember(null);
       setMemberDetails(null);

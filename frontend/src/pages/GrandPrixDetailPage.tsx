@@ -14,7 +14,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
-import { api, apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 
 // Circuit layout images (SVG-style track maps from Wikipedia/F1 sources)
 const CIRCUIT_IMAGES = {
@@ -103,10 +103,7 @@ export default function GrandPrixDetailPage() {
     error: queryError,
   } = useQuery({
     queryKey: ["/races", raceId, "details"],
-    queryFn: async () => {
-      const res = await apiClient.get(`/races/${raceId}/details`);
-      return res.data;
-    },
+    queryFn: () => api.races.details(raceId!) as Promise<any>,
     enabled: !!raceId,
   });
 

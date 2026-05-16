@@ -26,7 +26,7 @@ import { Button } from "../../components/ui/button";
 import { AvatarDisplay, AvatarSelector } from "../../components/AvatarDisplay";
 import PointsHistory from "./PointsHistory";
 import { useProfileData } from "./useProfileData";
-import { apiClient, getApiError } from "@/lib/api";
+import { api, apiClient, getApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 export default function ProfilePage() {
@@ -82,7 +82,7 @@ export default function ProfilePage() {
 
   const selectLeague = async (leagueId: string) => {
     try {
-      await apiClient.post(`/leagues/${leagueId}/select`);
+      await api.leagues.select(leagueId);
       toast.success("Ligue sélectionnée !");
       window.location.reload();
     } catch {
@@ -92,7 +92,7 @@ export default function ProfilePage() {
 
   const handleAvatarSelect = async (avatarId: string) => {
     try {
-      await apiClient.post("/user/avatar", { avatar_id: avatarId });
+      await api.avatars.select(avatarId);
       if (updateUser) updateUser({ avatar_id: avatarId, custom_avatar_url: null });
       toast.success("Avatar mis à jour !");
       setShowAvatarModal(false);

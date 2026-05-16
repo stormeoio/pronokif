@@ -2,15 +2,12 @@
  * Admin data hook — TanStack Query migration.
  */
 import { useQuery } from "@tanstack/react-query";
-import { api, apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 
 export function useAdminData() {
   const racesQuery = useQuery({
     queryKey: ["/admin/races"],
-    queryFn: async () => {
-      const res = await apiClient.get("/admin/races");
-      return res.data;
-    },
+    queryFn: () => api.admin.races() as Promise<any>,
     retry: false, // 403 = not admin, don't retry
   });
 

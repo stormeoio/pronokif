@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Textarea } from "../components/ui/textarea";
-import { apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -68,18 +68,16 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
     setSending(true);
     try {
-      const response = await apiClient.post("/feedback", {
-        category,
+      await api.feedback.send({
+        type: category,
         message: trimmedMessage,
       });
 
-      if (response.data) {
-        setSent(true);
-        toast.success("Message envoyé avec succès !");
-        setTimeout(() => {
-          handleClose();
-        }, 2000);
-      }
+      setSent(true);
+      toast.success("Message envoyé avec succès !");
+      setTimeout(() => {
+        handleClose();
+      }, 2000);
     } catch (error: unknown) {
       console.error("Feedback submit error:", error);
       const err = error as { response?: { data?: { detail?: string } } };

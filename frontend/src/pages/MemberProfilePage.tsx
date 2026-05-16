@@ -17,7 +17,7 @@ import {
 import { Button } from "../components/ui/button";
 import { AvatarDisplay } from "../components/AvatarDisplay";
 import { useAuth } from "@/lib/auth";
-import { api, apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 
 export default function MemberProfilePage() {
   const { userId } = useParams();
@@ -30,7 +30,7 @@ export default function MemberProfilePage() {
     error: profileError,
   } = useQuery({
     queryKey: ["/users", userId, "profile"],
-    queryFn: async () => (await apiClient.get(`/users/${userId}/profile`)).data,
+    queryFn: () => api.profile.get(userId!) as Promise<any>,
     enabled: !!userId,
   });
 

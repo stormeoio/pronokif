@@ -23,7 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
-import { api, apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 interface League {
@@ -71,7 +71,7 @@ export default function LeaderboardPage() {
 
   const switchLeague = async (leagueId: string) => {
     try {
-      await apiClient.post(`/leagues/${leagueId}/select`);
+      await api.leagues.select(leagueId);
       setSelectedLeagueId(leagueId);
       const league = leagues.find((l: any) => l.id === leagueId);
       toast.success(`Ligue "${league?.name}" sélectionnée`);

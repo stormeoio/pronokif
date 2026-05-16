@@ -5,7 +5,7 @@
  * declarative queries. Automatic refetch, caching, and error handling.
  */
 import { useQuery, useQueries } from "@tanstack/react-query";
-import { api, apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 
 // ── Individual queries ─────────────────────────────────────────────
 
@@ -13,7 +13,7 @@ function useUpcomingRaces() {
   return useQuery({
     queryKey: ["/races/upcoming"],
     queryFn: async () => {
-      const data = (await apiClient.get("/races/upcoming")).data;
+      const data = (await api.races.upcoming()) as any[];
       return (data || []).filter((r: any) => r.status !== "finished");
     },
   });

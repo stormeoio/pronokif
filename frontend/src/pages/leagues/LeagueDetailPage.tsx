@@ -20,7 +20,7 @@ import LeagueLeaderboard from "./LeagueLeaderboard";
 import LeagueMembers from "./LeagueMembers";
 import LeagueSettings from "./LeagueSettings";
 import { useLeagueDetailData } from "./useLeagueDetailData";
-import { apiClient, getApiError } from "@/lib/api";
+import { api, getApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 export default function LeagueDetailPage() {
@@ -103,9 +103,9 @@ export default function LeagueDetailPage() {
     }
     setSaving(true);
     try {
-      const res = await apiClient.put(`/leagues/${leagueId}`, {
+      await api.leagues.update(leagueId!, {
         name: editName.trim(),
-        description: editDescription.trim() || null,
+        description: editDescription.trim() || undefined,
       });
       refetch();
       setIsEditing(false);

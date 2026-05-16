@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Bell, Send, Loader2, Zap, AlertTriangle, Info } from "lucide-react";
-import { apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,7 +21,7 @@ export default function NotificationsTab() {
 
     setSendingNotif(true);
     try {
-      await apiClient.post("/admin/notifications", {
+      await api.admin.sendNotification({
         title: notifTitle.trim(),
         message: notifMessage.trim(),
         type: notifType,

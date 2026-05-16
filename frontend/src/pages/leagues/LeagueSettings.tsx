@@ -13,7 +13,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
-import { api, apiClient, getApiError } from "@/lib/api";
+import { api, getApiError } from "@/lib/api";
 
 interface LeagueSettingsProps {
   league: Record<string, any>;
@@ -66,7 +66,7 @@ export default function LeagueSettings({
   const deleteLeague = async () => {
     setDeleting(true);
     try {
-      await apiClient.delete(`/leagues/${leagueId}`);
+      await api.leagues.delete(leagueId!);
       toast.success("La ligue a été supprimée");
       navigate("/league");
     } catch (e: unknown) {
@@ -85,10 +85,10 @@ export default function LeagueSettings({
 
     setTransferring(true);
     try {
-      const res = await apiClient.post(`/leagues/${leagueId}/transfer`, {
+      await api.leagues.transfer(leagueId!, {
         new_owner_id: selectedNewOwner,
       });
-      toast.success(res.data.message || "Propriété transférée !");
+      toast.success("Propriété transférée !");
       setShowTransferModal(false);
       setSelectedNewOwner(null);
       onRefresh();

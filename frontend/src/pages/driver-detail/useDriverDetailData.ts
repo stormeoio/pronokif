@@ -2,15 +2,12 @@
  * Driver detail page data hook — TanStack Query migration.
  */
 import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 
 export function useDriverDetailData(driverId: string | undefined) {
   const driverQuery = useQuery({
     queryKey: ["/drivers", driverId, "details"],
-    queryFn: async () => {
-      const res = await apiClient.get(`/drivers/${driverId}/details`);
-      return res.data;
-    },
+    queryFn: () => api.drivers.details(driverId!) as Promise<any>,
     enabled: !!driverId,
   });
 

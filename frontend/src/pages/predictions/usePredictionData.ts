@@ -27,8 +27,7 @@ function useExistingPrediction(raceId: string | undefined) {
     queryKey: ["/predictions/race", raceId],
     queryFn: async () => {
       try {
-        const res = await apiClient.get(`/predictions/race/${raceId}`);
-        return res.data || null;
+        return ((await api.predictions.get(raceId!)) as any) || null;
       } catch {
         return null;
       }

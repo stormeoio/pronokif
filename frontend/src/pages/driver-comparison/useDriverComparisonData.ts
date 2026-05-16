@@ -4,25 +4,19 @@
  * Fetches all drivers list and the comparison between two selected drivers.
  */
 import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 
 export function useAllDrivers() {
   return useQuery({
     queryKey: ["/drivers/all"],
-    queryFn: async () => {
-      const res = await apiClient.get("/drivers/all");
-      return res.data;
-    },
+    queryFn: () => api.drivers.all() as Promise<any>,
   });
 }
 
 export function useDriverComparison(driver1Id: string, driver2Id: string) {
   return useQuery({
     queryKey: ["/drivers/compare", driver1Id, driver2Id],
-    queryFn: async () => {
-      const res = await apiClient.get(`/drivers/compare?driver1=${driver1Id}&driver2=${driver2Id}`);
-      return res.data;
-    },
+    queryFn: () => api.drivers.compare(driver1Id, driver2Id) as Promise<any>,
     enabled: !!driver1Id && !!driver2Id && driver1Id !== driver2Id,
   });
 }

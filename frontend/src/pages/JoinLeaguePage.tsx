@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Trophy, Users, LogIn, Loader2, AlertCircle, CheckCircle, Home } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { useAuth } from "@/lib/auth";
-import { api, apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 
 interface LeaguePreview {
   id: string;
@@ -36,10 +36,7 @@ export default function JoinLeaguePage() {
     error: leagueError,
   } = useQuery<LeaguePreview | null>({
     queryKey: ["/leagues/by-code", code],
-    queryFn: async () => {
-      const res = await apiClient.get<LeaguePreview>(`/leagues/by-code/${code}`);
-      return res.data;
-    },
+    queryFn: () => api.leagues.byCode(code!) as Promise<LeaguePreview>,
     enabled: !!code,
   });
 

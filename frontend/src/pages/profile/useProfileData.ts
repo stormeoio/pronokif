@@ -5,7 +5,7 @@
  * points history, and optionally league-specific leaderboard.
  */
 import { useQuery } from "@tanstack/react-query";
-import { api, apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 
 export function useProfileData(userId: string, currentLeagueId: string | null) {
   const leaguesQuery = useQuery({
@@ -34,10 +34,7 @@ export function useProfileData(userId: string, currentLeagueId: string | null) {
 
   const historyQuery = useQuery({
     queryKey: ["/predictions/points-history"],
-    queryFn: async () => {
-      const res = await apiClient.get("/predictions/points-history");
-      return res.data;
-    },
+    queryFn: () => api.predictions.pointsHistory() as Promise<any>,
   });
 
   const leagueLeaderboardQuery = useQuery({

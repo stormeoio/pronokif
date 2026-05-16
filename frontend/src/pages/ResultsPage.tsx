@@ -6,7 +6,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import ResultComparisonCard from "./results/ResultComparisonCard";
 import { useAuth } from "@/lib/auth";
-import { api, apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 
 export default function ResultsPage() {
   const { raceId } = useParams();
@@ -34,7 +34,7 @@ export default function ResultsPage() {
 
   const { data: result = null } = useQuery({
     queryKey: ["/results", selectedRace?.id],
-    queryFn: async () => (await apiClient.get(`/results/${selectedRace!.id}`)).data,
+    queryFn: () => api.results.get(String(selectedRace!.id)) as Promise<any>,
     enabled: !!selectedRace?.id,
   });
 

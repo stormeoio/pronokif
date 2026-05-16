@@ -19,7 +19,7 @@ import { Switch } from "../../components/ui/switch";
 import PredictionCard from "./PredictionCard";
 import SetCorrectAnswerModal from "./SetCorrectAnswerModal";
 import { useCustomPredictionsData } from "./useCustomPredictionsData";
-import { api, apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 interface League {
@@ -119,7 +119,7 @@ export default function CustomPredictionsPage() {
 
   const handleAnswer = async (predictionId: string, answer: string | string[]) => {
     try {
-      await apiClient.post(`/custom-predictions/${predictionId}/answer`, { answer });
+      await api.customPredictions.answer(predictionId, answer);
       toast.success("Réponse enregistrée !");
       refetchPredictions();
     } catch (e: unknown) {
@@ -129,7 +129,7 @@ export default function CustomPredictionsPage() {
 
   const handleSetCorrectAnswer = async (predictionId: string, correctAnswer: string | string[]) => {
     try {
-      await apiClient.post(`/custom-predictions/${predictionId}/set-correct`, {
+      await api.customPredictions.setCorrect(predictionId, {
         correct_answer: correctAnswer,
       });
       toast.success("Réponse correcte définie ! Points attribués.");

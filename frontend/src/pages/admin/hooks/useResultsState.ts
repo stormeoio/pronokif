@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 
 export type SelectionMode =
   | "quali_pole"
@@ -136,8 +136,7 @@ export function useResultsState({ setRaces }: UseResultsStateParams): UseResults
 
     if (race.has_results) {
       try {
-        const res = await apiClient.get(`/admin/results/${race.id}`);
-        const data = res.data as { results?: ResultsData };
+        const data = (await api.admin.results(String(race.id))) as { results?: ResultsData };
         if (data?.results) {
           const r = data.results;
           setQualiPole(r.quali_pole ?? null);
@@ -280,10 +279,10 @@ export function useResultsState({ setRaces }: UseResultsStateParams): UseResults
         payload["sprint_race_winner"] = sprintRaceWinner;
         payload["sprint_race_top10"] = sprintRaceTop10;
       }
-      await apiClient.post(`/admin/results/${selectedRace!.id}`, payload);
+      await api.admin.saveResults(String(selectedRace!.id), payload);
       toast.success("Resultats enregistres ! Les points ont ete calcules.");
-      const racesRes = await apiClient.get("/admin/races");
-      setRaces(racesRes.data as Race[]);
+      const racesData = await api.admin.races();
+      setRaces(racesData as unknown as Race[]);
     } catch (error: unknown) {
       const axiosError = error as { response?: { data?: { detail?: string } } };
       toast.error(axiosError.response?.data?.detail ?? "Erreur lors de l'enregistrement");
@@ -296,8 +295,7 @@ export function useResultsState({ setRaces }: UseResultsStateParams): UseResults
     if (!selectedRace) return;
     setSyncing(true);
     try {
-      const res = await apiClient.post(`/admin/sync-results/${selectedRace.id}`);
-      const resData = res.data as {
+      const resData = (await api.admin.syncResults(String(selectedRace.id))) as unknown as {
         status: string;
         message?: string;
         fetched_data: SyncFetchedData;

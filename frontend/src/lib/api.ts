@@ -121,31 +121,44 @@ export const api = {
     register: (body: { email: string; password: string; username: string }) =>
       post<TokenResponse>("/auth/register", body),
     me: () => get<User>("/auth/me"),
+    setUsername: (body: { username: string }) => post<User>("/auth/username", body),
     updateProfile: (body: Partial<User>) => patch<User>("/auth/me", body),
   },
 
   // ── Races ────────────────────────────────────────────────────
   races: {
     list: () => get<Race[]>("/races"),
+    upcoming: () => get<Race[]>("/races/upcoming"),
     next: () => get<Race>("/races/next"),
     get: (id: string) => get<RaceDetails>(`/races/${id}`),
+    details: (id: string) => get<RaceDetails>(`/races/${id}/details`),
     results: (raceId: string) => get<ResultsResponse>(`/races/${raceId}/results`),
   },
 
   // ── Drivers ──────────────────────────────────────────────────
   drivers: {
     list: () => get<Driver[]>("/drivers"),
+    all: () => get<Driver[]>("/drivers/all"),
     get: (id: string) => get<DriverDetails>(`/drivers/${id}`),
-    compare: (id1: string, id2: string) => get<DriverComparison>(`/drivers/compare/${id1}/${id2}`),
+    details: (id: string) => get<DriverDetails>(`/drivers/${id}/details`),
+    compare: (id1: string, id2: string) =>
+      get<DriverComparison>(`/drivers/compare?driver1=${id1}&driver2=${id2}`),
   },
 
   // ── Leagues ──────────────────────────────────────────────────
   leagues: {
     my: () => get<League[]>("/leagues/my"),
     get: (id: string) => get<League>(`/leagues/${id}`),
+    byCode: (code: string) => get<LeaguePreview>(`/leagues/by-code/${code}`),
     create: (body: { name: string }) => post<League>("/leagues", body),
     join: (body: { code: string }) => post<League>("/leagues/join", body),
+    select: (id: string) => post<void>(`/leagues/${id}/select`),
     leave: (id: string) => post<void>(`/leagues/${id}/leave`),
+    delete: (id: string) => del<void>(`/leagues/${id}`),
+    update: (id: string, body: { name?: string; description?: string }) =>
+      put<League>(`/leagues/${id}`, body),
+    transfer: (id: string, body: { new_owner_id: string }) =>
+      post<void>(`/leagues/${id}/transfer`, body),
     members: (id: string) => get<LeagueMember[]>(`/leagues/${id}/members`),
     leaderboard: (id: string) => get<LeaderboardEntry[]>(`/leagues/${id}/leaderboard`),
     unreadMessages: () => get<UnreadMessages>("/leagues/unread-messages"),
@@ -163,20 +176,25 @@ export const api = {
 
   // ── Predictions ──────────────────────────────────────────────
   predictions: {
-    get: (raceId: string) => get<Prediction>(`/predictions/${raceId}`),
-    save: (raceId: string, body: Partial<Prediction>) =>
-      post<Prediction>(`/predictions/${raceId}`, body),
-    lock: (raceId: string) => post<Prediction>(`/predictions/${raceId}/lock`),
+    get: (raceId: string) => get<Prediction>(`/predictions/race/${raceId}`),
+    saveSprint: (body: unknown) => post<Prediction>("/predictions/sprint", body),
+    saveMain: (body: unknown) => post<Prediction>("/predictions/main", body),
+    delete: (raceId: string) => del<void>(`/predictions/race/${raceId}`),
     stats: () => get<PredictionStats>("/predictions/stats"),
     history: () => get<PointsHistoryEntry[]>("/predictions/history"),
+    pointsHistory: () => get<PointsHistoryEntry[]>("/predictions/points-history"),
   },
 
   // ── Custom Predictions ───────────────────────────────────────
   customPredictions: {
-    list: (raceId: string, leagueId: string) =>
-      get<CustomPrediction[]>(`/custom-predictions/${raceId}/${leagueId}`),
+    list: (leagueId: string, raceId: string) =>
+      get<CustomPrediction[]>(`/predictions/custom/league/${leagueId}/race/${raceId}`),
     create: (body: Partial<CustomPrediction>) =>
-      post<CustomPrediction>("/custom-predictions", body),
+      post<CustomPrediction>("/predictions/custom", body),
+    answer: (predictionId: string, answer: unknown) =>
+      post<void>(`/custom-predictions/${predictionId}/answer`, { answer }),
+    setCorrect: (predictionId: string, body: unknown) =>
+      post<void>(`/custom-predictions/${predictionId}/set-correct`, body),
   },
 
   // ── Leaderboard ──────────────────────────────────────────────
@@ -218,14 +236,16 @@ export const api = {
   // ── Notifications ────────────────────────────────────────────
   notifications: {
     list: () => get<Notification[]>("/notifications"),
-    markRead: (id: string) => patch<void>(`/notifications/${id}/read`),
-    markAllRead: () => patch<void>("/notifications/read-all"),
+    unreadCount: () => get<{ count: number }>("/notifications/unread-count"),
+    markRead: (id: string) => put<void>(`/notifications/${id}/read`),
+    markAllRead: () => put<void>("/notifications/read-all"),
   },
 
   // ── Avatars ──────────────────────────────────────────────────
   avatars: {
     list: () => get<AvatarsResponse>("/avatars"),
-    select: (avatarId: string) => patch<User>("/auth/me", { avatar_id: avatarId }),
+    select: (avatarId: string) => post<User>("/user/avatar", { avatar_id: avatarId }),
+    upload: (formData: FormData) => post<{ avatar_url: string }>("/user/avatar/upload", formData),
   },
 
   // ── User Stats ───────────────────────────────────────────────
@@ -236,7 +256,31 @@ export const api = {
   // ── Admin ────────────────────────────────────────────────────
   admin: {
     members: () => get<AdminMember[]>("/admin/members"),
+    member: (id: string) => get<AdminMember>(`/admin/members/${id}`),
+    memberActivity: (id: string) => get<unknown[]>(`/admin/members/${id}/activity`),
+    deleteMember: (id: string) => del<void>(`/admin/members/${id}`),
+    races: () => get<Race[]>("/admin/races"),
+    results: (raceId: string) => get<unknown>(`/admin/results/${raceId}`),
+    saveResults: (raceId: string, body: unknown) => post<void>(`/admin/results/${raceId}`, body),
+    syncResults: (raceId: string) => post<void>(`/admin/sync-results/${raceId}`),
+    sendNotification: (body: { title: string; message: string; type: string }) =>
+      post<void>("/admin/notifications", body),
     feedback: () => get<FeedbackItem[]>("/admin/feedback"),
-    markFeedbackRead: (id: number) => patch<void>(`/admin/feedback/${id}/read`),
+    markFeedbackRead: (id: number) => put<void>(`/admin/feedback/${id}/read`),
+  },
+
+  // ── Feedback ────────────────────────────────────────────────
+  feedback: {
+    send: (body: { type: string; message: string }) => post<void>("/feedback", body),
+  },
+
+  // ── Profile ─────────────────────────────────────────────────
+  profile: {
+    get: (userId: string) => get<unknown>(`/users/${userId}/profile`),
+  },
+
+  // ── Results ─────────────────────────────────────────────────
+  results: {
+    get: (raceId: string) => get<ResultsResponse>(`/results/${raceId}`),
   },
 } as const;

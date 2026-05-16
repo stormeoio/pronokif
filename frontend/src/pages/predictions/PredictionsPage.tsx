@@ -7,7 +7,7 @@ import PredictionForm from "./PredictionForm";
 import { useDriverSelection } from "./useDriverSelection";
 import { usePredictionData } from "./usePredictionData";
 import { Button } from "@/components/ui/button";
-import { apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 export default function PredictionsPage() {
@@ -171,7 +171,7 @@ export default function PredictionsPage() {
   const handleDeletePredictions = async () => {
     setDeleting(true);
     try {
-      await apiClient.delete(`/predictions/race/${raceId}`);
+      await api.predictions.delete(raceId!);
       toast.success("Pronostics supprimés !");
       setExistingPrediction(null);
       setQualiPole(null);
@@ -214,7 +214,7 @@ export default function PredictionsPage() {
     setSaving(true);
     try {
       if (isSprint) {
-        await apiClient.post("/predictions/sprint", {
+        await api.predictions.saveSprint({
           race_id: raceId,
           sprint_quali_pole: sprintQualiPole,
           sprint_quali_top10: sprintQualiTop10,
@@ -230,7 +230,7 @@ export default function PredictionsPage() {
         });
         toast.success("Pronostics Sprint enregistrés !");
       } else {
-        await apiClient.post("/predictions/main", {
+        await api.predictions.saveMain({
           race_id: raceId,
           quali_pole: qualiPole,
           quali_top10: qualiTop10,

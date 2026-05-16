@@ -12,7 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
-import { api, apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 
 interface Notification {
   id: string;
@@ -48,10 +48,7 @@ export default function NotificationsPage() {
 
   const { data: unreadData, isLoading: countLoading } = useQuery({
     queryKey: ["/notifications/unread-count"],
-    queryFn: async () => {
-      const res = await apiClient.get("/notifications/unread-count");
-      return res.data;
-    },
+    queryFn: () => api.notifications.unreadCount(),
   });
 
   const loading = notifsLoading || countLoading;
