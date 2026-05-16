@@ -1,11 +1,47 @@
 import { useState } from "react";
-import { 
+import {
   Bird, Award, Crown, Star, Rocket, Flame, Zap, Target, Shield, Gem,
   Gamepad2, Trophy, User
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import type { ChangeEvent } from "react";
 
-// Icon mapping for default avatars
-const ICON_MAP = {
+// ------------------------------------------------------------------ types ---
+
+export interface AvatarObject {
+  id: string;
+  name?: string;
+  category: "teams" | "drivers" | "animals" | "gaming" | "abstract" | string;
+  icon?: string;
+  colors?: [string, string];
+  number?: string | number;
+}
+
+export type AvatarSize = "sm" | "md" | "lg" | "xl";
+
+export interface AvatarDisplayProps {
+  avatar?: AvatarObject | null;
+  size?: AvatarSize;
+  customUrl?: string | null;
+}
+
+export interface AvatarsData {
+  all: AvatarObject[];
+}
+
+export interface AvatarSelectorProps {
+  avatars?: AvatarsData;
+  selectedId?: string;
+  onSelect: (id: string) => void;
+  customUrl?: string | null;
+  onUpload: (file: File) => Promise<void>;
+}
+
+// ---------------------------------------------------------- icon mapping ---
+
+type IconKey = keyof typeof ICON_MAP;
+
+const ICON_MAP: Record<string, LucideIcon> = {
   wolf: Bird,
   eagle: Bird,
   lion: Bird,
@@ -23,29 +59,30 @@ const ICON_MAP = {
   gem: Gem,
 };
 
-// Render avatar based on type
-export function AvatarDisplay({ avatar, size = "md", customUrl = null }) {
-  const sizeClasses = {
-    sm: "w-8 h-8",
-    md: "w-12 h-12",
-    lg: "w-16 h-16",
-    xl: "w-24 h-24"
-  };
+const sizeClasses: Record<AvatarSize, string> = {
+  sm: "w-8 h-8",
+  md: "w-12 h-12",
+  lg: "w-16 h-16",
+  xl: "w-24 h-24",
+};
 
-  const iconSizes = {
-    sm: "w-4 h-4",
-    md: "w-6 h-6",
-    lg: "w-8 h-8",
-    xl: "w-12 h-12"
-  };
+const iconSizes: Record<AvatarSize, string> = {
+  sm: "w-4 h-4",
+  md: "w-6 h-6",
+  lg: "w-8 h-8",
+  xl: "w-12 h-12",
+};
 
-  const textSizes = {
-    sm: "text-sm",
-    md: "text-lg",
-    lg: "text-2xl",
-    xl: "text-4xl"
-  };
+const textSizes: Record<AvatarSize, string> = {
+  sm: "text-sm",
+  md: "text-lg",
+  lg: "text-2xl",
+  xl: "text-4xl",
+};
 
+// --------------------------------------------------------- AvatarDisplay ---
+
+export function AvatarDisplay({ avatar, size = "md", customUrl = null }: AvatarDisplayProps) {
   // Custom uploaded photo
   if (customUrl) {
     return (
@@ -66,12 +103,13 @@ export function AvatarDisplay({ avatar, size = "md", customUrl = null }) {
 
   // Team avatar (gradient with team colors)
   if (avatar.category === "teams") {
+    const colors = avatar.colors ?? ["#666", "#333"];
     return (
-      <div 
+      <div
         className={`${sizeClasses[size]} rounded-lg border-2 flex items-center justify-center`}
         style={{
-          background: `linear-gradient(135deg, ${avatar.colors[0]}, ${avatar.colors[1]})`,
-          borderColor: avatar.colors[0]
+          background: `linear-gradient(135deg, ${colors[0]}, ${colors[1]})`,
+          borderColor: colors[0],
         }}
       >
         <Shield className={`${iconSizes[size]} text-white drop-shadow-lg`} />
@@ -81,20 +119,21 @@ export function AvatarDisplay({ avatar, size = "md", customUrl = null }) {
 
   // Driver avatar (silhouette with number)
   if (avatar.category === "drivers") {
+    const colors = avatar.colors ?? ["#666", "#333"];
     return (
-      <div 
+      <div
         className={`${sizeClasses[size]} rounded-lg border-2 flex items-center justify-center relative overflow-hidden`}
         style={{
-          background: `linear-gradient(135deg, ${avatar.colors[0]}, ${avatar.colors[1]})`,
-          borderColor: avatar.colors[0]
+          background: `linear-gradient(135deg, ${colors[0]}, ${colors[1]})`,
+          borderColor: colors[0],
         }}
       >
         {/* Helmet silhouette background */}
         <div className="absolute inset-0 flex items-center justify-center opacity-30">
           <svg viewBox="0 0 100 100" className="w-full h-full">
-            <ellipse cx="50" cy="60" rx="40" ry="35" fill="white"/>
-            <ellipse cx="50" cy="45" rx="35" ry="30" fill="white"/>
-            <rect x="30" y="65" width="40" height="20" rx="5" fill="white"/>
+            <ellipse cx="50" cy="60" rx="40" ry="35" fill="white" />
+            <ellipse cx="50" cy="45" rx="35" ry="30" fill="white" />
+            <rect x="30" y="65" width="40" height="20" rx="5" fill="white" />
           </svg>
         </div>
         <span className={`font-heading ${textSizes[size]} text-white drop-shadow-lg z-10`}>
@@ -105,7 +144,7 @@ export function AvatarDisplay({ avatar, size = "md", customUrl = null }) {
   }
 
   // Default icon avatar
-  const Icon = ICON_MAP[avatar.icon] || Star;
+  const Icon: LucideIcon = (avatar.icon ? ICON_MAP[avatar.icon] : undefined) ?? Star;
   return (
     <div className={`${sizeClasses[size]} rounded-lg bg-gradient-to-b from-gray-700 to-gray-900 border-2 border-gray-600 flex items-center justify-center`}>
       <Icon className={`${iconSizes[size]} text-orange-500`} />
@@ -113,22 +152,32 @@ export function AvatarDisplay({ avatar, size = "md", customUrl = null }) {
   );
 }
 
-// Avatar selector component
-export function AvatarSelector({ avatars, selectedId, onSelect, customUrl, onUpload }) {
+// -------------------------------------------------------- AvatarSelector ---
+
+interface Category {
+  id: string;
+  label: string;
+}
+
+export function AvatarSelector({ avatars, selectedId, onSelect, customUrl, onUpload }: AvatarSelectorProps) {
   const [category, setCategory] = useState("default");
   const [uploading, setUploading] = useState(false);
 
-  const categories = [
+  const categories: Category[] = [
     { id: "default", label: "Classiques" },
     { id: "teams", label: "Écuries" },
     { id: "drivers", label: "Pilotes" },
-    { id: "custom", label: "Photo" }
+    { id: "custom", label: "Photo" },
   ];
 
-  const filteredAvatars = avatars?.all?.filter(a => a.category === category || 
-    (category === "default" && ["animals", "gaming", "abstract"].includes(a.category))) || [];
+  const filteredAvatars: AvatarObject[] =
+    avatars?.all?.filter(
+      (a) =>
+        a.category === category ||
+        (category === "default" && ["animals", "gaming", "abstract"].includes(a.category))
+    ) ?? [];
 
-  const handleFileUpload = async (e) => {
+  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -149,7 +198,7 @@ export function AvatarSelector({ avatars, selectedId, onSelect, customUrl, onUpl
     <div className="space-y-4">
       {/* Category tabs */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar">
-        {categories.map(cat => (
+        {categories.map((cat) => (
           <button
             key={cat.id}
             onClick={() => setCategory(cat.id)}
@@ -169,9 +218,9 @@ export function AvatarSelector({ avatars, selectedId, onSelect, customUrl, onUpl
         <div className="space-y-4">
           <div className="flex items-center justify-center p-8 border-2 border-dashed border-gray-600 rounded-lg">
             <label className="cursor-pointer text-center">
-              <input 
-                type="file" 
-                accept="image/*" 
+              <input
+                type="file"
+                accept="image/*"
                 onChange={handleFileUpload}
                 className="hidden"
               />
@@ -193,7 +242,7 @@ export function AvatarSelector({ avatars, selectedId, onSelect, customUrl, onUpl
         </div>
       ) : (
         <div className="grid grid-cols-5 gap-3">
-          {filteredAvatars.map(avatar => (
+          {filteredAvatars.map((avatar) => (
             <button
               key={avatar.id}
               onClick={() => onSelect(avatar.id)}

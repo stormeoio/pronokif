@@ -2,34 +2,121 @@ import { useState } from "react";
 import { apiClient } from "@/lib/api";
 import { toast } from "sonner";
 
+type SelectionMode =
+  | "quali_pole"
+  | "quali_top10"
+  | "sprint_quali_pole"
+  | "sprint_quali_top10"
+  | "sprint_race_winner"
+  | "sprint_race_top10"
+  | "race_winner"
+  | "race_top10"
+  | "fastest_lap"
+  | "first_corner"
+  | "dnf_select"
+
+interface Race {
+  id: number | string
+  has_results: boolean
+  is_sprint: boolean
+  [key: string]: unknown
+}
+
+interface ResultsData {
+  quali_pole?: string | null
+  quali_top10?: string[]
+  sprint_quali_pole?: string | null
+  sprint_quali_top10?: string[]
+  sprint_race_winner?: string | null
+  sprint_race_top10?: string[]
+  race_winner?: string | null
+  race_top10?: string[]
+  bonus?: {
+    safety_car?: boolean | null
+    dnf_drivers?: string[]
+    fastest_lap?: string | null
+    first_corner_leader?: string | null
+  }
+}
+
+interface SyncFetchedData {
+  quali_pole?: string | null
+  quali_top10?: string[]
+  sprint_quali_pole?: string | null
+  sprint_quali_top10?: string[]
+  sprint_race_winner?: string | null
+  sprint_race_top10?: string[]
+  race_winner?: string | null
+  race_top10?: string[]
+  bonus?: {
+    safety_car?: boolean | null
+    dnf_drivers?: string[]
+    fastest_lap?: string | null
+    first_corner_leader?: string | null
+  }
+}
+
+interface UseResultsStateParams {
+  setRaces: (races: Race[]) => void
+}
+
+interface UseResultsStateReturn {
+  selectedRace: Race | null
+  selectRace: (race: Race) => Promise<void>
+  saving: boolean
+  syncing: boolean
+  selectionMode: SelectionMode
+  setSelectionMode: (mode: SelectionMode) => void
+  qualiPole: string | null
+  qualiTop10: string[]
+  sprintQualiPole: string | null
+  sprintQualiTop10: string[]
+  sprintRaceWinner: string | null
+  sprintRaceTop10: string[]
+  raceWinner: string | null
+  raceTop10: string[]
+  safetyCar: boolean
+  setSafetyCar: (value: boolean) => void
+  dnfDrivers: string[]
+  setDnfDrivers: (drivers: string[]) => void
+  fastestLap: string | null
+  firstCornerLeader: string | null
+  handleDriverSelect: (driverId: string) => void
+  isDriverSelected: (driverId: string) => boolean
+  getDriverPosition: (driverId: string) => number | null
+  isComplete: boolean | string | null
+  handleSubmit: () => Promise<void>
+  handleSyncOpenF1: () => Promise<void>
+}
+
 /**
  * Custom hook encapsulating all results-related state and logic
  * (driver selection, sync, submit, race loading).
  */
-export function useResultsState({ setRaces }) {
-  const [selectedRace, setSelectedRace] = useState(null);
+export function useResultsState({ setRaces }: UseResultsStateParams): UseResultsStateReturn {
+  const [selectedRace, setSelectedRace] = useState<Race | null>(null);
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
   // Results state
-  const [qualiPole, setQualiPole] = useState(null);
-  const [qualiTop10, setQualiTop10] = useState([]);
-  const [sprintQualiPole, setSprintQualiPole] = useState(null);
-  const [sprintQualiTop10, setSprintQualiTop10] = useState([]);
-  const [sprintRaceWinner, setSprintRaceWinner] = useState(null);
-  const [sprintRaceTop10, setSprintRaceTop10] = useState([]);
-  const [raceWinner, setRaceWinner] = useState(null);
-  const [raceTop10, setRaceTop10] = useState([]);
+  const [qualiPole, setQualiPole] = useState<string | null>(null);
+  const [qualiTop10, setQualiTop10] = useState<string[]>([]);
+  const [sprintQualiPole, setSprintQualiPole] = useState<string | null>(null);
+  const [sprintQualiTop10, setSprintQualiTop10] = useState<string[]>([]);
+  const [sprintRaceWinner, setSprintRaceWinner] = useState<string | null>(null);
+  const [sprintRaceTop10, setSprintRaceTop10] = useState<string[]>([]);
+  const [raceWinner, setRaceWinner] = useState<string | null>(null);
+  const [raceTop10, setRaceTop10] = useState<string[]>([]);
 
   // Bonus results
   const [safetyCar, setSafetyCar] = useState(false);
-  const [dnfDrivers, setDnfDrivers] = useState([]);
-  const [fastestLap, setFastestLap] = useState(null);
-  const [firstCornerLeader, setFirstCornerLeader] = useState(null);
+  const [dnfDrivers, setDnfDrivers] = useState<string[]>([]);
+  const [fastestLap, setFastestLap] = useState<string | null>(null);
+  const [firstCornerLeader, setFirstCornerLeader] = useState<string | null>(null);
 
-  const [selectionMode, setSelectionMode] = useState("quali_pole");
+  const [selectionMode, setSelectionMode] = useState<SelectionMode>("quali_pole");
 
-  const resetForm = () => {
+  const resetForm = (): void => {
     setQualiPole(null);
     setQualiTop10([]);
     setSprintQualiTop10([]);
@@ -43,27 +130,28 @@ export function useResultsState({ setRaces }) {
     setSelectionMode("quali_pole");
   };
 
-  const selectRace = async (race) => {
+  const selectRace = async (race: Race): Promise<void> => {
     setSelectedRace(race);
     resetForm();
 
     if (race.has_results) {
       try {
         const res = await apiClient.get(`/admin/results/${race.id}`);
-        if (res.data?.results) {
-          const r = res.data.results;
-          setQualiPole(r.quali_pole);
-          setQualiTop10(r.quali_top10 || []);
-          setSprintQualiPole(r.sprint_quali_pole || null);
-          setSprintQualiTop10(r.sprint_quali_top10 || []);
-          setSprintRaceWinner(r.sprint_race_winner || null);
-          setSprintRaceTop10(r.sprint_race_top10 || []);
-          setRaceWinner(r.race_winner);
-          setRaceTop10(r.race_top10 || []);
-          setSafetyCar(r.bonus?.safety_car || false);
-          setDnfDrivers(r.bonus?.dnf_drivers || []);
-          setFastestLap(r.bonus?.fastest_lap || null);
-          setFirstCornerLeader(r.bonus?.first_corner_leader || null);
+        const data = res.data as { results?: ResultsData };
+        if (data?.results) {
+          const r = data.results;
+          setQualiPole(r.quali_pole ?? null);
+          setQualiTop10(r.quali_top10 ?? []);
+          setSprintQualiPole(r.sprint_quali_pole ?? null);
+          setSprintQualiTop10(r.sprint_quali_top10 ?? []);
+          setSprintRaceWinner(r.sprint_race_winner ?? null);
+          setSprintRaceTop10(r.sprint_race_top10 ?? []);
+          setRaceWinner(r.race_winner ?? null);
+          setRaceTop10(r.race_top10 ?? []);
+          setSafetyCar(r.bonus?.safety_car ?? false);
+          setDnfDrivers(r.bonus?.dnf_drivers ?? []);
+          setFastestLap(r.bonus?.fastest_lap ?? null);
+          setFirstCornerLeader(r.bonus?.first_corner_leader ?? null);
         }
       } catch (e) {
         console.error(e);
@@ -71,7 +159,7 @@ export function useResultsState({ setRaces }) {
     }
   };
 
-  const handleDriverSelect = (driverId) => {
+  const handleDriverSelect = (driverId: string): void => {
     switch (selectionMode) {
       case "quali_pole":
         setQualiPole(driverId); break;
@@ -109,7 +197,7 @@ export function useResultsState({ setRaces }) {
     }
   };
 
-  const isDriverSelected = (driverId) => {
+  const isDriverSelected = (driverId: string): boolean => {
     switch (selectionMode) {
       case "quali_pole": return qualiPole === driverId;
       case "quali_top10": return qualiTop10.includes(driverId);
@@ -126,7 +214,7 @@ export function useResultsState({ setRaces }) {
     }
   };
 
-  const getDriverPosition = (driverId) => {
+  const getDriverPosition = (driverId: string): number | null => {
     if (selectionMode === "quali_top10") return qualiTop10.indexOf(driverId) + 1 || null;
     if (selectionMode === "sprint_quali_top10") return sprintQualiTop10.indexOf(driverId) + 1 || null;
     if (selectionMode === "sprint_race_top10") return sprintRaceTop10.indexOf(driverId) + 1 || null;
@@ -140,38 +228,46 @@ export function useResultsState({ setRaces }) {
   );
   const isComplete = qualiPole && qualiTop10.length === 10 && raceWinner && raceTop10.length === 10 && isSprintComplete;
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (): Promise<void> => {
     if (!isComplete) { toast.error("Complete tous les resultats obligatoires"); return; }
     setSaving(true);
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         quali_pole: qualiPole, quali_top10: qualiTop10,
         race_winner: raceWinner, race_top10: raceTop10,
         safety_car: safetyCar, dnf_drivers: dnfDrivers,
         fastest_lap: fastestLap, first_corner_leader: firstCornerLeader,
       };
-      if (selectedRace.is_sprint) {
-        payload.sprint_quali_pole = sprintQualiPole;
-        payload.sprint_quali_top10 = sprintQualiTop10;
-        payload.sprint_race_winner = sprintRaceWinner;
-        payload.sprint_race_top10 = sprintRaceTop10;
+      if (selectedRace?.is_sprint) {
+        payload["sprint_quali_pole"] = sprintQualiPole;
+        payload["sprint_quali_top10"] = sprintQualiTop10;
+        payload["sprint_race_winner"] = sprintRaceWinner;
+        payload["sprint_race_top10"] = sprintRaceTop10;
       }
-      await apiClient.post(`/admin/results/${selectedRace.id}`, payload);
+      await apiClient.post(`/admin/results/${selectedRace!.id}`, payload);
       toast.success("Resultats enregistres ! Les points ont ete calcules.");
       const racesRes = await apiClient.get("/admin/races");
-      setRaces(racesRes.data);
-    } catch (error) {
-      toast.error(error.response?.data?.detail || "Erreur lors de l'enregistrement");
+      setRaces(racesRes.data as Race[]);
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { detail?: string } } };
+      toast.error(axiosError.response?.data?.detail ?? "Erreur lors de l'enregistrement");
     } finally { setSaving(false); }
   };
 
-  const handleSyncOpenF1 = async () => {
+  const handleSyncOpenF1 = async (): Promise<void> => {
     if (!selectedRace) return;
     setSyncing(true);
     try {
       const res = await apiClient.post(`/admin/sync-results/${selectedRace.id}`);
-      if (res.data.status === "success" || res.data.status === "partial") {
-        const f = res.data.fetched_data;
+      const resData = res.data as {
+        status: string
+        message?: string
+        fetched_data: SyncFetchedData
+        success_items?: string[]
+        errors?: string[]
+      };
+      if (resData.status === "success" || resData.status === "partial") {
+        const f = resData.fetched_data;
         if (f.quali_pole) setQualiPole(f.quali_pole);
         if (f.quali_top10?.length) setQualiTop10(f.quali_top10);
         if (f.sprint_quali_pole) setSprintQualiPole(f.sprint_quali_pole);
@@ -186,12 +282,12 @@ export function useResultsState({ setRaces }) {
           if (f.bonus.fastest_lap) setFastestLap(f.bonus.fastest_lap);
           if (f.bonus.first_corner_leader) setFirstCornerLeader(f.bonus.first_corner_leader);
         }
-        const items = res.data.success_items || [];
+        const items = resData.success_items ?? [];
         if (items.length > 0) toast.success(`Donnees recuperees automatiquement !\n${items.join(', ')}`, { duration: 5000 });
         else toast.warning("Aucune donnee disponible via l'API. Saisie manuelle requise.");
-        if (res.data.errors?.length > 0) console.log("Sync errors:", res.data.errors);
+        if ((resData.errors?.length ?? 0) > 0) console.log("Sync errors:", resData.errors);
       } else {
-        toast.warning(res.data.message || "Donnees non disponibles, saisie manuelle requise.");
+        toast.warning(resData.message ?? "Donnees non disponibles, saisie manuelle requise.");
       }
     } catch (error) {
       console.error("Sync error:", error);

@@ -4,6 +4,35 @@ import {
   Users, Copy, Share2, Check, MessageCircle, ChevronRight, Star,
 } from "lucide-react";
 
+// ------------------------------------------------------------------ types ---
+
+export interface LeagueMember {
+  id: string | number;
+  [key: string]: unknown;
+}
+
+export interface LeagueItem {
+  id: string | number;
+  name: string;
+  code: string;
+  members?: LeagueMember[];
+  [key: string]: unknown;
+}
+
+export interface LeagueListProps {
+  leagues: LeagueItem[];
+  loading: boolean;
+  userId: string | number;
+  currentLeagueId: string | number | null | undefined;
+  copied: string | null;
+  unreadByLeague: Record<string | number, number>;
+  onCopyCode: (code: string) => void;
+  onShareLeague: (league: LeagueItem) => void;
+  onSelectLeague: (id: string | number) => void;
+}
+
+// ----------------------------------------------------------- component ---
+
 export default function LeagueList({
   leagues,
   loading,
@@ -14,7 +43,7 @@ export default function LeagueList({
   onCopyCode,
   onShareLeague,
   onSelectLeague,
-}) {
+}: LeagueListProps) {
   const navigate = useNavigate();
 
   if (loading) {
@@ -39,18 +68,21 @@ export default function LeagueList({
     <div className="space-y-3 mb-6">
       {leagues.map((league) => {
         const isActive = currentLeagueId === league.id;
+        const unreadCount = unreadByLeague[league.id] ?? 0;
         return (
           <div
-            key={league.id}
+            key={league.id as string}
             className={`card-arcade p-4 transition-all ${
               isActive ? "border-2 border-yellow-500 bg-yellow-500/10" : "hover:border-cyan-500/50"
             }`}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                  isActive ? "bg-gradient-to-br from-yellow-500 to-yellow-700" : "bg-gray-800"
-                }`}>
+                <div
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    isActive ? "bg-gradient-to-br from-yellow-500 to-yellow-700" : "bg-gray-800"
+                  }`}
+                >
                   {isActive ? (
                     <Star className="w-5 h-5 text-white" />
                   ) : (
@@ -61,13 +93,15 @@ export default function LeagueList({
                   <div className="flex items-center gap-2">
                     <h3 className="font-heading text-white text-sm truncate">{league.name}</h3>
                     {isActive && (
-                      <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded font-heading">ACTIVE</span>
+                      <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded font-heading">
+                        ACTIVE
+                      </span>
                     )}
                   </div>
                   <div className="flex items-center gap-3 text-xs text-gray-500">
                     <span className="flex items-center gap-1">
                       <Users className="w-3 h-3" />
-                      {league.members?.length || 0}
+                      {league.members?.length ?? 0}
                     </span>
                     <span className="font-data">{league.code}</span>
                   </div>
@@ -76,7 +110,8 @@ export default function LeagueList({
 
               <div className="flex items-center gap-2">
                 <Button
-                  variant="ghost" size="icon"
+                  variant="ghost"
+                  size="icon"
                   onClick={(e) => { e.stopPropagation(); onShareLeague(league); }}
                   className="text-green-400 hover:text-green-300 hover:bg-green-500/10 h-8 w-8"
                   title="Partager"
@@ -85,22 +120,28 @@ export default function LeagueList({
                 </Button>
 
                 <Button
-                  variant="ghost" size="icon"
+                  variant="ghost"
+                  size="icon"
                   onClick={(e) => { e.stopPropagation(); onCopyCode(league.code); }}
                   className="text-gray-500 hover:text-white hover:bg-white/10 h-8 w-8"
                 >
-                  {copied === league.code ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                  {copied === league.code ? (
+                    <Check className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
                 </Button>
 
                 <Button
-                  variant="ghost" size="icon"
+                  variant="ghost"
+                  size="icon"
                   onClick={(e) => { e.stopPropagation(); navigate(`/league/${league.id}/chat`); }}
                   className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 h-8 w-8 relative"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  {unreadByLeague[league.id] > 0 && (
+                  {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 w-4 h-4 bg-pink-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white">
-                      {unreadByLeague[league.id] > 9 ? "9+" : unreadByLeague[league.id]}
+                      {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                   )}
                 </Button>

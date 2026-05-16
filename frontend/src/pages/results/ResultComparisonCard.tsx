@@ -1,5 +1,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Check, X } from "lucide-react";
+import type { ReactNode } from "react";
+
+// ------------------------------------------------------------------ types ---
+
+export interface ResultComparisonCardProps {
+  title: string;
+  icon?: ReactNode;
+  winnerLabel: string;
+  winnerId: string | number;
+  predictionWinnerId?: string | number;
+  top3?: Array<string | number>;
+  predictionTop3?: Array<string | number>;
+  getDriverName: (id: string | number) => string;
+}
+
+// ----------------------------------------------------------- component ---
 
 /**
  * Renders a comparison card for either Qualifications or Course results.
@@ -14,7 +30,7 @@ export default function ResultComparisonCard({
   top3,
   predictionTop3,
   getDriverName,
-}) {
+}: ResultComparisonCardProps) {
   return (
     <Card className="bg-card border-white/10">
       <CardHeader>
@@ -34,9 +50,11 @@ export default function ResultComparisonCard({
             </div>
             {predictionWinnerId !== undefined && (
               <div className="flex items-center gap-2">
-                <span className={`font-body text-sm ${
-                  predictionWinnerId === winnerId ? "text-emerald-500" : "text-zinc-400"
-                }`}>
+                <span
+                  className={`font-body text-sm ${
+                    predictionWinnerId === winnerId ? "text-emerald-500" : "text-zinc-400"
+                  }`}
+                >
                   Ton choix: {getDriverName(predictionWinnerId)}
                 </span>
                 {predictionWinnerId === winnerId ? (
@@ -57,33 +75,46 @@ export default function ResultComparisonCard({
               {top3.map((driverId, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className={`w-6 h-6 rounded-sm flex items-center justify-center font-heading text-xs ${
-                      i === 0 ? "bg-amber-500 text-black" :
-                      i === 1 ? "bg-zinc-300 text-black" :
-                      "bg-amber-700 text-white"
-                    }`}>
+                    <span
+                      className={`w-6 h-6 rounded-sm flex items-center justify-center font-heading text-xs ${
+                        i === 0
+                          ? "bg-amber-500 text-black"
+                          : i === 1
+                          ? "bg-zinc-300 text-black"
+                          : "bg-amber-700 text-white"
+                      }`}
+                    >
                       {i + 1}
                     </span>
                     <span className="font-body text-white">{getDriverName(driverId)}</span>
                   </div>
                   {predictionTop3 && (
                     <div className="flex items-center gap-2">
-                      <span className={`font-body text-sm ${
-                        predictionTop3[i] === driverId
-                          ? "text-emerald-500"
-                          : predictionTop3.includes(driverId)
-                            ? "text-amber-500"
-                            : "text-zinc-400"
-                      }`}>
-                        {getDriverName(predictionTop3[i])}
-                      </span>
-                      {predictionTop3[i] === driverId ? (
-                        <Check className="w-5 h-5 text-emerald-500" />
-                      ) : predictionTop3.includes(driverId) ? (
-                        <span className="text-amber-500 text-xs">~</span>
-                      ) : (
-                        <X className="w-5 h-5 text-red-500" />
-                      )}
+                      {(() => {
+                        const pred = predictionTop3[i];
+                        return (
+                          <>
+                            <span
+                              className={`font-body text-sm ${
+                                pred === driverId
+                                  ? "text-emerald-500"
+                                  : predictionTop3.includes(driverId)
+                                  ? "text-amber-500"
+                                  : "text-zinc-400"
+                              }`}
+                            >
+                              {pred !== undefined ? getDriverName(pred) : "—"}
+                            </span>
+                            {pred === driverId ? (
+                              <Check className="w-5 h-5 text-emerald-500" />
+                            ) : predictionTop3.includes(driverId) ? (
+                              <span className="text-amber-500 text-xs">~</span>
+                            ) : (
+                              <X className="w-5 h-5 text-red-500" />
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>
