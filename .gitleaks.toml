@@ -1,0 +1,58 @@
+# Gitleaks configuration — Pronokif
+# Extends the built-in ruleset and allowlists known false positives.
+# Run with:   gitleaks detect --source . --no-banner
+# Or:         make security
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Files and patterns that are not real secrets"
+
+paths = [
+    # Local-only env files — gitignored, not in any commit.
+    # Real secrets live here on a developer machine; safe to skip in scan.
+    '''(^|/)\.env$''',
+    '''(^|/)\.env\.local$''',
+    '''(^|/)\.env\.development$''',
+    '''(^|/)\.env\.staging$''',
+    '''(^|/)\.env\.production$''',
+    '''(^|/)\.env\..*\.local$''',
+
+    # Templates explicitly carry placeholder values, not secrets.
+    '''(^|/)\.env\.example$''',
+    '''(^|/)\.env\.template$''',
+
+    # Legacy local backup folder of the v0 codebase. Not committed,
+    # not deployed, kept on disk only as historical reference.
+    '''^_v0 bapt/''',
+
+    # Dependency caches and build artifacts.
+    '''node_modules/''',
+    '''/build/''',
+    '''/dist/''',
+    '''/coverage/''',
+    '''\.next/''',
+]
+
+# Documentation files are allowed to *quote* the historical leaked
+# JWT_SECRET fallback as part of explaining what was rotated. The
+# operational risk is closed by the rotation itself (see SECURITY.md).
+regexes = [
+    '''pronokif-secret-key-2026''',
+]
+
+# Per-rule allowlist — kept narrow so future real findings still surface.
+[[rules]]
+id = "generic-api-key"
+[rules.allowlist]
+description = "Documentation that intentionally references the rotated secret"
+paths = [
+    '''SECURITY\.md$''',
+    '''SECURITY_AUDIT\.md$''',
+    '''AUDIT_0\.1\.md$''',
+    '''PLAN_REFACTO\.md$''',
+    '''^docs/.*\.html$''',
+    '''^docs_A2/.*\.html$''',
+    '''^backend/audit_serveur_doublons\.md$''',
+]
