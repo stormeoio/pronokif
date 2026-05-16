@@ -6,9 +6,9 @@ import { apiClient } from "@/lib/api";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import {
-  ChevronLeft, ChevronRight, Trophy, Flag, Check, X,
-  Calendar, MapPin, Clock
+  ChevronLeft, Trophy, Flag, Calendar, MapPin, Clock
 } from "lucide-react";
+import ResultComparisonCard from "./results/ResultComparisonCard";
 
 export default function ResultsPage() {
   const { raceId } = useParams();
@@ -19,35 +19,24 @@ export default function ResultsPage() {
 
   const { data: races = [], isLoading: racesLoading } = useQuery({
     queryKey: ["/races"],
-    queryFn: async () => {
-      const res = await apiClient.get("/races");
-      return res.data;
-    },
+    queryFn: async () => (await apiClient.get("/races")).data,
   });
 
   const { data: drivers = [], isLoading: driversLoading } = useQuery({
     queryKey: ["/drivers"],
-    queryFn: async () => {
-      const res = await apiClient.get("/drivers");
-      return res.data;
-    },
+    queryFn: async () => (await apiClient.get("/drivers")).data,
   });
 
   const selectedRace = useMemo(() => {
     const effectiveId = raceId || manualRaceId;
-    if (effectiveId) {
-      return races.find(r => r.id === effectiveId) || null;
-    }
+    if (effectiveId) return races.find(r => r.id === effectiveId) || null;
     const finishedRaces = races.filter(r => r.status === "finished");
     return finishedRaces.length > 0 ? finishedRaces[finishedRaces.length - 1] : null;
   }, [races, raceId, manualRaceId]);
 
   const { data: result = null } = useQuery({
     queryKey: ["/results", selectedRace?.id],
-    queryFn: async () => {
-      const res = await apiClient.get(`/results/${selectedRace.id}`);
-      return res.data;
-    },
+    queryFn: async () => (await apiClient.get(`/results/${selectedRace.id}`)).data,
     enabled: !!selectedRace?.id,
   });
 
@@ -82,16 +71,11 @@ export default function ResultsPage() {
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/")}
-            className="text-zinc-400 hover:text-white"
-          >
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="text-zinc-400 hover:text-white">
             <ChevronLeft className="w-6 h-6" />
           </Button>
           <h1 className="font-heading text-2xl uppercase tracking-tight italic text-white">
-            Résultats
+            Resultats
           </h1>
         </div>
 
@@ -104,9 +88,7 @@ export default function ResultsPage() {
                 variant={selectedRace?.id === race.id ? "default" : "outline"}
                 onClick={() => selectRace(race)}
                 className={`flex-shrink-0 ${
-                  selectedRace?.id === race.id 
-                    ? 'bg-primary' 
-                    : 'border-zinc-700 bg-zinc-900/50'
+                  selectedRace?.id === race.id ? "bg-primary" : "border-zinc-700 bg-zinc-900/50"
                 }`}
                 data-testid={`race-btn-${race.id}`}
               >
@@ -121,12 +103,8 @@ export default function ResultsPage() {
           <Card className="bg-card border-white/10">
             <CardContent className="p-8 text-center">
               <Clock className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-              <p className="font-heading text-xl uppercase text-zinc-400 mb-2">
-                Aucun résultat disponible
-              </p>
-              <p className="font-body text-sm text-zinc-500">
-                Les résultats seront disponibles après chaque course
-              </p>
+              <p className="font-heading text-xl uppercase text-zinc-400 mb-2">Aucun resultat disponible</p>
+              <p className="font-body text-sm text-zinc-500">Les resultats seront disponibles apres chaque course</p>
             </CardContent>
           </Card>
         )}
@@ -142,15 +120,11 @@ export default function ResultsPage() {
                   </h2>
                   <div className="flex items-center gap-4 mt-2 text-zinc-400">
                     <span className="flex items-center gap-1 text-sm font-body">
-                      <MapPin className="w-4 h-4" />
-                      {selectedRace.circuit}
+                      <MapPin className="w-4 h-4" /> {selectedRace.circuit}
                     </span>
                     <span className="flex items-center gap-1 text-sm font-body">
                       <Calendar className="w-4 h-4" />
-                      {new Date(selectedRace.date).toLocaleDateString('fr-FR', { 
-                        day: 'numeric', 
-                        month: 'long' 
-                      })}
+                      {new Date(selectedRace.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
                     </span>
                   </div>
                 </div>
@@ -167,17 +141,11 @@ export default function ResultsPage() {
             {result.points && (
               <Card className="bg-emerald-500/10 border-emerald-500/20">
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Trophy className="w-8 h-8 text-emerald-500" />
-                      <div>
-                        <p className="font-heading text-lg uppercase text-white">
-                          +{result.points.total} points
-                        </p>
-                        <p className="font-body text-sm text-emerald-400">
-                          Gagnés sur ce Grand Prix
-                        </p>
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <Trophy className="w-8 h-8 text-emerald-500" />
+                    <div>
+                      <p className="font-heading text-lg uppercase text-white">+{result.points.total} points</p>
+                      <p className="font-body text-sm text-emerald-400">Gagnes sur ce Grand Prix</p>
                     </div>
                   </div>
                 </CardContent>
@@ -185,173 +153,35 @@ export default function ResultsPage() {
             )}
 
             {/* Qualifications */}
-            <Card className="bg-card border-white/10">
-              <CardHeader>
-                <CardTitle className="font-heading text-lg uppercase tracking-tight flex items-center gap-2">
-                  <Flag className="w-5 h-5 text-primary" />
-                  Qualifications
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Pole Position */}
-                <div className="p-3 rounded-sm bg-zinc-900/50 border border-zinc-800">
-                  <p className="font-body text-xs text-zinc-400 uppercase mb-2">Pole Position</p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="font-heading text-white">
-                        {getDriverName(result.results.quali_pole)}
-                      </span>
-                      <span className="font-body text-xs text-zinc-500">(Réel)</span>
-                    </div>
-                    {result.prediction && (
-                      <div className="flex items-center gap-2">
-                        <span className={`font-body text-sm ${
-                          result.prediction.quali_pole === result.results.quali_pole 
-                            ? 'text-emerald-500' 
-                            : 'text-zinc-400'
-                        }`}>
-                          Ton choix: {getDriverName(result.prediction.quali_pole)}
-                        </span>
-                        {result.prediction.quali_pole === result.results.quali_pole ? (
-                          <Check className="w-5 h-5 text-emerald-500" />
-                        ) : (
-                          <X className="w-5 h-5 text-red-500" />
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Top 3 Quali */}
-                <div className="p-3 rounded-sm bg-zinc-900/50 border border-zinc-800">
-                  <p className="font-body text-xs text-zinc-400 uppercase mb-2">Top 3</p>
-                  <div className="space-y-2">
-                    {result.results.quali_top3?.map((driverId, i) => (
-                      <div key={i} className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className={`w-6 h-6 rounded-sm flex items-center justify-center font-heading text-xs ${
-                            i === 0 ? 'bg-amber-500 text-black' :
-                            i === 1 ? 'bg-zinc-300 text-black' :
-                            'bg-amber-700 text-white'
-                          }`}>
-                            {i + 1}
-                          </span>
-                          <span className="font-body text-white">{getDriverName(driverId)}</span>
-                        </div>
-                        {result.prediction && (
-                          <div className="flex items-center gap-2">
-                            <span className={`font-body text-sm ${
-                              result.prediction.quali_top3[i] === driverId 
-                                ? 'text-emerald-500' 
-                                : result.prediction.quali_top3.includes(driverId)
-                                  ? 'text-amber-500'
-                                  : 'text-zinc-400'
-                            }`}>
-                              {getDriverName(result.prediction.quali_top3[i])}
-                            </span>
-                            {result.prediction.quali_top3[i] === driverId ? (
-                              <Check className="w-5 h-5 text-emerald-500" />
-                            ) : result.prediction.quali_top3.includes(driverId) ? (
-                              <span className="text-amber-500 text-xs">~</span>
-                            ) : (
-                              <X className="w-5 h-5 text-red-500" />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <ResultComparisonCard
+              title="Qualifications"
+              icon={<Flag className="w-5 h-5 text-primary" />}
+              winnerLabel="Pole Position"
+              winnerId={result.results.quali_pole}
+              predictionWinnerId={result.prediction?.quali_pole}
+              top3={result.results.quali_top3}
+              predictionTop3={result.prediction?.quali_top3}
+              getDriverName={getDriverName}
+            />
 
             {/* Course */}
-            <Card className="bg-card border-white/10">
-              <CardHeader>
-                <CardTitle className="font-heading text-lg uppercase tracking-tight flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-amber-500" />
-                  Course
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Winner */}
-                <div className="p-3 rounded-sm bg-zinc-900/50 border border-zinc-800">
-                  <p className="font-body text-xs text-zinc-400 uppercase mb-2">Vainqueur</p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="font-heading text-white">
-                        {getDriverName(result.results.race_winner)}
-                      </span>
-                      <span className="font-body text-xs text-zinc-500">(Réel)</span>
-                    </div>
-                    {result.prediction && (
-                      <div className="flex items-center gap-2">
-                        <span className={`font-body text-sm ${
-                          result.prediction.race_winner === result.results.race_winner 
-                            ? 'text-emerald-500' 
-                            : 'text-zinc-400'
-                        }`}>
-                          Ton choix: {getDriverName(result.prediction.race_winner)}
-                        </span>
-                        {result.prediction.race_winner === result.results.race_winner ? (
-                          <Check className="w-5 h-5 text-emerald-500" />
-                        ) : (
-                          <X className="w-5 h-5 text-red-500" />
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Top 3 Race */}
-                <div className="p-3 rounded-sm bg-zinc-900/50 border border-zinc-800">
-                  <p className="font-body text-xs text-zinc-400 uppercase mb-2">Top 3</p>
-                  <div className="space-y-2">
-                    {result.results.race_top3?.map((driverId, i) => (
-                      <div key={i} className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className={`w-6 h-6 rounded-sm flex items-center justify-center font-heading text-xs ${
-                            i === 0 ? 'bg-amber-500 text-black' :
-                            i === 1 ? 'bg-zinc-300 text-black' :
-                            'bg-amber-700 text-white'
-                          }`}>
-                            {i + 1}
-                          </span>
-                          <span className="font-body text-white">{getDriverName(driverId)}</span>
-                        </div>
-                        {result.prediction && (
-                          <div className="flex items-center gap-2">
-                            <span className={`font-body text-sm ${
-                              result.prediction.race_top3[i] === driverId 
-                                ? 'text-emerald-500' 
-                                : result.prediction.race_top3.includes(driverId)
-                                  ? 'text-amber-500'
-                                  : 'text-zinc-400'
-                            }`}>
-                              {getDriverName(result.prediction.race_top3[i])}
-                            </span>
-                            {result.prediction.race_top3[i] === driverId ? (
-                              <Check className="w-5 h-5 text-emerald-500" />
-                            ) : result.prediction.race_top3.includes(driverId) ? (
-                              <span className="text-amber-500 text-xs">~</span>
-                            ) : (
-                              <X className="w-5 h-5 text-red-500" />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <ResultComparisonCard
+              title="Course"
+              icon={<Trophy className="w-5 h-5 text-amber-500" />}
+              winnerLabel="Vainqueur"
+              winnerId={result.results.race_winner}
+              predictionWinnerId={result.prediction?.race_winner}
+              top3={result.results.race_top3}
+              predictionTop3={result.prediction?.race_top3}
+              getDriverName={getDriverName}
+            />
 
             {/* Points Breakdown */}
             {result.points && result.points.details.length > 0 && (
               <Card className="bg-card border-white/10">
                 <CardHeader>
                   <CardTitle className="font-heading text-lg uppercase tracking-tight">
-                    Détail des points
+                    Detail des points
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -373,12 +203,8 @@ export default function ResultsPage() {
           <Card className="bg-card border-white/10">
             <CardContent className="p-8 text-center">
               <Clock className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-              <p className="font-heading text-lg uppercase text-zinc-400 mb-2">
-                Résultats en attente
-              </p>
-              <p className="font-body text-sm text-zinc-500">
-                Les résultats seront disponibles après la course
-              </p>
+              <p className="font-heading text-lg uppercase text-zinc-400 mb-2">Resultats en attente</p>
+              <p className="font-body text-sm text-zinc-500">Les resultats seront disponibles apres la course</p>
             </CardContent>
           </Card>
         )}
