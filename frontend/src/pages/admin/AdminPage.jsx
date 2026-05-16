@@ -1,9 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
-import { apiClient } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import {
   ChevronLeft, Shield, Loader2, Trophy, Bell, MessageSquare, Users,
 } from "lucide-react";
@@ -12,39 +10,17 @@ import ResultsTab from "./ResultsTab";
 import NotificationsTab from "./NotificationsTab";
 import FeedbackTab from "./FeedbackTab";
 import MembersTab from "./MembersTab";
+import { useAdminData } from "./useAdminData";
 
 export default function AdminPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [races, setRaces] = useState([]);
-  const [drivers, setDrivers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { loading, isAdmin, isAccessDenied, races, drivers, refetchRaces } = useAdminData();
   const [adminTab, setAdminTab] = useState("results");
 
-  const fetchData = useCallback(async () => {
-    try {
-      const [racesRes, driversRes] = await Promise.all([
-        apiClient.get("/admin/races"),
-        apiClient.get("/drivers")
-      ]);
-      setRaces(racesRes.data);
-      setDrivers(driversRes.data);
-      setIsAdmin(true);
-    } catch (e) {
-      if (e.response?.status === 403) {
-        setIsAdmin(false);
-      }
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  // Expose setRaces-like behavior via refetch (ResultsTab may need to update after sync)
+  const setRaces = () => refetchRaces();
 
   if (loading) {
     return (

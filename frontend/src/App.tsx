@@ -2,8 +2,10 @@
  * Root application component — routing + providers.
  *
  * Sprint 3 refactor: auth, api client, and constants extracted to lib/.
+ * Sprint 4: lazy() code-splitting — each page is a separate chunk.
  * This file is now pure orchestration (providers + route table).
  */
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
@@ -12,31 +14,43 @@ import { AuthProvider, ProtectedRoute, useAuth } from "@/lib/auth";
 import { queryClient } from "@/lib/queryClient";
 import "@/App.css";
 
-// --- lazy-safe page imports (kept static for now; code-split in S4) -------
-import AuthPage from "@/pages/AuthPage";
-import SetUsernamePage from "@/pages/SetUsernamePage";
-import LeaguePage from "@/pages/LeaguePage";
-import DashboardPage from "@/pages/dashboard/DashboardPage";
-import RaceCalendarPage from "@/pages/RaceCalendarPage";
-import PredictionsPage from "@/pages/predictions/PredictionsPage";
-import LeaderboardPage from "@/pages/LeaderboardPage";
-import ResultsPage from "@/pages/ResultsPage";
-import ProfilePage from "@/pages/profile/ProfilePage";
-import AdminPage from "@/pages/admin/AdminPage";
-import NotificationsPage from "@/pages/NotificationsPage";
-import MiniGamesPage from "@/pages/MiniGamesPage";
-import MissionsPage from "@/pages/MissionsPage";
-import GlobalLeaderboardPage from "@/pages/GlobalLeaderboardPage";
-import CustomPredictionsPage from "@/pages/custom-predictions/CustomPredictionsPage";
-import GrandPrixDetailPage from "@/pages/GrandPrixDetailPage";
-import LeagueChatPage from "@/pages/LeagueChatPage";
-import MemberProfilePage from "@/pages/MemberProfilePage";
-import LeagueDetailPage from "@/pages/leagues/LeagueDetailPage";
-import JoinLeaguePage from "@/pages/JoinLeaguePage";
-import ChampionshipPage from "@/pages/championship/ChampionshipPage";
-import DriverDetailPage from "@/pages/driver-detail/DriverDetailPage";
-import DriverComparisonPage from "@/pages/driver-comparison/DriverComparisonPage";
+// --- lazy page imports (code-split: each page = separate chunk) ----------
+const AuthPage = lazy(() => import("@/pages/AuthPage"));
+const SetUsernamePage = lazy(() => import("@/pages/SetUsernamePage"));
+const LeaguePage = lazy(() => import("@/pages/LeaguePage"));
+const DashboardPage = lazy(() => import("@/pages/dashboard/DashboardPage"));
+const RaceCalendarPage = lazy(() => import("@/pages/RaceCalendarPage"));
+const PredictionsPage = lazy(() => import("@/pages/predictions/PredictionsPage"));
+const LeaderboardPage = lazy(() => import("@/pages/LeaderboardPage"));
+const ResultsPage = lazy(() => import("@/pages/ResultsPage"));
+const ProfilePage = lazy(() => import("@/pages/profile/ProfilePage"));
+const AdminPage = lazy(() => import("@/pages/admin/AdminPage"));
+const NotificationsPage = lazy(() => import("@/pages/NotificationsPage"));
+const MiniGamesPage = lazy(() => import("@/pages/MiniGamesPage"));
+const MissionsPage = lazy(() => import("@/pages/MissionsPage"));
+const GlobalLeaderboardPage = lazy(() => import("@/pages/GlobalLeaderboardPage"));
+const CustomPredictionsPage = lazy(() => import("@/pages/custom-predictions/CustomPredictionsPage"));
+const GrandPrixDetailPage = lazy(() => import("@/pages/GrandPrixDetailPage"));
+const LeagueChatPage = lazy(() => import("@/pages/LeagueChatPage"));
+const MemberProfilePage = lazy(() => import("@/pages/MemberProfilePage"));
+const LeagueDetailPage = lazy(() => import("@/pages/leagues/LeagueDetailPage"));
+const JoinLeaguePage = lazy(() => import("@/pages/JoinLeaguePage"));
+const ChampionshipPage = lazy(() => import("@/pages/championship/ChampionshipPage"));
+const DriverDetailPage = lazy(() => import("@/pages/driver-detail/DriverDetailPage"));
+const DriverComparisonPage = lazy(() => import("@/pages/driver-comparison/DriverComparisonPage"));
+
+// BottomNav stays eagerly loaded (present on every page)
 import BottomNav from "@/components/BottomNav";
+
+// --------------------------------------------------------- suspense fallback ---
+
+function PageLoader() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="animate-pulse-glow w-16 h-16 rounded-full bg-primary/20" />
+    </div>
+  );
+}
 
 // ------------------------------------------------------------------ layout ---
 
@@ -46,7 +60,9 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className={hideNav ? "" : "pb-safe"}>{children}</main>
+      <main className={hideNav ? "" : "pb-safe"}>
+        <Suspense fallback={<PageLoader />}>{children}</Suspense>
+      </main>
       {!hideNav && <BottomNav />}
     </div>
   );
@@ -58,11 +74,7 @@ function AppRouter() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse-glow w-16 h-16 rounded-full bg-primary/20" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (

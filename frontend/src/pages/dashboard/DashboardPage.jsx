@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
-import { apiClient } from "@/lib/api";
 import { Zap, ChevronRight } from "lucide-react";
 import { AvatarDisplay } from "../../components/AvatarDisplay";
 import NotificationBell from "../../components/NotificationBell";
@@ -9,6 +8,7 @@ import FeedbackModal from "../../components/FeedbackModal";
 import HamburgerMenu from "../../components/hamburger-menu/HamburgerMenu";
 import RaceSlider from "./RaceSlider";
 import { LeaguesList, NoLeagueCTA, HelpAdminCard } from "./LeaguesList";
+import { useDashboardData } from "./useDashboardData";
 
 const HERO_BANNER = "https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/d9b6f1a65194f54bbc34bb7e15e4af8069ab64dab312c6c3be1db79b2ca45259.png";
 
@@ -16,49 +16,14 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [loading, setLoading] = useState(true);
-  const [upcomingRaces, setUpcomingRaces] = useState([]);
+  const { loading, upcomingRaces, avatars, userLeagues, unreadChatByLeague, predictions } = useDashboardData();
+
   const [currentRaceIndex, setCurrentRaceIndex] = useState(0);
-  const [userLeagues, setUserLeagues] = useState([]);
-  const [predictions, setPredictions] = useState({});
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [sprintCountdown, setSprintCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [avatars, setAvatars] = useState({});
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [unreadChatByLeague, setUnreadChatByLeague] = useState({});
 
-  const fetchData = useCallback(async () => {
-    try {
-      const [raceRes, upcomingRes, avatarsRes, unreadRes, leaguesRes] = await Promise.all([
-        apiClient.get("/races/next"),
-        apiClient.get("/races/upcoming"),
-        apiClient.get("/avatars"),
-        apiClient.get("/leagues/unread-messages").catch(() => ({ data: { by_league: {} } })),
-        apiClient.get("/leagues/my").catch(() => ({ data: [] }))
-      ]);
-      setAvatars(avatarsRes.data);
-      setUnreadChatByLeague(unreadRes.data.by_league || {});
-      setUserLeagues(leaguesRes.data || []);
-
-      const upcoming = upcomingRes.data.filter(r => r.status !== "finished");
-      setUpcomingRaces(upcoming);
-
-      const predsPromises = upcoming.map(race =>
-        apiClient.get(`/predictions/race/${race.id}`).catch(() => ({ data: null }))
-      );
-      const predsResults = await Promise.all(predsPromises);
-      const predsMap = {};
-      upcoming.forEach((race, i) => { predsMap[race.id] = predsResults[i].data; });
-      setPredictions(predsMap);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
-
+  // Countdown timer (stays as local state — not server data)
   useEffect(() => {
     const currentRace = upcomingRaces[currentRaceIndex];
     if (!currentRace?.predictions_close_at) return;

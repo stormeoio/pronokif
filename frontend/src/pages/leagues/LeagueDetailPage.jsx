@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { apiClient } from "@/lib/api";
@@ -13,17 +13,15 @@ import {
 import LeagueLeaderboard from "./LeagueLeaderboard";
 import LeagueMembers from "./LeagueMembers";
 import LeagueSettings from "./LeagueSettings";
+import { useLeagueDetailData } from "./useLeagueDetailData";
 
 export default function LeagueDetailPage() {
   const { leagueId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [loading, setLoading] = useState(true);
-  const [league, setLeague] = useState(null);
-  const [members, setMembers] = useState([]);
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [avatars, setAvatars] = useState({});
+  const { loading, error, league, members, leaderboard, avatars, refetch } = useLeagueDetailData(leagueId);
+
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState("leaderboard");
 
@@ -33,31 +31,13 @@ export default function LeagueDetailPage() {
   const [editDescription, setEditDescription] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    try {
-      const [leagueRes, membersRes, leaderboardRes, avatarsRes] = await Promise.all([
-        apiClient.get(`/leagues/${leagueId}`),
-        apiClient.get(`/leagues/${leagueId}/members`),
-        apiClient.get(`/leagues/${leagueId}/leaderboard`),
-        apiClient.get("/avatars"),
-      ]);
-
-      setLeague(leagueRes.data);
-      setMembers(membersRes.data);
-      setLeaderboard(leaderboardRes.data);
-      setAvatars(avatarsRes.data);
-    } catch (e) {
-      console.error(e);
+  // Navigate away on error
+  useEffect(() => {
+    if (error) {
       toast.error("Erreur lors du chargement");
       navigate("/league");
-    } finally {
-      setLoading(false);
     }
-  }, [leagueId, navigate]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  }, [error, navigate]);
 
   const copyCode = async () => {
     if (!league) return;
@@ -114,7 +94,7 @@ export default function LeagueDetailPage() {
         name: editName.trim(),
         description: editDescription.trim() || null,
       });
-      setLeague(res.data);
+      refetch();
       setIsEditing(false);
       toast.success("Ligue mise à jour !");
     } catch (e) {
@@ -256,7 +236,7 @@ export default function LeagueDetailPage() {
           avatars={avatars}
           userId={user.id}
           isOwner={isOwner}
-          onRefresh={fetchData}
+          onRefresh={refetch}
         />
       </div>
     </div>
