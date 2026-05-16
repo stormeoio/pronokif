@@ -6,10 +6,11 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import { api, apiClient } from "@/lib/api";
+import { queryKeys } from "@/lib/queryKeys";
 
 function useRaceDetails(raceId: string | undefined) {
   return useQuery({
-    queryKey: ["/races", raceId],
+    queryKey: queryKeys.races.get(raceId!),
     queryFn: () => api.races.get(raceId!),
     enabled: !!raceId,
   });
@@ -17,14 +18,14 @@ function useRaceDetails(raceId: string | undefined) {
 
 function useDrivers() {
   return useQuery({
-    queryKey: ["/drivers"],
+    queryKey: queryKeys.drivers.list(),
     queryFn: () => api.drivers.list(),
   });
 }
 
 function useExistingPrediction(raceId: string | undefined) {
   return useQuery({
-    queryKey: ["/predictions/race", raceId],
+    queryKey: queryKeys.predictions.get(raceId!),
     queryFn: async () => {
       try {
         return ((await api.predictions.get(raceId!)) as any) || null;

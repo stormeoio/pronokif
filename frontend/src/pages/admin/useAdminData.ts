@@ -3,6 +3,7 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { queryKeys } from "@/lib/queryKeys";
 
 export function useAdminData() {
   const racesQuery = useQuery({
@@ -12,7 +13,7 @@ export function useAdminData() {
   });
 
   const driversQuery = useQuery({
-    queryKey: ["/drivers"],
+    queryKey: queryKeys.drivers.list(),
     queryFn: () => api.drivers.list(),
     enabled: racesQuery.isSuccess, // only fetch if admin check passed
   });

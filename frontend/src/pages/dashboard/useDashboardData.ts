@@ -6,12 +6,13 @@
  */
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { queryKeys } from "@/lib/queryKeys";
 
 // ── Individual queries ─────────────────────────────────────────────
 
 function useUpcomingRaces() {
   return useQuery({
-    queryKey: ["/races/upcoming"],
+    queryKey: queryKeys.races.upcoming(),
     queryFn: async () => {
       const data = (await api.races.upcoming()) as any[];
       return (data || []).filter((r: any) => r.status !== "finished");
@@ -21,7 +22,7 @@ function useUpcomingRaces() {
 
 function useAvatars() {
   return useQuery({
-    queryKey: ["/avatars"],
+    queryKey: queryKeys.avatars.list(),
     queryFn: () => api.avatars.list(),
     staleTime: 5 * 60_000, // avatars don't change often
   });
@@ -29,7 +30,7 @@ function useAvatars() {
 
 function useMyLeagues() {
   return useQuery({
-    queryKey: ["/leagues/my"],
+    queryKey: queryKeys.leagues.my(),
     queryFn: async () => {
       const data = await api.leagues.my();
       return data || [];
@@ -39,7 +40,7 @@ function useMyLeagues() {
 
 function useUnreadMessages() {
   return useQuery({
-    queryKey: ["/leagues/unread-messages"],
+    queryKey: queryKeys.leagues.unreadMessages(),
     queryFn: async () => {
       const data = await api.leagues.unreadMessages();
       return data?.by_league || {};
@@ -53,7 +54,7 @@ function useUnreadMessages() {
 function useRacePredictions(races: any[]) {
   return useQueries({
     queries: races.map((race) => ({
-      queryKey: ["/predictions/race", race.id],
+      queryKey: queryKeys.predictions.get(String(race.id)),
       queryFn: async () => {
         try {
           return await api.predictions.get(String(race.id));

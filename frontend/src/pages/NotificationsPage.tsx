@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { api } from "@/lib/api";
+import { queryKeys } from "@/lib/queryKeys";
 
 interface Notification {
   id: string;
@@ -42,12 +43,12 @@ export default function NotificationsPage() {
   const queryClient = useQueryClient();
 
   const { data: notifications = [], isLoading: notifsLoading } = useQuery({
-    queryKey: ["/notifications"],
+    queryKey: queryKeys.notifications.list(),
     queryFn: () => api.notifications.list(),
   });
 
   const { data: unreadData, isLoading: countLoading } = useQuery({
-    queryKey: ["/notifications/unread-count"],
+    queryKey: queryKeys.notifications.unreadCount(),
     queryFn: () => api.notifications.unreadCount(),
   });
 
@@ -57,8 +58,7 @@ export default function NotificationsPage() {
   const markAsRead = async (notifId: string) => {
     try {
       await api.notifications.markRead(notifId);
-      queryClient.invalidateQueries({ queryKey: ["/notifications"] });
-      queryClient.invalidateQueries({ queryKey: ["/notifications/unread-count"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications._def });
     } catch (e) {
       console.error(e);
     }
@@ -67,8 +67,7 @@ export default function NotificationsPage() {
   const markAllAsRead = async () => {
     try {
       await api.notifications.markAllRead();
-      queryClient.invalidateQueries({ queryKey: ["/notifications"] });
-      queryClient.invalidateQueries({ queryKey: ["/notifications/unread-count"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications._def });
     } catch (e) {
       console.error(e);
     }

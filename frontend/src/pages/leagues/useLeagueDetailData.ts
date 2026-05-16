@@ -3,28 +3,29 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { queryKeys } from "@/lib/queryKeys";
 
 export function useLeagueDetailData(leagueId: string | undefined) {
   const leagueQuery = useQuery({
-    queryKey: ["/leagues", leagueId],
+    queryKey: queryKeys.leagues.get(leagueId!),
     queryFn: () => api.leagues.get(leagueId!),
     enabled: !!leagueId,
   });
 
   const membersQuery = useQuery({
-    queryKey: ["/leagues", leagueId, "members"],
+    queryKey: queryKeys.leagues.members(leagueId!),
     queryFn: () => api.leagues.members(leagueId!),
     enabled: !!leagueId,
   });
 
   const leaderboardQuery = useQuery({
-    queryKey: ["/leagues", leagueId, "leaderboard"],
+    queryKey: queryKeys.leagues.leaderboard(leagueId!),
     queryFn: () => api.leagues.leaderboard(leagueId!),
     enabled: !!leagueId,
   });
 
   const avatarsQuery = useQuery({
-    queryKey: ["/avatars"],
+    queryKey: queryKeys.avatars.list(),
     queryFn: () => api.avatars.list(),
     staleTime: 5 * 60_000,
   });
