@@ -32,7 +32,9 @@ import DriverComparisonPage from "./pages/DriverComparisonPage";
 // Components
 import BottomNav from "./components/BottomNav";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+// Vite exposes env vars under import.meta.env. Migrated from
+// process.env.REACT_APP_BACKEND_URL during the Sprint 2 CRA -> Vite cut.
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
 
 // Auth Context

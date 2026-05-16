@@ -1,70 +1,82 @@
-# Getting Started with Create React App
+# Pronokif — Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+React 19 + Vite + TypeScript (progressive). Migrated from CRA + Craco
+during Sprint 2 of the A2 refactor.
 
-## Available Scripts
+## Quick start
 
-In the project directory, you can run:
+```bash
+cd frontend
+npm install                 # one-time
+cp .env.example .env        # then fill VITE_BACKEND_URL
+npm run dev                 # http://localhost:3000
+```
 
-### `npm start`
+The backend must be running on `VITE_BACKEND_URL` (default
+`http://localhost:8000`). See `../backend/README` (or run `make dev-backend`
+from the repo root).
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Scripts
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+| Command            | What it does                                         |
+| ------------------ | ---------------------------------------------------- |
+| `npm run dev`      | Vite dev server on port 3000 (HMR, fast reload)      |
+| `npm run build`    | `tsc --noEmit` + `vite build` -> `./build`           |
+| `npm run preview`  | Serve the production bundle locally for sanity check |
+| `npm test`         | Vitest single run (unit + component, jsdom)          |
+| `npm run test:watch` | Vitest watch mode                                  |
+| `npm run lint`     | ESLint v9 flat config across `.{js,jsx,ts,tsx}`      |
+| `npm run format`   | Prettier write across `src/**`                       |
+| `npm run typecheck`| `tsc -b --noEmit` (catches type errors without build)|
 
-### `npm test`
+## TypeScript convention (Sprint 2 baseline)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **Every new file is `.ts` or `.tsx`.** No new `.js`/`.jsx`.
+- `tsconfig.json` is `strict: true` plus `noUncheckedIndexedAccess`. New
+  code MUST satisfy these.
+- Existing `.js`/`.jsx` files keep working through `allowJs: true`. They
+  will be migrated incrementally during Sprint 3 (page-by-page refactor).
+- When you touch a `.jsx` file for non-trivial work, prefer renaming it
+  to `.tsx` and adding the types you need rather than leaving it loose.
+- Path alias `@/` resolves to `src/` in both Vite and tsc.
 
-### `npm run build`
+## Environment variables
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Vite only exposes vars prefixed `VITE_` to the bundle (browser side).
+The single backend URL is `VITE_BACKEND_URL`. See `.env.example` for the
+full template; copy it to `.env` (gitignored) for local dev.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+If you migrated from the CRA setup: every `process.env.REACT_APP_*` is
+now `import.meta.env.VITE_*`. The mapping is 1:1.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Tests
 
-### `npm run eject`
+Vitest runs in `jsdom` mode through `@testing-library/react` and
+`@testing-library/jest-dom`. The smoke test in `src/main.test.tsx`
+exists only to prove the toolchain is alive after refactors — replace
+it with real component coverage as pages get migrated to TS.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Lint & format
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+ESLint v9 flat config in `eslint.config.js` covers JS/JSX/TS/TSX.
+Prettier handles formatting. A `simple-git-hooks` pre-commit runs
+`lint-staged` so anything you commit is formatted and lint-clean.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+To install the hook the first time:
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```bash
+cd frontend
+npx simple-git-hooks
+```
 
-## Learn More
+(`npm install` runs that automatically when `simple-git-hooks` is in
+devDependencies, but if it didn't, the line above wires it up.)
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Why Vite (and not CRA / Next)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- CRA is unmaintained. Craco was a transitional escape hatch; both go.
+- Next.js would force a routing rewrite (file-based vs the current
+  `react-router-dom` setup) for no immediate product gain.
+- Vite gives us instant cold-start, native ESM dev, and first-class
+  TypeScript without ejecting webpack. The 3-day Sprint 2 budget covers
+  the swap end to end with no regression to user-visible behavior.

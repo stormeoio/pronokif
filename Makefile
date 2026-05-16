@@ -60,7 +60,7 @@ test-cov: install  ## Run backend tests with coverage report
 
 .PHONY: test-frontend
 test-frontend:  ## Run frontend test suite (added in Sprint 2)
-	cd frontend && npm test -- --watchAll=false
+	cd frontend && npm test
 
 # --------------------------------------------------------------------------- #
 # Lint & format                                                               #
