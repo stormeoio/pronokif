@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { apiClient } from "@/lib/api";
@@ -11,15 +11,22 @@ import {
 import PredictionTimer from "./PredictionTimer";
 import PredictionForm from "./PredictionForm";
 import { useDriverSelection } from "./useDriverSelection";
+import { usePredictionData } from "./usePredictionData";
 
 export default function PredictionsPage() {
   const { raceId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [race, setRace] = useState(null);
-  const [drivers, setDrivers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // ── Data fetching (TanStack Query) ──────────────────────────────────
+  const {
+    loading,
+    race,
+    drivers,
+    existingPrediction: fetchedPrediction,
+    minigamesComplete,
+  } = usePredictionData(raceId);
+
   const [saving, setSaving] = useState(false);
   const [existingPrediction, setExistingPrediction] = useState(null);
 
@@ -51,82 +58,50 @@ export default function PredictionsPage() {
   // Current selection mode
   const [selectionMode, setSelectionMode] = useState("quali_pole");
 
-  // Mini-games completion
-  const [minigamesComplete, setMinigamesComplete] = useState(false);
-
   // Delete confirmation
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // ── Data fetching ───────────────────────────────────────────────────
-  const fetchData = useCallback(async () => {
-    try {
-      const [raceRes, driversRes] = await Promise.all([
-        apiClient.get(`/races/${raceId}`),
-        apiClient.get("/drivers"),
-      ]);
-      setRace(raceRes.data);
-      setDrivers(driversRes.data);
+  // ── Hydrate form state from fetched prediction ──────────────────────
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (loading || hydratedRef.current) return;
+    hydratedRef.current = true;
 
-      try {
-        const [reactionRes, batakRes] = await Promise.all([
-          apiClient.get("/minigames/reaction/scores").catch(() => ({ data: [] })),
-          apiClient.get("/minigames/batak/scores").catch(() => ({ data: [] })),
-        ]);
-        const reactionComp = reactionRes.data.filter((s) => s.mode === "competition").length;
-        const batakComp = batakRes.data.filter((s) => s.mode === "competition").length;
-        setMinigamesComplete(reactionComp >= 3 && batakComp >= 3);
-      } catch {
-        setMinigamesComplete(false);
+    if (fetchedPrediction) {
+      setExistingPrediction(fetchedPrediction);
+      setQualiPole(fetchedPrediction.quali_pole || null);
+      setQualiTop10(fetchedPrediction.quali_top10 || []);
+      setRaceWinner(fetchedPrediction.race_winner || null);
+      setRaceTop10(fetchedPrediction.race_top10 || []);
+      if (fetchedPrediction.bonus_bets) {
+        setSafetyCar(fetchedPrediction.bonus_bets.safety_car ?? null);
+        setDnfDrivers(fetchedPrediction.bonus_bets.dnf_drivers || []);
+        setNoDnf(fetchedPrediction.bonus_bets.no_dnf || false);
+        setFastestLapDriver(fetchedPrediction.bonus_bets.fastest_lap_driver || null);
+        setFirstCornerLeader(fetchedPrediction.bonus_bets.first_corner_leader || null);
       }
-
-      try {
-        const predRes = await apiClient.get(`/predictions/race/${raceId}`);
-        if (predRes.data) {
-          setExistingPrediction(predRes.data);
-          setQualiPole(predRes.data.quali_pole || null);
-          setQualiTop10(predRes.data.quali_top10 || []);
-          setRaceWinner(predRes.data.race_winner || null);
-          setRaceTop10(predRes.data.race_top10 || []);
-          if (predRes.data.bonus_bets) {
-            setSafetyCar(predRes.data.bonus_bets.safety_car ?? null);
-            setDnfDrivers(predRes.data.bonus_bets.dnf_drivers || []);
-            setNoDnf(predRes.data.bonus_bets.no_dnf || false);
-            setFastestLapDriver(predRes.data.bonus_bets.fastest_lap_driver || null);
-            setFirstCornerLeader(predRes.data.bonus_bets.first_corner_leader || null);
-          }
-          setSprintQualiPole(predRes.data.sprint_quali_pole || null);
-          setSprintQualiTop10(predRes.data.sprint_quali_top10 || []);
-          setSprintRaceWinner(predRes.data.sprint_race_winner || null);
-          setSprintRaceTop10(predRes.data.sprint_race_top10 || []);
-          if (predRes.data.sprint_bonus_bets) {
-            setSprintSafetyCar(predRes.data.sprint_bonus_bets.safety_car ?? null);
-            setSprintDnfDrivers(predRes.data.sprint_bonus_bets.dnf_drivers || []);
-            setSprintNoDnf(predRes.data.sprint_bonus_bets.no_dnf || false);
-            setSprintFastestLap(predRes.data.sprint_bonus_bets.fastest_lap_driver || null);
-            setSprintFirstCorner(predRes.data.sprint_bonus_bets.first_corner_leader || null);
-          }
-        }
-      } catch {
-        // No existing prediction
+      setSprintQualiPole(fetchedPrediction.sprint_quali_pole || null);
+      setSprintQualiTop10(fetchedPrediction.sprint_quali_top10 || []);
+      setSprintRaceWinner(fetchedPrediction.sprint_race_winner || null);
+      setSprintRaceTop10(fetchedPrediction.sprint_race_top10 || []);
+      if (fetchedPrediction.sprint_bonus_bets) {
+        setSprintSafetyCar(fetchedPrediction.sprint_bonus_bets.safety_car ?? null);
+        setSprintDnfDrivers(fetchedPrediction.sprint_bonus_bets.dnf_drivers || []);
+        setSprintNoDnf(fetchedPrediction.sprint_bonus_bets.no_dnf || false);
+        setSprintFastestLap(fetchedPrediction.sprint_bonus_bets.fastest_lap_driver || null);
+        setSprintFirstCorner(fetchedPrediction.sprint_bonus_bets.first_corner_leader || null);
       }
-
-      if (raceRes.data?.is_sprint_weekend) {
-        setActiveTab("sprint");
-        setSelectionMode("sprint_quali_pole");
-      } else {
-        setActiveTab("main");
-        setSelectionMode("quali_pole");
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error("Erreur lors du chargement");
-    } finally {
-      setLoading(false);
     }
-  }, [raceId]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+    if (race?.is_sprint_weekend) {
+      setActiveTab("sprint");
+      setSelectionMode("sprint_quali_pole");
+    } else {
+      setActiveTab("main");
+      setSelectionMode("quali_pole");
+    }
+  }, [loading, fetchedPrediction, race]);
 
   useEffect(() => {
     setSelectionMode(activeTab === "sprint" ? "sprint_quali_pole" : "quali_pole");

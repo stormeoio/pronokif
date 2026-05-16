@@ -1,31 +1,24 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { apiClient } from "@/lib/api";
 import { toast } from "sonner";
 import { ArrowLeft, User, History, Lightbulb, Loader2, GitCompare } from "lucide-react";
 import { getTeamColors } from "./driverHelpers";
 import { ProfileTab, PalmaresTab, FactsTab } from "./DriverTabs";
+import { useDriverDetailData } from "./useDriverDetailData";
 
 export default function DriverDetailPage() {
   const { driverId } = useParams();
   const navigate = useNavigate();
-  const [driver, setDriver] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
 
-  useEffect(() => { fetchDriverDetails(); }, [driverId]);
+  const { loading, driver, error } = useDriverDetailData(driverId);
 
-  const fetchDriverDetails = async () => {
-    try {
-      setLoading(true);
-      const res = await apiClient.get(`/drivers/${driverId}/details`);
-      setDriver(res.data);
-    } catch (err) {
-      console.error("Error fetching driver details:", err);
+  useEffect(() => {
+    if (error) {
       toast.error("Impossible de charger les informations du pilote");
       navigate("/championship");
-    } finally { setLoading(false); }
-  };
+    }
+  }, [error, navigate]);
 
   if (loading) {
     return (

@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { apiClient } from "@/lib/api";
 import { Button } from "../components/ui/button";
 import { toast } from "sonner";
-import { 
-  Trophy, Users, LogIn, Loader2, AlertCircle, 
+import {
+  Trophy, Users, LogIn, Loader2, AlertCircle,
   CheckCircle, Home
 } from "lucide-react";
 
@@ -13,35 +14,31 @@ export default function JoinLeaguePage() {
   const { code } = useParams();
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
-  
-  const [loading, setLoading] = useState(true);
+
+  const queryClient = useQueryClient();
   const [joining, setJoining] = useState(false);
-  const [league, setLeague] = useState(null);
-  const [error, setError] = useState(null);
-  const [alreadyMember, setAlreadyMember] = useState(false);
 
-  useEffect(() => {
-    const fetchLeagueInfo = async () => {
-      try {
-        const res = await apiClient.get(`/leagues/by-code/${code}`);
-        setLeague(res.data);
-        
-        // Check if user is already a member
-        if (user) {
-          const myLeaguesRes = await apiClient.get("/leagues/my");
-          const isMember = myLeaguesRes.data.some(l => l.code === code.toUpperCase());
-          setAlreadyMember(isMember);
-        }
-      } catch (e) {
-        console.error(e);
-        setError("Cette ligue n'existe pas ou le lien est invalide");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const { data: league = null, isLoading: leagueLoading, error: leagueError } = useQuery({
+    queryKey: ["/leagues/by-code", code],
+    queryFn: async () => {
+      const res = await apiClient.get(`/leagues/by-code/${code}`);
+      return res.data;
+    },
+    enabled: !!code,
+  });
 
-    fetchLeagueInfo();
-  }, [code, user]);
+  const { data: myLeagues = [], isLoading: myLeaguesLoading } = useQuery({
+    queryKey: ["/leagues/my"],
+    queryFn: async () => {
+      const res = await apiClient.get("/leagues/my");
+      return res.data;
+    },
+    enabled: !!user && !!league,
+  });
+
+  const loading = leagueLoading || (!!user && !!league && myLeaguesLoading);
+  const error = leagueError ? "Cette ligue n'existe pas ou le lien est invalide" : null;
+  const alreadyMember = myLeagues.some(l => l.code === code?.toUpperCase());
 
   const handleJoin = async () => {
     if (!user) {
@@ -60,7 +57,7 @@ export default function JoinLeaguePage() {
     } catch (e) {
       const message = e.response?.data?.detail || "Erreur lors de la connexion";
       if (message.includes("already")) {
-        setAlreadyMember(true);
+        queryClient.invalidateQueries({ queryKey: ["/leagues/my"] });
       } else {
         toast.error(message);
       }

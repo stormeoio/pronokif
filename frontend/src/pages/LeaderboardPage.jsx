@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { apiClient } from "@/lib/api";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { 
-  Trophy, TrendingUp, TrendingDown, Minus, Users, 
+import {
+  Trophy, TrendingUp, TrendingDown, Minus, Users,
   Share2, Copy, Check, ChevronDown, MessageCircle, Plus
 } from "lucide-react";
 import { toast } from "sonner";
@@ -19,46 +20,42 @@ import {
 export default function LeaderboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [leagues, setLeagues] = useState([]);
-  const [currentLeague, setCurrentLeague] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  const [selectedLeagueId, setSelectedLeagueId] = useState(null);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, [user]);
+  const { data: leagues = [], isLoading: leaguesLoading } = useQuery({
+    queryKey: ["/leagues/my"],
+    queryFn: async () => {
+      const res = await apiClient.get("/leagues/my");
+      return res.data;
+    },
+  });
 
-  const fetchData = async () => {
-    try {
-      const leaguesRes = await apiClient.get("/leagues/my");
-      setLeagues(leaguesRes.data);
+  const activeLeagueId = selectedLeagueId || user?.current_league_id;
+  const currentLeague = useMemo(
+    () => leagues.find(l => l.id === activeLeagueId) || null,
+    [leagues, activeLeagueId]
+  );
 
-      if (user.current_league_id) {
-        const league = leaguesRes.data.find(l => l.id === user.current_league_id);
-        setCurrentLeague(league);
-        
-        const leaderboardRes = await apiClient.get(`/leagues/${user.current_league_id}/leaderboard`);
-        setLeaderboard(leaderboardRes.data);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: leaderboard = [], isLoading: lbLoading } = useQuery({
+    queryKey: ["/leagues", activeLeagueId, "leaderboard"],
+    queryFn: async () => {
+      const res = await apiClient.get(`/leagues/${activeLeagueId}/leaderboard`);
+      return res.data;
+    },
+    enabled: !!activeLeagueId,
+  });
+
+  const loading = leaguesLoading || (!!activeLeagueId && lbLoading);
 
   const switchLeague = async (leagueId) => {
     try {
       await apiClient.post(`/leagues/${leagueId}/select`);
+      setSelectedLeagueId(leagueId);
       const league = leagues.find(l => l.id === leagueId);
-      setCurrentLeague(league);
-      
-      const leaderboardRes = await apiClient.get(`/leagues/${leagueId}/leaderboard`);
-      setLeaderboard(leaderboardRes.data);
-      
-      toast.success(`Ligue "${league.name}" sélectionnée`);
+      toast.success(`Ligue "${league?.name}" sélectionnée`);
     } catch (e) {
       toast.error("Erreur lors du changement de ligue");
     }

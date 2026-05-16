@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { apiClient } from "@/lib/api";
 import { Button } from "../components/ui/button";
@@ -37,38 +38,28 @@ const COUNTRY_FLAGS = {
 export default function RaceCalendarPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  
-  const [loading, setLoading] = useState(true);
-  const [races, setRaces] = useState([]);
-  const [myPredictions, setMyPredictions] = useState({});
+
   const [filter, setFilter] = useState("upcoming"); // upcoming, all, completed
 
-  const fetchData = useCallback(async () => {
-    try {
-      const [racesRes, predsRes] = await Promise.all([
-        apiClient.get("/races/upcoming"),
-        apiClient.get("/predictions/history")
-      ]);
-      
-      setRaces(racesRes.data);
-      
-      // Create a map of race_id -> prediction
-      const predsMap = {};
-      predsRes.data.forEach(p => {
-        predsMap[p.race_id] = p;
-      });
-      setMyPredictions(predsMap);
-    } catch (e) {
-      console.error(e);
-      toast.error("Erreur lors du chargement");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: races = [], isLoading: racesLoading } = useQuery({
+    queryKey: ["/races/upcoming"],
+    queryFn: async () => {
+      const res = await apiClient.get("/races/upcoming");
+      return res.data;
+    },
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const { data: myPredictions = {}, isLoading: predsLoading } = useQuery({
+    queryKey: ["/predictions/history"],
+    queryFn: async () => {
+      const res = await apiClient.get("/predictions/history");
+      const predsMap = {};
+      res.data.forEach(p => { predsMap[p.race_id] = p; });
+      return predsMap;
+    },
+  });
+
+  const loading = racesLoading || predsLoading;
 
   const getFilteredRaces = () => {
     if (filter === "upcoming") {

@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { apiClient } from "@/lib/api";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { 
+import {
   ChevronLeft, ChevronRight, Trophy, Flag, Check, X,
   Calendar, MapPin, Clock
 } from "lucide-react";
@@ -13,65 +14,48 @@ export default function ResultsPage() {
   const { raceId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
-  const [races, setRaces] = useState([]);
-  const [selectedRace, setSelectedRace] = useState(null);
-  const [result, setResult] = useState(null);
-  const [drivers, setDrivers] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchData();
-  }, [raceId]);
+  const [manualRaceId, setManualRaceId] = useState(null);
 
-  const fetchData = async () => {
-    try {
-      const [racesRes, driversRes] = await Promise.all([
-        apiClient.get("/races"),
-        apiClient.get("/drivers")
-      ]);
+  const { data: races = [], isLoading: racesLoading } = useQuery({
+    queryKey: ["/races"],
+    queryFn: async () => {
+      const res = await apiClient.get("/races");
+      return res.data;
+    },
+  });
 
-      setRaces(racesRes.data);
-      setDrivers(driversRes.data);
+  const { data: drivers = [], isLoading: driversLoading } = useQuery({
+    queryKey: ["/drivers"],
+    queryFn: async () => {
+      const res = await apiClient.get("/drivers");
+      return res.data;
+    },
+  });
 
-      // Find selected or most recent finished race
-      const finishedRaces = racesRes.data.filter(r => r.status === "finished");
-      let targetRace = null;
-
-      if (raceId) {
-        targetRace = racesRes.data.find(r => r.id === raceId);
-      } else if (finishedRaces.length > 0) {
-        targetRace = finishedRaces[finishedRaces.length - 1];
-      }
-
-      if (targetRace) {
-        setSelectedRace(targetRace);
-        
-        // Fetch results for this race
-        try {
-          const resultRes = await apiClient.get(`/results/${targetRace.id}`);
-          setResult(resultRes.data);
-        } catch {
-          setResult(null);
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
+  const selectedRace = useMemo(() => {
+    const effectiveId = raceId || manualRaceId;
+    if (effectiveId) {
+      return races.find(r => r.id === effectiveId) || null;
     }
-  };
+    const finishedRaces = races.filter(r => r.status === "finished");
+    return finishedRaces.length > 0 ? finishedRaces[finishedRaces.length - 1] : null;
+  }, [races, raceId, manualRaceId]);
 
-  const selectRace = async (race) => {
-    setSelectedRace(race);
+  const { data: result = null } = useQuery({
+    queryKey: ["/results", selectedRace?.id],
+    queryFn: async () => {
+      const res = await apiClient.get(`/results/${selectedRace.id}`);
+      return res.data;
+    },
+    enabled: !!selectedRace?.id,
+  });
+
+  const loading = racesLoading || driversLoading;
+
+  const selectRace = (race) => {
+    setManualRaceId(race.id);
     navigate(`/results/${race.id}`, { replace: true });
-    
-    try {
-      const resultRes = await apiClient.get(`/results/${race.id}`);
-      setResult(resultRes.data);
-    } catch {
-      setResult(null);
-    }
   };
 
   const getDriverName = (driverId) => {

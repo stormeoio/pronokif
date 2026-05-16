@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
 import { Button } from "../components/ui/button";
-import { 
+import {
   ArrowLeft, Bell, Check, Info, Zap, AlertTriangle, CheckCheck
 } from "lucide-react";
 
@@ -14,35 +15,32 @@ const TYPE_CONFIG = {
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [notifsRes, countRes] = await Promise.all([
-          apiClient.get("/notifications"),
-          apiClient.get("/notifications/unread-count")
-        ]);
-        setNotifications(notifsRes.data);
-        setUnreadCount(countRes.data.count);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const { data: notifications = [], isLoading: notifsLoading } = useQuery({
+    queryKey: ["/notifications"],
+    queryFn: async () => {
+      const res = await apiClient.get("/notifications");
+      return res.data;
+    },
+  });
+
+  const { data: unreadData, isLoading: countLoading } = useQuery({
+    queryKey: ["/notifications/unread-count"],
+    queryFn: async () => {
+      const res = await apiClient.get("/notifications/unread-count");
+      return res.data;
+    },
+  });
+
+  const loading = notifsLoading || countLoading;
+  const unreadCount = unreadData?.count || 0;
 
   const markAsRead = async (notifId) => {
     try {
       await apiClient.put(`/notifications/${notifId}/read`);
-      setNotifications(prev => 
-        prev.map(n => n.id === notifId ? { ...n, is_read: true } : n)
-      );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      queryClient.invalidateQueries({ queryKey: ["/notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/notifications/unread-count"] });
     } catch (e) {
       console.error(e);
     }
@@ -51,8 +49,8 @@ export default function NotificationsPage() {
   const markAllAsRead = async () => {
     try {
       await apiClient.put("/notifications/read-all");
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-      setUnreadCount(0);
+      queryClient.invalidateQueries({ queryKey: ["/notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/notifications/unread-count"] });
     } catch (e) {
       console.error(e);
     }

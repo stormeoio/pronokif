@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { apiClient } from "@/lib/api";
 import { toast } from "sonner";
 import {
   ArrowLeft, Trophy, Medal, Zap, Flag, Timer, Target, Hash,
@@ -9,43 +8,32 @@ import {
 import {
   getTeamColor, DriverCard, ComparisonBar, EfficiencyCard, getVerdict
 } from "./ComparisonComponents";
+import { useAllDrivers, useDriverComparison } from "./useDriverComparisonData";
 
 export default function DriverComparisonPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [allDrivers, setAllDrivers] = useState([]);
   const [driver1Id, setDriver1Id] = useState(searchParams.get("d1") || "");
   const [driver2Id, setDriver2Id] = useState(searchParams.get("d2") || "");
-  const [comparison, setComparison] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [loadingDrivers, setLoadingDrivers] = useState(true);
   const [dropdown1Open, setDropdown1Open] = useState(false);
   const [dropdown2Open, setDropdown2Open] = useState(false);
 
-  useEffect(() => { fetchAllDrivers(); }, []);
+  const driversQuery = useAllDrivers();
+  const allDrivers = driversQuery.data ?? [];
+  const loadingDrivers = driversQuery.isLoading;
+
+  // Set default selections once drivers load
+  const hydratedRef = useRef(false);
   useEffect(() => {
-    if (driver1Id && driver2Id && driver1Id !== driver2Id) fetchComparison();
-    else setComparison(null);
-  }, [driver1Id, driver2Id]);
+    if (hydratedRef.current || allDrivers.length === 0) return;
+    hydratedRef.current = true;
+    if (!driver1Id && allDrivers.length > 0) setDriver1Id(allDrivers[0].id);
+    if (!driver2Id && allDrivers.length > 1) setDriver2Id(allDrivers[1].id);
+  }, [allDrivers, driver1Id, driver2Id]);
 
-  const fetchAllDrivers = async () => {
-    try {
-      const res = await apiClient.get("/drivers/all");
-      setAllDrivers(res.data);
-      if (!driver1Id && res.data.length > 0) setDriver1Id(res.data[0].id);
-      if (!driver2Id && res.data.length > 1) setDriver2Id(res.data[1].id);
-    } catch (err) { toast.error("Erreur lors du chargement des pilotes"); }
-    finally { setLoadingDrivers(false); }
-  };
-
-  const fetchComparison = async () => {
-    try {
-      setLoading(true);
-      const res = await apiClient.get(`/drivers/compare?driver1=${driver1Id}&driver2=${driver2Id}`);
-      setComparison(res.data);
-    } catch (err) { toast.error("Erreur lors de la comparaison"); }
-    finally { setLoading(false); }
-  };
+  const comparisonQuery = useDriverComparison(driver1Id, driver2Id);
+  const comparison = comparisonQuery.data ?? null;
+  const loading = comparisonQuery.isLoading;
 
   const swapDrivers = () => { const t = driver1Id; setDriver1Id(driver2Id); setDriver2Id(t); };
 

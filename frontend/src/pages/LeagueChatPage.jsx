@@ -1,11 +1,12 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { apiClient } from "@/lib/api";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { toast } from "sonner";
-import { 
+import {
   ArrowLeft, Send, Users, MessageCircle, RefreshCw,
   Crown, Clock
 } from "lucide-react";
@@ -15,63 +16,50 @@ export default function LeagueChatPage() {
   const { leagueId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
-  const [league, setLeague] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [members, setMembers] = useState([]);
+  const queryClient = useQueryClient();
+
   const [newMessage, setNewMessage] = useState("");
-  const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [avatars, setAvatars] = useState({});
-  
+
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
+
+  // ── Data queries ──────────────────────────────────────────
+  const { data: league = null, isLoading: leagueLoading } = useQuery({
+    queryKey: ["/leagues", leagueId],
+    queryFn: async () => (await apiClient.get(`/leagues/${leagueId}`)).data,
+    enabled: !!leagueId,
+  });
+
+  const { data: messages = [] } = useQuery({
+    queryKey: ["/leagues", leagueId, "messages"],
+    queryFn: async () => {
+      const res = await apiClient.get(`/leagues/${leagueId}/messages`);
+      // Mark messages as read (fire & forget)
+      apiClient.post(`/leagues/${leagueId}/messages/read`).catch(() => {});
+      return res.data;
+    },
+    enabled: !!leagueId,
+    refetchInterval: 15_000, // Auto-refresh every 15 seconds
+  });
+
+  const { data: members = [] } = useQuery({
+    queryKey: ["/leagues", leagueId, "members"],
+    queryFn: async () => (await apiClient.get(`/leagues/${leagueId}/members`)).data,
+    enabled: !!leagueId,
+  });
+
+  const { data: avatars = {} } = useQuery({
+    queryKey: ["/avatars"],
+    queryFn: async () => (await apiClient.get("/avatars")).data,
+    staleTime: 5 * 60_000,
+  });
+
+  const loading = leagueLoading;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-
-  const fetchData = useCallback(async () => {
-    try {
-      const [leagueRes, messagesRes, membersRes, avatarsRes] = await Promise.all([
-        apiClient.get(`/leagues/${leagueId}`),
-        apiClient.get(`/leagues/${leagueId}/messages`),
-        apiClient.get(`/leagues/${leagueId}/members`),
-        apiClient.get("/avatars")
-      ]);
-      
-      setLeague(leagueRes.data);
-      setMessages(messagesRes.data);
-      setMembers(membersRes.data);
-      setAvatars(avatarsRes.data);
-      
-      // Mark messages as read
-      await apiClient.post(`/leagues/${leagueId}/messages/read`).catch(() => {});
-    } catch (e) {
-      console.error(e);
-      toast.error("Erreur lors du chargement du chat");
-    } finally {
-      setLoading(false);
-    }
-  }, [leagueId]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  // Auto-refresh messages every 15 seconds
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const res = await apiClient.get(`/leagues/${leagueId}/messages`);
-        setMessages(res.data);
-      } catch (e) {
-        console.error("Failed to refresh messages", e);
-      }
-    }, 15000);
-
-    return () => clearInterval(interval);
-  }, [leagueId]);
 
   useEffect(() => {
     scrollToBottom();
@@ -83,11 +71,11 @@ export default function LeagueChatPage() {
 
     setSending(true);
     try {
-      const res = await apiClient.post(`/leagues/${leagueId}/messages`, {
+      await apiClient.post(`/leagues/${leagueId}/messages`, {
         content: newMessage.trim()
       });
-      setMessages(prev => [...prev, res.data]);
       setNewMessage("");
+      queryClient.invalidateQueries({ queryKey: ["/leagues", leagueId, "messages"] });
     } catch (e) {
       toast.error(e.response?.data?.detail || "Erreur lors de l'envoi");
     } finally {
@@ -95,14 +83,9 @@ export default function LeagueChatPage() {
     }
   };
 
-  const refreshMessages = async () => {
-    try {
-      const res = await apiClient.get(`/leagues/${leagueId}/messages`);
-      setMessages(res.data);
-      toast.success("Messages actualisés");
-    } catch (e) {
-      toast.error("Erreur lors de l'actualisation");
-    }
+  const refreshMessages = () => {
+    queryClient.invalidateQueries({ queryKey: ["/leagues", leagueId, "messages"] });
+    toast.success("Messages actualisés");
   };
 
   const getAvatarById = (avatarId) => {

@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { apiClient } from "@/lib/api";
 import { Button } from "../components/ui/button";
@@ -11,35 +11,28 @@ import { AvatarDisplay } from "../components/AvatarDisplay";
 export default function GlobalLeaderboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  
-  const [loading, setLoading] = useState(true);
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [myPosition, setMyPosition] = useState(null);
-  const [totalPlayers, setTotalPlayers] = useState(0);
-  const [avatars, setAvatars] = useState({});
 
-  const fetchData = useCallback(async () => {
-    try {
-      const [lbRes, avatarsRes] = await Promise.all([
-        apiClient.get("/leaderboard/global?limit=100"),
-        apiClient.get("/avatars")
-      ]);
+  const { data: lbData, isLoading: lbLoading } = useQuery({
+    queryKey: ["/leaderboard/global?limit=100"],
+    queryFn: async () => {
+      const res = await apiClient.get("/leaderboard/global?limit=100");
+      return res.data;
+    },
+  });
 
-      setLeaderboard(lbRes.data.leaderboard);
-      setMyPosition(lbRes.data.my_position);
-      setTotalPlayers(lbRes.data.total_players);
-      setAvatars(avatarsRes.data);
-    } catch (e) {
-      console.error(e);
-      toast.error("Erreur lors du chargement");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: avatars = {}, isLoading: avatarsLoading } = useQuery({
+    queryKey: ["/avatars"],
+    queryFn: async () => {
+      const res = await apiClient.get("/avatars");
+      return res.data;
+    },
+    staleTime: 5 * 60_000,
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const loading = lbLoading || avatarsLoading;
+  const leaderboard = lbData?.leaderboard || [];
+  const myPosition = lbData?.my_position || null;
+  const totalPlayers = lbData?.total_players || 0;
 
   const getAvatarById = (avatarId) => {
     return avatars?.all?.find(a => a.id === avatarId) || null;

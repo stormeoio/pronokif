@@ -1,12 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { apiClient } from "@/lib/api";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Progress } from "../components/ui/progress";
 import { toast } from "sonner";
-import { 
+import {
   ChevronLeft, Trophy, Target, Users, Gamepad2, Check, Lock,
   Star, Crown, Medal, Zap, Flag, Calendar, Eye, AlertTriangle, Timer
 } from "lucide-react";
@@ -31,54 +32,50 @@ const ICON_MAP = {
 
 export default function MissionsPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user, updateUser } = useAuth();
-  
-  const [loading, setLoading] = useState(true);
-  const [missions, setMissions] = useState([]);
-  const [categories, setCategories] = useState({});
+
   const [activeCategory, setActiveCategory] = useState("assiduity");
-  const [stats, setStats] = useState(null);
   const [claiming, setClaiming] = useState(null);
 
-  const fetchData = useCallback(async () => {
-    try {
-      const [missionsRes, statsRes] = await Promise.all([
-        apiClient.get("/user/missions"),
-        apiClient.get("/user/stats")
-      ]);
+  const { data: missionsData, isLoading: missionsLoading } = useQuery({
+    queryKey: ["/user/missions"],
+    queryFn: async () => {
+      const res = await apiClient.get("/user/missions");
+      return res.data;
+    },
+  });
 
-      setMissions(missionsRes.data.missions);
-      setCategories(missionsRes.data.categories);
-      setStats(statsRes.data);
-    } catch (e) {
-      console.error(e);
-      toast.error("Erreur lors du chargement");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: stats = null, isLoading: statsLoading } = useQuery({
+    queryKey: ["/user/stats"],
+    queryFn: async () => {
+      const res = await apiClient.get("/user/stats");
+      return res.data;
+    },
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const loading = missionsLoading || statsLoading;
+  const missions = missionsData?.missions || [];
+  const categories = missionsData?.categories || {};
 
   const handleClaimMission = async (missionId) => {
     setClaiming(missionId);
     try {
       const res = await apiClient.post(`/user/missions/${missionId}/claim`);
       toast.success(`+${res.data.xp_earned} XP !`);
-      
+
       if (res.data.level_up) {
         toast.success(`Niveau ${res.data.new_level} atteint !`, { icon: "🎉" });
       }
-      
+
       // Update user data
       if (updateUser) {
         updateUser({ xp: res.data.new_xp, level: res.data.new_level });
       }
-      
+
       // Refresh missions
-      fetchData();
+      queryClient.invalidateQueries({ queryKey: ["/user/missions"] });
+      queryClient.invalidateQueries({ queryKey: ["/user/stats"] });
     } catch (e) {
       toast.error(e.response?.data?.detail || "Erreur");
     } finally {

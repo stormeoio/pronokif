@@ -1,12 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
 import { toast } from "sonner";
 import { Loader2, Users, RefreshCw } from "lucide-react";
 import { DeleteConfirmModal, MemberDetailsModal } from "./MembersSubComponents";
 
 export default function MembersTab() {
-  const [membersList, setMembersList] = useState([]);
-  const [loadingMembers, setLoadingMembers] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: membersList = [], isLoading: loadingMembers, refetch: fetchMembers } = useQuery({
+    queryKey: ["/admin/members"],
+    queryFn: async () => {
+      const res = await apiClient.get("/admin/members");
+      return res.data;
+    },
+  });
+
   const [selectedMember, setSelectedMember] = useState(null);
   const [memberDetails, setMemberDetails] = useState(null);
   const [loadingMemberDetails, setLoadingMemberDetails] = useState(false);
@@ -15,22 +24,6 @@ export default function MembersTab() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingMember, setDeletingMember] = useState(false);
   const [memberDetailTab, setMemberDetailTab] = useState("info");
-
-  const fetchMembers = async () => {
-    setLoadingMembers(true);
-    try {
-      const res = await apiClient.get("/admin/members");
-      setMembersList(res.data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingMembers(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchMembers();
-  }, []);
 
   const fetchMemberDetails = async (memberId) => {
     setLoadingMemberDetails(true);
@@ -68,7 +61,7 @@ export default function MembersTab() {
       setSelectedMember(null);
       setMemberDetails(null);
       setShowDeleteConfirm(false);
-      fetchMembers();
+      queryClient.invalidateQueries({ queryKey: ["/admin/members"] });
     } catch (e) {
       console.error(e);
       toast.error(e.response?.data?.detail || "Erreur lors de la suppression");

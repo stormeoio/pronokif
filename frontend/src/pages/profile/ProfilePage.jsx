@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { apiClient } from "@/lib/api";
@@ -11,52 +11,25 @@ import {
 import { toast } from "sonner";
 import { AvatarDisplay, AvatarSelector } from "../../components/AvatarDisplay";
 import PointsHistory from "./PointsHistory";
+import { useProfileData } from "./useProfileData";
 
 export default function ProfilePage() {
   const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
 
-  const [leagues, setLeagues] = useState([]);
-  const [stats, setStats] = useState({ totalPredictions: 0, totalPoints: 0 });
-  const [loading, setLoading] = useState(true);
+  // ── Data fetching (TanStack Query) ──────────────────────────────────
+  const {
+    loading,
+    leagues,
+    avatars,
+    globalPosition,
+    pointsHistory,
+    stats,
+  } = useProfileData(user.id, user.current_league_id);
+
   const [copied, setCopied] = useState(null);
-  const [avatars, setAvatars] = useState(null);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
-  const [globalPosition, setGlobalPosition] = useState(null);
-  const [pointsHistory, setPointsHistory] = useState({ history: [], summary: {} });
   const [showHistory, setShowHistory] = useState(false);
-
-  const fetchData = useCallback(async () => {
-    try {
-      const [leaguesRes, predictionsRes, statsRes, avatarsRes, globalLbRes, historyRes] = await Promise.all([
-        apiClient.get("/leagues/my"),
-        apiClient.get("/predictions/history"),
-        apiClient.get("/predictions/stats"),
-        apiClient.get("/avatars"),
-        apiClient.get("/leaderboard/global"),
-        apiClient.get("/predictions/points-history")
-      ]);
-      setLeagues(leaguesRes.data);
-      setAvatars(avatarsRes.data);
-      setGlobalPosition(globalLbRes.data.my_position);
-      setPointsHistory(historyRes.data);
-      setStats({
-        totalPredictions: statsRes.data.total_predictions,
-        racesParticipated: statsRes.data.races_participated,
-        totalPoints: historyRes.data.summary?.total_points || 0
-      });
-      if (user.current_league_id) {
-        try {
-          const leaderboardRes = await apiClient.get(`/leagues/${user.current_league_id}/leaderboard`);
-          const myEntry = leaderboardRes.data.find(e => e.user_id === user.id);
-          if (myEntry) setStats(prev => ({ ...prev, totalPoints: myEntry.total_points }));
-        } catch (e) {}
-      }
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  }, [user.current_league_id, user.id]);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleLogout = () => { logout(); navigate("/auth"); };
 

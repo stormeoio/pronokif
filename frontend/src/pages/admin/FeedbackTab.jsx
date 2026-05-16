@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
 import { toast } from "sonner";
 import {
@@ -6,31 +6,20 @@ import {
 } from "lucide-react";
 
 export default function FeedbackTab() {
-  const [feedbackList, setFeedbackList] = useState([]);
-  const [loadingFeedback, setLoadingFeedback] = useState(false);
+  const queryClient = useQueryClient();
 
-  const fetchFeedback = async () => {
-    setLoadingFeedback(true);
-    try {
+  const { data: feedbackList = [], isLoading: loadingFeedback, refetch: fetchFeedback } = useQuery({
+    queryKey: ["/admin/feedback"],
+    queryFn: async () => {
       const res = await apiClient.get("/admin/feedback");
-      setFeedbackList(res.data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingFeedback(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchFeedback();
-  }, []);
+      return res.data;
+    },
+  });
 
   const markFeedbackRead = async (feedbackId) => {
     try {
       await apiClient.put(`/admin/feedback/${feedbackId}/read`);
-      setFeedbackList(prev =>
-        prev.map(f => f.id === feedbackId ? { ...f, read: true } : f)
-      );
+      queryClient.invalidateQueries({ queryKey: ["/admin/feedback"] });
     } catch (e) {
       console.error(e);
     }

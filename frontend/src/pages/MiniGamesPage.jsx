@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { apiClient } from "@/lib/api";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { toast } from "sonner";
-import { 
+import {
   ChevronLeft, Zap, Target, Trophy, Medal, Dumbbell, Timer,
   Crown, Users
 } from "lucide-react";
@@ -15,93 +16,81 @@ import { AvatarDisplay } from "../components/AvatarDisplay";
 export default function MiniGamesPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  
-  const [loading, setLoading] = useState(true);
-  const [leagues, setLeagues] = useState([]);
-  const [nextRace, setNextRace] = useState(null);
-  const [activeTab, setActiveTab] = useState("reaction"); // reaction, batak
-  const [mode, setMode] = useState("training"); // training, competition
-  const [avatars, setAvatars] = useState({});
-  
-  // Attempts tracking
-  const [reactionAttempts, setReactionAttempts] = useState({ used: 0, remaining: 3 });
-  const [batakAttempts, setBatakAttempts] = useState({ used: 0, remaining: 3 });
-  
-  // Leaderboards
-  const [reactionLeaderboard, setReactionLeaderboard] = useState([]);
-  const [batakLeaderboard, setBatakLeaderboard] = useState([]);
-  const [globalReactionLeaderboard, setGlobalReactionLeaderboard] = useState([]);
-  const [globalBatakLeaderboard, setGlobalBatakLeaderboard] = useState([]);
+  const queryClient = useQueryClient();
 
-  const fetchData = useCallback(async () => {
-    try {
-      const [leaguesRes, raceRes, avatarsRes] = await Promise.all([
-        apiClient.get("/leagues/my"),
-        apiClient.get("/races/next"),
-        apiClient.get("/avatars")
-      ]);
+  const [activeTab, setActiveTab] = useState("reaction");
+  const [mode, setMode] = useState("training");
 
-      setLeagues(leaguesRes.data);
-      setNextRace(raceRes.data);
-      setAvatars(avatarsRes.data);
+  // ── Data queries ──────────────────────────────────────────
+  const { data: leagues = [] } = useQuery({
+    queryKey: ["/leagues/my"],
+    queryFn: async () => (await apiClient.get("/leagues/my")).data,
+  });
 
-      // Fetch global leaderboards
-      const [globalReactionRes, globalBatakRes] = await Promise.all([
-        apiClient.get("/minigames/global-leaderboard/reaction"),
-        apiClient.get("/minigames/global-leaderboard/batak")
-      ]);
-      setGlobalReactionLeaderboard(globalReactionRes.data.leaderboard || []);
-      setGlobalBatakLeaderboard(globalBatakRes.data.leaderboard || []);
-    } catch (e) {
-      console.error(e);
-      toast.error("Erreur lors du chargement");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: nextRace = null } = useQuery({
+    queryKey: ["/races/next"],
+    queryFn: async () => (await apiClient.get("/races/next")).data,
+  });
 
-  const fetchCompetitionData = useCallback(async () => {
-    if (!nextRace) return;
+  const { data: avatars = {}, isLoading: loading } = useQuery({
+    queryKey: ["/avatars"],
+    queryFn: async () => (await apiClient.get("/avatars")).data,
+    staleTime: 5 * 60_000,
+  });
 
-    try {
-      // Fetch attempts using "global" as league_id (results are shared across all leagues)
-      const [reactionAttemptsRes, batakAttemptsRes] = await Promise.all([
-        apiClient.get(`/minigames/attempts/reaction/global/${nextRace.id}`),
-        apiClient.get(`/minigames/attempts/batak/global/${nextRace.id}`)
-      ]);
+  const { data: globalReactionLeaderboard = [] } = useQuery({
+    queryKey: ["/minigames/global-leaderboard/reaction"],
+    queryFn: async () => (await apiClient.get("/minigames/global-leaderboard/reaction")).data.leaderboard || [],
+  });
 
-      setReactionAttempts({
-        used: reactionAttemptsRes.data.attempts_used,
-        remaining: reactionAttemptsRes.data.attempts_remaining
-      });
-      setBatakAttempts({
-        used: batakAttemptsRes.data.attempts_used,
-        remaining: batakAttemptsRes.data.attempts_remaining
-      });
+  const { data: globalBatakLeaderboard = [] } = useQuery({
+    queryKey: ["/minigames/global-leaderboard/batak"],
+    queryFn: async () => (await apiClient.get("/minigames/global-leaderboard/batak")).data.leaderboard || [],
+  });
 
-      // Fetch leaderboards for all leagues (using first league or global)
-      if (leagues.length > 0) {
-        const [reactionLbRes, batakLbRes] = await Promise.all([
-          apiClient.get(`/minigames/leaderboard/reaction/${leagues[0].id}/${nextRace.id}`),
-          apiClient.get(`/minigames/leaderboard/batak/${leagues[0].id}/${nextRace.id}`)
-        ]);
-        setReactionLeaderboard(reactionLbRes.data.leaderboard || []);
-        setBatakLeaderboard(batakLbRes.data.leaderboard || []);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }, [nextRace, leagues]);
+  // ── Dependent queries (need nextRace) ─────────────────────
+  const { data: reactionAttempts = { used: 0, remaining: 3 } } = useQuery({
+    queryKey: ["/minigames/attempts/reaction", nextRace?.id],
+    queryFn: async () => {
+      const res = await apiClient.get(`/minigames/attempts/reaction/global/${nextRace.id}`);
+      return { used: res.data.attempts_used, remaining: res.data.attempts_remaining };
+    },
+    enabled: !!nextRace?.id,
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const { data: batakAttempts = { used: 0, remaining: 3 } } = useQuery({
+    queryKey: ["/minigames/attempts/batak", nextRace?.id],
+    queryFn: async () => {
+      const res = await apiClient.get(`/minigames/attempts/batak/global/${nextRace.id}`);
+      return { used: res.data.attempts_used, remaining: res.data.attempts_remaining };
+    },
+    enabled: !!nextRace?.id,
+  });
 
-  useEffect(() => {
-    if (nextRace) {
-      fetchCompetitionData();
-    }
-  }, [nextRace, fetchCompetitionData]);
+  const { data: reactionLeaderboard = [] } = useQuery({
+    queryKey: ["/minigames/leaderboard/reaction", leagues[0]?.id, nextRace?.id],
+    queryFn: async () => {
+      const res = await apiClient.get(`/minigames/leaderboard/reaction/${leagues[0].id}/${nextRace.id}`);
+      return res.data.leaderboard || [];
+    },
+    enabled: !!nextRace?.id && leagues.length > 0,
+  });
+
+  const { data: batakLeaderboard = [] } = useQuery({
+    queryKey: ["/minigames/leaderboard/batak", leagues[0]?.id, nextRace?.id],
+    queryFn: async () => {
+      const res = await apiClient.get(`/minigames/leaderboard/batak/${leagues[0].id}/${nextRace.id}`);
+      return res.data.leaderboard || [];
+    },
+    enabled: !!nextRace?.id && leagues.length > 0,
+  });
+
+  // ── Mutations ─────────────────────────────────────────────
+  const invalidateCompetition = () => {
+    queryClient.invalidateQueries({ queryKey: ["/minigames/attempts"] });
+    queryClient.invalidateQueries({ queryKey: ["/minigames/leaderboard"] });
+    queryClient.invalidateQueries({ queryKey: ["/minigames/global-leaderboard"] });
+  };
 
   const handleReactionSubmit = async (reactionTime, isTraining) => {
     try {
@@ -114,7 +103,7 @@ export default function MiniGamesPage() {
 
       if (!isTraining) {
         toast.success(`Temps enregistré: ${reactionTime}ms`);
-        fetchCompetitionData();
+        invalidateCompetition();
       } else {
         toast.success(`Temps: ${reactionTime}ms (Entraînement)`);
       }
@@ -135,7 +124,7 @@ export default function MiniGamesPage() {
 
       if (!isTraining) {
         toast.success(`Score enregistré: ${score} cibles`);
-        fetchCompetitionData();
+        invalidateCompetition();
       } else {
         toast.success(`Score: ${score} cibles (Entraînement)`);
       }

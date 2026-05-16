@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { apiClient } from "@/lib/api";
@@ -14,17 +14,15 @@ import {
 } from "lucide-react";
 import PredictionCard from "./PredictionCard";
 import SetCorrectAnswerModal from "./SetCorrectAnswerModal";
+import { useCustomPredictionsData } from "./useCustomPredictionsData";
 
 export default function CustomPredictionsPage() {
   const { leagueId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [loading, setLoading] = useState(true);
   const [league, setLeague] = useState(null);
-  const [allRaces, setAllRaces] = useState([]);
   const [selectedRace, setSelectedRace] = useState(null);
-  const [predictions, setPredictions] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedPrediction, setSelectedPrediction] = useState(null);
 
@@ -35,43 +33,23 @@ export default function CustomPredictionsPage() {
   const [choices, setChoices] = useState([{ text: "", points: 2 }, { text: "", points: 2 }]);
   const [creating, setCreating] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    try {
-      const [leaguesRes, racesRes] = await Promise.all([
-        apiClient.get("/leagues/my"),
-        apiClient.get("/races")
-      ]);
+  // ── Data fetching (TanStack Query) ──────────────────────────────────
+  const {
+    loading,
+    allRaces,
+    defaultLeague,
+    predictions,
+    refetchPredictions,
+  } = useCustomPredictionsData(leagueId, league, selectedRace);
 
-      const currentLeague = leaguesRes.data.find(l => l.id === leagueId) || leaguesRes.data[0];
-      setLeague(currentLeague);
-
-      const upcomingRaces = racesRes.data.filter(r => r.status !== "finished");
-      setAllRaces(upcomingRaces);
-
-      if (upcomingRaces.length > 0) {
-        setSelectedRace(upcomingRaces[0]);
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error("Erreur lors du chargement");
-    } finally {
-      setLoading(false);
-    }
-  }, [leagueId]);
-
-  const fetchPredictions = useCallback(async () => {
-    if (!league || !selectedRace) return;
-    try {
-      const predsRes = await apiClient.get(`/custom-predictions/to-answer/${league.id}/${selectedRace.id}`);
-      setPredictions(predsRes.data);
-    } catch (e) {
-      console.error(e);
-      setPredictions([]);
-    }
-  }, [league, selectedRace]);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
-  useEffect(() => { fetchPredictions(); }, [fetchPredictions]);
+  // Hydrate league and selectedRace from query data once
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (loading || hydratedRef.current) return;
+    hydratedRef.current = true;
+    if (defaultLeague) setLeague(defaultLeague);
+    if (allRaces.length > 0) setSelectedRace(allRaces[0]);
+  }, [loading, defaultLeague, allRaces]);
 
   const handleCreatePrediction = async () => {
     if (!question.trim()) { toast.error("Ajoute une question"); return; }
@@ -92,7 +70,7 @@ export default function CustomPredictionsPage() {
       toast.success("Pronostic créé !");
       setShowCreateModal(false);
       resetForm();
-      fetchData();
+      refetchPredictions();
     } catch (e) {
       toast.error(e.response?.data?.detail || "Erreur");
     } finally {
@@ -104,7 +82,7 @@ export default function CustomPredictionsPage() {
     try {
       await apiClient.post(`/custom-predictions/${predictionId}/answer`, { answer });
       toast.success("Réponse enregistrée !");
-      fetchData();
+      refetchPredictions();
     } catch (e) { toast.error("Erreur"); }
   };
 
@@ -113,7 +91,7 @@ export default function CustomPredictionsPage() {
       await apiClient.post(`/custom-predictions/${predictionId}/set-correct`, { correct_answer: correctAnswer });
       toast.success("Réponse correcte définie ! Points attribués.");
       setSelectedPrediction(null);
-      fetchData();
+      refetchPredictions();
     } catch (e) { toast.error(e.response?.data?.detail || "Erreur"); }
   };
 

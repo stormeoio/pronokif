@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { apiClient } from "@/lib/api";
 import { Button } from "../components/ui/button";
-import { 
+import {
   ArrowLeft, Trophy, Target, Zap, Medal, Gamepad2,
   Timer, BarChart3, Calendar, Crown, Users, Flag
 } from "lucide-react";
@@ -13,31 +13,27 @@ export default function MemberProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [avatars, setAvatars] = useState({});
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const [profileRes, avatarsRes] = await Promise.all([
-          apiClient.get(`/users/${userId}/profile`),
-          apiClient.get("/avatars")
-        ]);
-        setProfile(profileRes.data);
-        setAvatars(avatarsRes.data);
-      } catch (e) {
-        setError("Impossible de charger le profil");
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const { data: profile = null, isLoading: profileLoading, error: profileError } = useQuery({
+    queryKey: ["/users", userId, "profile"],
+    queryFn: async () => {
+      const res = await apiClient.get(`/users/${userId}/profile`);
+      return res.data;
+    },
+    enabled: !!userId,
+  });
 
-    fetchProfile();
-  }, [userId]);
+  const { data: avatars = {}, isLoading: avatarsLoading } = useQuery({
+    queryKey: ["/avatars"],
+    queryFn: async () => {
+      const res = await apiClient.get("/avatars");
+      return res.data;
+    },
+    staleTime: 5 * 60_000,
+  });
+
+  const loading = profileLoading || avatarsLoading;
+  const error = profileError ? "Impossible de charger le profil" : null;
 
   const getAvatarById = (avatarId) => {
     return avatars?.all?.find(a => a.id === avatarId) || null;

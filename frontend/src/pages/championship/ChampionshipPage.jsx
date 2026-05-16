@@ -1,69 +1,34 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import { toast } from "sonner";
 import {
   Flag, Trophy, RefreshCw, Loader2, Car, Calendar, GitCompare,
 } from "lucide-react";
-import { JOLPICA_API } from "./championshipUtils";
 import DriverStandings from "./DriverStandings";
 import ConstructorStandings from "./ConstructorStandings";
 import SeasonProgress from "./SeasonProgress";
+import { useChampionshipData } from "./useChampionshipData";
 
 export default function ChampionshipPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("drivers");
-  const [driversStandings, setDriversStandings] = useState([]);
-  const [constructorsStandings, setConstructorsStandings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState(null);
-  const [season, setSeason] = useState(new Date().getFullYear());
-  const [raceSchedule, setRaceSchedule] = useState([]);
 
-  const fetchStandings = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
+  const {
+    loading,
+    refreshing,
+    season,
+    driversStandings,
+    constructorsStandings,
+    raceSchedule,
+    refetchAll,
+    lastUpdated,
+  } = useChampionshipData();
 
-    try {
-      const [driversRes, constructorsRes, scheduleRes] = await Promise.all([
-        fetch(`${JOLPICA_API}/current/driverstandings.json`),
-        fetch(`${JOLPICA_API}/current/constructorstandings.json`),
-        fetch(`${JOLPICA_API}/current.json`),
-      ]);
-
-      if (!driversRes.ok || !constructorsRes.ok) throw new Error("API error");
-
-      const driversData = await driversRes.json();
-      const constructorsData = await constructorsRes.json();
-      const scheduleData = await scheduleRes.json();
-
-      const driversList = driversData?.MRData?.StandingsTable?.StandingsLists?.[0];
-      if (driversList) {
-        setSeason(driversList.season);
-        setDriversStandings(driversList.DriverStandings || []);
-      }
-
-      const constructorsList = constructorsData?.MRData?.StandingsTable?.StandingsLists?.[0];
-      if (constructorsList) {
-        setConstructorsStandings(constructorsList.ConstructorStandings || []);
-      }
-
-      setRaceSchedule(scheduleData?.MRData?.RaceTable?.Races || []);
-      setLastUpdated(new Date());
-      if (isRefresh) toast.success("Classements mis à jour !");
-    } catch (e) {
-      console.error("Error fetching F1 standings:", e);
-      toast.error("Erreur lors du chargement des classements");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchStandings();
-  }, [fetchStandings]);
+  const handleRefresh = async () => {
+    await refetchAll();
+    toast.success("Classements mis à jour !");
+  };
 
   if (loading) {
     return (
@@ -102,7 +67,7 @@ export default function ChampionshipPage() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => fetchStandings(true)}
+              onClick={handleRefresh}
               disabled={refreshing}
               className="text-gray-400 hover:text-white hover:bg-white/10"
             >

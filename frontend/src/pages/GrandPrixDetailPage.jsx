@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
 import { Button } from "../components/ui/button";
 import { 
@@ -64,25 +64,17 @@ const COUNTRY_FLAGS = {
 export default function GrandPrixDetailPage() {
   const { raceId } = useParams();
   const navigate = useNavigate();
-  const [raceDetails, setRaceDetails] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchRaceDetails = async () => {
-      try {
-        const res = await apiClient.get(`/races/${raceId}/details`);
-        setRaceDetails(res.data);
-      } catch (err) {
-        setError("Impossible de charger les détails du Grand Prix");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const { data: raceDetails = null, isLoading: loading, error: queryError } = useQuery({
+    queryKey: ["/races", raceId, "details"],
+    queryFn: async () => {
+      const res = await apiClient.get(`/races/${raceId}/details`);
+      return res.data;
+    },
+    enabled: !!raceId,
+  });
 
-    fetchRaceDetails();
-  }, [raceId]);
+  const error = queryError ? "Impossible de charger les détails du Grand Prix" : null;
 
   const formatDate = (isoString) => {
     const date = new Date(isoString);
