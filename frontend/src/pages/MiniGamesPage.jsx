@@ -9,7 +9,7 @@ import {
   ChevronLeft, Zap, Target, Trophy, Medal, Dumbbell, Timer,
   Crown, Users
 } from "lucide-react";
-import { ReactionGame, BatakGame } from "../components/MiniGames";
+import { ReactionGame, BatakGame } from "../components/mini-games/MiniGames";
 import { AvatarDisplay } from "../components/AvatarDisplay";
 
 export default function MiniGamesPage() {
