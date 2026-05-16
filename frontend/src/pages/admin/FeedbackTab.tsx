@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2, RefreshCw, MessageSquare, Bug, Lightbulb } from "lucide-react";
-import { apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 
 interface FeedbackItem {
   id: number;
@@ -21,15 +21,12 @@ export default function FeedbackTab() {
     refetch: fetchFeedback,
   } = useQuery({
     queryKey: ["/admin/feedback"],
-    queryFn: async (): Promise<FeedbackItem[]> => {
-      const res = await apiClient.get("/admin/feedback");
-      return res.data;
-    },
+    queryFn: () => api.admin.feedback() as unknown as Promise<FeedbackItem[]>,
   });
 
   const markFeedbackRead = async (feedbackId: number) => {
     try {
-      await apiClient.put(`/admin/feedback/${feedbackId}/read`);
+      await api.admin.markFeedbackRead(feedbackId);
       queryClient.invalidateQueries({ queryKey: ["/admin/feedback"] });
     } catch (error: unknown) {
       console.error(error);

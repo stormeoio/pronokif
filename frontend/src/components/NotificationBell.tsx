@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiClient } from "@/lib/api";
 import { Bell } from "lucide-react";
+import { api } from "@/lib/api";
 
 export default function NotificationBell() {
   const navigate = useNavigate();
@@ -9,8 +9,8 @@ export default function NotificationBell() {
 
   const fetchUnreadCount = async () => {
     try {
-      const res = await apiClient.get("/notifications/unread-count");
-      setUnreadCount(res.data.count);
+      const notifications = await api.notifications.list();
+      setUnreadCount(notifications.filter((n) => !n.is_read).length);
     } catch (error: unknown) {
       console.error(error);
     }

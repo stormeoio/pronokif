@@ -17,7 +17,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { ReactionGame, BatakGame } from "../components/mini-games/MiniGames";
 import { AvatarDisplay } from "../components/AvatarDisplay";
-import { apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 export default function MiniGamesPage() {
@@ -31,38 +31,36 @@ export default function MiniGamesPage() {
   // ── Data queries ──────────────────────────────────────────
   const { data: leagues = [] } = useQuery({
     queryKey: ["/leagues/my"],
-    queryFn: async () => (await apiClient.get("/leagues/my")).data,
+    queryFn: () => api.leagues.my(),
   });
 
   const { data: nextRace = null } = useQuery({
     queryKey: ["/races/next"],
-    queryFn: async () => (await apiClient.get("/races/next")).data,
+    queryFn: () => api.races.next(),
   });
 
-  const { data: avatars = {}, isLoading: loading } = useQuery({
+  const { data: avatars = {} as { all?: any[] }, isLoading: loading } = useQuery({
     queryKey: ["/avatars"],
-    queryFn: async () => (await apiClient.get("/avatars")).data,
+    queryFn: () => api.avatars.list(),
     staleTime: 5 * 60_000,
   });
 
   const { data: globalReactionLeaderboard = [] } = useQuery({
     queryKey: ["/minigames/global-leaderboard/reaction"],
-    queryFn: async () =>
-      (await apiClient.get("/minigames/global-leaderboard/reaction")).data.leaderboard || [],
+    queryFn: async () => (await api.minigames.globalLeaderboard("reaction")).leaderboard || [],
   });
 
   const { data: globalBatakLeaderboard = [] } = useQuery({
     queryKey: ["/minigames/global-leaderboard/batak"],
-    queryFn: async () =>
-      (await apiClient.get("/minigames/global-leaderboard/batak")).data.leaderboard || [],
+    queryFn: async () => (await api.minigames.globalLeaderboard("batak")).leaderboard || [],
   });
 
   // ── Dependent queries (need nextRace) ─────────────────────
   const { data: reactionAttempts = { used: 0, remaining: 3 } } = useQuery({
     queryKey: ["/minigames/attempts/reaction", nextRace?.id],
     queryFn: async () => {
-      const res = await apiClient.get(`/minigames/attempts/reaction/global/${nextRace.id}`);
-      return { used: res.data.attempts_used, remaining: res.data.attempts_remaining };
+      const res = await api.minigames.attempts("reaction", "global", nextRace!.id);
+      return { used: res.attempts_used, remaining: res.attempts_remaining };
     },
     enabled: !!nextRace?.id,
   });
@@ -70,8 +68,8 @@ export default function MiniGamesPage() {
   const { data: batakAttempts = { used: 0, remaining: 3 } } = useQuery({
     queryKey: ["/minigames/attempts/batak", nextRace?.id],
     queryFn: async () => {
-      const res = await apiClient.get(`/minigames/attempts/batak/global/${nextRace.id}`);
-      return { used: res.data.attempts_used, remaining: res.data.attempts_remaining };
+      const res = await api.minigames.attempts("batak", "global", nextRace!.id);
+      return { used: res.attempts_used, remaining: res.attempts_remaining };
     },
     enabled: !!nextRace?.id,
   });
@@ -79,10 +77,8 @@ export default function MiniGamesPage() {
   const { data: reactionLeaderboard = [] } = useQuery({
     queryKey: ["/minigames/leaderboard/reaction", leagues[0]?.id, nextRace?.id],
     queryFn: async () => {
-      const res = await apiClient.get(
-        `/minigames/leaderboard/reaction/${leagues[0].id}/${nextRace.id}`,
-      );
-      return res.data.leaderboard || [];
+      const res = await api.minigames.leaderboard("reaction", leagues[0]!.id, nextRace!.id);
+      return res.leaderboard || [];
     },
     enabled: !!nextRace?.id && leagues.length > 0,
   });
@@ -90,10 +86,8 @@ export default function MiniGamesPage() {
   const { data: batakLeaderboard = [] } = useQuery({
     queryKey: ["/minigames/leaderboard/batak", leagues[0]?.id, nextRace?.id],
     queryFn: async () => {
-      const res = await apiClient.get(
-        `/minigames/leaderboard/batak/${leagues[0].id}/${nextRace.id}`,
-      );
-      return res.data.leaderboard || [];
+      const res = await api.minigames.leaderboard("batak", leagues[0]!.id, nextRace!.id);
+      return res.leaderboard || [];
     },
     enabled: !!nextRace?.id && leagues.length > 0,
   });
@@ -107,8 +101,8 @@ export default function MiniGamesPage() {
 
   const handleReactionSubmit = async (reactionTime: number, isTraining: boolean) => {
     try {
-      await apiClient.post("/minigames/reaction", {
-        race_id: nextRace.id,
+      await api.minigames.submitReaction({
+        race_id: nextRace!.id,
         league_id: "global",
         reaction_time_ms: reactionTime,
         is_training: isTraining,
@@ -129,8 +123,8 @@ export default function MiniGamesPage() {
 
   const handleBatakSubmit = async (score: number, timeSeconds: number, isTraining: boolean) => {
     try {
-      await apiClient.post("/minigames/batak", {
-        race_id: nextRace.id,
+      await api.minigames.submitBatak({
+        race_id: nextRace!.id,
         league_id: "global",
         score,
         time_seconds: timeSeconds,

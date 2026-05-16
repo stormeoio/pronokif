@@ -24,7 +24,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Progress } from "../components/ui/progress";
 import { useAuth } from "@/lib/auth";
-import { apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 
 const ICON_MAP = {
   target: Target,
@@ -54,18 +54,12 @@ export default function MissionsPage() {
 
   const { data: missionsData, isLoading: missionsLoading } = useQuery({
     queryKey: ["/user/missions"],
-    queryFn: async () => {
-      const res = await apiClient.get("/user/missions");
-      return res.data;
-    },
+    queryFn: () => api.missions.list(),
   });
 
   const { data: stats = null, isLoading: statsLoading } = useQuery({
     queryKey: ["/user/stats"],
-    queryFn: async () => {
-      const res = await apiClient.get("/user/stats");
-      return res.data;
-    },
+    queryFn: () => api.user.stats(),
   });
 
   const loading = missionsLoading || statsLoading;
@@ -75,16 +69,16 @@ export default function MissionsPage() {
   const handleClaimMission = async (missionId: string) => {
     setClaiming(missionId);
     try {
-      const res = await apiClient.post(`/user/missions/${missionId}/claim`);
-      toast.success(`+${res.data.xp_earned} XP !`);
+      const res = await api.missions.claim(missionId);
+      toast.success(`+${res.xp_earned} XP !`);
 
-      if (res.data.level_up) {
-        toast.success(`Niveau ${res.data.new_level} atteint !`, { icon: "🎉" });
+      if (res.level_up) {
+        toast.success(`Niveau ${res.new_level} atteint !`, { icon: "🎉" });
       }
 
       // Update user data
       if (updateUser) {
-        updateUser({ xp: res.data.new_xp, level: res.data.new_level });
+        updateUser({ xp: res.new_xp, level: res.new_level });
       }
 
       // Refresh missions

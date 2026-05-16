@@ -36,6 +36,7 @@ export interface League {
   members: string[];
   created_at: string;
   description: string | null;
+  owner_id?: string;
 }
 
 export interface LeaguePreview {
@@ -109,6 +110,8 @@ export interface Race {
 export interface RaceDetails extends Race {
   sessions?: RaceSession[];
   circuit_info?: CircuitInfo;
+  can_predict?: boolean;
+  can_predict_sprint?: boolean;
 }
 
 export interface RaceSession {
@@ -241,6 +244,10 @@ export interface PredictionStats {
   total_points: number;
   best_race_points: number;
   current_streak: number;
+  total_predictions?: number;
+  races_participated?: number;
+  winners_correct?: number;
+  poles_correct?: number;
 }
 
 export interface PointsHistoryEntry {

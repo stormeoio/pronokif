@@ -5,15 +5,12 @@
  * All selection/form state stays in the page component.
  */
 import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api";
+import { api, apiClient } from "@/lib/api";
 
 function useRaceDetails(raceId: string | undefined) {
   return useQuery({
     queryKey: ["/races", raceId],
-    queryFn: async () => {
-      const res = await apiClient.get(`/races/${raceId}`);
-      return res.data;
-    },
+    queryFn: () => api.races.get(raceId!),
     enabled: !!raceId,
   });
 }
@@ -21,10 +18,7 @@ function useRaceDetails(raceId: string | undefined) {
 function useDrivers() {
   return useQuery({
     queryKey: ["/drivers"],
-    queryFn: async () => {
-      const res = await apiClient.get("/drivers");
-      return res.data;
-    },
+    queryFn: () => api.drivers.list(),
   });
 }
 

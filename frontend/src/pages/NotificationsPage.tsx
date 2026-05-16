@@ -12,7 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
-import { apiClient } from "@/lib/api";
+import { api, apiClient } from "@/lib/api";
 
 interface Notification {
   id: string;
@@ -43,10 +43,7 @@ export default function NotificationsPage() {
 
   const { data: notifications = [], isLoading: notifsLoading } = useQuery({
     queryKey: ["/notifications"],
-    queryFn: async () => {
-      const res = await apiClient.get("/notifications");
-      return res.data;
-    },
+    queryFn: () => api.notifications.list(),
   });
 
   const { data: unreadData, isLoading: countLoading } = useQuery({
@@ -62,7 +59,7 @@ export default function NotificationsPage() {
 
   const markAsRead = async (notifId: string) => {
     try {
-      await apiClient.put(`/notifications/${notifId}/read`);
+      await api.notifications.markRead(notifId);
       queryClient.invalidateQueries({ queryKey: ["/notifications"] });
       queryClient.invalidateQueries({ queryKey: ["/notifications/unread-count"] });
     } catch (e) {
@@ -72,7 +69,7 @@ export default function NotificationsPage() {
 
   const markAllAsRead = async () => {
     try {
-      await apiClient.put("/notifications/read-all");
+      await api.notifications.markAllRead();
       queryClient.invalidateQueries({ queryKey: ["/notifications"] });
       queryClient.invalidateQueries({ queryKey: ["/notifications/unread-count"] });
     } catch (e) {

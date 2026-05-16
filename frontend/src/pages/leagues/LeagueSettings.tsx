@@ -13,7 +13,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
-import { apiClient } from "@/lib/api";
+import { api, apiClient } from "@/lib/api";
 
 interface LeagueSettingsProps {
   league: Record<string, any>;
@@ -52,7 +52,7 @@ export default function LeagueSettings({
   const leaveLeague = async () => {
     setLeaving(true);
     try {
-      await apiClient.post(`/leagues/${leagueId}/leave`);
+      await api.leagues.leave(leagueId!);
       toast.success("Tu as quitté la ligue");
       navigate("/league");
     } catch (e: unknown) {

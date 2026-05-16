@@ -17,7 +17,7 @@ import {
 import { Button } from "../components/ui/button";
 import { AvatarDisplay } from "../components/AvatarDisplay";
 import { useAuth } from "@/lib/auth";
-import { apiClient } from "@/lib/api";
+import { api, apiClient } from "@/lib/api";
 
 export default function MemberProfilePage() {
   const { userId } = useParams();
@@ -30,19 +30,13 @@ export default function MemberProfilePage() {
     error: profileError,
   } = useQuery({
     queryKey: ["/users", userId, "profile"],
-    queryFn: async () => {
-      const res = await apiClient.get(`/users/${userId}/profile`);
-      return res.data;
-    },
+    queryFn: async () => (await apiClient.get(`/users/${userId}/profile`)).data,
     enabled: !!userId,
   });
 
-  const { data: avatars = {}, isLoading: avatarsLoading } = useQuery({
+  const { data: avatars = {} as { all?: any[] }, isLoading: avatarsLoading } = useQuery({
     queryKey: ["/avatars"],
-    queryFn: async () => {
-      const res = await apiClient.get("/avatars");
-      return res.data;
-    },
+    queryFn: () => api.avatars.list(),
     staleTime: 5 * 60_000,
   });
 

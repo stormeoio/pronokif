@@ -5,7 +5,7 @@
  * for the selected league/race combination.
  */
 import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api";
+import { api, apiClient } from "@/lib/api";
 
 export function useCustomPredictionsData(
   leagueId: string | undefined,
@@ -14,17 +14,14 @@ export function useCustomPredictionsData(
 ) {
   const leaguesQuery = useQuery({
     queryKey: ["/leagues/my"],
-    queryFn: async () => {
-      const res = await apiClient.get("/leagues/my");
-      return res.data;
-    },
+    queryFn: () => api.leagues.my(),
   });
 
   const racesQuery = useQuery({
     queryKey: ["/races"],
     queryFn: async () => {
-      const res = await apiClient.get("/races");
-      return (res.data || []).filter((r: any) => r.status !== "finished");
+      const data = await api.races.list();
+      return (data || []).filter((r: any) => r.status !== "finished");
     },
   });
 

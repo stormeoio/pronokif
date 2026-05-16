@@ -14,7 +14,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
-import { apiClient } from "@/lib/api";
+import { api, apiClient } from "@/lib/api";
 
 // Circuit layout images (SVG-style track maps from Wikipedia/F1 sources)
 const CIRCUIT_IMAGES = {

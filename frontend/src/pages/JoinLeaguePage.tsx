@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Trophy, Users, LogIn, Loader2, AlertCircle, CheckCircle, Home } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { useAuth } from "@/lib/auth";
-import { apiClient } from "@/lib/api";
+import { api, apiClient } from "@/lib/api";
 
 interface LeaguePreview {
   id: string;
@@ -45,10 +45,7 @@ export default function JoinLeaguePage() {
 
   const { data: myLeagues = [], isLoading: myLeaguesLoading } = useQuery<LeagueBasic[]>({
     queryKey: ["/leagues/my"],
-    queryFn: async () => {
-      const res = await apiClient.get<LeagueBasic[]>("/leagues/my");
-      return res.data;
-    },
+    queryFn: () => api.leagues.my() as Promise<LeagueBasic[]>,
     enabled: !!user && !!league,
   });
 
@@ -66,9 +63,9 @@ export default function JoinLeaguePage() {
 
     setJoining(true);
     try {
-      const res = await apiClient.post<LeagueBasic>("/leagues/join", { code: code!.toUpperCase() });
-      updateUser({ ...user, current_league_id: res.data.id });
-      toast.success(`Tu as rejoint "${res.data.name}" !`);
+      const res = await api.leagues.join({ code: code!.toUpperCase() });
+      updateUser({ ...user, current_league_id: res.id });
+      toast.success(`Tu as rejoint "${res.name}" !`);
       navigate("/");
     } catch (e: unknown) {
       const axiosError = e as AxiosError<{ detail: string }>;

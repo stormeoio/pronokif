@@ -106,7 +106,7 @@ export default function AdminPage() {
         </div>
 
         {adminTab === "results" && (
-          <ResultsTab races={races} setRaces={setRaces} drivers={drivers} />
+          <ResultsTab races={races} setRaces={setRaces} drivers={drivers as any} />
         )}
         {adminTab === "notifications" && <NotificationsTab />}
         {adminTab === "feedback" && <FeedbackTab />}

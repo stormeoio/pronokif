@@ -3,7 +3,7 @@ import { Home, Trophy, Target, User, Users, MessageCircle, Flag } from "lucide-r
 import type { LucideIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
-import { apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 
 // ------------------------------------------------------------------ types ---
 
@@ -34,8 +34,8 @@ export default function BottomNav() {
   useEffect(() => {
     const fetchUnread = async (): Promise<void> => {
       try {
-        const chatRes = await apiClient.get("/leagues/unread-messages");
-        setUnreadChatCount((chatRes.data as { total_unread: number }).total_unread);
+        const data = await api.leagues.unreadMessages();
+        setUnreadChatCount(data.total_unread);
       } catch {
         // Ignore
       }

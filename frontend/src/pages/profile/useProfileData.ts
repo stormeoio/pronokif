@@ -5,39 +5,30 @@
  * points history, and optionally league-specific leaderboard.
  */
 import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api";
+import { api, apiClient } from "@/lib/api";
 
 export function useProfileData(userId: string, currentLeagueId: string | null) {
   const leaguesQuery = useQuery({
     queryKey: ["/leagues/my"],
-    queryFn: async () => {
-      const res = await apiClient.get("/leagues/my");
-      return res.data;
-    },
+    queryFn: () => api.leagues.my(),
   });
 
   const statsQuery = useQuery({
     queryKey: ["/predictions/stats"],
-    queryFn: async () => {
-      const res = await apiClient.get("/predictions/stats");
-      return res.data;
-    },
+    queryFn: () => api.predictions.stats(),
   });
 
   const avatarsQuery = useQuery({
     queryKey: ["/avatars"],
-    queryFn: async () => {
-      const res = await apiClient.get("/avatars");
-      return res.data;
-    },
+    queryFn: () => api.avatars.list(),
     staleTime: 5 * 60_000,
   });
 
   const globalLbQuery = useQuery({
     queryKey: ["/leaderboard/global"],
     queryFn: async () => {
-      const res = await apiClient.get("/leaderboard/global");
-      return res.data.my_position ?? null;
+      const data = await api.leaderboard.global();
+      return (data as any).my_position ?? null;
     },
   });
 
@@ -52,8 +43,8 @@ export function useProfileData(userId: string, currentLeagueId: string | null) {
   const leagueLeaderboardQuery = useQuery({
     queryKey: ["/leagues/leaderboard", currentLeagueId],
     queryFn: async () => {
-      const res = await apiClient.get(`/leagues/${currentLeagueId}/leaderboard`);
-      const myEntry = res.data.find((e: any) => e.user_id === userId);
+      const data = await api.leagues.leaderboard(currentLeagueId!);
+      const myEntry = (data as any[]).find((e: any) => e.user_id === userId);
       return myEntry?.total_points ?? null;
     },
     enabled: !!currentLeagueId,

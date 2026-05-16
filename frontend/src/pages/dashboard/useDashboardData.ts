@@ -5,7 +5,7 @@
  * declarative queries. Automatic refetch, caching, and error handling.
  */
 import { useQuery, useQueries } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api";
+import { api, apiClient } from "@/lib/api";
 
 // ── Individual queries ─────────────────────────────────────────────
 
@@ -13,8 +13,8 @@ function useUpcomingRaces() {
   return useQuery({
     queryKey: ["/races/upcoming"],
     queryFn: async () => {
-      const res = await apiClient.get("/races/upcoming");
-      return (res.data || []).filter((r: any) => r.status !== "finished");
+      const data = (await apiClient.get("/races/upcoming")).data;
+      return (data || []).filter((r: any) => r.status !== "finished");
     },
   });
 }
@@ -22,10 +22,7 @@ function useUpcomingRaces() {
 function useAvatars() {
   return useQuery({
     queryKey: ["/avatars"],
-    queryFn: async () => {
-      const res = await apiClient.get("/avatars");
-      return res.data;
-    },
+    queryFn: () => api.avatars.list(),
     staleTime: 5 * 60_000, // avatars don't change often
   });
 }
@@ -34,8 +31,8 @@ function useMyLeagues() {
   return useQuery({
     queryKey: ["/leagues/my"],
     queryFn: async () => {
-      const res = await apiClient.get("/leagues/my");
-      return res.data || [];
+      const data = await api.leagues.my();
+      return data || [];
     },
   });
 }
@@ -44,8 +41,8 @@ function useUnreadMessages() {
   return useQuery({
     queryKey: ["/leagues/unread-messages"],
     queryFn: async () => {
-      const res = await apiClient.get("/leagues/unread-messages");
-      return res.data?.by_league || {};
+      const data = await api.leagues.unreadMessages();
+      return (data as any)?.by_league || {};
     },
     refetchInterval: 30_000, // poll every 30s for unread badges
   });
@@ -59,8 +56,7 @@ function useRacePredictions(races: any[]) {
       queryKey: ["/predictions/race", race.id],
       queryFn: async () => {
         try {
-          const res = await apiClient.get(`/predictions/race/${race.id}`);
-          return res.data;
+          return await api.predictions.get(String(race.id));
         } catch {
           return null;
         }

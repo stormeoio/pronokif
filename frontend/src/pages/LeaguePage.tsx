@@ -9,7 +9,7 @@ import { Label } from "../components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import LeagueCreatedScreen from "./leagues/LeagueCreatedScreen";
 import LeagueList from "./leagues/LeagueList";
-import { apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 export default function LeaguePage() {
@@ -27,16 +27,14 @@ export default function LeaguePage() {
   // ── Data queries ──────────────────────────────────────────
   const { data: myLeagues = [], isLoading: loadingLeagues } = useQuery({
     queryKey: ["/leagues/my"],
-    queryFn: async () => (await apiClient.get("/leagues/my")).data,
+    queryFn: () => api.leagues.my(),
   });
 
   const { data: unreadByLeague = {} } = useQuery({
     queryKey: ["/leagues/unread-messages"],
     queryFn: async () => {
-      const res = await apiClient
-        .get("/leagues/unread-messages")
-        .catch(() => ({ data: { by_league: {} } }));
-      return res.data.by_league || {};
+      const res = await api.leagues.unreadMessages().catch(() => ({ by_league: {} }));
+      return res.by_league || {};
     },
   });
 
@@ -53,9 +51,9 @@ export default function LeaguePage() {
     const code = (formData.get("code") as string).toUpperCase();
 
     try {
-      const res = await apiClient.post("/leagues/join", { code });
-      updateUser({ ...user, current_league_id: res.data.id });
-      toast.success(`Tu as rejoint "${res.data.name}" !`);
+      const res = await api.leagues.join({ code });
+      updateUser({ ...user, current_league_id: res.id });
+      toast.success(`Tu as rejoint "${res.name}" !`);
       invalidateLeagues();
       (e.target as HTMLFormElement).reset();
     } catch (error: unknown) {
@@ -75,9 +73,9 @@ export default function LeaguePage() {
     const name = formData.get("name") as string;
 
     try {
-      const res = await apiClient.post("/leagues", { name });
-      setCreatedLeague(res.data);
-      updateUser({ ...user, current_league_id: res.data.id });
+      const res = await api.leagues.create({ name });
+      setCreatedLeague(res);
+      updateUser({ ...user, current_league_id: res.id });
       toast.success("Ligue creee !");
       invalidateLeagues();
     } catch (error: unknown) {
@@ -159,7 +157,7 @@ export default function LeaguePage() {
 
         {/* My Leagues List */}
         <LeagueList
-          leagues={myLeagues}
+          leagues={myLeagues as any}
           loading={loadingLeagues}
           userId={user!.id}
           currentLeagueId={user!.current_league_id}

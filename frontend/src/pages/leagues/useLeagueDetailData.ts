@@ -2,42 +2,30 @@
  * League detail data hook — TanStack Query migration.
  */
 import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 
 export function useLeagueDetailData(leagueId: string | undefined) {
   const leagueQuery = useQuery({
     queryKey: ["/leagues", leagueId],
-    queryFn: async () => {
-      const res = await apiClient.get(`/leagues/${leagueId}`);
-      return res.data;
-    },
+    queryFn: () => api.leagues.get(leagueId!),
     enabled: !!leagueId,
   });
 
   const membersQuery = useQuery({
     queryKey: ["/leagues", leagueId, "members"],
-    queryFn: async () => {
-      const res = await apiClient.get(`/leagues/${leagueId}/members`);
-      return res.data;
-    },
+    queryFn: () => api.leagues.members(leagueId!),
     enabled: !!leagueId,
   });
 
   const leaderboardQuery = useQuery({
     queryKey: ["/leagues", leagueId, "leaderboard"],
-    queryFn: async () => {
-      const res = await apiClient.get(`/leagues/${leagueId}/leaderboard`);
-      return res.data;
-    },
+    queryFn: () => api.leagues.leaderboard(leagueId!),
     enabled: !!leagueId,
   });
 
   const avatarsQuery = useQuery({
     queryKey: ["/avatars"],
-    queryFn: async () => {
-      const res = await apiClient.get("/avatars");
-      return res.data;
-    },
+    queryFn: () => api.avatars.list(),
     staleTime: 5 * 60_000,
   });
 
@@ -47,7 +35,7 @@ export function useLeagueDetailData(leagueId: string | undefined) {
     league: leagueQuery.data ?? null,
     members: membersQuery.data ?? [],
     leaderboard: leaderboardQuery.data ?? [],
-    avatars: avatarsQuery.data ?? {},
+    avatars: avatarsQuery.data ?? ({} as Record<string, any>),
     refetch: () => {
       leagueQuery.refetch();
       membersQuery.refetch();

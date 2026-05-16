@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2, Users, RefreshCw } from "lucide-react";
 import { DeleteConfirmModal, MemberDetailsModal } from "./MembersSubComponents";
-import { apiClient } from "@/lib/api";
+import { api, apiClient } from "@/lib/api";
 
 interface MemberListItem {
   id: number;
@@ -48,10 +48,7 @@ export default function MembersTab() {
     refetch: fetchMembers,
   } = useQuery({
     queryKey: ["/admin/members"],
-    queryFn: async (): Promise<MemberListItem[]> => {
-      const res = await apiClient.get("/admin/members");
-      return res.data;
-    },
+    queryFn: (): Promise<MemberListItem[]> => api.admin.members(),
   });
 
   const [selectedMember, setSelectedMember] = useState<number | null>(null);

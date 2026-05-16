@@ -6,7 +6,7 @@ import { ArrowLeft, Send, Users, MessageCircle, RefreshCw, Crown, Clock } from "
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { AvatarDisplay } from "../components/AvatarDisplay";
-import { apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 export default function LeagueChatPage() {
@@ -24,17 +24,17 @@ export default function LeagueChatPage() {
   // ── Data queries ──────────────────────────────────────────
   const { data: league = null, isLoading: leagueLoading } = useQuery({
     queryKey: ["/leagues", leagueId],
-    queryFn: async () => (await apiClient.get(`/leagues/${leagueId}`)).data,
+    queryFn: () => api.leagues.get(leagueId!),
     enabled: !!leagueId,
   });
 
   const { data: messages = [] } = useQuery({
     queryKey: ["/leagues", leagueId, "messages"],
     queryFn: async () => {
-      const res = await apiClient.get(`/leagues/${leagueId}/messages`);
+      const data = await api.chat.messages(leagueId!);
       // Mark messages as read (fire & forget)
-      apiClient.post(`/leagues/${leagueId}/messages/read`).catch(() => {});
-      return res.data;
+      api.chat.markRead(leagueId!).catch(() => {});
+      return data;
     },
     enabled: !!leagueId,
     refetchInterval: 15_000, // Auto-refresh every 15 seconds
@@ -42,13 +42,13 @@ export default function LeagueChatPage() {
 
   const { data: members = [] } = useQuery({
     queryKey: ["/leagues", leagueId, "members"],
-    queryFn: async () => (await apiClient.get(`/leagues/${leagueId}/members`)).data,
+    queryFn: () => api.leagues.members(leagueId!),
     enabled: !!leagueId,
   });
 
-  const { data: avatars = {} } = useQuery({
+  const { data: avatars = {} as { all?: any[] } } = useQuery({
     queryKey: ["/avatars"],
-    queryFn: async () => (await apiClient.get("/avatars")).data,
+    queryFn: () => api.avatars.list(),
     staleTime: 5 * 60_000,
   });
 
@@ -68,9 +68,7 @@ export default function LeagueChatPage() {
 
     setSending(true);
     try {
-      await apiClient.post(`/leagues/${leagueId}/messages`, {
-        content: newMessage.trim(),
-      });
+      await api.chat.send(leagueId!, { content: newMessage.trim() });
       setNewMessage("");
       queryClient.invalidateQueries({ queryKey: ["/leagues", leagueId, "messages"] });
     } catch (e: unknown) {

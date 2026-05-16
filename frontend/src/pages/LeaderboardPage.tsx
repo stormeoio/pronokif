@@ -23,7 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
-import { apiClient } from "@/lib/api";
+import { api, apiClient } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 interface League {
@@ -52,10 +52,7 @@ export default function LeaderboardPage() {
 
   const { data: leagues = [], isLoading: leaguesLoading } = useQuery({
     queryKey: ["/leagues/my"],
-    queryFn: async () => {
-      const res = await apiClient.get("/leagues/my");
-      return res.data;
-    },
+    queryFn: () => api.leagues.my(),
   });
 
   const activeLeagueId = selectedLeagueId || user?.current_league_id;
@@ -66,10 +63,7 @@ export default function LeaderboardPage() {
 
   const { data: leaderboard = [], isLoading: lbLoading } = useQuery({
     queryKey: ["/leagues", activeLeagueId, "leaderboard"],
-    queryFn: async () => {
-      const res = await apiClient.get(`/leagues/${activeLeagueId}/leaderboard`);
-      return res.data;
-    },
+    queryFn: () => api.leagues.leaderboard(activeLeagueId!),
     enabled: !!activeLeagueId,
   });
 

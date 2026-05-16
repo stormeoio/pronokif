@@ -85,8 +85,8 @@ export default function LeagueDetailPage() {
   };
 
   const startEditing = () => {
-    setEditName(league.name);
-    setEditDescription(league.description || "");
+    setEditName(league!.name);
+    setEditDescription(league!.description || "");
     setIsEditing(true);
   };
 
@@ -119,7 +119,8 @@ export default function LeagueDetailPage() {
 
   const getAvatar = (member: Record<string, any>): string | null => {
     if (member.custom_avatar_url) return member.custom_avatar_url;
-    if (member.avatar_id && avatars[member.avatar_id]) return avatars[member.avatar_id];
+    if (member.avatar_id && (avatars as any)[member.avatar_id])
+      return (avatars as any)[member.avatar_id];
     return null;
   };
 

@@ -19,7 +19,7 @@ import { Switch } from "../../components/ui/switch";
 import PredictionCard from "./PredictionCard";
 import SetCorrectAnswerModal from "./SetCorrectAnswerModal";
 import { useCustomPredictionsData } from "./useCustomPredictionsData";
-import { apiClient } from "@/lib/api";
+import { api, apiClient } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 interface League {
@@ -81,7 +81,7 @@ export default function CustomPredictionsPage() {
     if (loading || hydratedRef.current) return;
     hydratedRef.current = true;
     if (defaultLeague) setLeague(defaultLeague);
-    if (allRaces.length > 0) setSelectedRace(allRaces[0]);
+    if (allRaces.length > 0) setSelectedRace(allRaces[0] ?? null);
   }, [loading, defaultLeague, allRaces]);
 
   const handleCreatePrediction = async () => {
@@ -103,7 +103,7 @@ export default function CustomPredictionsPage() {
         multiple_choice: multipleChoice,
         choices: answerType === "choice" ? choices.filter((c) => c.text.trim()) : null,
       };
-      await apiClient.post("/custom-predictions", payload);
+      await api.customPredictions.create(payload as any);
       toast.success("Pronostic créé !");
       setShowCreateModal(false);
       resetForm();

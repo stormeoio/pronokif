@@ -6,7 +6,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import ResultComparisonCard from "./results/ResultComparisonCard";
 import { useAuth } from "@/lib/auth";
-import { apiClient } from "@/lib/api";
+import { api, apiClient } from "@/lib/api";
 
 export default function ResultsPage() {
   const { raceId } = useParams();
@@ -17,12 +17,12 @@ export default function ResultsPage() {
 
   const { data: races = [], isLoading: racesLoading } = useQuery({
     queryKey: ["/races"],
-    queryFn: async () => (await apiClient.get("/races")).data,
+    queryFn: () => api.races.list(),
   });
 
   const { data: drivers = [], isLoading: driversLoading } = useQuery({
     queryKey: ["/drivers"],
-    queryFn: async () => (await apiClient.get("/drivers")).data,
+    queryFn: () => api.drivers.list(),
   });
 
   const selectedRace = useMemo(() => {
@@ -34,7 +34,7 @@ export default function ResultsPage() {
 
   const { data: result = null } = useQuery({
     queryKey: ["/results", selectedRace?.id],
-    queryFn: async () => (await apiClient.get(`/results/${selectedRace.id}`)).data,
+    queryFn: async () => (await apiClient.get(`/results/${selectedRace!.id}`)).data,
     enabled: !!selectedRace?.id,
   });
 

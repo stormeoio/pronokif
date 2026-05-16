@@ -5,7 +5,7 @@ import { ChevronLeft, Crown, Trophy, Users, Globe, Zap } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { AvatarDisplay } from "../components/AvatarDisplay";
-import { apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 interface LeaderboardEntry {
@@ -25,24 +25,14 @@ export default function GlobalLeaderboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const { data: lbData, isLoading: lbLoading } = useQuery<{
-    leaderboard: LeaderboardEntry[];
-    my_position: number | null;
-    total_players: number;
-  }>({
+  const { data: lbData, isLoading: lbLoading } = useQuery({
     queryKey: ["/leaderboard/global?limit=100"],
-    queryFn: async () => {
-      const res = await apiClient.get("/leaderboard/global?limit=100");
-      return res.data;
-    },
+    queryFn: () => api.leaderboard.global(100),
   });
 
-  const { data: avatars = {} as AvatarData, isLoading: avatarsLoading } = useQuery<AvatarData>({
+  const { data: avatars = {} as AvatarData, isLoading: avatarsLoading } = useQuery({
     queryKey: ["/avatars"],
-    queryFn: async () => {
-      const res = await apiClient.get("/avatars");
-      return res.data;
-    },
+    queryFn: () => api.avatars.list() as any,
     staleTime: 5 * 60_000,
   });
 
@@ -52,7 +42,7 @@ export default function GlobalLeaderboardPage() {
   const totalPlayers = lbData?.total_players || 0;
 
   const getAvatarById = (avatarId: string | undefined): any => {
-    return avatars?.all?.find((a) => a.id === avatarId) || null;
+    return avatars?.all?.find((a: any) => a.id === avatarId) || null;
   };
 
   if (loading) {

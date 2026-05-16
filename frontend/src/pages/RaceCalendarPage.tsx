@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { useAuth } from "@/lib/auth";
-import { apiClient } from "@/lib/api";
+import { api, apiClient } from "@/lib/api";
 
 // Country flag emojis mapping
 const COUNTRY_FLAGS = {
@@ -60,9 +60,9 @@ export default function RaceCalendarPage() {
   const { data: myPredictions = {}, isLoading: predsLoading } = useQuery({
     queryKey: ["/predictions/history"],
     queryFn: async () => {
-      const res = await apiClient.get("/predictions/history");
+      const data = await api.predictions.history();
       const predsMap: Record<string, unknown> = {};
-      res.data.forEach((p: { race_id: string }) => {
+      data.forEach((p: { race_id: string }) => {
         predsMap[p.race_id] = p;
       });
       return predsMap;

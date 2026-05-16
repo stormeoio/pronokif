@@ -2,7 +2,7 @@
  * Admin data hook — TanStack Query migration.
  */
 import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api";
+import { api, apiClient } from "@/lib/api";
 
 export function useAdminData() {
   const racesQuery = useQuery({
@@ -16,10 +16,7 @@ export function useAdminData() {
 
   const driversQuery = useQuery({
     queryKey: ["/drivers"],
-    queryFn: async () => {
-      const res = await apiClient.get("/drivers");
-      return res.data;
-    },
+    queryFn: () => api.drivers.list(),
     enabled: racesQuery.isSuccess, // only fetch if admin check passed
   });
 

@@ -3,7 +3,7 @@ import { Trophy, Timer, RotateCcw, Play, Target, Share2, X, MessageCircle } from
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { apiClient } from "@/lib/api";
+import { api } from "@/lib/api";
 
 interface BatakGameProps {
   onSubmit?: (score: number, duration: number, isTraining: boolean) => Promise<void>;
@@ -97,8 +97,8 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
   const fetchUserLeagues = async () => {
     setLoadingLeagues(true);
     try {
-      const res = await apiClient.get("/leagues/my");
-      setUserLeagues(res.data || []);
+      const data = await api.leagues.my();
+      setUserLeagues((data || []) as unknown as League[]);
     } catch (error: unknown) {
       console.error("Error fetching leagues:", error);
       setUserLeagues([]);
@@ -116,7 +116,7 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
     setSharing(true);
     try {
       const message = `🎯 J'ai fait ${score} cibles au Batak Pro ! ${getResultMessage(score)} Qui peut faire mieux ?`;
-      await apiClient.post(`/leagues/${leagueId}/messages`, { content: message });
+      await api.chat.send(String(leagueId), { content: message });
       toast.success(`Score partagé dans ${leagueName} !`);
       setShowShareModal(false);
     } catch (error: unknown) {

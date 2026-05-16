@@ -399,7 +399,7 @@ export default function ProfilePage() {
             </div>
             <div className="p-4">
               <AvatarSelector
-                avatars={avatars}
+                avatars={avatars ?? undefined}
                 selectedId={user!.avatar_id}
                 onSelect={handleAvatarSelect}
                 customUrl={user!.custom_avatar_url as any}
