@@ -2131,13 +2131,12 @@ async def health_check():
 # Include router
 app.include_router(api_router)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Install the security middleware stack: strict CORS (no wildcard outside
+# dev), conservative security headers (HSTS, X-Frame-Options, nosniff,
+# Referrer-Policy, Permissions-Policy), and an optional slowapi rate
+# limiter when the dependency is present. See backend/middleware/security.py.
+from middleware.security import install as install_security
+install_security(app)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
