@@ -51,6 +51,9 @@ dump.rdb
 # ═══════════════════════════════════════ TESTING ════════════════════════════════
 /coverage
 frontend/coverage/
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
 
 # ═══════════════════════════════════════ ARCHIVES ═══════════════════════════════
 *.zip
