@@ -49,7 +49,11 @@ export default function BottomNav() {
   }, [user]);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50" data-testid="bottom-nav">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50"
+      aria-label="Navigation principale"
+      data-testid="bottom-nav"
+    >
       {/* Kerb stripe decoration top */}
       <div className="h-2 bg-kerb-stripe" />
 
@@ -66,6 +70,8 @@ export default function BottomNav() {
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
+              aria-label={item.label}
+              aria-current={isActive ? "page" : undefined}
               className={`flex flex-col items-center justify-center w-[52px] h-[52px] rounded-xl transition-all relative ${
                 isActive
                   ? "nav-item-active shadow-lg"

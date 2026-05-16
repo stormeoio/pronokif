@@ -325,7 +325,7 @@ export function useResultsState({ setRaces }: UseResultsStateParams): UseResults
             duration: 5000,
           });
         else toast.warning("Aucune donnee disponible via l'API. Saisie manuelle requise.");
-        if ((resData.errors?.length ?? 0) > 0) console.log("Sync errors:", resData.errors);
+        if ((resData.errors?.length ?? 0) > 0) console.warn("Sync errors:", resData.errors);
       } else {
         toast.warning(resData.message ?? "Donnees non disponibles, saisie manuelle requise.");
       }

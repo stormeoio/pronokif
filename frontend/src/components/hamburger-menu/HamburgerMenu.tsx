@@ -41,10 +41,12 @@ export default function HamburgerMenu() {
     <>
       <button
         onClick={() => setIsOpen(true)}
+        aria-label="Ouvrir le menu"
+        aria-expanded={isOpen}
         className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
         data-testid="hamburger-menu-btn"
       >
-        <Menu className="w-6 h-6" />
+        <Menu className="w-6 h-6" aria-hidden="true" />
       </button>
 
       {isOpen && (
@@ -52,12 +54,16 @@ export default function HamburgerMenu() {
       )}
 
       <div
+        role="dialog"
+        aria-label="Menu principal"
+        aria-hidden={!isOpen}
         className={`fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-[#0a1628] border-r border-cyan-500/20 z-50 transform transition-transform duration-300 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="p-4 border-b border-gray-700/50 flex items-center justify-between">
           <h2 className="font-heading text-lg text-white uppercase tracking-wider">Menu</h2>
           <button
             onClick={closeMenu}
+            aria-label="Fermer le menu"
             className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
           >
             <X className="w-5 h-5" />

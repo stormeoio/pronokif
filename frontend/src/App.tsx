@@ -66,7 +66,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className={hideNav ? "" : "pb-safe"}>
+      <main className={hideNav ? "" : "pb-safe"} role="main">
         <ErrorBoundary key={location.pathname}>
           <Suspense fallback={<PageLoader />}>{children}</Suspense>
         </ErrorBoundary>

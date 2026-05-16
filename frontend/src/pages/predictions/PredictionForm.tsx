@@ -238,7 +238,7 @@ export default function PredictionForm({
   return (
     <>
       {/* Step Navigation Grid */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-2" role="tablist" aria-label="Etapes de pronostic">
         {steps.map((step) => {
           const Icon = step.icon;
           const isActive = selectionMode === step.key || (step.isBonus && showBonus);
@@ -287,6 +287,9 @@ export default function PredictionForm({
           return (
             <button
               key={step.key}
+              role="tab"
+              aria-selected={isActive}
+              aria-label={`${step.label} ${step.sublabel}`}
               onClick={handleStepClick}
               className={`flex flex-col items-center p-2 rounded-xl transition-all border-2 ${bgClass} ${borderClass}`}
               data-testid={`step-${step.key}`}

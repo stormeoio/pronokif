@@ -151,7 +151,7 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
           }
         }
       } catch (openF1Error: unknown) {
-        console.log("OpenF1 data not available:", openF1Error);
+        // OpenF1 API optional — silently fall back to Ergast-only data
       }
 
       const raceResultsList = raceData?.MRData?.RaceTable?.Races?.[0]?.Results || [];
