@@ -2,8 +2,10 @@
 # Install on top of requirements.txt:
 #   pip install -r backend/requirements.txt -r backend/requirements-dev.txt
 
-# -- Runtime add-ons used by the security middleware (S0-7) --
-slowapi==0.1.9            # opt-in per-IP rate limiter for FastAPI
+# Runtime deps used by middleware/security.py (slowapi rate limiter)
+# now live in backend/requirements.txt so production gets actual rate
+# limiting instead of the silent no-op fallback. Keep this file for
+# tooling deps only.
 
 # -- Tests --
 pytest-asyncio==0.24.0    # async test cases for FastAPI

@@ -23,7 +23,6 @@ Wires three things on the application:
 from __future__ import annotations
 
 import os
-from typing import Iterable
 
 from fastapi import FastAPI
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -151,9 +150,12 @@ def install_rate_limit(app: FastAPI) -> None:
 
 def install(app: FastAPI) -> None:
     """Install the full security middleware stack on the FastAPI app."""
-    # Order matters: CORS must run first so preflight responses also
-    # carry the security headers; rate-limit attaches state without
-    # adding a middleware itself.
+    # Starlette stacks middleware in LIFO order: the last add_middleware
+    # call wraps the request OUTERMOST. We install CORS first (becomes
+    # innermost) and security-headers second (becomes outermost). That
+    # way SecurityHeadersMiddleware runs on the way back out for every
+    # response, including CORS preflight short-circuit responses.
+    # rate-limit only attaches state, no middleware layer.
     install_cors(app)
     install_security_headers(app)
     install_rate_limit(app)

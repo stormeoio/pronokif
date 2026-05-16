@@ -42,6 +42,14 @@ on any running instance. Force-pushing a rewritten history would invalidate
 every external fork and every link to a commit SHA on GitHub for no
 operational gain. The rotation closes the actual attack surface.
 
+**Heads-up on automated scanners.** GitHub's secret scanning, Dependabot,
+TruffleHog, and similar bots will continue to surface the
+`pronokif-secret-key-2026` string when they crawl the historical commits
+(it is, after all, what they are designed to find). This is expected. When
+those alerts arrive, mark them as resolved with the reason "secret rotated"
+and link to commit `803b183` plus this section. Do not attempt to silence
+the bot by patching individual commits. The rotation is the answer.
+
 ### 2026-05-16 — Stale `.env` files in git history
 
 **What happened.** Two non-secret `.env` files were committed and later

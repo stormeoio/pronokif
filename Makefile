@@ -120,9 +120,9 @@ dev-frontend:  ## Start the frontend in dev mode (CRA / Vite)
 .PHONY: clean
 clean:  ## Remove caches, builds and the venv
 	rm -rf $(VENV) frontend/build frontend/node_modules/.cache
-	find . -type d -name __pycache__ -prune -exec rm -rf {} +
-	find . -type d -name .pytest_cache -prune -exec rm -rf {} +
-	find . -type d -name .ruff_cache -prune -exec rm -rf {} +
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name .ruff_cache -exec rm -rf {} + 2>/dev/null || true
 
 .PHONY: ci
 ci: format-check lint test security  ## What CI will run on every PR
