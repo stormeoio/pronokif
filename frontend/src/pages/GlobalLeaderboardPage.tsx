@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { AvatarDisplay } from "../components/AvatarDisplay";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import type { AvatarsResponse } from "@/types/api";
 
 interface LeaderboardEntry {
   user_id: string;
@@ -15,10 +16,6 @@ interface LeaderboardEntry {
   total_points: number;
   position: number;
   level: number;
-}
-
-interface AvatarData {
-  all: Array<{ id: string; [key: string]: unknown }>;
 }
 
 export default function GlobalLeaderboardPage() {
@@ -30,9 +27,9 @@ export default function GlobalLeaderboardPage() {
     queryFn: () => api.leaderboard.global(100),
   });
 
-  const { data: avatars = {} as AvatarData, isLoading: avatarsLoading } = useQuery({
+  const { data: avatars, isLoading: avatarsLoading } = useQuery({
     queryKey: ["/avatars"],
-    queryFn: () => api.avatars.list() as any,
+    queryFn: () => api.avatars.list(),
     staleTime: 5 * 60_000,
   });
 
@@ -41,8 +38,9 @@ export default function GlobalLeaderboardPage() {
   const myPosition = lbData?.my_position || null;
   const totalPlayers = lbData?.total_players || 0;
 
-  const getAvatarById = (avatarId: string | undefined): any => {
-    return avatars?.all?.find((a: any) => a.id === avatarId) || null;
+  const getAvatarById = (avatarId: string | null | undefined) => {
+    if (!avatarId) return null;
+    return avatars?.all?.find((a) => a.id === avatarId) || null;
   };
 
   if (loading) {
@@ -99,7 +97,7 @@ export default function GlobalLeaderboardPage() {
             <div className="flex items-center gap-3">
               <AvatarDisplay
                 avatar={getAvatarById(user?.avatar_id)}
-                customUrl={user?.custom_avatar_url as any}
+                customUrl={user?.custom_avatar_url}
                 size="md"
               />
               <div>

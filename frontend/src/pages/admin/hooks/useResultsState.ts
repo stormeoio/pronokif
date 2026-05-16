@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api";
 
-type SelectionMode =
+export type SelectionMode =
   | "quali_pole"
   | "quali_top10"
   | "sprint_quali_pole"

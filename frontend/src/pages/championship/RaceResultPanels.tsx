@@ -4,7 +4,7 @@
 import { Clock, Flag, Target, Timer, Zap } from "lucide-react";
 import { getTeamColor, getRankStyle, formatLapTime } from "./championshipUtils";
 
-interface RaceResult {
+export interface RaceResult {
   position: string;
   points: string;
   status: string;
@@ -14,7 +14,7 @@ interface RaceResult {
   FastestLap?: { rank: string; lap: string; Time?: { time: string } };
 }
 
-interface QualifyingResult {
+export interface QualifyingResult {
   position: string;
   Driver: { driverId: string; givenName: string; familyName: string };
   Constructor?: { constructorId: string };
@@ -23,18 +23,18 @@ interface QualifyingResult {
   Q3?: string;
 }
 
-interface LapEntry {
+export interface LapEntry {
   driver_number: number;
   lap_duration: number;
 }
 
-interface PracticeData {
+export interface PracticeData {
   fp1: LapEntry[];
   fp2: LapEntry[];
   fp3: LapEntry[];
 }
 
-interface RaceResultsData {
+export interface RaceResultsData {
   fastestLap: {
     driver?: { givenName: string; familyName: string };
     constructor?: { constructorId: string; name: string };

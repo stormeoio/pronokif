@@ -24,7 +24,7 @@ export function useAdminData() {
     racesQuery.error &&
     typeof racesQuery.error === "object" &&
     "response" in racesQuery.error &&
-    (racesQuery.error as any).response?.status === 403;
+    (racesQuery.error as { response?: { status?: number } }).response?.status === 403;
 
   return {
     loading: racesQuery.isLoading,

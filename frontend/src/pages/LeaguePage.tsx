@@ -19,7 +19,7 @@ export default function LeaguePage() {
     code: string;
     id: string;
   } | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<string | false>(false);
   const { updateUser, user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -91,7 +91,7 @@ export default function LeaguePage() {
   const copyCode = async (code?: string) => {
     try {
       await navigator.clipboard.writeText(code || createdLeague?.code || "");
-      setCopied((code || createdLeague?.code) as any);
+      setCopied(code || createdLeague?.code || false);
       toast.success("Code copie !");
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -129,7 +129,7 @@ export default function LeaguePage() {
     return (
       <LeagueCreatedScreen
         league={createdLeague}
-        copied={copied as any}
+        copied={copied || null}
         onCopyCode={() => copyCode()}
         onShareCode={() => shareLeague(createdLeague)}
         onDone={() => {
@@ -157,15 +157,15 @@ export default function LeaguePage() {
 
         {/* My Leagues List */}
         <LeagueList
-          leagues={myLeagues as any}
+          leagues={myLeagues}
           loading={loadingLeagues}
           userId={user!.id}
           currentLeagueId={user!.current_league_id}
-          copied={copied as any}
+          copied={copied || null}
           unreadByLeague={unreadByLeague}
           onCopyCode={copyCode}
           onShareLeague={shareLeague}
-          onSelectLeague={selectLeague as any}
+          onSelectLeague={(id) => selectLeague(String(id))}
         />
 
         {/* Create / Join Tabs */}

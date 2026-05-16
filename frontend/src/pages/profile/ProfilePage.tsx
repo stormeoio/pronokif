@@ -26,7 +26,7 @@ import { Button } from "../../components/ui/button";
 import { AvatarDisplay, AvatarSelector } from "../../components/AvatarDisplay";
 import PointsHistory from "./PointsHistory";
 import { useProfileData } from "./useProfileData";
-import { apiClient } from "@/lib/api";
+import { apiClient, getApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 export default function ProfilePage() {
@@ -109,16 +109,19 @@ export default function ProfilePage() {
         headers: { "Content-Type": "multipart/form-data" },
       });
       if (updateUser)
-        updateUser({ avatar_id: undefined, custom_avatar_url: (res.data as any).avatar_url });
+        updateUser({
+          avatar_id: undefined,
+          custom_avatar_url: (res.data as { avatar_url: string }).avatar_url,
+        });
       toast.success("Photo uploadée !");
       setShowAvatarModal(false);
     } catch (e: unknown) {
-      toast.error((e as any).response?.data?.detail || "Erreur lors de l'upload");
+      toast.error(getApiError(e, "Erreur lors de l'upload"));
     }
   };
 
-  const getAvatarById = (avatarId: string | undefined) =>
-    avatars?.all?.find((a: any) => a.id === avatarId) || null;
+  const getAvatarById = (avatarId: string | null | undefined) =>
+    avatars?.all?.find((a) => a.id === avatarId) || null;
 
   if (loading) {
     return (
@@ -140,8 +143,8 @@ export default function ProfilePage() {
           <div className="flex items-center gap-4">
             <div className="relative">
               <AvatarDisplay
-                avatar={getAvatarById(user!.avatar_id) as any}
-                customUrl={user!.custom_avatar_url as any}
+                avatar={getAvatarById(user!.avatar_id)}
+                customUrl={user!.custom_avatar_url}
                 size="xl"
               />
               <button
@@ -160,14 +163,12 @@ export default function ProfilePage() {
               <div className="flex items-center gap-3 mt-2">
                 <div className="bg-blue-500/20 border border-blue-500/50 px-3 py-1 rounded-lg">
                   <span className="font-heading text-sm text-blue-400">
-                    Niv. {(user as any).level || 1}
+                    Niv. {user!.level || 1}
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Zap className="w-4 h-4 text-yellow-500" />
-                  <span className="font-data text-sm text-yellow-400">
-                    {(user as any).xp || 0} XP
-                  </span>
+                  <span className="font-data text-sm text-yellow-400">{user!.xp || 0} XP</span>
                 </div>
               </div>
               {globalPosition && (
@@ -400,9 +401,9 @@ export default function ProfilePage() {
             <div className="p-4">
               <AvatarSelector
                 avatars={avatars ?? undefined}
-                selectedId={user!.avatar_id}
+                selectedId={user!.avatar_id ?? undefined}
                 onSelect={handleAvatarSelect}
-                customUrl={user!.custom_avatar_url as any}
+                customUrl={user!.custom_avatar_url}
                 onUpload={handleAvatarUpload}
               />
             </div>

@@ -151,8 +151,8 @@ export default function MissionsPage() {
             </div>
             {user && (
               <div className="text-right">
-                <p className="font-heading text-sm text-cyan-400">Niveau {(user as any).level}</p>
-                <p className="font-data text-xs text-gray-400">{(user as any).xp} XP</p>
+                <p className="font-heading text-sm text-cyan-400">Niveau {user.level}</p>
+                <p className="font-data text-xs text-gray-400">{user.xp} XP</p>
               </div>
             )}
           </div>

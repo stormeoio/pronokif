@@ -8,6 +8,10 @@ import {
   SprintResultsList,
   PracticeResultsList,
   ExtrasPanel,
+  type RaceResult,
+  type QualifyingResult,
+  type PracticeData,
+  type RaceResultsData,
 } from "./RaceResultPanels";
 
 interface Race {
@@ -19,25 +23,12 @@ interface Race {
   Circuit?: { circuitId: string };
 }
 
-interface RaceResults {
-  race: Array<Record<string, unknown>>;
-  qualifying: Array<Record<string, unknown>>;
-  sprint: Array<Record<string, unknown>>;
+interface RaceResults extends RaceResultsData {
+  race: RaceResult[];
+  qualifying: QualifyingResult[];
+  sprint: RaceResult[];
   sprintQualifying: Array<Record<string, unknown>>;
-  practice: {
-    fp1: Array<Record<string, unknown>>;
-    fp2: Array<Record<string, unknown>>;
-    fp3: Array<Record<string, unknown>>;
-  };
-  fastestLap: {
-    driver?: Record<string, unknown>;
-    constructor?: Record<string, unknown>;
-    time: string;
-    lap: string;
-  } | null;
-  firstCornerLeader: number | null;
-  sprintFirstCornerLeader: number | null;
-  hasSprint: boolean;
+  practice: PracticeData;
 }
 
 interface SeasonProgressProps {
@@ -68,11 +59,7 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
       const qualifyingData = qualifyingRes.ok ? await qualifyingRes.json() : null;
       const sprintData = sprintRes?.ok ? await sprintRes.json() : null;
 
-      const practiceData: {
-        fp1: Record<string, unknown>[];
-        fp2: Record<string, unknown>[];
-        fp3: Record<string, unknown>[];
-      } = { fp1: [], fp2: [], fp3: [] };
+      const practiceData: PracticeData = { fp1: [], fp2: [], fp3: [] };
       let fastestLap: RaceResults["fastestLap"] = null;
       let firstCornerLeader: number | null = null;
       let sprintFirstCornerLeader: number | null = null;
@@ -297,17 +284,15 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
                 ))}
               </div>
 
-              {resultsTab === "race" && <RaceResultsList results={raceResults.race as any} />}
+              {resultsTab === "race" && <RaceResultsList results={raceResults.race} />}
               {resultsTab === "qualifying" && (
-                <QualifyingResultsList results={raceResults.qualifying as any} />
+                <QualifyingResultsList results={raceResults.qualifying} />
               )}
               {resultsTab === "sprint" && raceResults.hasSprint && (
-                <SprintResultsList results={raceResults.sprint as any} />
+                <SprintResultsList results={raceResults.sprint} />
               )}
-              {resultsTab === "practice" && (
-                <PracticeResultsList practice={raceResults.practice as any} />
-              )}
-              {resultsTab === "extras" && <ExtrasPanel raceResults={raceResults as any} />}
+              {resultsTab === "practice" && <PracticeResultsList practice={raceResults.practice} />}
+              {resultsTab === "extras" && <ExtrasPanel raceResults={raceResults} />}
             </>
           ) : (
             <p className="font-body text-sm text-gray-500 text-center py-4">

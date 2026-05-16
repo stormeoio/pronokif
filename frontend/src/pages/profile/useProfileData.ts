@@ -28,7 +28,7 @@ export function useProfileData(userId: string, currentLeagueId: string | null) {
     queryKey: ["/leaderboard/global"],
     queryFn: async () => {
       const data = await api.leaderboard.global();
-      return (data as any).my_position ?? null;
+      return data.my_position ?? null;
     },
   });
 
@@ -44,7 +44,7 @@ export function useProfileData(userId: string, currentLeagueId: string | null) {
     queryKey: ["/leagues/leaderboard", currentLeagueId],
     queryFn: async () => {
       const data = await api.leagues.leaderboard(currentLeagueId!);
-      const myEntry = (data as any[]).find((e: any) => e.user_id === userId);
+      const myEntry = data.find((e) => e.user_id === userId);
       return myEntry?.total_points ?? null;
     },
     enabled: !!currentLeagueId,

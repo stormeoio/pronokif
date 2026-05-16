@@ -16,9 +16,12 @@ export interface User {
   email: string;
   username?: string;
   current_league_id?: string;
-  avatar_id?: string;
+  avatar_id?: string | null;
+  custom_avatar_url?: string | null;
   custom_avatar?: string;
   is_admin?: boolean;
+  level: number;
+  xp: number;
   [key: string]: unknown; // allow extra fields from backend
 }
 

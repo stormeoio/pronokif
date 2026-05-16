@@ -99,6 +99,19 @@ async function del<T = void>(url: string): Promise<T> {
   return res.data;
 }
 
+// ═══════════════════════════════════════ ERROR HELPERS ═══════════════════════
+
+/** Extract error message from axios error responses. */
+export function getApiError(e: unknown, fallback = "Erreur"): string {
+  const err = e as { response?: { data?: { detail?: string }; status?: number } };
+  return err.response?.data?.detail || fallback;
+}
+
+/** Extract HTTP status from axios error. */
+export function getApiStatus(e: unknown): number | undefined {
+  return (e as { response?: { status?: number } }).response?.status;
+}
+
 // ═══════════════════════════════════════ TYPED API OBJECT ═════════════════════
 
 export const api = {

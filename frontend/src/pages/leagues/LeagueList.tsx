@@ -13,8 +13,7 @@ export interface LeagueItem {
   id: string | number;
   name: string;
   code: string;
-  members?: LeagueMember[];
-  [key: string]: unknown;
+  members?: LeagueMember[] | string[];
 }
 
 export interface LeagueListProps {

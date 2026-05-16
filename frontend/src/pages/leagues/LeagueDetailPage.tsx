@@ -20,7 +20,7 @@ import LeagueLeaderboard from "./LeagueLeaderboard";
 import LeagueMembers from "./LeagueMembers";
 import LeagueSettings from "./LeagueSettings";
 import { useLeagueDetailData } from "./useLeagueDetailData";
-import { apiClient } from "@/lib/api";
+import { apiClient, getApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 export default function LeagueDetailPage() {
@@ -111,16 +111,18 @@ export default function LeagueDetailPage() {
       setIsEditing(false);
       toast.success("Ligue mise à jour !");
     } catch (e: unknown) {
-      toast.error((e as any).response?.data?.detail || "Erreur lors de la mise à jour");
+      toast.error(getApiError(e, "Erreur lors de la mise à jour"));
     } finally {
       setSaving(false);
     }
   };
 
-  const getAvatar = (member: Record<string, any>): string | null => {
-    if (member.custom_avatar_url) return member.custom_avatar_url;
-    if (member.avatar_id && (avatars as any)[member.avatar_id])
-      return (avatars as any)[member.avatar_id];
+  const getAvatar = (member: Record<string, unknown>): string | null => {
+    if (member.custom_avatar_url) return member.custom_avatar_url as string;
+    if (member.avatar_id && avatars?.all) {
+      const found = avatars.all.find((a) => a.id === member.avatar_id);
+      if (found) return found.url;
+    }
     return null;
   };
 
@@ -297,15 +299,15 @@ export default function LeagueDetailPage() {
           <LeagueLeaderboard
             leaderboard={leaderboard}
             members={members}
-            userId={user?.id as any}
+            userId={user?.id ?? ""}
             getAvatar={getAvatar}
           />
         ) : (
           <LeagueMembers
             members={members}
             leaderboard={leaderboard}
-            userId={user?.id as any}
-            ownerId={league.owner_id}
+            userId={user?.id ?? ""}
+            ownerId={league.owner_id ?? ""}
             getAvatar={getAvatar}
           />
         )}
@@ -315,7 +317,7 @@ export default function LeagueDetailPage() {
           leagueId={leagueId}
           members={members}
           avatars={avatars}
-          userId={user?.id as any}
+          userId={user?.id ?? ""}
           isOwner={isOwner}
           onRefresh={refetch}
         />

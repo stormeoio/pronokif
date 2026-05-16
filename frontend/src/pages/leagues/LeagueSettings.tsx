@@ -13,13 +13,13 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
-import { api, apiClient } from "@/lib/api";
+import { api, apiClient, getApiError } from "@/lib/api";
 
 interface LeagueSettingsProps {
   league: Record<string, any>;
   leagueId: string | undefined;
   members: Record<string, any>[];
-  avatars: Record<string, any>;
+  avatars: Record<string, any> | null;
   userId: string;
   isOwner: boolean;
   onRefresh: () => void;
@@ -56,7 +56,7 @@ export default function LeagueSettings({
       toast.success("Tu as quitté la ligue");
       navigate("/league");
     } catch (e: unknown) {
-      toast.error((e as any).response?.data?.detail || "Erreur lors du départ");
+      toast.error(getApiError(e, "Erreur lors du départ"));
     } finally {
       setLeaving(false);
       setShowLeaveConfirm(false);
@@ -70,7 +70,7 @@ export default function LeagueSettings({
       toast.success("La ligue a été supprimée");
       navigate("/league");
     } catch (e: unknown) {
-      toast.error((e as any).response?.data?.detail || "Erreur lors de la suppression");
+      toast.error(getApiError(e, "Erreur lors de la suppression"));
     } finally {
       setDeleting(false);
       setShowDeleteConfirm(false);
@@ -93,7 +93,7 @@ export default function LeagueSettings({
       setSelectedNewOwner(null);
       onRefresh();
     } catch (e: unknown) {
-      toast.error((e as any).response?.data?.detail || "Erreur lors du transfert");
+      toast.error(getApiError(e, "Erreur lors du transfert"));
     } finally {
       setTransferring(false);
     }
@@ -185,9 +185,9 @@ export default function LeagueSettings({
                     >
                       <div
                         className="w-10 h-10 rounded-full flex items-center justify-center text-white font-heading"
-                        style={{ backgroundColor: avatars[member.id]?.color || "#3b82f6" }}
+                        style={{ backgroundColor: avatars?.[member.id]?.color || "#3b82f6" }}
                       >
-                        {avatars[member.id]?.emoji ||
+                        {avatars?.[member.id]?.emoji ||
                           member.username?.charAt(0)?.toUpperCase() ||
                           "?"}
                       </div>

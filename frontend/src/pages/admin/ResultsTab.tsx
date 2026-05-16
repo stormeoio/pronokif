@@ -1,20 +1,21 @@
 import { Check, Flag, Trophy, Calendar, Save, Loader2, Zap, RefreshCw, Medal } from "lucide-react";
 import { BonusPanel, DnfPanel, DriverGrid } from "./ResultsSubComponents";
-import { useResultsState } from "./hooks/useResultsState";
+import { useResultsState, type SelectionMode } from "./hooks/useResultsState";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 interface Race {
-  id: number;
+  id: number | string;
   name: string;
   date: string;
   is_past: boolean;
   is_sprint: boolean;
   has_results: boolean;
+  [key: string]: unknown;
 }
 
 interface Driver {
-  id: number;
+  id: string | number;
   name: string;
   team: string;
   number: number;
@@ -160,7 +161,7 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
                 <Button
                   key={race.id}
                   variant={selectedRace?.id === race.id ? "default" : "outline"}
-                  onClick={() => selectRace(race as any)}
+                  onClick={() => selectRace(race)}
                   className={`flex-shrink-0 text-xs ${
                     selectedRace?.id === race.id
                       ? "btn-racing"
@@ -227,7 +228,7 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
               return (
                 <button
                   key={step.key}
-                  onClick={() => setSelectionMode(step.key as any)}
+                  onClick={() => setSelectionMode(step.key as SelectionMode)}
                   className={`flex-1 min-w-[55px] p-2 rounded-lg border-2 transition-all ${
                     isActive
                       ? step.isBonus
@@ -272,21 +273,21 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
             <BonusPanel
               safetyCar={safetyCar}
               setSafetyCar={setSafetyCar}
-              dnfDrivers={dnfDrivers as any}
-              setDnfDrivers={setDnfDrivers as any}
-              fastestLap={fastestLap as any}
-              firstCornerLeader={firstCornerLeader as any}
+              dnfDrivers={dnfDrivers}
+              setDnfDrivers={setDnfDrivers}
+              fastestLap={fastestLap}
+              firstCornerLeader={firstCornerLeader}
               drivers={drivers}
-              setSelectionMode={setSelectionMode as any}
+              setSelectionMode={(mode) => setSelectionMode(mode as SelectionMode)}
             />
           )}
 
           {selectionMode === "dnf_select" && (
             <DnfPanel
-              dnfDrivers={dnfDrivers as any}
-              setDnfDrivers={setDnfDrivers as any}
+              dnfDrivers={dnfDrivers}
+              setDnfDrivers={setDnfDrivers}
               drivers={drivers}
-              setSelectionMode={setSelectionMode as any}
+              setSelectionMode={(mode) => setSelectionMode(mode as SelectionMode)}
             />
           )}
 
@@ -319,9 +320,9 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
           {!["bonus"].includes(selectionMode) && (
             <DriverGrid
               drivers={drivers}
-              isDriverSelected={isDriverSelected as any}
-              getDriverPosition={getDriverPosition as any}
-              handleDriverSelect={handleDriverSelect as any}
+              isDriverSelected={(id) => isDriverSelected(String(id))}
+              getDriverPosition={(id) => getDriverPosition(String(id))}
+              handleDriverSelect={(id) => handleDriverSelect(String(id))}
             />
           )}
         </>

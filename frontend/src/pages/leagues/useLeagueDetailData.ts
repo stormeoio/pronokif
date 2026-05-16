@@ -35,7 +35,7 @@ export function useLeagueDetailData(leagueId: string | undefined) {
     league: leagueQuery.data ?? null,
     members: membersQuery.data ?? [],
     leaderboard: leaderboardQuery.data ?? [],
-    avatars: avatarsQuery.data ?? ({} as Record<string, any>),
+    avatars: avatarsQuery.data ?? null,
     refetch: () => {
       leagueQuery.refetch();
       membersQuery.refetch();

@@ -6,7 +6,7 @@ import { ArrowLeft, Send, Users, MessageCircle, RefreshCw, Crown, Clock } from "
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { AvatarDisplay } from "../components/AvatarDisplay";
-import { api } from "@/lib/api";
+import { api, getApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 export default function LeagueChatPage() {
@@ -72,7 +72,7 @@ export default function LeagueChatPage() {
       setNewMessage("");
       queryClient.invalidateQueries({ queryKey: ["/leagues", leagueId, "messages"] });
     } catch (e: unknown) {
-      toast.error((e as any).response?.data?.detail || "Erreur lors de l'envoi");
+      toast.error(getApiError(e, "Erreur lors de l'envoi"));
     } finally {
       setSending(false);
     }

@@ -103,6 +103,7 @@ export default function CustomPredictionsPage() {
         multiple_choice: multipleChoice,
         choices: answerType === "choice" ? choices.filter((c) => c.text.trim()) : null,
       };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- answer_type extends beyond CustomPrediction union
       await api.customPredictions.create(payload as any);
       toast.success("Pronostic créé !");
       setShowCreateModal(false);

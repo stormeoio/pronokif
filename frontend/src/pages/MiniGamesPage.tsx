@@ -293,7 +293,7 @@ export default function MiniGamesPage() {
               <Medal className="w-4 h-4" />
               Classement {activeTab === "reaction" ? "Reaction" : "Batak"}
               {mode === "competition" && leagues[0] && (
-                <span className="text-gray-500 text-xs ml-2">({(leagues[0] as any).name})</span>
+                <span className="text-gray-500 text-xs ml-2">({leagues[0].name})</span>
               )}
             </CardTitle>
           </CardHeader>

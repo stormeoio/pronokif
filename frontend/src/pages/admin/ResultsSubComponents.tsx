@@ -5,7 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 interface Driver {
-  id: number;
+  id: string | number;
   name: string;
   team: string;
   number: number;
@@ -14,10 +14,10 @@ interface Driver {
 interface BonusPanelProps {
   safetyCar: boolean;
   setSafetyCar: (value: boolean) => void;
-  dnfDrivers: number[];
-  setDnfDrivers: (drivers: number[]) => void;
-  fastestLap: number | null;
-  firstCornerLeader: number | null;
+  dnfDrivers: string[];
+  setDnfDrivers: (drivers: string[]) => void;
+  fastestLap: string | null;
+  firstCornerLeader: string | null;
   drivers: Driver[];
   setSelectionMode: (mode: string) => void;
 }
@@ -117,8 +117,8 @@ export function BonusPanel({
 }
 
 interface DnfPanelProps {
-  dnfDrivers: number[];
-  setDnfDrivers: (drivers: number[]) => void;
+  dnfDrivers: string[];
+  setDnfDrivers: (drivers: string[]) => void;
   drivers: Driver[];
   setSelectionMode: (mode: string) => void;
 }
@@ -169,9 +169,9 @@ export function DnfPanel({ dnfDrivers, setDnfDrivers, drivers, setSelectionMode 
 
 interface DriverGridProps {
   drivers: Driver[];
-  isDriverSelected: (driverId: number) => boolean;
-  getDriverPosition: (driverId: number) => number | null;
-  handleDriverSelect: (driverId: number) => void;
+  isDriverSelected: (driverId: string | number) => boolean;
+  getDriverPosition: (driverId: string | number) => number | null;
+  handleDriverSelect: (driverId: string | number) => void;
 }
 
 export function DriverGrid({

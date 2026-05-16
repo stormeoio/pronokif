@@ -42,7 +42,7 @@ function useUnreadMessages() {
     queryKey: ["/leagues/unread-messages"],
     queryFn: async () => {
       const data = await api.leagues.unreadMessages();
-      return (data as any)?.by_league || {};
+      return data?.by_league || {};
     },
     refetchInterval: 30_000, // poll every 30s for unread badges
   });
