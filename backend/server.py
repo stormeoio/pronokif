@@ -73,6 +73,7 @@ from routes.leagues import router as leagues_router
 from routes.predictions import router as predictions_router
 from routes.races import router as races_router
 from routes.minigames import router as minigames_router
+from routes.feedback import router as feedback_router
 
 # Include all extracted route modules
 app.include_router(auth_router, prefix="/api")
@@ -80,6 +81,7 @@ app.include_router(leagues_router, prefix="/api")
 app.include_router(predictions_router, prefix="/api")
 app.include_router(races_router, prefix="/api")
 app.include_router(minigames_router, prefix="/api")
+app.include_router(feedback_router, prefix="/api")
 
 # NOTE: Models are now in models/schemas.py
 # NOTE: Auth helpers are now in services/auth.py
@@ -233,69 +235,14 @@ async def count_individual_predictions(user_id: str) -> int:
     return total_pronos
 
 
-# ==================== ADMIN EMAIL ====================
-ADMIN_EMAIL = "catalan.baptiste123@gmail.com"
+# ==================== ADMIN AUTHORIZATION ====================
+# check_is_admin and ADMIN_EMAIL now live in services/admin.py.
+# Re-imported here so the legacy endpoints still in this file (admin
+# members, sync, etc — to be extracted in S1 lots 4-6) keep working
+# without each having to import the helper directly.
+from services.admin import check_is_admin, ADMIN_EMAIL  # noqa: F401  (used below)
 
-async def check_is_admin(user: dict) -> bool:
-    """Check if user is admin by email"""
-    return user.get("email", "").lower() == ADMIN_EMAIL.lower()
-
-# ==================== FEEDBACK SYSTEM ====================
-
-class FeedbackCreate(BaseModel):
-    category: str  # bug, suggestion, feedback
-    message: str
-
-@api_router.post("/feedback")
-async def submit_feedback(data: FeedbackCreate, user=Depends(get_current_user)):
-    """Submit feedback to admin"""
-    if not data.message.strip():
-        raise HTTPException(status_code=400, detail="Message cannot be empty")
-    
-    if len(data.message) > 2000:
-        raise HTTPException(status_code=400, detail="Message too long (max 2000 characters)")
-    
-    if data.category not in ["bug", "suggestion", "feedback"]:
-        raise HTTPException(status_code=400, detail="Invalid category")
-    
-    feedback = {
-        "id": str(uuid.uuid4()),
-        "user_id": user["id"],
-        "username": user.get("username", "Anonymous"),
-        "email": user.get("email"),
-        "category": data.category,
-        "message": data.message.strip(),
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "read": False
-    }
-    
-    await db.feedback.insert_one(feedback)
-    return {"message": "Feedback submitted successfully", "id": feedback["id"]}
-
-@api_router.get("/admin/feedback")
-async def get_all_feedback(user=Depends(get_current_user)):
-    """Get all feedback (admin only)"""
-    if not await check_is_admin(user):
-        raise HTTPException(status_code=403, detail="Admin access required")
-    
-    feedback_list = await db.feedback.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
-    return feedback_list
-
-@api_router.put("/admin/feedback/{feedback_id}/read")
-async def mark_feedback_read(feedback_id: str, user=Depends(get_current_user)):
-    """Mark feedback as read (admin only)"""
-    if not await check_is_admin(user):
-        raise HTTPException(status_code=403, detail="Admin access required")
-    
-    result = await db.feedback.update_one(
-        {"id": feedback_id},
-        {"$set": {"read": True}}
-    )
-    
-    if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Feedback not found")
-    
-    return {"message": "Feedback marked as read"}
+# Feedback endpoints moved to routes/feedback.py + services/feedback.py (S1 lot 1).
 
 # ==================== ADMIN MEMBERS MANAGEMENT ====================
 
