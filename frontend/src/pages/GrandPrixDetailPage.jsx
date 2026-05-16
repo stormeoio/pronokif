@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { apiClient } from "../App";
+import { apiClient } from "@/lib/api";
 import { Button } from "../components/ui/button";
 import { 
   ArrowLeft, MapPin, Calendar, Clock, Flag, Zap,

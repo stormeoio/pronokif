@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { Home, Trophy, Target, User, Users, MessageCircle, Flag } from "lucide-react";
-import { useAuth, apiClient } from "../App";
+import { useAuth } from "@/lib/auth";
+import { apiClient } from "@/lib/api";
 import { useState, useEffect } from "react";
 
 const navItems = [

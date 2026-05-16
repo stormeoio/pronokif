@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Zap, Trophy, Timer, RotateCcw, Play, Target, Share2, X, MessageCircle } from "lucide-react";
-import { apiClient } from "../App";
+import { apiClient } from "@/lib/api";
 import { toast } from "sonner";
 
 // F1 Lights Out Reaction Game

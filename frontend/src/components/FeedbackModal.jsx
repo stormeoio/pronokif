@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { apiClient } from "../App";
+import { apiClient } from "@/lib/api";
 import { Button } from "../components/ui/button";
 import { Textarea } from "../components/ui/textarea";
 import { toast } from "sonner";

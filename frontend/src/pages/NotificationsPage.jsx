@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiClient } from "../App";
+import { apiClient } from "@/lib/api";
 import { Button } from "../components/ui/button";
 import { 
   ArrowLeft, Bell, Check, Info, Zap, AlertTriangle, CheckCheck

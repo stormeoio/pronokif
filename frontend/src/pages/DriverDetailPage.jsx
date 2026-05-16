@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { apiClient } from "../App";
+import { apiClient } from "@/lib/api";
 import { toast } from "sonner";
 import { 
   ArrowLeft, Trophy, Medal, Award, Flag, Zap, Timer, Calendar, 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useAuth, apiClient } from "../App";
+import { useAuth } from "@/lib/auth";
+import { apiClient } from "@/lib/api";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import { toast } from "sonner";

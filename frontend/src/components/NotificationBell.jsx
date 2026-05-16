@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiClient } from "../App";
+import { apiClient } from "@/lib/api";
 import { Bell } from "lucide-react";
 
 export default function NotificationBell() {

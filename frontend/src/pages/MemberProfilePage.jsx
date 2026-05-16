@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useAuth, apiClient } from "../App";
+import { useAuth } from "@/lib/auth";
+import { apiClient } from "@/lib/api";
 import { Button } from "../components/ui/button";
 import { 
   ArrowLeft, Trophy, Target, Zap, Medal, Gamepad2,
