@@ -14,10 +14,25 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import os
 
 from fastapi import FastAPI
+import sentry_sdk
 
 from config import client, logger
+
+# ── Sentry error monitoring (no-op if SENTRY_DSN is unset) ──────────
+_sentry_dsn = os.environ.get("SENTRY_DSN")
+if _sentry_dsn:
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        environment=os.environ.get("ENVIRONMENT", "production"),
+        release=f"pronokif-backend@{os.environ.get('APP_VERSION', 'dev')}",
+        traces_sample_rate=0.2,
+        send_default_pii=False,
+        # FastAPI integration is auto-discovered
+    )
+    logger.info("[Sentry] Initialized — error tracking active")
 from middleware.security import install as install_security
 
 # Route modules — one router per business domain.

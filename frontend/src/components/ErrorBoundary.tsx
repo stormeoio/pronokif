@@ -7,6 +7,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AlertTriangle, RotateCcw, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { captureError } from "@/lib/sentry";
 
 interface Props {
   children: ReactNode;
@@ -33,6 +34,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("[ErrorBoundary]", error, errorInfo);
+    captureError(error, { componentStack: errorInfo.componentStack ?? undefined });
     this.props.onError?.(error, errorInfo);
   }
 
