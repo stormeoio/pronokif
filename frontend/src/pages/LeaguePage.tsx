@@ -216,8 +216,8 @@ export default function LeaguePage() {
                     id="code"
                     name="code"
                     required
-                    className="h-14 text-center font-data text-2xl uppercase tracking-[0.3em] bg-gray-900/60 border-gray-700
-                             focus:border-yellow-500 focus:ring-yellow-500/20"
+                    className="h-14 text-center font-data text-2xl text-white uppercase tracking-[0.3em] bg-gray-900/60 border-gray-700
+                             placeholder:text-gray-500 focus:border-yellow-500 focus:ring-yellow-500/20"
                     maxLength={6}
                     data-testid="join-code-input"
                   />
@@ -261,8 +261,8 @@ export default function LeaguePage() {
                     id="name"
                     name="name"
                     required
-                    className="h-12 bg-gray-900/60 border-gray-700 font-body
-                             focus:border-cyan-500 focus:ring-cyan-500/20"
+                    className="h-12 bg-gray-900/60 border-gray-700 font-body text-white
+                             placeholder:text-gray-500 focus:border-cyan-500 focus:ring-cyan-500/20"
                     placeholder="Ex: Les Champions F1"
                     data-testid="league-name-input"
                   />
