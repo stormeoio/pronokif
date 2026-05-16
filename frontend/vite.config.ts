@@ -45,9 +45,8 @@ export default defineConfig(({ mode }) => {
     test: {
       globals: true,
       environment: "jsdom",
-      // No setup file needed yet; @testing-library/jest-dom is imported
-      // per-test for now. Promote to a global setup when test count grows.
-      include: ["src/**/*.{test,spec}.{ts,tsx}"],
+      setupFiles: ["src/test/setup.ts"],
+      include: ["src/**/*.{test,spec}.{ts,tsx,js,jsx}"],
       coverage: {
         provider: "v8",
         reporter: ["text", "html"],

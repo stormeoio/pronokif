@@ -1,0 +1,64 @@
+# Pronokif — local development stack
+# Usage: docker compose up (boot < 30s target)
+#
+# Services:
+#   - backend:  FastAPI on :8000
+#   - frontend: Nginx on :3000
+#   - mongo:    MongoDB 7 on :27017
+#
+# For production, use individual Dockerfiles + managed MongoDB Atlas.
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: pronokif
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok", "--quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      MONGO_URL: mongodb://mongo:27017
+      DB_NAME: pronokif
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me-in-production-32chars!}
+      CORS_ORIGINS: http://localhost:3000
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/docs')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_BACKEND_URL: http://localhost:8000
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  mongo_data:

@@ -35,5 +35,5 @@
     }
   },
   "include": ["src", "vite.config.ts"],
-  "exclude": ["node_modules", "build", "dist", "coverage"]
+  "exclude": ["node_modules", "build", "dist", "coverage", "src/**/*.test.*", "src/**/*.spec.*", "src/test/**"]
 }

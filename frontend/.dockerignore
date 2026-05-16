@@ -1,0 +1,8 @@
+node_modules/
+build/
+.env
+.env.*
+coverage/
+*.test.*
+*.spec.*
+src/test/
