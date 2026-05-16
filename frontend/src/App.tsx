@@ -11,6 +11,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { AuthProvider, ProtectedRoute, useAuth } from "@/lib/auth";
 import { queryClient } from "@/lib/queryClient";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import "@/App.css";
 
 // --- lazy page imports (code-split: each page = separate chunk) ----------
@@ -47,8 +48,12 @@ import BottomNav from "@/components/BottomNav";
 
 function PageLoader() {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="animate-pulse-glow w-16 h-16 rounded-full bg-primary/20" />
+    <div
+      className="min-h-screen flex flex-col items-center justify-center gap-4"
+      style={{ background: "linear-gradient(180deg, #0a0f1a 0%, #151c2c 50%, #0a0f1a 100%)" }}
+    >
+      <div className="w-14 h-14 rounded-full border-4 border-orange-500/30 border-t-orange-500 animate-spin" />
+      <p className="text-sm text-gray-500 animate-pulse">Chargement...</p>
     </div>
   );
 }
@@ -62,7 +67,9 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       <main className={hideNav ? "" : "pb-safe"}>
-        <Suspense fallback={<PageLoader />}>{children}</Suspense>
+        <ErrorBoundary key={location.pathname}>
+          <Suspense fallback={<PageLoader />}>{children}</Suspense>
+        </ErrorBoundary>
       </main>
       {!hideNav && <BottomNav />}
     </div>
@@ -309,24 +316,26 @@ function AppRouter() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <AppLayout>
-            <AppRouter />
-          </AppLayout>
-          <Toaster
-            position="top-center"
-            toastOptions={{
-              style: {
-                background: "#121214",
-                color: "#fafafa",
-                border: "1px solid rgba(255,255,255,0.1)",
-              },
-            }}
-          />
-        </AuthProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <AppLayout>
+              <AppRouter />
+            </AppLayout>
+            <Toaster
+              position="top-center"
+              toastOptions={{
+                style: {
+                  background: "#121214",
+                  color: "#fafafa",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                },
+              }}
+            />
+          </AuthProvider>
+        </QueryClientProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
