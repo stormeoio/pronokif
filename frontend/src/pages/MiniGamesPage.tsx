@@ -1,152 +1,34 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import {
-  ChevronLeft,
-  Zap,
-  Target,
-  Trophy,
-  Medal,
-  Dumbbell,
-  Timer,
-  Crown,
-  Users,
-} from "lucide-react";
+import { ChevronLeft, Zap, Target, Trophy, Dumbbell } from "lucide-react";
 import { Button } from "../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Card, CardContent } from "../components/ui/card";
 import { ReactionGame, BatakGame } from "../components/mini-games/MiniGames";
-import { AvatarDisplay } from "../components/AvatarDisplay";
-import { api } from "@/lib/api";
+import { useMiniGamesData } from "./mini-games/useMiniGamesData";
+import { MiniGamesLeaderboard } from "./mini-games/MiniGamesLeaderboard";
 import { useAuth } from "@/lib/auth";
 
 export default function MiniGamesPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<"reaction" | "batak">("reaction");
-  const [mode, setMode] = useState<"training" | "challenge" | "competition">("training");
+  const [mode, setMode] = useState<"training" | "competition">("training");
 
-  // ── Data queries ──────────────────────────────────────────
-  const { data: leagues = [] } = useQuery({
-    queryKey: ["/leagues/my"],
-    queryFn: () => api.leagues.my(),
-  });
-
-  const { data: nextRace = null } = useQuery({
-    queryKey: ["/races/next"],
-    queryFn: () => api.races.next(),
-  });
-
-  const { data: avatars = {} as { all?: any[] }, isLoading: loading } = useQuery({
-    queryKey: ["/avatars"],
-    queryFn: () => api.avatars.list(),
-    staleTime: 5 * 60_000,
-  });
-
-  const { data: globalReactionLeaderboard = [] } = useQuery({
-    queryKey: ["/minigames/global-leaderboard/reaction"],
-    queryFn: async () => (await api.minigames.globalLeaderboard("reaction")).leaderboard || [],
-  });
-
-  const { data: globalBatakLeaderboard = [] } = useQuery({
-    queryKey: ["/minigames/global-leaderboard/batak"],
-    queryFn: async () => (await api.minigames.globalLeaderboard("batak")).leaderboard || [],
-  });
-
-  // ── Dependent queries (need nextRace) ─────────────────────
-  const { data: reactionAttempts = { used: 0, remaining: 3 } } = useQuery({
-    queryKey: ["/minigames/attempts/reaction", nextRace?.id],
-    queryFn: async () => {
-      const res = await api.minigames.attempts("reaction", "global", nextRace!.id);
-      return { used: res.attempts_used, remaining: res.attempts_remaining };
-    },
-    enabled: !!nextRace?.id,
-  });
-
-  const { data: batakAttempts = { used: 0, remaining: 3 } } = useQuery({
-    queryKey: ["/minigames/attempts/batak", nextRace?.id],
-    queryFn: async () => {
-      const res = await api.minigames.attempts("batak", "global", nextRace!.id);
-      return { used: res.attempts_used, remaining: res.attempts_remaining };
-    },
-    enabled: !!nextRace?.id,
-  });
-
-  const { data: reactionLeaderboard = [] } = useQuery({
-    queryKey: ["/minigames/leaderboard/reaction", leagues[0]?.id, nextRace?.id],
-    queryFn: async () => {
-      const res = await api.minigames.leaderboard("reaction", leagues[0]!.id, nextRace!.id);
-      return res.leaderboard || [];
-    },
-    enabled: !!nextRace?.id && leagues.length > 0,
-  });
-
-  const { data: batakLeaderboard = [] } = useQuery({
-    queryKey: ["/minigames/leaderboard/batak", leagues[0]?.id, nextRace?.id],
-    queryFn: async () => {
-      const res = await api.minigames.leaderboard("batak", leagues[0]!.id, nextRace!.id);
-      return res.leaderboard || [];
-    },
-    enabled: !!nextRace?.id && leagues.length > 0,
-  });
-
-  // ── Mutations ─────────────────────────────────────────────
-  const invalidateCompetition = () => {
-    queryClient.invalidateQueries({ queryKey: ["/minigames/attempts"] });
-    queryClient.invalidateQueries({ queryKey: ["/minigames/leaderboard"] });
-    queryClient.invalidateQueries({ queryKey: ["/minigames/global-leaderboard"] });
-  };
-
-  const handleReactionSubmit = async (reactionTime: number, isTraining: boolean) => {
-    try {
-      await api.minigames.submitReaction({
-        race_id: nextRace!.id,
-        league_id: "global",
-        reaction_time_ms: reactionTime,
-        is_training: isTraining,
-      });
-
-      if (!isTraining) {
-        toast.success(`Temps enregistré: ${reactionTime}ms`);
-        invalidateCompetition();
-      } else {
-        toast.success(`Temps: ${reactionTime}ms (Entraînement)`);
-      }
-    } catch (e: unknown) {
-      toast.error(
-        (e as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Erreur",
-      );
-    }
-  };
-
-  const handleBatakSubmit = async (score: number, timeSeconds: number, isTraining: boolean) => {
-    try {
-      await api.minigames.submitBatak({
-        race_id: nextRace!.id,
-        league_id: "global",
-        score,
-        time_seconds: timeSeconds,
-        is_training: isTraining,
-      });
-
-      if (!isTraining) {
-        toast.success(`Score enregistré: ${score} cibles`);
-        invalidateCompetition();
-      } else {
-        toast.success(`Score: ${score} cibles (Entraînement)`);
-      }
-    } catch (e: unknown) {
-      toast.error(
-        (e as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Erreur",
-      );
-    }
-  };
-
-  const getAvatarById = (avatarId: string | undefined) => {
-    return avatars?.all?.find((a: any) => a.id === avatarId) || null;
-  };
+  const {
+    loading,
+    nextRace,
+    leagues,
+    reactionAttempts,
+    batakAttempts,
+    reactionLeaderboard,
+    batakLeaderboard,
+    globalReactionLeaderboard,
+    globalBatakLeaderboard,
+    handleReactionSubmit,
+    handleBatakSubmit,
+    getAvatarById,
+  } = useMiniGamesData();
 
   if (loading) {
     return (
@@ -158,6 +40,10 @@ export default function MiniGamesPage() {
       </div>
     );
   }
+
+  const leagueLeaderboard = activeTab === "reaction" ? reactionLeaderboard : batakLeaderboard;
+  const globalLeaderboard =
+    activeTab === "reaction" ? globalReactionLeaderboard : globalBatakLeaderboard;
 
   return (
     <div className="min-h-screen bg-app-main pb-24" data-testid="minigames-page">
@@ -189,7 +75,7 @@ export default function MiniGamesPage() {
       </div>
 
       <div className="max-w-2xl mx-auto p-4 space-y-6">
-        {/* Info Card - Récompenses (moved to top) */}
+        {/* Info Card - Récompenses */}
         <Card className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 border-yellow-500/30">
           <CardContent className="p-4">
             <h3 className="font-heading text-sm uppercase text-yellow-500 mb-2 flex items-center gap-2">
@@ -287,138 +173,15 @@ export default function MiniGamesPage() {
         )}
 
         {/* Leaderboard */}
-        <Card className="game-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="font-heading text-sm uppercase text-cyan-400 flex items-center gap-2">
-              <Medal className="w-4 h-4" />
-              Classement {activeTab === "reaction" ? "Reaction" : "Batak"}
-              {mode === "competition" && leagues[0] && (
-                <span className="text-gray-500 text-xs ml-2">({leagues[0].name})</span>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-2">
-            {/* League Leaderboard */}
-            {mode === "competition" && (
-              <div className="mb-4">
-                <p className="font-body text-xs text-gray-500 px-2 mb-2 flex items-center gap-1">
-                  <Users className="w-3 h-3" /> Ligue - Ce weekend
-                </p>
-                {(activeTab === "reaction" ? reactionLeaderboard : batakLeaderboard).length ===
-                0 ? (
-                  <p className="font-body text-sm text-gray-500 text-center py-4">
-                    Aucun score enregistré pour ce weekend
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {(activeTab === "reaction" ? reactionLeaderboard : batakLeaderboard)
-                      .slice(0, 10)
-                      .map((entry: any, i: any) => (
-                        <div
-                          key={entry.user_id}
-                          className={`flex items-center gap-3 p-2 rounded-lg ${
-                            entry.user_id === user?.id
-                              ? "bg-orange-500/10 border border-orange-500/30"
-                              : ""
-                          }`}
-                        >
-                          <div
-                            className={`w-8 h-8 rounded flex items-center justify-center ${
-                              i === 0
-                                ? "position-1-gaming"
-                                : i === 1
-                                  ? "position-2-gaming"
-                                  : i === 2
-                                    ? "position-3-gaming"
-                                    : "bg-gray-700"
-                            }`}
-                          >
-                            <span
-                              className={`font-heading text-sm ${i < 3 && i !== 2 ? "text-black" : "text-white"}`}
-                            >
-                              {entry.position}
-                            </span>
-                          </div>
-                          <AvatarDisplay avatar={getAvatarById(entry.avatar_id)} size="sm" />
-                          <span className="font-body text-sm text-white flex-1 truncate">
-                            {entry.username}
-                          </span>
-                          <span
-                            className={`font-data text-sm ${
-                              activeTab === "reaction" ? "text-orange-400" : "text-cyan-400"
-                            }`}
-                          >
-                            {activeTab === "reaction"
-                              ? `${entry.best_score}ms`
-                              : `${entry.best_score} pts`}
-                          </span>
-                        </div>
-                      ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Global Leaderboard */}
-            <div>
-              <p className="font-body text-xs text-gray-500 px-2 mb-2 flex items-center gap-1">
-                <Crown className="w-3 h-3" /> Classement Global (All-time)
-              </p>
-              {(activeTab === "reaction" ? globalReactionLeaderboard : globalBatakLeaderboard)
-                .length === 0 ? (
-                <p className="font-body text-sm text-gray-500 text-center py-4">
-                  Aucun score enregistré
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {(activeTab === "reaction" ? globalReactionLeaderboard : globalBatakLeaderboard)
-                    .slice(0, 10)
-                    .map((entry: any, i: any) => (
-                      <div
-                        key={entry.user_id}
-                        className={`flex items-center gap-3 p-2 rounded-lg ${
-                          entry.user_id === user?.id
-                            ? "bg-cyan-500/10 border border-cyan-500/30"
-                            : ""
-                        }`}
-                      >
-                        <div
-                          className={`w-8 h-8 rounded flex items-center justify-center ${
-                            i === 0
-                              ? "position-1-gaming"
-                              : i === 1
-                                ? "position-2-gaming"
-                                : i === 2
-                                  ? "position-3-gaming"
-                                  : "bg-gray-700"
-                          }`}
-                        >
-                          <span
-                            className={`font-heading text-sm ${i < 3 && i !== 2 ? "text-black" : "text-white"}`}
-                          >
-                            {entry.position}
-                          </span>
-                        </div>
-                        <AvatarDisplay avatar={getAvatarById(entry.avatar_id)} size="sm" />
-                        <span className="font-body text-sm text-white flex-1 truncate">
-                          {entry.username}
-                        </span>
-                        <span
-                          className={`font-data text-sm ${
-                            activeTab === "reaction" ? "text-orange-400" : "text-cyan-400"
-                          }`}
-                        >
-                          {activeTab === "reaction"
-                            ? `${entry.best_score}ms`
-                            : `${entry.best_score} pts`}
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <MiniGamesLeaderboard
+          activeTab={activeTab}
+          mode={mode}
+          leagueName={leagues[0]?.name}
+          userId={user?.id}
+          leagueLeaderboard={leagueLeaderboard}
+          globalLeaderboard={globalLeaderboard}
+          getAvatarById={getAvatarById}
+        />
       </div>
     </div>
   );
