@@ -5,6 +5,7 @@ PRONOKIF - Avatar routes.
     POST /user/avatar            — switch avatar (id or custom URL)
     POST /user/avatar/upload     — upload a custom image (<= 500KB)
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
@@ -13,7 +14,6 @@ from features import AvatarUpdate
 from models.schemas import UserResponse
 from services import avatars as avatar_service
 from services.auth import get_current_user
-
 
 router = APIRouter(tags=["avatars"])
 
@@ -50,15 +50,11 @@ async def update_user_avatar(data: AvatarUpdate, user=Depends(get_current_user))
 
 
 @router.post("/user/avatar/upload")
-async def upload_custom_avatar(
-    file: UploadFile = File(...), user=Depends(get_current_user)
-):
+async def upload_custom_avatar(file: UploadFile = File(...), user=Depends(get_current_user)):
     """Upload a custom avatar image; stored inline as a base64 data URL."""
     contents = await file.read()
     try:
-        data_url = await avatar_service.upload_custom_avatar(
-            user["id"], contents, file.content_type
-        )
+        data_url = await avatar_service.upload_custom_avatar(user["id"], contents, file.content_type)
     except avatar_service.AvatarError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

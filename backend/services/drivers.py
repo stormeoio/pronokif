@@ -5,10 +5,10 @@ Wraps the static ``drivers_data`` catalogue with photo URLs, "useful
 facts" generation, and side-by-side comparison metrics. The routes layer
 stays a thin adapter over these helpers.
 """
+
 from __future__ import annotations
 
 import random
-from typing import Optional
 
 from config import db
 from data.drivers_data import (
@@ -16,7 +16,6 @@ from data.drivers_data import (
     get_all_drivers_detailed,
     get_driver_details,
 )
-
 
 # Official F1 headshots (race suits). Fallback to Norris if unknown.
 DRIVER_PHOTOS: dict[str, str] = {
@@ -49,7 +48,7 @@ def _photo_for(driver_id: str) -> str:
     return DRIVER_PHOTOS.get(driver_id, DRIVER_PHOTOS["norris"])
 
 
-def _generate_driver_facts(driver: dict, next_race: Optional[dict] = None) -> list[dict]:
+def _generate_driver_facts(driver: dict, next_race: dict | None = None) -> list[dict]:
     """Build up to 10 random "fun fact" cards for the driver detail page.
 
     Picks from a pool seeded by palmares, contract, demographics, and
@@ -63,154 +62,198 @@ def _generate_driver_facts(driver: dict, next_race: Optional[dict] = None) -> li
     all_facts: list[dict] = []
 
     if f1_stats.get("world_championships", 0) > 0:
-        all_facts.append({
-            "type": "achievement",
-            "title": "Champion du Monde",
-            "text": f"{driver['first_name']} a remporté {f1_stats['world_championships']} titre(s) mondial(aux) en F1.",
-            "icon": "trophy",
-        })
+        all_facts.append(
+            {
+                "type": "achievement",
+                "title": "Champion du Monde",
+                "text": (
+                    f"{driver['first_name']} a remporté {f1_stats['world_championships']} titre(s) mondial(aux) en F1."
+                ),
+                "icon": "trophy",
+            }
+        )
 
     if f1_stats.get("wins", 0) > 0:
-        all_facts.append({
-            "type": "stat",
-            "title": "Victoires en F1",
-            "text": f"Total de {f1_stats['wins']} victoire(s) en Grand Prix.",
-            "icon": "flag",
-        })
+        all_facts.append(
+            {
+                "type": "stat",
+                "title": "Victoires en F1",
+                "text": f"Total de {f1_stats['wins']} victoire(s) en Grand Prix.",
+                "icon": "flag",
+            }
+        )
 
     if f1_stats.get("podiums", 0) > 0:
-        all_facts.append({
-            "type": "stat",
-            "title": "Podiums",
-            "text": f"{f1_stats['podiums']} podium(s) au total dans sa carrière F1.",
-            "icon": "medal",
-        })
+        all_facts.append(
+            {
+                "type": "stat",
+                "title": "Podiums",
+                "text": f"{f1_stats['podiums']} podium(s) au total dans sa carrière F1.",
+                "icon": "medal",
+            }
+        )
 
     if f1_stats.get("poles", 0) > 0:
-        all_facts.append({
-            "type": "stat",
-            "title": "Pole Positions",
-            "text": f"{f1_stats['poles']} pole position(s) en qualifications.",
-            "icon": "zap",
-        })
+        all_facts.append(
+            {
+                "type": "stat",
+                "title": "Pole Positions",
+                "text": f"{f1_stats['poles']} pole position(s) en qualifications.",
+                "icon": "zap",
+            }
+        )
 
     if f1_stats.get("fastest_laps", 0) > 0:
-        all_facts.append({
-            "type": "stat",
-            "title": "Meilleurs Tours",
-            "text": f"{f1_stats['fastest_laps']} meilleur(s) tour(s) en course.",
-            "icon": "timer",
-        })
+        all_facts.append(
+            {
+                "type": "stat",
+                "title": "Meilleurs Tours",
+                "text": f"{f1_stats['fastest_laps']} meilleur(s) tour(s) en course.",
+                "icon": "timer",
+            }
+        )
 
     for junior_season in junior[:3]:
         if junior_season.get("position") == 1:
-            all_facts.append({
-                "type": "junior",
-                "title": f"Champion {junior_season['series']}",
-                "text": f"Champion de {junior_season['series']} en {junior_season['year']} avec {junior_season.get('team', 'N/A')}.",
-                "icon": "award",
-            })
+            all_facts.append(
+                {
+                    "type": "junior",
+                    "title": f"Champion {junior_season['series']}",
+                    "text": (
+                        f"Champion de {junior_season['series']} en {junior_season['year']}"
+                        f" avec {junior_season.get('team', 'N/A')}."
+                    ),
+                    "icon": "award",
+                }
+            )
 
     if contract.get("end_year"):
         years_left = contract["end_year"] - 2026
         if years_left > 0:
-            all_facts.append({
-                "type": "contract",
-                "title": "Contrat actuel",
-                "text": f"Sous contrat avec {driver['team']} jusqu'en {contract['end_year']} ({years_left} an(s) restant(s)).",
-                "icon": "file",
-            })
+            all_facts.append(
+                {
+                    "type": "contract",
+                    "title": "Contrat actuel",
+                    "text": (
+                        f"Sous contrat avec {driver['team']} jusqu'en {contract['end_year']}"
+                        f" ({years_left} an(s) restant(s))."
+                    ),
+                    "icon": "file",
+                }
+            )
 
     if contract.get("salary_estimate"):
-        all_facts.append({
-            "type": "contract",
-            "title": "Salaire estimé",
-            "text": f"Rémunération estimée : {contract['salary_estimate']}.",
-            "icon": "dollar",
-        })
+        all_facts.append(
+            {
+                "type": "contract",
+                "title": "Salaire estimé",
+                "text": f"Rémunération estimée : {contract['salary_estimate']}.",
+                "icon": "dollar",
+            }
+        )
 
     age = 2026 - int(driver.get("date_of_birth", "2000-01-01").split("-")[0])
-    all_facts.append({
-        "type": "personal",
-        "title": "Âge",
-        "text": f"{driver['first_name']} a {age} ans (né le {driver.get('date_of_birth', 'N/A')}).",
-        "icon": "calendar",
-    })
+    all_facts.append(
+        {
+            "type": "personal",
+            "title": "Âge",
+            "text": f"{driver['first_name']} a {age} ans (né le {driver.get('date_of_birth', 'N/A')}).",
+            "icon": "calendar",
+        }
+    )
 
-    all_facts.append({
-        "type": "personal",
-        "title": "Nationalité",
-        "text": f"Représente {driver.get('country_name', driver.get('country', 'N/A'))} en Formule 1.",
-        "icon": "flag",
-    })
+    all_facts.append(
+        {
+            "type": "personal",
+            "title": "Nationalité",
+            "text": f"Représente {driver.get('country_name', driver.get('country', 'N/A'))} en Formule 1.",
+            "icon": "flag",
+        }
+    )
 
-    all_facts.append({
-        "type": "personal",
-        "title": "Lieu de naissance",
-        "text": f"Né à {driver.get('place_of_birth', 'N/A')}.",
-        "icon": "map",
-    })
+    all_facts.append(
+        {
+            "type": "personal",
+            "title": "Lieu de naissance",
+            "text": f"Né à {driver.get('place_of_birth', 'N/A')}.",
+            "icon": "map",
+        }
+    )
 
     if driver.get("height_cm"):
-        all_facts.append({
-            "type": "physical",
-            "title": "Taille",
-            "text": f"Mesure {driver['height_cm']} cm.",
-            "icon": "ruler",
-        })
+        all_facts.append(
+            {
+                "type": "physical",
+                "title": "Taille",
+                "text": f"Mesure {driver['height_cm']} cm.",
+                "icon": "ruler",
+            }
+        )
 
-    all_facts.append({
-        "type": "team",
-        "title": "Équipe actuelle",
-        "text": f"Pilote pour {driver['team']} avec le numéro {driver.get('number', 'N/A')}.",
-        "icon": "car",
-    })
+    all_facts.append(
+        {
+            "type": "team",
+            "title": "Équipe actuelle",
+            "text": f"Pilote pour {driver['team']} avec le numéro {driver.get('number', 'N/A')}.",
+            "icon": "car",
+        }
+    )
 
     if f1_stats.get("first_team"):
-        all_facts.append({
-            "type": "career",
-            "title": "Débuts en F1",
-            "text": f"A débuté en F1 avec {f1_stats['first_team']} ({f1_stats.get('seasons', 'N/A')}).",
-            "icon": "play",
-        })
+        all_facts.append(
+            {
+                "type": "career",
+                "title": "Débuts en F1",
+                "text": f"A débuté en F1 avec {f1_stats['first_team']} ({f1_stats.get('seasons', 'N/A')}).",
+                "icon": "play",
+            }
+        )
 
     if f1_stats.get("entries", 0) > 0:
-        all_facts.append({
-            "type": "experience",
-            "title": "Expérience",
-            "text": f"{f1_stats['entries']} Grand(s) Prix disputé(s) en carrière.",
-            "icon": "target",
-        })
+        all_facts.append(
+            {
+                "type": "experience",
+                "title": "Expérience",
+                "text": f"{f1_stats['entries']} Grand(s) Prix disputé(s) en carrière.",
+                "icon": "target",
+            }
+        )
 
     if f1_stats.get("points", 0) > 0:
-        all_facts.append({
-            "type": "stat",
-            "title": "Points en carrière",
-            "text": f"Total de {f1_stats['points']} points marqués en F1.",
-            "icon": "hash",
-        })
+        all_facts.append(
+            {
+                "type": "stat",
+                "title": "Points en carrière",
+                "text": f"Total de {f1_stats['points']} points marqués en F1.",
+                "icon": "hash",
+            }
+        )
 
     if driver.get("license_points"):
-        all_facts.append({
-            "type": "misc",
-            "title": "Points de permis",
-            "text": f"Actuellement {driver['license_points']}/12 points sur sa super-licence.",
-            "icon": "shield",
-        })
+        all_facts.append(
+            {
+                "type": "misc",
+                "title": "Points de permis",
+                "text": f"Actuellement {driver['license_points']}/12 points sur sa super-licence.",
+                "icon": "shield",
+            }
+        )
 
     if contract.get("notes"):
-        all_facts.append({
-            "type": "info",
-            "title": "Info contrat",
-            "text": contract["notes"],
-            "icon": "info",
-        })
+        all_facts.append(
+            {
+                "type": "info",
+                "title": "Info contrat",
+                "text": contract["notes"],
+                "icon": "info",
+            }
+        )
 
     random.shuffle(all_facts)
     return all_facts[:10]
 
 
-async def get_details(driver_id: str) -> Optional[dict]:
+async def get_details(driver_id: str) -> dict | None:
     """Look up a driver by slug, falling back to the 3-letter code (VER,
     HAM…). Enriches the result with a photo URL and 10 useful facts
     contextualised on the next upcoming race. Returns None if unknown.
@@ -254,7 +297,7 @@ def _winner(a: int, b: int) -> str:
     return "tie"
 
 
-def compare(driver1_id: str, driver2_id: str) -> Optional[dict]:
+def compare(driver1_id: str, driver2_id: str) -> dict | None:
     """Build a side-by-side comparison of two drivers (F1 palmares +
     derived rates). Returns None if either driver is unknown so the route
     can raise 404.

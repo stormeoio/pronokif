@@ -13,3 +13,15 @@ line-length = 120
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "SIM", "N"]
+ignore = [
+    "B008",   # function-call-in-default-argument — FastAPI Depends() pattern
+    "E712",   # comparison-to-true/false — tests use `== True` for API assertions
+]
+
+[tool.ruff.lint.per-file-ignores]
+"data/drivers_data.py" = ["E501"]   # data literals, long lines OK
+"features.py" = ["E501"]            # mission/avatar definitions
+"data/f1_data.py" = ["E501"]        # race/driver data
+"tests/*" = ["E501"]                # test assertions can be verbose
+"services/sync.py" = ["E501"]       # deeply chained API response parsing
+"routes/races.py" = ["E501"]        # ISO date string construction

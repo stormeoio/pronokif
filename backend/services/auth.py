@@ -2,34 +2,36 @@
 PRONOKIF - Authentication Utilities
 Password hashing, JWT token management, and user authentication
 """
-import bcrypt
-import jwt
-import uuid
+
 import random
 import string
-from datetime import datetime, timezone, timedelta
-from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import uuid
+from datetime import UTC, datetime, timedelta
 
-from config import db, JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRATION_HOURS
+import bcrypt
+import jwt
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+from config import JWT_ALGORITHM, JWT_EXPIRATION_HOURS, JWT_SECRET, db
 
 security = HTTPBearer()
 
 
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt"""
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(password: str, hashed: str) -> bool:
     """Verify a password against its hash"""
-    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+    return bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))
 
 
 def create_token(user_id: str) -> str:
     """Create a JWT token for a user"""
-    expiration = datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)
-    payload = {"sub": user_id, "exp": expiration, "iat": datetime.now(timezone.utc)}
+    expiration = datetime.now(UTC) + timedelta(hours=JWT_EXPIRATION_HOURS)
+    payload = {"sub": user_id, "exp": expiration, "iat": datetime.now(UTC)}
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
@@ -44,15 +46,15 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
         return user
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+    except jwt.ExpiredSignatureError as exc:
+        raise HTTPException(status_code=401, detail="Token expired") from exc
+    except jwt.InvalidTokenError as exc:
+        raise HTTPException(status_code=401, detail="Invalid token") from exc
 
 
 def generate_league_code() -> str:
     """Generate a random 6-character league code"""
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    return "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
 
 async def send_user_notification(user_id: str, message: str, notif_type: str = "info"):
@@ -62,15 +64,12 @@ async def send_user_notification(user_id: str, message: str, notif_type: str = "
         "title": notif_type.replace("_", " ").title(),
         "message": message,
         "type": notif_type,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "user_id": user_id,
-        "is_personal": True
+        "is_personal": True,
     }
     await db.notifications.insert_one(notification)
-    await db.users.update_one(
-        {"id": user_id},
-        {"$addToSet": {"unread_notifications": notification["id"]}}
-    )
+    await db.users.update_one({"id": user_id}, {"$addToSet": {"unread_notifications": notification["id"]}})
 
 
 async def check_is_admin(user: dict) -> bool:

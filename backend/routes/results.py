@@ -9,9 +9,8 @@ GET  /admin/results/{race_id}        — league creators (raw stored doc)
 Authorization caveat: the /admin/* endpoints here are gated on
 "league creator" not on ADMIN_EMAIL. See services/results.py docstring.
 """
-from __future__ import annotations
 
-from typing import List, Optional
+from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -20,21 +19,20 @@ from services import results as results_service
 from services.auth import get_current_user
 from services.results import require_league_creator
 
-
 router = APIRouter(tags=["results"])
 
 
 class RaceResultsInput(BaseModel):
     quali_pole: str
-    quali_top10: List[str]
-    sprint_quali_top10: Optional[List[str]] = None
-    sprint_race_top10: Optional[List[str]] = None
+    quali_top10: list[str]
+    sprint_quali_top10: list[str] | None = None
+    sprint_race_top10: list[str] | None = None
     race_winner: str
-    race_top10: List[str]
+    race_top10: list[str]
     safety_car: bool = False
-    dnf_drivers: List[str] = []
-    fastest_lap: Optional[str] = None
-    first_corner_leader: Optional[str] = None
+    dnf_drivers: list[str] = []
+    fastest_lap: str | None = None
+    first_corner_leader: str | None = None
 
 
 @router.get("/results/{race_id}")
@@ -55,9 +53,7 @@ async def set_race_results(
     leaderboard updates, and locks all predictions for this race.
     """
     payload = results_service.build_results_payload(data)
-    processed = await results_service.set_official_and_score(
-        race_id=race_id, results=payload, entered_by=user["id"]
-    )
+    processed = await results_service.set_official_and_score(race_id=race_id, results=payload, entered_by=user["id"])
     return {"message": "Results saved", "predictions_processed": processed}
 
 

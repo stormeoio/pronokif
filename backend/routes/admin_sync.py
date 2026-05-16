@@ -12,13 +12,13 @@ All endpoints are admin-only via ``services.admin.require_admin``:
 The router has no prefix — server.py mounts it under ``/api`` like the
 other modular routers.
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from services import sync as sync_service
 from services.admin import require_admin
-
 
 router = APIRouter(tags=["admin-sync"])
 

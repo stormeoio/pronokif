@@ -15,12 +15,12 @@ shadowed by FastAPI's matcher — APIRouter resolves in declaration order.
 Mounted by server.py under prefix="/api". No auth required (public
 driver catalogue), matching the existing behaviour in server.py.
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
 
 from services import drivers as drivers_service
-
 
 router = APIRouter(tags=["drivers"])
 

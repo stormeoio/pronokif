@@ -10,6 +10,7 @@ PUT  /notifications/read-all           — any authenticated user
 The router has no path prefix; server.py mounts it under /api so the
 paths above end up as /api/notifications/... and /api/admin/notifications.
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -18,7 +19,6 @@ from pydantic import BaseModel
 from services import notifications as notifications_service
 from services.admin import require_admin
 from services.auth import get_current_user
-
 
 router = APIRouter(tags=["notifications"])
 
@@ -30,9 +30,7 @@ class NotificationCreate(BaseModel):
 
 
 @router.post("/admin/notifications")
-async def create_notification(
-    data: NotificationCreate, admin=Depends(require_admin)
-):
+async def create_notification(data: NotificationCreate, admin=Depends(require_admin)):
     """Create and broadcast a notification to all users (admin only)."""
     try:
         notification = await notifications_service.create(
@@ -42,9 +40,7 @@ async def create_notification(
             author=admin,
         )
     except notifications_service.NotificationValidationError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return {
         "message": "Notification sent to all users",
         "id": notification["id"],
@@ -64,9 +60,7 @@ async def get_unread_count(user=Depends(get_current_user)):
 
 
 @router.put("/notifications/{notification_id}/read")
-async def mark_notification_read(
-    notification_id: str, user=Depends(get_current_user)
-):
+async def mark_notification_read(notification_id: str, user=Depends(get_current_user)):
     """Mark a single notification as read."""
     await notifications_service.mark_read(user, notification_id)
     return {"message": "Notification marked as read"}

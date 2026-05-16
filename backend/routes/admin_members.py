@@ -10,13 +10,13 @@ The router has no path prefix because the admin endpoints share the
 /admin/... namespace with other admin routers; server.py mounts this
 with prefix="/api" so the paths above are absolute under /api.
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from services import admin_members as admin_members_service
 from services.admin import require_admin
-
 
 router = APIRouter(tags=["admin-members"])
 
@@ -33,9 +33,7 @@ async def get_member_details(member_id: str, _admin=Depends(require_admin)):
     try:
         return await admin_members_service.get_details(member_id)
     except admin_members_service.MemberNotFoundError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Member not found"
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found") from exc
 
 
 @router.get("/admin/members/{member_id}/activity")
@@ -44,23 +42,15 @@ async def get_member_activity(member_id: str, _admin=Depends(require_admin)):
     try:
         return await admin_members_service.get_activity(member_id)
     except admin_members_service.MemberNotFoundError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Member not found"
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found") from exc
 
 
 @router.delete("/admin/members/{member_id}")
 async def delete_member(member_id: str, admin=Depends(require_admin)):
     """Delete a member account and cascade-cleanup all their data."""
     try:
-        return await admin_members_service.delete(
-            member_id, acting_admin_id=admin["id"]
-        )
+        return await admin_members_service.delete(member_id, acting_admin_id=admin["id"])
     except admin_members_service.CannotDeleteSelfError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except admin_members_service.MemberNotFoundError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Member not found"
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found") from exc

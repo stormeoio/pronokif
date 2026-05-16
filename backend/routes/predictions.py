@@ -2,25 +2,24 @@
 PRONOKIF - Prediction Routes
 /predictions/* endpoints for managing user predictions
 """
-from fastapi import APIRouter, HTTPException, Depends
-from typing import List
+
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
+
+from fastapi import APIRouter, Depends, HTTPException
 
 from config import db
-from models.schemas import (
-    PredictionCreate, SprintPredictionCreate, MainPredictionCreate,
-    CustomPredictionCreate
-)
-from services.auth import get_current_user
-from services.scoring import calculate_points
-from services.predictions import count_individual_predictions  # re-export for backward compat
 from data.f1_data import F1_RACES_2026
+from models.schemas import CustomPredictionCreate, MainPredictionCreate, PredictionCreate, SprintPredictionCreate
+from services.auth import get_current_user
+from services.predictions import count_individual_predictions  # re-export for backward compat
+from services.scoring import calculate_points
 
 router = APIRouter(prefix="/predictions", tags=["Predictions"])
 
 
 # ==================== HELPER FUNCTIONS ====================
+
 
 def get_predictions_close_time(race: dict) -> datetime:
     """Get the time when main race predictions close (15 min before Q1)"""
@@ -48,20 +47,21 @@ def get_sprint_predictions_close_time(race: dict):
 
 # ==================== MAIN PREDICTION ENDPOINTS ====================
 
+
 @router.post("")
 async def create_prediction(data: PredictionCreate, user=Depends(get_current_user)):
     """Create or update a prediction for a race"""
     race = next((r for r in F1_RACES_2026 if r["id"] == data.race_id), None)
     if not race:
         raise HTTPException(status_code=404, detail="Race not found")
-    
+
     predictions_close = get_predictions_close_time(race)
-    if datetime.now(timezone.utc) > predictions_close:
+    if datetime.now(UTC) > predictions_close:
         raise HTTPException(status_code=400, detail="Les pronostics sont fermés (15 min avant les FP1)")
-    
+
     if len(data.quali_top10) != 10 or len(data.race_top10) != 10:
         raise HTTPException(status_code=400, detail="Top 10 must have exactly 10 drivers")
-    
+
     if race.get("is_sprint"):
         if not data.sprint_quali_pole:
             raise HTTPException(status_code=400, detail="Sprint quali pole required for sprint weekend")
@@ -71,10 +71,10 @@ async def create_prediction(data: PredictionCreate, user=Depends(get_current_use
             raise HTTPException(status_code=400, detail="Sprint race winner required for sprint weekend")
         if not data.sprint_race_top10 or len(data.sprint_race_top10) != 10:
             raise HTTPException(status_code=400, detail="Sprint race top 10 required for sprint weekend")
-    
-    now = datetime.now(timezone.utc).isoformat()
+
+    now = datetime.now(UTC).isoformat()
     existing = await db.predictions.find_one({"user_id": user["id"], "race_id": data.race_id})
-    
+
     prediction_data = {
         "quali_pole": data.quali_pole,
         "quali_top10": data.quali_top10,
@@ -86,18 +86,22 @@ async def create_prediction(data: PredictionCreate, user=Depends(get_current_use
         "race_top10": data.race_top10,
         "bonus_bets": data.bonus_bets.dict() if data.bonus_bets else None,
         "custom_predictions": data.custom_predictions,
-        "updated_at": now
+        "updated_at": now,
     }
-    
+
     if existing:
         await db.predictions.update_one({"id": existing["id"]}, {"$set": prediction_data})
         existing_clean = {k: v for k, v in existing.items() if k != "_id"}
         return {**existing_clean, **prediction_data, "locked": False}
-    
+
     prediction_id = str(uuid.uuid4())
     prediction = {
-        "id": prediction_id, "user_id": user["id"], "race_id": data.race_id,
-        **prediction_data, "locked": False, "created_at": now
+        "id": prediction_id,
+        "user_id": user["id"],
+        "race_id": data.race_id,
+        **prediction_data,
+        "locked": False,
+        "created_at": now,
     }
     await db.predictions.insert_one(prediction)
     return {k: v for k, v in prediction.items() if k != "_id"}
@@ -116,16 +120,16 @@ async def delete_my_prediction(race_id: str, user=Depends(get_current_user)):
     race = next((r for r in F1_RACES_2026 if r["id"] == race_id), None)
     if not race:
         raise HTTPException(status_code=404, detail="Course non trouvée")
-    
+
     close_time = get_predictions_close_time(race)
-    if datetime.now(timezone.utc) >= close_time:
+    if datetime.now(UTC) >= close_time:
         raise HTTPException(status_code=400, detail="Les pronostics sont clôturés, suppression impossible")
-    
+
     result = await db.predictions.delete_one({"user_id": user["id"], "race_id": race_id})
-    
+
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Aucun pronostic trouvé pour cette course")
-    
+
     return {"message": "Pronostics supprimés avec succès"}
 
 
@@ -141,32 +145,29 @@ async def get_prediction_stats(user=Depends(get_current_user)):
     """Get prediction statistics for the current user"""
     total_predictions = await count_individual_predictions(user["id"])
     races_participated = await db.predictions.count_documents({"user_id": user["id"]})
-    
-    return {
-        "total_predictions": total_predictions,
-        "races_participated": races_participated
-    }
+
+    return {"total_predictions": total_predictions, "races_participated": races_participated}
 
 
 @router.get("/points-history")
 async def get_points_history(user=Depends(get_current_user)):
     """Get detailed points history for the user"""
     predictions = await db.predictions.find({"user_id": user["id"]}, {"_id": 0}).to_list(100)
-    
+
     history = []
     race_map = {r["id"]: r for r in F1_RACES_2026}
-    
+
     for pred in predictions:
         race_id = pred.get("race_id")
         race = race_map.get(race_id)
         if not race:
             continue
-        
+
         result = await db.race_results.find_one({"race_id": race_id}, {"_id": 0})
-        
+
         if result:
             points = calculate_points(pred, result.get("results", {}))
-            
+
             history_entry = {
                 "race_id": race_id,
                 "race_name": race["name"],
@@ -183,47 +184,50 @@ async def get_points_history(user=Depends(get_current_user)):
                 "sprint_breakdown": None,
                 "total_points": points["total"],
                 "xp_earned": points["xp_earned"],
-                "details": points["details"]
+                "details": points["details"],
             }
-            
+
             if race.get("is_sprint"):
                 history_entry["sprint_breakdown"] = {
                     "sprint_quali_top10": {"points": points["sprint_quali_top10"], "label": "Top 10 Qualif Sprint"},
                     "sprint_race_top10": {"points": points["sprint_race_top10"], "label": "Top 10 Course Sprint"},
                 }
-            
+
             history.append(history_entry)
         else:
-            history.append({
-                "race_id": race_id,
-                "race_name": race["name"],
-                "race_date": race.get("date"),
-                "is_sprint_weekend": race.get("is_sprint", False),
-                "has_results": False,
-                "points_breakdown": None,
-                "sprint_breakdown": None,
-                "total_points": 0,
-                "xp_earned": 0,
-                "details": ["En attente des résultats"]
-            })
-    
+            history.append(
+                {
+                    "race_id": race_id,
+                    "race_name": race["name"],
+                    "race_date": race.get("date"),
+                    "is_sprint_weekend": race.get("is_sprint", False),
+                    "has_results": False,
+                    "points_breakdown": None,
+                    "sprint_breakdown": None,
+                    "total_points": 0,
+                    "xp_earned": 0,
+                    "details": ["En attente des résultats"],
+                }
+            )
+
     history.sort(key=lambda x: x.get("race_date", ""), reverse=True)
-    
+
     total_points = sum(h["total_points"] for h in history)
     total_xp = sum(h["xp_earned"] for h in history)
-    
+
     return {
         "history": history,
         "summary": {
             "total_points": total_points,
             "total_xp": total_xp,
             "races_with_results": len([h for h in history if h["has_results"]]),
-            "races_pending": len([h for h in history if not h["has_results"]])
-        }
+            "races_pending": len([h for h in history if not h["has_results"]]),
+        },
     }
 
 
 # ==================== SEPARATE SPRINT/MAIN PREDICTIONS ====================
+
 
 @router.post("/sprint")
 async def save_sprint_prediction(data: SprintPredictionCreate, user=Depends(get_current_user)):
@@ -231,38 +235,42 @@ async def save_sprint_prediction(data: SprintPredictionCreate, user=Depends(get_
     race = next((r for r in F1_RACES_2026 if r["id"] == data.race_id), None)
     if not race:
         raise HTTPException(status_code=404, detail="Race not found")
-    
+
     if not race.get("is_sprint"):
         raise HTTPException(status_code=400, detail="This is not a sprint weekend")
-    
+
     sprint_predictions_close = get_sprint_predictions_close_time(race)
-    if datetime.now(timezone.utc) > sprint_predictions_close:
+    if datetime.now(UTC) > sprint_predictions_close:
         raise HTTPException(status_code=400, detail="Les pronostics sprint sont fermés (15 min avant SQ1)")
-    
+
     if len(data.sprint_quali_top10) != 10 or len(data.sprint_race_top10) != 10:
         raise HTTPException(status_code=400, detail="Sprint Top 10 must have exactly 10 drivers")
-    
-    now = datetime.now(timezone.utc).isoformat()
+
+    now = datetime.now(UTC).isoformat()
     existing = await db.predictions.find_one({"user_id": user["id"], "race_id": data.race_id})
-    
+
     sprint_data = {
         "sprint_quali_pole": data.sprint_quali_pole,
         "sprint_quali_top10": data.sprint_quali_top10,
         "sprint_race_winner": data.sprint_race_winner,
         "sprint_race_top10": data.sprint_race_top10,
         "sprint_bonus_bets": data.sprint_bonus_bets.dict() if data.sprint_bonus_bets else None,
-        "sprint_updated_at": now
+        "sprint_updated_at": now,
     }
-    
+
     if existing:
         await db.predictions.update_one({"id": existing["id"]}, {"$set": sprint_data})
         existing_clean = {k: v for k, v in existing.items() if k != "_id"}
         return {**existing_clean, **sprint_data}
-    
+
     prediction_id = str(uuid.uuid4())
     prediction = {
-        "id": prediction_id, "user_id": user["id"], "race_id": data.race_id,
-        **sprint_data, "locked": False, "created_at": now
+        "id": prediction_id,
+        "user_id": user["id"],
+        "race_id": data.race_id,
+        **sprint_data,
+        "locked": False,
+        "created_at": now,
     }
     await db.predictions.insert_one(prediction)
     return {k: v for k, v in prediction.items() if k != "_id"}
@@ -274,35 +282,39 @@ async def save_main_prediction(data: MainPredictionCreate, user=Depends(get_curr
     race = next((r for r in F1_RACES_2026 if r["id"] == data.race_id), None)
     if not race:
         raise HTTPException(status_code=404, detail="Race not found")
-    
+
     predictions_close = get_predictions_close_time(race)
-    if datetime.now(timezone.utc) > predictions_close:
+    if datetime.now(UTC) > predictions_close:
         raise HTTPException(status_code=400, detail="Les pronostics sont fermés (15 min avant Q1)")
-    
+
     if len(data.quali_top10) != 10 or len(data.race_top10) != 10:
         raise HTTPException(status_code=400, detail="Top 10 must have exactly 10 drivers")
-    
-    now = datetime.now(timezone.utc).isoformat()
+
+    now = datetime.now(UTC).isoformat()
     existing = await db.predictions.find_one({"user_id": user["id"], "race_id": data.race_id})
-    
+
     main_data = {
         "quali_pole": data.quali_pole,
         "quali_top10": data.quali_top10,
         "race_winner": data.race_winner,
         "race_top10": data.race_top10,
         "bonus_bets": data.bonus_bets.dict() if data.bonus_bets else None,
-        "main_updated_at": now
+        "main_updated_at": now,
     }
-    
+
     if existing:
         await db.predictions.update_one({"id": existing["id"]}, {"$set": main_data})
         existing_clean = {k: v for k, v in existing.items() if k != "_id"}
         return {**existing_clean, **main_data}
-    
+
     prediction_id = str(uuid.uuid4())
     prediction = {
-        "id": prediction_id, "user_id": user["id"], "race_id": data.race_id,
-        **main_data, "locked": False, "created_at": now
+        "id": prediction_id,
+        "user_id": user["id"],
+        "race_id": data.race_id,
+        **main_data,
+        "locked": False,
+        "created_at": now,
     }
     await db.predictions.insert_one(prediction)
     return {k: v for k, v in prediction.items() if k != "_id"}
@@ -310,13 +322,14 @@ async def save_main_prediction(data: MainPredictionCreate, user=Depends(get_curr
 
 # ==================== CUSTOM PREDICTIONS ====================
 
+
 @router.post("/custom")
 async def create_custom_prediction(data: CustomPredictionCreate, user=Depends(get_current_user)):
     """Create a custom prediction for a league"""
     league = await db.leagues.find_one({"id": data.league_id}, {"_id": 0})
     if not league or user["id"] not in league["members"]:
         raise HTTPException(status_code=403, detail="Not a member of this league")
-    
+
     prediction_id = str(uuid.uuid4())
     processed_choices = None
     if data.choices:
@@ -326,7 +339,7 @@ async def create_custom_prediction(data: CustomPredictionCreate, user=Depends(ge
             if not choice_dict.get("id"):
                 choice_dict["id"] = f"choice_{i}"
             processed_choices.append(choice_dict)
-    
+
     custom_pred = {
         "id": prediction_id,
         "race_id": data.race_id,
@@ -337,7 +350,7 @@ async def create_custom_prediction(data: CustomPredictionCreate, user=Depends(ge
         "multiple_choice": data.multiple_choice,
         "choices": processed_choices,
         "correct_answer": None,
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "created_at": datetime.now(UTC).isoformat(),
     }
     await db.custom_predictions.insert_one(custom_pred)
     return {k: v for k, v in custom_pred.items() if k != "_id"}
@@ -349,10 +362,10 @@ async def get_league_custom_predictions(league_id: str, race_id: str, user=Depen
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league or user["id"] not in league["members"]:
         raise HTTPException(status_code=403, detail="Not a member of this league")
-    
-    predictions = await db.custom_predictions.find(
-        {"league_id": league_id, "race_id": race_id}, {"_id": 0}
-    ).to_list(100)
+
+    predictions = await db.custom_predictions.find({"league_id": league_id, "race_id": race_id}, {"_id": 0}).to_list(
+        100
+    )
     return predictions
 
 
@@ -362,16 +375,18 @@ async def answer_custom_prediction(prediction_id: str, answer: dict, user=Depend
     custom_pred = await db.custom_predictions.find_one({"id": prediction_id}, {"_id": 0})
     if not custom_pred:
         raise HTTPException(status_code=404, detail="Custom prediction not found")
-    
+
     await db.custom_prediction_answers.update_one(
         {"prediction_id": prediction_id, "user_id": user["id"]},
-        {"$set": {
-            "prediction_id": prediction_id,
-            "user_id": user["id"],
-            "answer": answer.get("answer"),
-            "answered_at": datetime.now(timezone.utc).isoformat()
-        }},
-        upsert=True
+        {
+            "$set": {
+                "prediction_id": prediction_id,
+                "user_id": user["id"],
+                "answer": answer.get("answer"),
+                "answered_at": datetime.now(UTC).isoformat(),
+            }
+        },
+        upsert=True,
     )
     return {"message": "Answer saved"}
 
@@ -384,19 +399,18 @@ async def set_correct_answer(prediction_id: str, data: dict, user=Depends(get_cu
         raise HTTPException(status_code=404, detail="Custom prediction not found")
     if custom_pred["created_by"] != user["id"]:
         raise HTTPException(status_code=403, detail="Only creator can set correct answer")
-    
+
     await db.custom_predictions.update_one(
-        {"id": prediction_id},
-        {"$set": {"correct_answer": data.get("correct_answer")}}
+        {"id": prediction_id}, {"$set": {"correct_answer": data.get("correct_answer")}}
     )
-    
+
     answers = await db.custom_prediction_answers.find({"prediction_id": prediction_id}, {"_id": 0}).to_list(1000)
     correct = data.get("correct_answer")
-    
+
     for ans in answers:
         user_answer = ans.get("answer")
         is_correct = False
-        
+
         if custom_pred["multiple_choice"]:
             if isinstance(user_answer, list) and isinstance(correct, list):
                 is_correct = any(a in correct for a in user_answer)
@@ -404,14 +418,13 @@ async def set_correct_answer(prediction_id: str, data: dict, user=Depends(get_cu
                 is_correct = correct in user_answer
         else:
             is_correct = user_answer == correct
-        
+
         if is_correct:
             league = await db.leagues.find_one({"id": custom_pred["league_id"]}, {"_id": 0})
             if league:
                 await db.leaderboard.update_one(
-                    {"league_id": league["id"], "user_id": ans["user_id"]},
-                    {"$inc": {"total_points": 2}}
+                    {"league_id": league["id"], "user_id": ans["user_id"]}, {"$inc": {"total_points": 2}}
                 )
                 await db.users.update_one({"id": ans["user_id"]}, {"$inc": {"xp": 10}})
-    
+
     return {"message": "Correct answer set and points calculated"}

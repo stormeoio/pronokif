@@ -4,13 +4,13 @@ PRONOKIF - Avatars service.
 Catalog lookup and avatar mutation (predefined ID or base64-encoded
 custom upload). Keeps the data-URL encoding out of the route handler.
 """
+
 from __future__ import annotations
 
 import base64
 
 from config import db
-from features import ALL_AVATARS, DEFAULT_AVATARS, TEAM_AVATARS, DRIVER_AVATARS
-
+from features import ALL_AVATARS, DEFAULT_AVATARS, DRIVER_AVATARS, TEAM_AVATARS
 
 # Custom uploads are stored inline as a data URL — keep them small.
 MAX_AVATAR_BYTES = 500_000
@@ -58,9 +58,7 @@ async def set_avatar(
     return await db.users.find_one({"id": user_id}, {"_id": 0})
 
 
-async def upload_custom_avatar(
-    user_id: str, contents: bytes, content_type: str | None
-) -> str:
+async def upload_custom_avatar(user_id: str, contents: bytes, content_type: str | None) -> str:
     """Encode raw image bytes as a data URL and persist on the user.
 
     Returns the resulting data URL.

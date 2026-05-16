@@ -9,13 +9,13 @@ because they share the /users, /user namespaces with other routers.
     GET  /user/missions                  — caller's mission progress
     POST /user/missions/{id}/claim       — claim XP reward
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from services import profile as profile_service
 from services.auth import get_current_user
-
 
 router = APIRouter(tags=["profile"])
 
@@ -24,9 +24,7 @@ router = APIRouter(tags=["profile"])
 async def get_user_public_profile(user_id: str, user=Depends(get_current_user)):
     """Public profile of a user (stats, common leagues, recent picks)."""
     try:
-        return await profile_service.get_public_profile(
-            target_user_id=user_id, requesting_user_id=user["id"]
-        )
+        return await profile_service.get_public_profile(target_user_id=user_id, requesting_user_id=user["id"])
     except profile_service.UserNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -44,9 +42,7 @@ async def get_user_missions(user=Depends(get_current_user)):
 
 
 @router.post("/user/missions/{mission_id}/claim")
-async def claim_mission_reward(
-    mission_id: str, user=Depends(get_current_user)
-):
+async def claim_mission_reward(mission_id: str, user=Depends(get_current_user)):
     """Award XP for a completed mission. 400 if not eligible, 404 if unknown."""
     try:
         return await profile_service.claim_mission(user["id"], mission_id)

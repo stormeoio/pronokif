@@ -10,6 +10,7 @@ canonical version below mirrors the server.py logic (more granular —
 this is what the public profile + admin views relied on) and applies it
 to both classic and sprint bonus_bets.
 """
+
 from __future__ import annotations
 
 from config import db
@@ -22,9 +23,7 @@ async def count_individual_predictions(user_id: str) -> int:
     quali pole, quali top10, race winner, race top10, plus 4 bonus bets,
     then the same 8 for sprint sessions when present.
     """
-    predictions = await db.predictions.find(
-        {"user_id": user_id}, {"_id": 0}
-    ).to_list(1000)
+    predictions = await db.predictions.find({"user_id": user_id}, {"_id": 0}).to_list(1000)
     total = 0
 
     for pred in predictions:

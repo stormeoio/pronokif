@@ -14,9 +14,10 @@ behavior here via `require_league_creator` so existing league-creator
 operators keep their access. Switching to require_admin would be a
 breaking change.
 """
+
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import Depends, HTTPException, status
@@ -26,13 +27,11 @@ from data.f1_data import F1_RACES_2026
 from services.auth import get_current_user, send_user_notification
 from services.scoring import calculate_points
 
-
 # ---------- Auth helper -------------------------------------------------
 
+
 async def _is_league_creator(user: dict) -> bool:
-    leagues = await db.leagues.find(
-        {"created_by": user["id"]}, {"_id": 0}
-    ).to_list(100)
+    leagues = await db.leagues.find({"created_by": user["id"]}, {"_id": 0}).to_list(100)
     return bool(leagues)
 
 
@@ -48,6 +47,7 @@ async def require_league_creator(user: dict = Depends(get_current_user)) -> dict
 
 # ---------- Read paths --------------------------------------------------
 
+
 async def get_official(race_id: str, user: dict) -> dict:
     """Return the official results for a race plus the caller's own
     prediction and the points it would score. 404 when no results yet."""
@@ -58,9 +58,7 @@ async def get_official(race_id: str, user: dict) -> dict:
             detail="Results not available yet",
         )
 
-    prediction = await db.predictions.find_one(
-        {"user_id": user["id"], "race_id": race_id}, {"_id": 0}
-    )
+    prediction = await db.predictions.find_one({"user_id": user["id"], "race_id": race_id}, {"_id": 0})
     points = calculate_points(prediction, result["results"]) if prediction else None
     return {"results": result["results"], "prediction": prediction, "points": points}
 
@@ -69,11 +67,9 @@ async def list_admin_races() -> list[dict]:
     """Return every race in the calendar with its status flags for the
     admin race-picker UI."""
     out: list[dict] = []
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     for race in F1_RACES_2026:
-        result = await db.race_results.find_one(
-            {"race_id": race["id"]}, {"_id": 0}
-        )
+        result = await db.race_results.find_one({"race_id": race["id"]}, {"_id": 0})
         race_date = datetime.fromisoformat(race["date"] + "T15:00:00+00:00")
         out.append(
             {
@@ -95,9 +91,8 @@ async def get_admin_detail(race_id: str) -> dict | None:
 
 # ---------- Write path: results + scoring batch -------------------------
 
-async def set_official_and_score(
-    *, race_id: str, results: dict, entered_by: str
-) -> int:
+
+async def set_official_and_score(*, race_id: str, results: dict, entered_by: str) -> int:
     """Upsert official results then score every prediction for the race.
 
     Side effects per matched prediction:
@@ -117,27 +112,21 @@ async def set_official_and_score(
                 "race_id": race_id,
                 "results": results,
                 "entered_by": entered_by,
-                "entered_at": datetime.now(timezone.utc).isoformat(),
+                "entered_at": datetime.now(UTC).isoformat(),
             }
         },
         upsert=True,
     )
 
-    predictions = await db.predictions.find(
-        {"race_id": race_id}, {"_id": 0}
-    ).to_list(1000)
+    predictions = await db.predictions.find({"race_id": race_id}, {"_id": 0}).to_list(1000)
 
-    race_name = next(
-        (r["name"] for r in F1_RACES_2026 if r["id"] == race_id), race_id
-    )
+    race_name = next((r["name"] for r in F1_RACES_2026 if r["id"] == race_id), race_id)
 
     for pred in predictions:
         points = calculate_points(pred, results)
         user_id = pred["user_id"]
 
-        await db.users.update_one(
-            {"id": user_id}, {"$inc": {"xp": points["xp_earned"]}}
-        )
+        await db.users.update_one({"id": user_id}, {"$inc": {"xp": points["xp_earned"]}})
 
         user_data = await db.users.find_one({"id": user_id}, {"_id": 0})
         if not user_data:
@@ -146,12 +135,8 @@ async def set_official_and_score(
         new_xp = user_data.get("xp", 0) + points["xp_earned"]
         new_level = (new_xp // 100) + 1
         if new_level > user_data.get("level", 1):
-            await db.users.update_one(
-                {"id": user_id}, {"$set": {"level": new_level}}
-            )
-            await send_user_notification(
-                user_id, f"Niveau {new_level} atteint !", "level_up"
-            )
+            await db.users.update_one({"id": user_id}, {"$set": {"level": new_level}})
+            await send_user_notification(user_id, f"Niveau {new_level} atteint !", "level_up")
 
         await send_user_notification(
             user_id,
@@ -159,18 +144,12 @@ async def set_official_and_score(
             "results",
         )
 
-        leagues = await db.leagues.find(
-            {"members": user_id}, {"_id": 0}
-        ).to_list(100)
+        leagues = await db.leagues.find({"members": user_id}, {"_id": 0}).to_list(100)
         for league in leagues:
-            entry = await db.leaderboard.find_one(
-                {"league_id": league["id"], "user_id": user_id}
-            )
+            entry = await db.leaderboard.find_one({"league_id": league["id"], "user_id": user_id})
             if not entry:
                 continue
-            all_entries = await db.leaderboard.find(
-                {"league_id": league["id"]}, {"_id": 0}
-            ).to_list(100)
+            all_entries = await db.leaderboard.find({"league_id": league["id"]}, {"_id": 0}).to_list(100)
             all_entries.sort(key=lambda x: x["total_points"], reverse=True)
             current_pos = next(
                 (i + 1 for i, e in enumerate(all_entries) if e["user_id"] == user_id),
@@ -187,9 +166,7 @@ async def set_official_and_score(
                 },
             )
 
-    await db.predictions.update_many(
-        {"race_id": race_id}, {"$set": {"locked": True}}
-    )
+    await db.predictions.update_many({"race_id": race_id}, {"$set": {"locked": True}})
     return len(predictions)
 
 

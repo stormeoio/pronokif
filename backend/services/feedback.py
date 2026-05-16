@@ -6,13 +6,13 @@ routes/feedback.py stay slim (validation, dependency injection, response
 shaping) and gives tests a seam to write against without spinning up a
 FastAPI client.
 """
+
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from config import db
-
 
 VALID_CATEGORIES = ("bug", "suggestion", "feedback")
 MAX_MESSAGE_LENGTH = 2000
@@ -27,9 +27,7 @@ def _validate(message: str, category: str) -> None:
     if not message.strip():
         raise FeedbackValidationError("Message cannot be empty")
     if len(message) > MAX_MESSAGE_LENGTH:
-        raise FeedbackValidationError(
-            f"Message too long (max {MAX_MESSAGE_LENGTH} characters)"
-        )
+        raise FeedbackValidationError(f"Message too long (max {MAX_MESSAGE_LENGTH} characters)")
     if category not in VALID_CATEGORIES:
         raise FeedbackValidationError("Invalid category")
 
@@ -45,7 +43,7 @@ async def submit(*, user: dict, message: str, category: str) -> dict:
         "email": user.get("email"),
         "category": category,
         "message": message.strip(),
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "read": False,
     }
     await db.feedback.insert_one(feedback)
@@ -54,16 +52,10 @@ async def submit(*, user: dict, message: str, category: str) -> dict:
 
 async def list_all(limit: int = 200) -> list[dict]:
     """Return the most recent feedback entries (admin view)."""
-    return await (
-        db.feedback.find({}, {"_id": 0})
-        .sort("created_at", -1)
-        .to_list(limit)
-    )
+    return await db.feedback.find({}, {"_id": 0}).sort("created_at", -1).to_list(limit)
 
 
 async def mark_read(feedback_id: str) -> bool:
     """Mark a feedback row as read. Returns False if no row matched."""
-    result = await db.feedback.update_one(
-        {"id": feedback_id}, {"$set": {"read": True}}
-    )
+    result = await db.feedback.update_one({"id": feedback_id}, {"$set": {"read": True}})
     return result.modified_count > 0

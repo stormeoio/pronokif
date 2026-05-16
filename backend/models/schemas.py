@@ -2,11 +2,13 @@
 PRONOKIF - Pydantic Models/Schemas
 All request/response models for the API
 """
-from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional, Dict, Any
 
+from typing import Any
+
+from pydantic import BaseModel, EmailStr
 
 # ==================== AUTH MODELS ====================
+
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -25,13 +27,13 @@ class UserSetUsername(BaseModel):
 class UserResponse(BaseModel):
     id: str
     email: str
-    username: Optional[str] = None
+    username: str | None = None
     created_at: str
-    current_league_id: Optional[str] = None
+    current_league_id: str | None = None
     xp: int = 0
     level: int = 1
-    avatar_id: Optional[str] = None
-    custom_avatar_url: Optional[str] = None
+    avatar_id: str | None = None
+    custom_avatar_url: str | None = None
 
 
 class TokenResponse(BaseModel):
@@ -42,9 +44,10 @@ class TokenResponse(BaseModel):
 
 # ==================== LEAGUE MODELS ====================
 
+
 class LeagueCreate(BaseModel):
     name: str
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class LeagueJoin(BaseModel):
@@ -52,8 +55,8 @@ class LeagueJoin(BaseModel):
 
 
 class LeagueUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
 
 
 class LeagueResponse(BaseModel):
@@ -61,9 +64,9 @@ class LeagueResponse(BaseModel):
     name: str
     code: str
     created_by: str
-    members: List[str]
+    members: list[str]
     created_at: str
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class TransferOwnershipRequest(BaseModel):
@@ -85,44 +88,45 @@ class LeaderboardEntry(BaseModel):
 
 # ==================== PREDICTION MODELS ====================
 
+
 class BonusBets(BaseModel):
     safety_car: bool = False
-    dnf_drivers: List[str] = []
-    fastest_lap_driver: Optional[str] = None
-    first_corner_leader: Optional[str] = None
+    dnf_drivers: list[str] = []
+    fastest_lap_driver: str | None = None
+    first_corner_leader: str | None = None
 
 
 class SprintPredictionCreate(BaseModel):
     race_id: str
     sprint_quali_pole: str
-    sprint_quali_top10: List[str]
+    sprint_quali_top10: list[str]
     sprint_race_winner: str
-    sprint_race_top10: List[str]
-    sprint_bonus_bets: Optional[BonusBets] = None
+    sprint_race_top10: list[str]
+    sprint_bonus_bets: BonusBets | None = None
 
 
 class MainPredictionCreate(BaseModel):
     race_id: str
     quali_pole: str
-    quali_top10: List[str]
+    quali_top10: list[str]
     race_winner: str
-    race_top10: List[str]
-    bonus_bets: Optional[BonusBets] = None
+    race_top10: list[str]
+    bonus_bets: BonusBets | None = None
 
 
 class PredictionCreate(BaseModel):
     race_id: str
     quali_pole: str
-    quali_top10: List[str]
-    sprint_quali_pole: Optional[str] = None
-    sprint_quali_top10: Optional[List[str]] = None
-    sprint_race_winner: Optional[str] = None
-    sprint_race_top10: Optional[List[str]] = None
+    quali_top10: list[str]
+    sprint_quali_pole: str | None = None
+    sprint_quali_top10: list[str] | None = None
+    sprint_race_winner: str | None = None
+    sprint_race_top10: list[str] | None = None
     race_winner: str
-    race_top10: List[str]
-    bonus_bets: Optional[BonusBets] = None
-    sprint_bonus_bets: Optional[BonusBets] = None
-    custom_predictions: Optional[Dict[str, Any]] = None
+    race_top10: list[str]
+    bonus_bets: BonusBets | None = None
+    sprint_bonus_bets: BonusBets | None = None
+    custom_predictions: dict[str, Any] | None = None
 
 
 class PredictionResponse(BaseModel):
@@ -130,13 +134,13 @@ class PredictionResponse(BaseModel):
     user_id: str
     race_id: str
     quali_pole: str
-    quali_top10: List[str]
-    sprint_quali_top10: Optional[List[str]] = None
-    sprint_race_top10: Optional[List[str]] = None
+    quali_top10: list[str]
+    sprint_quali_top10: list[str] | None = None
+    sprint_race_top10: list[str] | None = None
     race_winner: str
-    race_top10: List[str]
-    bonus_bets: Optional[dict] = None
-    custom_predictions: Optional[dict] = None
+    race_top10: list[str]
+    bonus_bets: dict | None = None
+    custom_predictions: dict | None = None
     locked: bool
     created_at: str
     updated_at: str
@@ -144,11 +148,12 @@ class PredictionResponse(BaseModel):
 
 # ==================== CUSTOM PREDICTION MODELS ====================
 
+
 class CustomPredictionChoice(BaseModel):
-    id: Optional[str] = None
+    id: str | None = None
     text: str
-    driver_id: Optional[str] = None
-    position: Optional[int] = None
+    driver_id: str | None = None
+    position: int | None = None
     points: int = 2
 
 
@@ -158,7 +163,7 @@ class CustomPredictionCreate(BaseModel):
     question: str
     answer_type: str  # "text", "drivers", "positions", "custom"
     multiple_choice: bool = False
-    choices: Optional[List[CustomPredictionChoice]] = None
+    choices: list[CustomPredictionChoice] | None = None
 
 
 class CustomPredictionResponse(BaseModel):
@@ -169,12 +174,13 @@ class CustomPredictionResponse(BaseModel):
     question: str
     answer_type: str
     multiple_choice: bool
-    choices: Optional[List[dict]] = None
-    correct_answer: Optional[Any] = None
+    choices: list[dict] | None = None
+    correct_answer: Any | None = None
     created_at: str
 
 
 # ==================== RACE & DRIVER MODELS ====================
+
 
 class RaceResponse(BaseModel):
     id: str
@@ -183,17 +189,17 @@ class RaceResponse(BaseModel):
     country: str
     date: str
     quali_date: str
-    sprint_quali_date: Optional[str] = None
-    sprint_race_date: Optional[str] = None
+    sprint_quali_date: str | None = None
+    sprint_race_date: str | None = None
     predictions_close_at: str
     status: str
     is_sprint_weekend: bool = False
-    results: Optional[dict] = None
-    race_time: Optional[str] = None
-    quali_time: Optional[str] = None
-    sprint_quali_time: Optional[str] = None
-    sprint_race_time: Optional[str] = None
-    timezone: Optional[str] = "Europe/Paris"
+    results: dict | None = None
+    race_time: str | None = None
+    quali_time: str | None = None
+    sprint_quali_time: str | None = None
+    sprint_race_time: str | None = None
+    timezone: str | None = "Europe/Paris"
 
 
 class DriverResponse(BaseModel):
@@ -202,10 +208,11 @@ class DriverResponse(BaseModel):
     team: str
     number: int
     country: str
-    code: Optional[str] = None
+    code: str | None = None
 
 
 # ==================== NOTIFICATION & FEEDBACK MODELS ====================
+
 
 class NotificationResponse(BaseModel):
     id: str
@@ -223,14 +230,15 @@ class FeedbackCreate(BaseModel):
 
 # ==================== ADMIN MODELS ====================
 
+
 class RaceResultsInput(BaseModel):
     quali_pole: str
-    quali_top10: List[str]
-    sprint_quali_top10: Optional[List[str]] = None
-    sprint_race_top10: Optional[List[str]] = None
+    quali_top10: list[str]
+    sprint_quali_top10: list[str] | None = None
+    sprint_race_top10: list[str] | None = None
     race_winner: str
-    race_top10: List[str]
+    race_top10: list[str]
     safety_car: bool = False
-    dnf_drivers: List[str] = []
-    fastest_lap: Optional[str] = None
-    first_corner_leader: Optional[str] = None
+    dnf_drivers: list[str] = []
+    fastest_lap: str | None = None
+    first_corner_leader: str | None = None

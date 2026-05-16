@@ -8,6 +8,7 @@ and gives tests a seam without spinning up a FastAPI client.
 All functions assume the caller has already enforced admin access (the
 route layer wires `Depends(require_admin)`).
 """
+
 from __future__ import annotations
 
 from config import db, logger
@@ -28,15 +29,11 @@ class CannotDeleteSelfError(ValueError):
 
 async def list_all(limit: int = 1000) -> list[dict]:
     """Return all registered members enriched with prediction + league counts."""
-    members = await db.users.find(
-        {}, {"_id": 0, "password_hash": 0}
-    ).to_list(limit)
+    members = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(limit)
 
     for member in members:
         member["predictions_count"] = await count_individual_predictions(member["id"])
-        member["leagues_count"] = await db.leagues.count_documents(
-            {"members": member["id"]}
-        )
+        member["leagues_count"] = await db.leagues.count_documents({"members": member["id"]})
 
     return members
 
@@ -44,9 +41,7 @@ async def list_all(limit: int = 1000) -> list[dict]:
 async def get_details(member_id: str) -> dict:
     """Return a detailed member profile (stats, leagues, recent predictions,
     minigame scores). Raises MemberNotFoundError if unknown."""
-    member = await db.users.find_one(
-        {"id": member_id}, {"_id": 0, "password_hash": 0}
-    )
+    member = await db.users.find_one({"id": member_id}, {"_id": 0, "password_hash": 0})
     if not member:
         raise MemberNotFoundError(member_id)
 
@@ -57,15 +52,10 @@ async def get_details(member_id: str) -> dict:
     predictions_count = await count_individual_predictions(member_id)
     races_participated = await db.predictions.count_documents({"user_id": member_id})
 
-    leagues = await db.leagues.find(
-        {"members": member_id}, {"_id": 0}
-    ).to_list(100)
+    leagues = await db.leagues.find({"members": member_id}, {"_id": 0}).to_list(100)
 
     recent_predictions = await (
-        db.predictions.find({"user_id": member_id}, {"_id": 0})
-        .sort("created_at", -1)
-        .limit(10)
-        .to_list(10)
+        db.predictions.find({"user_id": member_id}, {"_id": 0}).sort("created_at", -1).limit(10).to_list(10)
     )
 
     race_map = {r["id"]: r["name"] for r in F1_RACES_2026}
@@ -73,10 +63,7 @@ async def get_details(member_id: str) -> dict:
         pred["race_name"] = race_map.get(pred["race_id"], pred["race_id"])
 
     minigame_scores = await (
-        db.minigame_scores.find({"user_id": member_id}, {"_id": 0})
-        .sort("created_at", -1)
-        .limit(20)
-        .to_list(20)
+        db.minigame_scores.find({"user_id": member_id}, {"_id": 0}).sort("created_at", -1).limit(20).to_list(20)
     )
 
     return {
@@ -112,17 +99,12 @@ async def get_details(member_id: str) -> dict:
 async def get_activity(member_id: str, limit: int = 50) -> dict:
     """Return login activity history for a given member.
     Raises MemberNotFoundError if unknown."""
-    member = await db.users.find_one(
-        {"id": member_id}, {"_id": 0, "password_hash": 0}
-    )
+    member = await db.users.find_one({"id": member_id}, {"_id": 0, "password_hash": 0})
     if not member:
         raise MemberNotFoundError(member_id)
 
     sessions = await (
-        db.user_sessions.find({"user_id": member_id}, {"_id": 0})
-        .sort("login_at", -1)
-        .limit(limit)
-        .to_list(limit)
+        db.user_sessions.find({"user_id": member_id}, {"_id": 0}).sort("login_at", -1).limit(limit).to_list(limit)
     )
 
     return {
@@ -159,9 +141,7 @@ async def delete(member_id: str, *, acting_admin_id: str) -> dict:
     if not member:
         raise MemberNotFoundError(member_id)
 
-    await db.leagues.update_many(
-        {"members": member_id}, {"$pull": {"members": member_id}}
-    )
+    await db.leagues.update_many({"members": member_id}, {"$pull": {"members": member_id}})
     await db.leaderboard.delete_many({"user_id": member_id})
     await db.predictions.delete_many({"user_id": member_id})
     await db.user_stats.delete_one({"user_id": member_id})

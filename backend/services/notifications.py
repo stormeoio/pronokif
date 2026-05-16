@@ -9,13 +9,13 @@ The route layer stays slim: it validates payloads, injects the current
 user via FastAPI dependencies, and turns service-level exceptions into
 HTTP responses.
 """
+
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from config import db
-
 
 VALID_TYPES = ("info", "update", "important")
 MAX_LIST_LIMIT = 50
@@ -47,30 +47,21 @@ async def create(*, title: str, message: str, ntype: str, author: dict) -> dict:
         "title": title.strip(),
         "message": message.strip(),
         "type": ntype,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "created_by": author["id"],
     }
 
     await db.notifications.insert_one(notification)
-    await db.users.update_many(
-        {}, {"$addToSet": {"unread_notifications": notification["id"]}}
-    )
+    await db.users.update_many({}, {"$addToSet": {"unread_notifications": notification["id"]}})
     return notification
 
 
 async def list_for_user(user: dict, limit: int = MAX_LIST_LIMIT) -> list[dict]:
     """Return the most recent notifications, decorated with per-user
     `is_read` status."""
-    notifications = await (
-        db.notifications.find({}, {"_id": 0})
-        .sort("created_at", -1)
-        .limit(limit)
-        .to_list(limit)
-    )
+    notifications = await db.notifications.find({}, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
 
-    user_doc = await db.users.find_one(
-        {"id": user["id"]}, {"unread_notifications": 1}
-    )
+    user_doc = await db.users.find_one({"id": user["id"]}, {"unread_notifications": 1})
     unread_ids = set((user_doc or {}).get("unread_notifications", []))
 
     for notif in notifications:
@@ -80,9 +71,7 @@ async def list_for_user(user: dict, limit: int = MAX_LIST_LIMIT) -> list[dict]:
 
 async def count_unread(user: dict) -> int:
     """Return the count of unread notifications for the given user."""
-    user_doc = await db.users.find_one(
-        {"id": user["id"]}, {"unread_notifications": 1}
-    )
+    user_doc = await db.users.find_one({"id": user["id"]}, {"unread_notifications": 1})
     return len((user_doc or {}).get("unread_notifications", []))
 
 
@@ -96,6 +85,4 @@ async def mark_read(user: dict, notification_id: str) -> None:
 
 async def mark_all_read(user: dict) -> None:
     """Clear the user's unread notifications list."""
-    await db.users.update_one(
-        {"id": user["id"]}, {"$set": {"unread_notifications": []}}
-    )
+    await db.users.update_one({"id": user["id"]}, {"$set": {"unread_notifications": []}})

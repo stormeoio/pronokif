@@ -5,9 +5,8 @@ Business logic for the global and per-race leaderboards. Kept free of
 FastAPI imports so it can be exercised directly from tests or admin
 scripts.
 """
-from __future__ import annotations
 
-from typing import Optional
+from __future__ import annotations
 
 from config import db
 from services.scoring import calculate_points
@@ -27,19 +26,19 @@ async def build_global(*, current_user_id: str, limit: int = 100) -> dict:
         if not u.get("username"):
             continue
 
-        leaderboard_entries = await db.leaderboard.find(
-            {"user_id": u["id"]}, {"_id": 0}
-        ).to_list(100)
+        leaderboard_entries = await db.leaderboard.find({"user_id": u["id"]}, {"_id": 0}).to_list(100)
         total_points = sum(e.get("total_points", 0) for e in leaderboard_entries)
 
-        user_points.append({
-            "user_id": u["id"],
-            "username": u.get("username", "Anonymous"),
-            "avatar_id": u.get("avatar_id"),
-            "total_points": total_points,
-            "level": u.get("level", 1),
-            "xp": u.get("xp", 0),
-        })
+        user_points.append(
+            {
+                "user_id": u["id"],
+                "username": u.get("username", "Anonymous"),
+                "avatar_id": u.get("avatar_id"),
+                "total_points": total_points,
+                "level": u.get("level", 1),
+                "xp": u.get("xp", 0),
+            }
+        )
 
     # Highest points first, XP breaks ties.
     user_points.sort(key=lambda x: (-x["total_points"], -x["xp"]))
@@ -61,16 +60,12 @@ async def build_global(*, current_user_id: str, limit: int = 100) -> dict:
     }
 
 
-async def build_race_weekend(
-    *, race_id: str, league_id: Optional[str] = None
-) -> dict:
+async def build_race_weekend(*, race_id: str, league_id: str | None = None) -> dict:
     """Rank predictors for a single race. If ``league_id`` is provided, only
     members of that league are included. Returns an empty leaderboard with
     a friendly message when results haven't been imported yet.
     """
-    predictions = await db.predictions.find(
-        {"race_id": race_id}, {"_id": 0}
-    ).to_list(10000)
+    predictions = await db.predictions.find({"race_id": race_id}, {"_id": 0}).to_list(10000)
 
     results = await db.race_results.find_one({"race_id": race_id}, {"_id": 0})
     if not results:
@@ -85,18 +80,18 @@ async def build_race_weekend(
             continue
 
         if league_id:
-            user_leagues = await db.leagues.find(
-                {"id": league_id, "members": pred["user_id"]}, {"_id": 0}
-            ).to_list(1)
+            user_leagues = await db.leagues.find({"id": league_id, "members": pred["user_id"]}, {"_id": 0}).to_list(1)
             if not user_leagues:
                 continue
 
-        user_race_points.append({
-            "user_id": pred["user_id"],
-            "username": user_data.get("username", "Anonymous"),
-            "avatar_id": user_data.get("avatar_id"),
-            "race_points": points["total"],
-        })
+        user_race_points.append(
+            {
+                "user_id": pred["user_id"],
+                "username": user_data.get("username", "Anonymous"),
+                "avatar_id": user_data.get("avatar_id"),
+                "race_points": points["total"],
+            }
+        )
 
     user_race_points.sort(key=lambda x: x["race_points"], reverse=True)
 

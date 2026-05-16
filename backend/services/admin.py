@@ -16,6 +16,7 @@ The legacy `check_is_admin(user)` predicate is kept for handlers that
 need to branch on admin status mid-flow (e.g. add fields only when the
 caller is admin) rather than gate the whole endpoint.
 """
+
 from __future__ import annotations
 
 import os
@@ -23,7 +24,6 @@ import os
 from fastapi import Depends, HTTPException, status
 
 from services.auth import get_current_user
-
 
 # Admin identity is keyed by email today. Override via env so staging /
 # prod can have a different operator without code changes.

@@ -5,10 +5,11 @@ Business logic for public profiles, user stats and the mission system.
 Routes layer (routes/profile.py) just validates inputs, calls these
 functions and shapes HTTP responses.
 """
+
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from config import db
 from data.f1_data import F1_RACES_2026
@@ -36,6 +37,7 @@ class UserNotFoundError(Exception):
 
 # ---------------------------------------------------------------- profile ---
 
+
 async def get_public_profile(target_user_id: str, requesting_user_id: str) -> dict:
     """Build the public profile payload for `target_user_id` as seen by
     `requesting_user_id` (used to surface leagues they share)."""
@@ -46,21 +48,13 @@ async def get_public_profile(target_user_id: str, requesting_user_id: str) -> di
     if not target_user:
         raise UserNotFoundError("User not found")
 
-    stats = await db.user_stats.find_one(
-        {"user_id": target_user_id}, {"_id": 0}
-    ) or get_default_user_stats()
+    stats = await db.user_stats.find_one({"user_id": target_user_id}, {"_id": 0}) or get_default_user_stats()
 
     total_predictions = await count_individual_predictions(target_user_id)
-    races_participated = await db.predictions.count_documents(
-        {"user_id": target_user_id}
-    )
+    races_participated = await db.predictions.count_documents({"user_id": target_user_id})
 
-    user_leagues = await db.leagues.find(
-        {"members": requesting_user_id}, {"_id": 0}
-    ).to_list(100)
-    target_leagues = await db.leagues.find(
-        {"members": target_user_id}, {"_id": 0}
-    ).to_list(100)
+    user_leagues = await db.leagues.find({"members": requesting_user_id}, {"_id": 0}).to_list(100)
+    target_leagues = await db.leagues.find({"members": target_user_id}, {"_id": 0}).to_list(100)
 
     user_league_ids = {league["id"] for league in user_leagues}
     common_leagues: list[dict] = []
@@ -68,9 +62,7 @@ async def get_public_profile(target_user_id: str, requesting_user_id: str) -> di
     for league in target_leagues:
         if league["id"] not in user_league_ids:
             continue
-        leaderboard = await db.leaderboard.find(
-            {"league_id": league["id"]}, {"_id": 0}
-        ).to_list(100)
+        leaderboard = await db.leaderboard.find({"league_id": league["id"]}, {"_id": 0}).to_list(100)
         leaderboard.sort(key=lambda x: x.get("total_points", 0), reverse=True)
         position = next(
             (i + 1 for i, e in enumerate(leaderboard) if e["user_id"] == target_user_id),
@@ -80,24 +72,31 @@ async def get_public_profile(target_user_id: str, requesting_user_id: str) -> di
             (e.get("total_points", 0) for e in leaderboard if e["user_id"] == target_user_id),
             0,
         )
-        common_leagues.append({
-            "id": league["id"],
-            "name": league["name"],
-            "position": position,
-            "total_points": total_points,
-            "members_count": len(league["members"]),
-        })
+        common_leagues.append(
+            {
+                "id": league["id"],
+                "name": league["name"],
+                "position": position,
+                "total_points": total_points,
+                "members_count": len(league["members"]),
+            }
+        )
 
-    recent_predictions = await db.predictions.find(
-        {"user_id": target_user_id},
-        {
-            "_id": 0,
-            "quali_top10": 0,
-            "race_top10": 0,
-            "sprint_quali_top10": 0,
-            "sprint_race_top10": 0,
-        },
-    ).sort("created_at", -1).limit(5).to_list(5)
+    recent_predictions = (
+        await db.predictions.find(
+            {"user_id": target_user_id},
+            {
+                "_id": 0,
+                "quali_top10": 0,
+                "race_top10": 0,
+                "sprint_quali_top10": 0,
+                "sprint_race_top10": 0,
+            },
+        )
+        .sort("created_at", -1)
+        .limit(5)
+        .to_list(5)
+    )
 
     race_map = {r["id"]: r["name"] for r in F1_RACES_2026}
     for pred in recent_predictions:
@@ -140,6 +139,7 @@ async def get_public_profile(target_user_id: str, requesting_user_id: str) -> di
 
 # ------------------------------------------------------------------ stats ---
 
+
 async def get_or_create_stats(user_id: str) -> dict:
     """Return a user's stats doc, creating defaults on first read."""
     stats = await db.user_stats.find_one({"user_id": user_id}, {"_id": 0})
@@ -152,15 +152,12 @@ async def get_or_create_stats(user_id: str) -> dict:
 
 # --------------------------------------------------------------- missions ---
 
+
 async def list_missions(user_id: str) -> dict:
     """Return mission progress for a user, grouped by category."""
-    stats_doc = await db.user_stats.find_one(
-        {"user_id": user_id}, {"_id": 0}
-    ) or get_default_user_stats()
+    stats_doc = await db.user_stats.find_one({"user_id": user_id}, {"_id": 0}) or get_default_user_stats()
 
-    completed = await db.user_missions.find(
-        {"user_id": user_id, "completed": True}, {"_id": 0}
-    ).to_list(1000)
+    completed = await db.user_missions.find({"user_id": user_id, "completed": True}, {"_id": 0}).to_list(1000)
     completed_ids = {m["mission_id"] for m in completed}
 
     progress = get_user_mission_progress(stats_doc)
@@ -184,9 +181,7 @@ async def claim_mission(user_id: str, mission_id: str) -> dict:
     if not mission:
         raise MissionError("Mission not found", status_code=404)
 
-    existing = await db.user_missions.find_one(
-        {"user_id": user_id, "mission_id": mission_id, "completed": True}
-    )
+    existing = await db.user_missions.find_one({"user_id": user_id, "mission_id": mission_id, "completed": True})
     if existing:
         raise MissionError("Mission already claimed")
 
@@ -199,16 +194,16 @@ async def claim_mission(user_id: str, mission_id: str) -> dict:
     new_xp = user_data.get("xp", 0) + xp_reward
     new_level = get_level_from_xp(new_xp)
 
-    await db.users.update_one(
-        {"id": user_id}, {"$set": {"xp": new_xp, "level": new_level}}
+    await db.users.update_one({"id": user_id}, {"$set": {"xp": new_xp, "level": new_level}})
+    await db.user_missions.insert_one(
+        {
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "mission_id": mission_id,
+            "completed": True,
+            "claimed_at": datetime.now(UTC).isoformat(),
+        }
     )
-    await db.user_missions.insert_one({
-        "id": str(uuid.uuid4()),
-        "user_id": user_id,
-        "mission_id": mission_id,
-        "completed": True,
-        "claimed_at": datetime.now(timezone.utc).isoformat(),
-    })
 
     await send_user_notification(
         user_id,
@@ -218,9 +213,7 @@ async def claim_mission(user_id: str, mission_id: str) -> dict:
 
     level_up = new_level > user_data.get("level", 1)
     if level_up:
-        await send_user_notification(
-            user_id, f"Niveau {new_level} atteint !", "level_up"
-        )
+        await send_user_notification(user_id, f"Niveau {new_level} atteint !", "level_up")
 
     return {
         "message": "Mission claimed",

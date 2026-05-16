@@ -24,7 +24,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": None,
             "salary_estimate": "35M USD/an",
             "verified": False,
-            "notes": "Contrat longue durée signé en 2024"
+            "notes": "Contrat longue durée signé en 2024",
         },
         "palmares": {
             "f1": {
@@ -36,21 +36,24 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 8,
                 "fastest_laps": 10,
                 "points": 1150,
-                "entries": 135
+                "entries": 135,
             },
             "junior": [
                 {"year": 2018, "series": "F2", "team": "Carlin", "position": 2, "wins": 6, "note": "Vice-champion"},
                 {"year": 2017, "series": "F3 Europe", "team": "Carlin", "position": 1, "wins": 9, "note": "Champion"},
-                {"year": 2016, "series": "Eurocup Formula Renault 2.0", "team": "Josef Kaufmann Racing", "position": 1, "wins": 7, "note": "Champion"},
-                {"year": 2015, "series": "MSA Formula", "team": "Carlin", "position": 1, "wins": 8, "note": "Champion"}
-            ]
+                {
+                    "year": 2016,
+                    "series": "Eurocup Formula Renault 2.0",
+                    "team": "Josef Kaufmann Racing",
+                    "position": 1,
+                    "wins": 7,
+                    "note": "Champion",
+                },
+                {"year": 2015, "series": "MSA Formula", "team": "Carlin", "position": 1, "wins": 8, "note": "Champion"},
+            ],
         },
-        "social": {
-            "instagram": "@landonorris",
-            "twitter": "@LandoNorris"
-        }
+        "social": {"instagram": "@landonorris", "twitter": "@LandoNorris"},
     },
-    
     "piastri": {
         "id": "piastri",
         "first_name": "Oscar",
@@ -73,7 +76,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": None,
             "salary_estimate": "18M USD/an",
             "verified": False,
-            "notes": "Extension jusqu'en 2028 signée fin 2024"
+            "notes": "Extension jusqu'en 2028 signée fin 2024",
         },
         "palmares": {
             "f1": {
@@ -85,20 +88,23 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 3,
                 "fastest_laps": 4,
                 "points": 450,
-                "entries": 65
+                "entries": 65,
             },
             "junior": [
                 {"year": 2021, "series": "F2", "team": "Prema Racing", "position": 1, "wins": 5, "note": "Champion"},
                 {"year": 2020, "series": "F3", "team": "Prema Racing", "position": 1, "wins": 5, "note": "Champion"},
-                {"year": 2019, "series": "Formula Renault Eurocup", "team": "R-ace GP", "position": 1, "wins": 7, "note": "Champion"}
-            ]
+                {
+                    "year": 2019,
+                    "series": "Formula Renault Eurocup",
+                    "team": "R-ace GP",
+                    "position": 1,
+                    "wins": 7,
+                    "note": "Champion",
+                },
+            ],
         },
-        "social": {
-            "instagram": "@oscarpiastri",
-            "twitter": "@OscarPiastri"
-        }
+        "social": {"instagram": "@oscarpiastri", "twitter": "@OscarPiastri"},
     },
-    
     "russell": {
         "id": "russell",
         "first_name": "George",
@@ -121,7 +127,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 1,
             "salary_estimate": "15M USD/an",
             "verified": False,
-            "notes": "Extension multi-année signée début 2024"
+            "notes": "Extension multi-année signée début 2024",
         },
         "palmares": {
             "f1": {
@@ -133,20 +139,30 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 5,
                 "fastest_laps": 8,
                 "points": 650,
-                "entries": 135
+                "entries": 135,
             },
             "junior": [
                 {"year": 2018, "series": "F2", "team": "ART Grand Prix", "position": 1, "wins": 7, "note": "Champion"},
-                {"year": 2017, "series": "GP3 Series", "team": "ART Grand Prix", "position": 1, "wins": 4, "note": "Champion"},
-                {"year": 2014, "series": "BRDC F4", "team": "Lanan Racing", "position": 1, "wins": 6, "note": "Champion"}
-            ]
+                {
+                    "year": 2017,
+                    "series": "GP3 Series",
+                    "team": "ART Grand Prix",
+                    "position": 1,
+                    "wins": 4,
+                    "note": "Champion",
+                },
+                {
+                    "year": 2014,
+                    "series": "BRDC F4",
+                    "team": "Lanan Racing",
+                    "position": 1,
+                    "wins": 6,
+                    "note": "Champion",
+                },
+            ],
         },
-        "social": {
-            "instagram": "@georgerussell63",
-            "twitter": "@GeorgeRussell63"
-        }
+        "social": {"instagram": "@georgerussell63", "twitter": "@GeorgeRussell63"},
     },
-    
     "antonelli": {
         "id": "antonelli",
         "first_name": "Kimi",
@@ -169,7 +185,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 2,
             "salary_estimate": "3M USD/an",
             "verified": False,
-            "notes": "Premier contrat F1, membre du programme junior Mercedes"
+            "notes": "Premier contrat F1, membre du programme junior Mercedes",
         },
         "palmares": {
             "f1": {
@@ -181,20 +197,37 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 1,
                 "fastest_laps": 0,
                 "points": 45,
-                "entries": 20
+                "entries": 20,
             },
             "junior": [
-                {"year": 2024, "series": "F2", "team": "Prema Racing", "position": 2, "wins": 4, "note": "Vice-champion, promu en F1"},
-                {"year": 2023, "series": "Formula Regional European", "team": "Prema Racing", "position": 1, "wins": 14, "note": "Champion"},
-                {"year": 2022, "series": "Italian F4/ADAC F4", "team": "Prema Powerteam", "position": 1, "wins": 13, "note": "Double champion"}
-            ]
+                {
+                    "year": 2024,
+                    "series": "F2",
+                    "team": "Prema Racing",
+                    "position": 2,
+                    "wins": 4,
+                    "note": "Vice-champion, promu en F1",
+                },
+                {
+                    "year": 2023,
+                    "series": "Formula Regional European",
+                    "team": "Prema Racing",
+                    "position": 1,
+                    "wins": 14,
+                    "note": "Champion",
+                },
+                {
+                    "year": 2022,
+                    "series": "Italian F4/ADAC F4",
+                    "team": "Prema Powerteam",
+                    "position": 1,
+                    "wins": 13,
+                    "note": "Double champion",
+                },
+            ],
         },
-        "social": {
-            "instagram": "@kaborelli",
-            "twitter": "@Antonelli_Kimi"
-        }
+        "social": {"instagram": "@kaborelli", "twitter": "@Antonelli_Kimi"},
     },
-    
     "leclerc": {
         "id": "leclerc",
         "first_name": "Charles",
@@ -217,7 +250,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": None,
             "salary_estimate": "25M USD/an",
             "verified": False,
-            "notes": "Contrat longue durée, pilier de l'équipe Ferrari"
+            "notes": "Contrat longue durée, pilier de l'équipe Ferrari",
         },
         "palmares": {
             "f1": {
@@ -229,20 +262,30 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 28,
                 "fastest_laps": 12,
                 "points": 1200,
-                "entries": 155
+                "entries": 155,
             },
             "junior": [
                 {"year": 2017, "series": "F2", "team": "Prema Racing", "position": 1, "wins": 7, "note": "Champion"},
-                {"year": 2016, "series": "GP3 Series", "team": "ART Grand Prix", "position": 1, "wins": 4, "note": "Champion"},
-                {"year": 2014, "series": "Formula Renault 2.0 Alps", "team": "Fortec", "position": 1, "wins": 6, "note": "Champion"}
-            ]
+                {
+                    "year": 2016,
+                    "series": "GP3 Series",
+                    "team": "ART Grand Prix",
+                    "position": 1,
+                    "wins": 4,
+                    "note": "Champion",
+                },
+                {
+                    "year": 2014,
+                    "series": "Formula Renault 2.0 Alps",
+                    "team": "Fortec",
+                    "position": 1,
+                    "wins": 6,
+                    "note": "Champion",
+                },
+            ],
         },
-        "social": {
-            "instagram": "@charles_leclerc",
-            "twitter": "@Charles_Leclerc"
-        }
+        "social": {"instagram": "@charles_leclerc", "twitter": "@Charles_Leclerc"},
     },
-    
     "hamilton": {
         "id": "hamilton",
         "first_name": "Lewis",
@@ -265,7 +308,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 1,
             "salary_estimate": "50M USD/an",
             "verified": False,
-            "notes": "Transfert historique de Mercedes vers Ferrari"
+            "notes": "Transfert historique de Mercedes vers Ferrari",
         },
         "palmares": {
             "f1": {
@@ -277,20 +320,37 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 104,
                 "fastest_laps": 67,
                 "points": 4800,
-                "entries": 360
+                "entries": 360,
             },
             "junior": [
-                {"year": 2006, "series": "GP2 Series", "team": "ART Grand Prix", "position": 1, "wins": 5, "note": "Champion, 1ère année"},
-                {"year": 2005, "series": "Formula 3 Euro Series", "team": "ASM", "position": 1, "wins": 15, "note": "Champion"},
-                {"year": 2003, "series": "Formula Renault UK", "team": "Manor Motorsport", "position": 1, "wins": 10, "note": "Champion"}
-            ]
+                {
+                    "year": 2006,
+                    "series": "GP2 Series",
+                    "team": "ART Grand Prix",
+                    "position": 1,
+                    "wins": 5,
+                    "note": "Champion, 1ère année",
+                },
+                {
+                    "year": 2005,
+                    "series": "Formula 3 Euro Series",
+                    "team": "ASM",
+                    "position": 1,
+                    "wins": 15,
+                    "note": "Champion",
+                },
+                {
+                    "year": 2003,
+                    "series": "Formula Renault UK",
+                    "team": "Manor Motorsport",
+                    "position": 1,
+                    "wins": 10,
+                    "note": "Champion",
+                },
+            ],
         },
-        "social": {
-            "instagram": "@lewishamilton",
-            "twitter": "@LewisHamilton"
-        }
+        "social": {"instagram": "@lewishamilton", "twitter": "@LewisHamilton"},
     },
-    
     "verstappen": {
         "id": "verstappen",
         "first_name": "Max",
@@ -313,7 +373,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": None,
             "salary_estimate": "55M USD/an",
             "verified": False,
-            "notes": "Contrat le plus long de l'histoire de la F1, performance clauses"
+            "notes": "Contrat le plus long de l'histoire de la F1, performance clauses",
         },
         "palmares": {
             "f1": {
@@ -325,19 +385,29 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 45,
                 "fastest_laps": 35,
                 "points": 3200,
-                "entries": 210
+                "entries": 210,
             },
             "junior": [
-                {"year": 2014, "series": "F3 Europe", "team": "Van Amersfoort Racing", "position": 3, "wins": 10, "note": "Promu directement en F1 à 17 ans"},
-                {"year": 2013, "series": "Karting World Championship", "team": "-", "position": 1, "wins": None, "note": "Champion du monde KZ"}
-            ]
+                {
+                    "year": 2014,
+                    "series": "F3 Europe",
+                    "team": "Van Amersfoort Racing",
+                    "position": 3,
+                    "wins": 10,
+                    "note": "Promu directement en F1 à 17 ans",
+                },
+                {
+                    "year": 2013,
+                    "series": "Karting World Championship",
+                    "team": "-",
+                    "position": 1,
+                    "wins": None,
+                    "note": "Champion du monde KZ",
+                },
+            ],
         },
-        "social": {
-            "instagram": "@maxverstappen1",
-            "twitter": "@Max33Verstappen"
-        }
+        "social": {"instagram": "@maxverstappen1", "twitter": "@Max33Verstappen"},
     },
-    
     "hadjar": {
         "id": "hadjar",
         "first_name": "Isack",
@@ -360,7 +430,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 1,
             "salary_estimate": "2M USD/an",
             "verified": False,
-            "notes": "Promu de la Red Bull Academy, premier pilote français chez Red Bull"
+            "notes": "Promu de la Red Bull Academy, premier pilote français chez Red Bull",
         },
         "palmares": {
             "f1": {
@@ -372,21 +442,31 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 0,
                 "fastest_laps": 0,
                 "points": 0,
-                "entries": 3
+                "entries": 3,
             },
             "junior": [
                 {"year": 2025, "series": "F2", "team": "Campos Racing", "position": 1, "wins": 5, "note": "Champion"},
-                {"year": 2024, "series": "F2", "team": "Campos Racing", "position": 2, "wins": 3, "note": "Vice-champion"},
+                {
+                    "year": 2024,
+                    "series": "F2",
+                    "team": "Campos Racing",
+                    "position": 2,
+                    "wins": 3,
+                    "note": "Vice-champion",
+                },
                 {"year": 2023, "series": "F3", "team": "Hitech GP", "position": 3, "wins": 2, "note": "3ème"},
-                {"year": 2022, "series": "Formula Regional Middle East", "team": "Hitech GP", "position": 1, "wins": 4, "note": "Champion"}
-            ]
+                {
+                    "year": 2022,
+                    "series": "Formula Regional Middle East",
+                    "team": "Hitech GP",
+                    "position": 1,
+                    "wins": 4,
+                    "note": "Champion",
+                },
+            ],
         },
-        "social": {
-            "instagram": "@isaborelli",
-            "twitter": "@IsackHadjar"
-        }
+        "social": {"instagram": "@isaborelli", "twitter": "@IsackHadjar"},
     },
-    
     "sainz": {
         "id": "sainz",
         "first_name": "Carlos",
@@ -409,7 +489,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 1,
             "salary_estimate": "12M USD/an",
             "verified": False,
-            "notes": "A quitté Ferrari pour Williams, contrat multi-année"
+            "notes": "A quitté Ferrari pour Williams, contrat multi-année",
         },
         "palmares": {
             "f1": {
@@ -421,20 +501,30 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 6,
                 "fastest_laps": 5,
                 "points": 1100,
-                "entries": 210
+                "entries": 210,
             },
             "junior": [
-                {"year": 2014, "series": "Formula Renault 3.5", "team": "DAMS", "position": 1, "wins": 7, "note": "Champion"},
-                {"year": 2012, "series": "Formula 3 Euro Series", "team": "Carlin", "position": 3, "wins": 2, "note": "Top 3"},
-                {"year": 2011, "series": "British F3", "team": "Carlin", "position": 5, "wins": 1, "note": "Rookie"}
-            ]
+                {
+                    "year": 2014,
+                    "series": "Formula Renault 3.5",
+                    "team": "DAMS",
+                    "position": 1,
+                    "wins": 7,
+                    "note": "Champion",
+                },
+                {
+                    "year": 2012,
+                    "series": "Formula 3 Euro Series",
+                    "team": "Carlin",
+                    "position": 3,
+                    "wins": 2,
+                    "note": "Top 3",
+                },
+                {"year": 2011, "series": "British F3", "team": "Carlin", "position": 5, "wins": 1, "note": "Rookie"},
+            ],
         },
-        "social": {
-            "instagram": "@carlossainz55",
-            "twitter": "@Carlossainz55"
-        }
+        "social": {"instagram": "@carlossainz55", "twitter": "@Carlossainz55"},
     },
-    
     "albon": {
         "id": "albon",
         "first_name": "Alexander",
@@ -457,7 +547,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 1,
             "salary_estimate": "5M USD/an",
             "verified": False,
-            "notes": "Revenu en F1 après une année en DTM"
+            "notes": "Revenu en F1 après une année en DTM",
         },
         "palmares": {
             "f1": {
@@ -469,20 +559,23 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 0,
                 "fastest_laps": 1,
                 "points": 280,
-                "entries": 120
+                "entries": 120,
             },
             "junior": [
                 {"year": 2018, "series": "F2", "team": "DAMS", "position": 3, "wins": 4, "note": "3ème"},
                 {"year": 2017, "series": "F2", "team": "ART Grand Prix", "position": 10, "wins": 0, "note": "Rookie"},
-                {"year": 2016, "series": "GP3 Series", "team": "ART Grand Prix", "position": 2, "wins": 2, "note": "Vice-champion"}
-            ]
+                {
+                    "year": 2016,
+                    "series": "GP3 Series",
+                    "team": "ART Grand Prix",
+                    "position": 2,
+                    "wins": 2,
+                    "note": "Vice-champion",
+                },
+            ],
         },
-        "social": {
-            "instagram": "@alex_albon",
-            "twitter": "@alex_albon"
-        }
+        "social": {"instagram": "@alex_albon", "twitter": "@alex_albon"},
     },
-    
     "lawson": {
         "id": "lawson",
         "first_name": "Liam",
@@ -505,7 +598,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 2,
             "salary_estimate": "2M USD/an",
             "verified": False,
-            "notes": "Promu après ses remplacements réussis en 2023"
+            "notes": "Promu après ses remplacements réussis en 2023",
         },
         "palmares": {
             "f1": {
@@ -517,20 +610,30 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 0,
                 "fastest_laps": 1,
                 "points": 55,
-                "entries": 30
+                "entries": 30,
             },
             "junior": [
-                {"year": 2023, "series": "F2", "team": "Carlin", "position": 3, "wins": 2, "note": "3ème + remplacements F1"},
+                {
+                    "year": 2023,
+                    "series": "F2",
+                    "team": "Carlin",
+                    "position": 3,
+                    "wins": 2,
+                    "note": "3ème + remplacements F1",
+                },
                 {"year": 2022, "series": "F2", "team": "Carlin", "position": 3, "wins": 2, "note": "3ème"},
-                {"year": 2021, "series": "DTM", "team": "AF Corse Ferrari", "position": 2, "wins": 2, "note": "Vice-champion"}
-            ]
+                {
+                    "year": 2021,
+                    "series": "DTM",
+                    "team": "AF Corse Ferrari",
+                    "position": 2,
+                    "wins": 2,
+                    "note": "Vice-champion",
+                },
+            ],
         },
-        "social": {
-            "instagram": "@liamlawson30",
-            "twitter": "@LiamLawson30"
-        }
+        "social": {"instagram": "@liamlawson30", "twitter": "@LiamLawson30"},
     },
-    
     "lindblad": {
         "id": "lindblad",
         "first_name": "Arvid",
@@ -553,7 +656,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 2,
             "salary_estimate": "1.5M USD/an",
             "verified": False,
-            "notes": "Plus jeune pilote de la grille 2026, produit Red Bull Academy"
+            "notes": "Plus jeune pilote de la grille 2026, produit Red Bull Academy",
         },
         "palmares": {
             "f1": {
@@ -565,20 +668,30 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 0,
                 "fastest_laps": 0,
                 "points": 0,
-                "entries": 3
+                "entries": 3,
             },
             "junior": [
-                {"year": 2025, "series": "F2", "team": "Prema Racing", "position": 1, "wins": 6, "note": "Champion, rookie"},
+                {
+                    "year": 2025,
+                    "series": "F2",
+                    "team": "Prema Racing",
+                    "position": 1,
+                    "wins": 6,
+                    "note": "Champion, rookie",
+                },
                 {"year": 2024, "series": "F3", "team": "Prema Racing", "position": 1, "wins": 7, "note": "Champion"},
-                {"year": 2023, "series": "Formula Regional Europe", "team": "Prema Racing", "position": 2, "wins": 5, "note": "Vice-champion"}
-            ]
+                {
+                    "year": 2023,
+                    "series": "Formula Regional Europe",
+                    "team": "Prema Racing",
+                    "position": 2,
+                    "wins": 5,
+                    "note": "Vice-champion",
+                },
+            ],
         },
-        "social": {
-            "instagram": "@arvidlindblad",
-            "twitter": "@ArvLindblad"
-        }
+        "social": {"instagram": "@arvidlindblad", "twitter": "@ArvLindblad"},
     },
-    
     "alonso": {
         "id": "alonso",
         "first_name": "Fernando",
@@ -601,7 +714,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 1,
             "salary_estimate": "20M USD/an",
             "verified": False,
-            "notes": "Pilote le plus expérimenté de la grille, contrat multi-année"
+            "notes": "Pilote le plus expérimenté de la grille, contrat multi-année",
         },
         "palmares": {
             "f1": {
@@ -613,19 +726,29 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 22,
                 "fastest_laps": 24,
                 "points": 2300,
-                "entries": 400
+                "entries": 400,
             },
             "junior": [
-                {"year": 2000, "series": "Formula 3000", "team": "Astromega", "position": 4, "wins": 1, "note": "Rookie"},
-                {"year": 1999, "series": "Euro Open by Nissan", "team": "Campos", "position": 1, "wins": 6, "note": "Champion"}
-            ]
+                {
+                    "year": 2000,
+                    "series": "Formula 3000",
+                    "team": "Astromega",
+                    "position": 4,
+                    "wins": 1,
+                    "note": "Rookie",
+                },
+                {
+                    "year": 1999,
+                    "series": "Euro Open by Nissan",
+                    "team": "Campos",
+                    "position": 1,
+                    "wins": 6,
+                    "note": "Champion",
+                },
+            ],
         },
-        "social": {
-            "instagram": "@fernandoalo_oficial",
-            "twitter": "@alo_oficial"
-        }
+        "social": {"instagram": "@fernandoalo_oficial", "twitter": "@alo_oficial"},
     },
-    
     "stroll": {
         "id": "stroll",
         "first_name": "Lance",
@@ -648,7 +771,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": None,
             "salary_estimate": "10M USD/an",
             "verified": False,
-            "notes": "Fils du propriétaire Lawrence Stroll, contrat longue durée"
+            "notes": "Fils du propriétaire Lawrence Stroll, contrat longue durée",
         },
         "palmares": {
             "f1": {
@@ -660,19 +783,29 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 1,
                 "fastest_laps": 0,
                 "points": 350,
-                "entries": 175
+                "entries": 175,
             },
             "junior": [
-                {"year": 2016, "series": "F3 Europe", "team": "Prema Powerteam", "position": 1, "wins": 14, "note": "Champion"},
-                {"year": 2015, "series": "Toyota Racing Series", "team": "M2 Competition", "position": 1, "wins": 4, "note": "Champion"}
-            ]
+                {
+                    "year": 2016,
+                    "series": "F3 Europe",
+                    "team": "Prema Powerteam",
+                    "position": 1,
+                    "wins": 14,
+                    "note": "Champion",
+                },
+                {
+                    "year": 2015,
+                    "series": "Toyota Racing Series",
+                    "team": "M2 Competition",
+                    "position": 1,
+                    "wins": 4,
+                    "note": "Champion",
+                },
+            ],
         },
-        "social": {
-            "instagram": "@lance_stroll",
-            "twitter": "@lance_stroll"
-        }
+        "social": {"instagram": "@lance_stroll", "twitter": "@lance_stroll"},
     },
-    
     "ocon": {
         "id": "ocon",
         "first_name": "Esteban",
@@ -695,7 +828,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 1,
             "salary_estimate": "6M USD/an",
             "verified": False,
-            "notes": "A quitté Alpine pour Haas, nouveau défi"
+            "notes": "A quitté Alpine pour Haas, nouveau défi",
         },
         "palmares": {
             "f1": {
@@ -707,19 +840,29 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 0,
                 "fastest_laps": 0,
                 "points": 450,
-                "entries": 150
+                "entries": 150,
             },
             "junior": [
-                {"year": 2015, "series": "GP3 Series", "team": "ART Grand Prix", "position": 1, "wins": 5, "note": "Champion"},
-                {"year": 2014, "series": "F3 Europe", "team": "Prema Powerteam", "position": 1, "wins": 9, "note": "Champion"}
-            ]
+                {
+                    "year": 2015,
+                    "series": "GP3 Series",
+                    "team": "ART Grand Prix",
+                    "position": 1,
+                    "wins": 5,
+                    "note": "Champion",
+                },
+                {
+                    "year": 2014,
+                    "series": "F3 Europe",
+                    "team": "Prema Powerteam",
+                    "position": 1,
+                    "wins": 9,
+                    "note": "Champion",
+                },
+            ],
         },
-        "social": {
-            "instagram": "@estaborelli",
-            "twitter": "@OconEsteban"
-        }
+        "social": {"instagram": "@estaborelli", "twitter": "@OconEsteban"},
     },
-    
     "bearman": {
         "id": "bearman",
         "first_name": "Oliver",
@@ -742,7 +885,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 2,
             "salary_estimate": "2M USD/an",
             "verified": False,
-            "notes": "Membre Ferrari Driver Academy, prêté à Haas"
+            "notes": "Membre Ferrari Driver Academy, prêté à Haas",
         },
         "palmares": {
             "f1": {
@@ -754,20 +897,30 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 0,
                 "fastest_laps": 0,
                 "points": 15,
-                "entries": 25
+                "entries": 25,
             },
             "junior": [
-                {"year": 2024, "series": "F2", "team": "Prema Racing", "position": 3, "wins": 2, "note": "3ème + remplacements F1"},
+                {
+                    "year": 2024,
+                    "series": "F2",
+                    "team": "Prema Racing",
+                    "position": 3,
+                    "wins": 2,
+                    "note": "3ème + remplacements F1",
+                },
                 {"year": 2023, "series": "F3", "team": "Prema Racing", "position": 3, "wins": 2, "note": "3ème"},
-                {"year": 2022, "series": "Formula Regional Europe", "team": "Van Amersfoort Racing", "position": 2, "wins": 5, "note": "Vice-champion"}
-            ]
+                {
+                    "year": 2022,
+                    "series": "Formula Regional Europe",
+                    "team": "Van Amersfoort Racing",
+                    "position": 2,
+                    "wins": 5,
+                    "note": "Vice-champion",
+                },
+            ],
         },
-        "social": {
-            "instagram": "@oliverbearman",
-            "twitter": "@OllieBearman"
-        }
+        "social": {"instagram": "@oliverbearman", "twitter": "@OllieBearman"},
     },
-    
     "gasly": {
         "id": "gasly",
         "first_name": "Pierre",
@@ -790,7 +943,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": None,
             "salary_estimate": "10M USD/an",
             "verified": False,
-            "notes": "Pilote leader chez Alpine, contrat longue durée"
+            "notes": "Pilote leader chez Alpine, contrat longue durée",
         },
         "palmares": {
             "f1": {
@@ -802,19 +955,29 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 0,
                 "fastest_laps": 3,
                 "points": 450,
-                "entries": 155
+                "entries": 155,
             },
             "junior": [
-                {"year": 2016, "series": "GP2 Series", "team": "Prema Racing", "position": 1, "wins": 4, "note": "Champion"},
-                {"year": 2014, "series": "Formula Renault 3.5", "team": "Arden", "position": 2, "wins": 2, "note": "Vice-champion"}
-            ]
+                {
+                    "year": 2016,
+                    "series": "GP2 Series",
+                    "team": "Prema Racing",
+                    "position": 1,
+                    "wins": 4,
+                    "note": "Champion",
+                },
+                {
+                    "year": 2014,
+                    "series": "Formula Renault 3.5",
+                    "team": "Arden",
+                    "position": 2,
+                    "wins": 2,
+                    "note": "Vice-champion",
+                },
+            ],
         },
-        "social": {
-            "instagram": "@pierregasly",
-            "twitter": "@PierreGASLY"
-        }
+        "social": {"instagram": "@pierregasly", "twitter": "@PierreGASLY"},
     },
-    
     "colapinto": {
         "id": "colapinto",
         "first_name": "Franco",
@@ -837,7 +1000,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 2,
             "salary_estimate": "2M USD/an",
             "verified": False,
-            "notes": "Premier pilote argentin en F1 depuis plus de 20 ans"
+            "notes": "Premier pilote argentin en F1 depuis plus de 20 ans",
         },
         "palmares": {
             "f1": {
@@ -849,20 +1012,30 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 0,
                 "fastest_laps": 0,
                 "points": 15,
-                "entries": 35
+                "entries": 35,
             },
             "junior": [
-                {"year": 2024, "series": "F2", "team": "MP Motorsport", "position": 6, "wins": 1, "note": "Promu en F1 mi-saison"},
+                {
+                    "year": 2024,
+                    "series": "F2",
+                    "team": "MP Motorsport",
+                    "position": 6,
+                    "wins": 1,
+                    "note": "Promu en F1 mi-saison",
+                },
                 {"year": 2023, "series": "F2", "team": "MP Motorsport", "position": 9, "wins": 0, "note": "Rookie"},
-                {"year": 2022, "series": "F3", "team": "Van Amersfoort Racing", "position": 4, "wins": 1, "note": "Top 5"}
-            ]
+                {
+                    "year": 2022,
+                    "series": "F3",
+                    "team": "Van Amersfoort Racing",
+                    "position": 4,
+                    "wins": 1,
+                    "note": "Top 5",
+                },
+            ],
         },
-        "social": {
-            "instagram": "@francolapinto",
-            "twitter": "@FranColapinto"
-        }
+        "social": {"instagram": "@francolapinto", "twitter": "@FranColapinto"},
     },
-    
     "hulkenberg": {
         "id": "hulkenberg",
         "first_name": "Nico",
@@ -885,7 +1058,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": None,
             "salary_estimate": "8M USD/an",
             "verified": False,
-            "notes": "Pilote leader du projet Audi F1, recrue clé"
+            "notes": "Pilote leader du projet Audi F1, recrue clé",
         },
         "palmares": {
             "f1": {
@@ -897,20 +1070,30 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 1,
                 "fastest_laps": 2,
                 "points": 550,
-                "entries": 220
+                "entries": 220,
             },
             "junior": [
-                {"year": 2009, "series": "GP2 Series", "team": "ART Grand Prix", "position": 1, "wins": 5, "note": "Champion"},
+                {
+                    "year": 2009,
+                    "series": "GP2 Series",
+                    "team": "ART Grand Prix",
+                    "position": 1,
+                    "wins": 5,
+                    "note": "Champion",
+                },
                 {"year": 2008, "series": "F3 Euro Series", "team": "ASM", "position": 1, "wins": 7, "note": "Champion"},
-                {"year": 2007, "series": "Formula 3 Euro Series", "team": "ASM", "position": 5, "wins": 2, "note": "Rookie"}
-            ]
+                {
+                    "year": 2007,
+                    "series": "Formula 3 Euro Series",
+                    "team": "ASM",
+                    "position": 5,
+                    "wins": 2,
+                    "note": "Rookie",
+                },
+            ],
         },
-        "social": {
-            "instagram": "@hulaborelli",
-            "twitter": "@HulkHulkenberg"
-        }
+        "social": {"instagram": "@hulaborelli", "twitter": "@HulkHulkenberg"},
     },
-    
     "bortoleto": {
         "id": "bortoleto",
         "first_name": "Gabriel",
@@ -933,7 +1116,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": None,
             "salary_estimate": "2M USD/an",
             "verified": False,
-            "notes": "Membre McLaren Driver Development, prêté à Audi/Sauber"
+            "notes": "Membre McLaren Driver Development, prêté à Audi/Sauber",
         },
         "palmares": {
             "f1": {
@@ -945,20 +1128,30 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 0,
                 "fastest_laps": 0,
                 "points": 8,
-                "entries": 25
+                "entries": 25,
             },
             "junior": [
-                {"year": 2024, "series": "F2", "team": "Invicta Racing", "position": 1, "wins": 3, "note": "Champion, rookie"},
+                {
+                    "year": 2024,
+                    "series": "F2",
+                    "team": "Invicta Racing",
+                    "position": 1,
+                    "wins": 3,
+                    "note": "Champion, rookie",
+                },
                 {"year": 2023, "series": "F3", "team": "Trident", "position": 1, "wins": 2, "note": "Champion"},
-                {"year": 2022, "series": "Formula Regional Europe", "team": "R-ace GP", "position": 4, "wins": 2, "note": "Top 5"}
-            ]
+                {
+                    "year": 2022,
+                    "series": "Formula Regional Europe",
+                    "team": "R-ace GP",
+                    "position": 4,
+                    "wins": 2,
+                    "note": "Top 5",
+                },
+            ],
         },
-        "social": {
-            "instagram": "@gabriel.bortoleto",
-            "twitter": "@GabrielBort22"
-        }
+        "social": {"instagram": "@gabriel.bortoleto", "twitter": "@GabrielBort22"},
     },
-    
     "perez": {
         "id": "perez",
         "first_name": "Sergio",
@@ -981,7 +1174,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": None,
             "salary_estimate": "10M USD/an",
             "verified": False,
-            "notes": "Pilote d'expérience pour la nouvelle équipe Cadillac F1"
+            "notes": "Pilote d'expérience pour la nouvelle équipe Cadillac F1",
         },
         "palmares": {
             "f1": {
@@ -993,20 +1186,23 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 3,
                 "fastest_laps": 11,
                 "points": 1600,
-                "entries": 290
+                "entries": 290,
             },
             "junior": [
-                {"year": 2010, "series": "GP2 Series", "team": "Barwa Addax", "position": 2, "wins": 5, "note": "Vice-champion"},
+                {
+                    "year": 2010,
+                    "series": "GP2 Series",
+                    "team": "Barwa Addax",
+                    "position": 2,
+                    "wins": 5,
+                    "note": "Vice-champion",
+                },
                 {"year": 2009, "series": "GP2 Series", "team": "Arden", "position": 4, "wins": 1, "note": "Top 5"},
-                {"year": 2008, "series": "British F3", "team": "T-Sport", "position": 4, "wins": 2, "note": "Top 5"}
-            ]
+                {"year": 2008, "series": "British F3", "team": "T-Sport", "position": 4, "wins": 2, "note": "Top 5"},
+            ],
         },
-        "social": {
-            "instagram": "@scaborelli",
-            "twitter": "@SChecoPerez"
-        }
+        "social": {"instagram": "@scaborelli", "twitter": "@SChecoPerez"},
     },
-    
     "bottas": {
         "id": "bottas",
         "first_name": "Valtteri",
@@ -1029,7 +1225,7 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 1,
             "salary_estimate": "8M USD/an",
             "verified": False,
-            "notes": "Rejoint la nouvelle équipe Cadillac après Sauber"
+            "notes": "Rejoint la nouvelle équipe Cadillac après Sauber",
         },
         "palmares": {
             "f1": {
@@ -1041,24 +1237,44 @@ F1_DRIVERS_DETAILED_2026 = {
                 "poles": 20,
                 "fastest_laps": 19,
                 "points": 1800,
-                "entries": 245
+                "entries": 245,
             },
             "junior": [
-                {"year": 2011, "series": "GP3 Series", "team": "Lotus ART", "position": 1, "wins": 3, "note": "Champion"},
-                {"year": 2010, "series": "F3 Euro Series", "team": "ART Grand Prix", "position": 3, "wins": 2, "note": "Top 3"},
-                {"year": 2009, "series": "Formula Renault 2.0 NEC", "team": "Motopark Academy", "position": 3, "wins": 1, "note": "Top 3"}
-            ]
+                {
+                    "year": 2011,
+                    "series": "GP3 Series",
+                    "team": "Lotus ART",
+                    "position": 1,
+                    "wins": 3,
+                    "note": "Champion",
+                },
+                {
+                    "year": 2010,
+                    "series": "F3 Euro Series",
+                    "team": "ART Grand Prix",
+                    "position": 3,
+                    "wins": 2,
+                    "note": "Top 3",
+                },
+                {
+                    "year": 2009,
+                    "series": "Formula Renault 2.0 NEC",
+                    "team": "Motopark Academy",
+                    "position": 3,
+                    "wins": 1,
+                    "note": "Top 3",
+                },
+            ],
         },
-        "social": {
-            "instagram": "@vaborelli",
-            "twitter": "@ValtteriBottas"
-        }
-    }
+        "social": {"instagram": "@vaborelli", "twitter": "@ValtteriBottas"},
+    },
 }
+
 
 # Helper function to get driver by ID
 def get_driver_details(driver_id: str):
     return F1_DRIVERS_DETAILED_2026.get(driver_id)
+
 
 # Helper function to get all drivers
 def get_all_drivers_detailed():

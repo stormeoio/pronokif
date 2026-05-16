@@ -21,10 +21,11 @@ via ``asyncio.create_task``.
 Custom exceptions:
 * ``RaceNotFoundError`` — race_id does not match the 2026 calendar.
 """
+
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -34,12 +35,23 @@ from data.f1_data import F1_DRIVERS_2026, F1_RACES_2026
 from services.auth import send_user_notification
 from services.scoring import calculate_points
 
-
 AUTO_SYNC_INTERVAL_HOURS = 1
 DNF_STATUSES = [
-    "Accident", "Collision", "Engine", "Gearbox", "Hydraulics",
-    "Brakes", "Suspension", "Electrical", "Retired", "Mechanical",
-    "Power Unit", "Oil leak", "Water leak", "Overheating", "Spun off",
+    "Accident",
+    "Collision",
+    "Engine",
+    "Gearbox",
+    "Hydraulics",
+    "Brakes",
+    "Suspension",
+    "Electrical",
+    "Retired",
+    "Mechanical",
+    "Power Unit",
+    "Oil leak",
+    "Water leak",
+    "Overheating",
+    "Spun off",
 ]
 
 
@@ -91,13 +103,20 @@ async def sync_one_race(race_id: str, user_id: str) -> dict:
     number_to_id = _number_to_id_map()
 
     fetched_data: dict[str, Any] = {
-        "quali_pole": None, "quali_top10": [],
-        "sprint_quali_pole": None, "sprint_quali_top10": [],
-        "sprint_race_winner": None, "sprint_race_top10": [],
-        "race_winner": None, "race_top10": [],
+        "quali_pole": None,
+        "quali_top10": [],
+        "sprint_quali_pole": None,
+        "sprint_quali_top10": [],
+        "sprint_race_winner": None,
+        "sprint_race_top10": [],
+        "race_winner": None,
+        "race_top10": [],
         "bonus": {
-            "safety_car": None, "dnf_drivers": [], "fastest_lap": None,
-            "first_corner_leader": None, "sprint_first_corner_leader": None,
+            "safety_car": None,
+            "dnf_drivers": [],
+            "fastest_lap": None,
+            "first_corner_leader": None,
+            "sprint_first_corner_leader": None,
         },
     }
     errors: list[str] = []
@@ -113,7 +132,13 @@ async def sync_one_race(race_id: str, user_id: str) -> dict:
                 try:
                     quali_resp = await client.get(f"{JOLPICA_API}/{year}/{round_number}/qualifying.json")
                     if quali_resp.status_code == 200:
-                        quali_results = quali_resp.json().get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0].get("QualifyingResults", [])
+                        quali_results = (
+                            quali_resp.json()
+                            .get("MRData", {})
+                            .get("RaceTable", {})
+                            .get("Races", [{}])[0]
+                            .get("QualifyingResults", [])
+                        )
                         if quali_results:
                             pole_num = quali_results[0].get("Driver", {}).get("permanentNumber")
                             if pole_num:
@@ -131,7 +156,13 @@ async def sync_one_race(race_id: str, user_id: str) -> dict:
                 try:
                     race_resp = await client.get(f"{JOLPICA_API}/{year}/{round_number}/results.json")
                     if race_resp.status_code == 200:
-                        race_results = race_resp.json().get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0].get("Results", [])
+                        race_results = (
+                            race_resp.json()
+                            .get("MRData", {})
+                            .get("RaceTable", {})
+                            .get("Races", [{}])[0]
+                            .get("Results", [])
+                        )
                         if race_results:
                             winner_num = race_results[0].get("Driver", {}).get("permanentNumber")
                             if winner_num:
@@ -164,7 +195,13 @@ async def sync_one_race(race_id: str, user_id: str) -> dict:
                     try:
                         sprint_resp = await client.get(f"{JOLPICA_API}/{year}/{round_number}/sprint.json")
                         if sprint_resp.status_code == 200:
-                            sprint_results = sprint_resp.json().get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0].get("SprintResults", [])
+                            sprint_results = (
+                                sprint_resp.json()
+                                .get("MRData", {})
+                                .get("RaceTable", {})
+                                .get("Races", [{}])[0]
+                                .get("SprintResults", [])
+                            )
                             if sprint_results:
                                 sw_num = sprint_results[0].get("Driver", {}).get("permanentNumber")
                                 if sw_num:
@@ -188,8 +225,9 @@ async def sync_one_race(race_id: str, user_id: str) -> dict:
                     meeting = None
                     for m in meetings:
                         m_name = (m.get("meeting_name", "") + " " + m.get("circuit_short_name", "")).lower()
-                        if any(word in m_name for word in circuit_name.split()[:2]) or \
-                           any(word in m_name for word in race_name.replace("grand prix", "").split()[:2]):
+                        if any(word in m_name for word in circuit_name.split()[:2]) or any(
+                            word in m_name for word in race_name.replace("grand prix", "").split()[:2]
+                        ):
                             meeting = m
                             break
                     if meeting:
@@ -202,19 +240,27 @@ async def sync_one_race(race_id: str, user_id: str) -> dict:
 
                             if race_session:
                                 session_key = race_session.get("session_key")
-                                rc_resp = await client.get(f"{OPENF1_API}/race_control", params={"session_key": session_key})
+                                rc_resp = await client.get(
+                                    f"{OPENF1_API}/race_control", params={"session_key": session_key}
+                                )
                                 if rc_resp.status_code == 200:
                                     rc_messages = rc_resp.json()
                                     for msg in rc_messages:
                                         category = msg.get("category", "").lower()
                                         message = msg.get("message", "").lower()
-                                        if "safety car" in category or "safety car" in message or "safetycar" in message:
+                                        if (
+                                            "safety car" in category
+                                            or "safety car" in message
+                                            or "safetycar" in message
+                                        ):
                                             fetched_data["bonus"]["safety_car"] = True
                                             break
                                     if fetched_data["bonus"]["safety_car"] is None:
                                         fetched_data["bonus"]["safety_car"] = False
 
-                                pos_resp = await client.get(f"{OPENF1_API}/position", params={"session_key": session_key})
+                                pos_resp = await client.get(
+                                    f"{OPENF1_API}/position", params={"session_key": session_key}
+                                )
                                 if pos_resp.status_code == 200:
                                     positions = pos_resp.json()
                                     p1_positions = [p for p in positions if p.get("position") == 1]
@@ -225,14 +271,18 @@ async def sync_one_race(race_id: str, user_id: str) -> dict:
 
                             if sprint_session:
                                 session_key = sprint_session.get("session_key")
-                                pos_resp = await client.get(f"{OPENF1_API}/position", params={"session_key": session_key})
+                                pos_resp = await client.get(
+                                    f"{OPENF1_API}/position", params={"session_key": session_key}
+                                )
                                 if pos_resp.status_code == 200:
                                     positions = pos_resp.json()
                                     p1_positions = [p for p in positions if p.get("position") == 1]
                                     if len(p1_positions) > 1:
                                         sl_num = p1_positions[1].get("driver_number")
                                         if sl_num:
-                                            fetched_data["bonus"]["sprint_first_corner_leader"] = number_to_id.get(sl_num)
+                                            fetched_data["bonus"]["sprint_first_corner_leader"] = number_to_id.get(
+                                                sl_num
+                                            )
             except Exception as e:
                 errors.append(f"OpenF1 data: {str(e)}")
     except Exception as e:
@@ -275,9 +325,12 @@ async def auto_sync_and_save(race_id: str, user_id: str) -> dict:
     number_to_id = _number_to_id_map()
 
     fetched_data: dict[str, Any] = {
-        "quali_pole": None, "quali_top10": [],
-        "sprint_quali_top10": [], "sprint_race_top10": [],
-        "race_winner": None, "race_top10": [],
+        "quali_pole": None,
+        "quali_top10": [],
+        "sprint_quali_top10": [],
+        "sprint_race_top10": [],
+        "race_winner": None,
+        "race_top10": [],
         "bonus": {"safety_car": None, "dnf_drivers": [], "fastest_lap": None, "first_corner_leader": None},
     }
     errors: list[str] = []
@@ -286,12 +339,22 @@ async def auto_sync_and_save(race_id: str, user_id: str) -> dict:
         async with httpx.AsyncClient(timeout=60) as client:
             round_number, _ = await _resolve_round(client, race, year)
             if not round_number:
-                return {"status": "error", "message": f"Could not find round number for {race.get('name')}", "errors": ["Round not found"]}
+                return {
+                    "status": "error",
+                    "message": f"Could not find round number for {race.get('name')}",
+                    "errors": ["Round not found"],
+                }
 
             try:
                 quali_resp = await client.get(f"{JOLPICA_API}/{year}/{round_number}/qualifying.json")
                 if quali_resp.status_code == 200:
-                    quali_results = quali_resp.json().get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0].get("QualifyingResults", [])
+                    quali_results = (
+                        quali_resp.json()
+                        .get("MRData", {})
+                        .get("RaceTable", {})
+                        .get("Races", [{}])[0]
+                        .get("QualifyingResults", [])
+                    )
                     if quali_results:
                         pole_num = quali_results[0].get("Driver", {}).get("permanentNumber")
                         if pole_num:
@@ -308,7 +371,9 @@ async def auto_sync_and_save(race_id: str, user_id: str) -> dict:
             try:
                 race_resp = await client.get(f"{JOLPICA_API}/{year}/{round_number}/results.json")
                 if race_resp.status_code == 200:
-                    race_results = race_resp.json().get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0].get("Results", [])
+                    race_results = (
+                        race_resp.json().get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0].get("Results", [])
+                    )
                     if race_results:
                         winner_num = race_results[0].get("Driver", {}).get("permanentNumber")
                         if winner_num:
@@ -339,7 +404,13 @@ async def auto_sync_and_save(race_id: str, user_id: str) -> dict:
                 try:
                     sprint_resp = await client.get(f"{JOLPICA_API}/{year}/{round_number}/sprint.json")
                     if sprint_resp.status_code == 200:
-                        sprint_results = sprint_resp.json().get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0].get("SprintResults", [])
+                        sprint_results = (
+                            sprint_resp.json()
+                            .get("MRData", {})
+                            .get("RaceTable", {})
+                            .get("Races", [{}])[0]
+                            .get("SprintResults", [])
+                        )
                         if sprint_results:
                             for result in sprint_results[:10]:
                                 d_num = result.get("Driver", {}).get("permanentNumber")
@@ -359,8 +430,9 @@ async def auto_sync_and_save(race_id: str, user_id: str) -> dict:
                     meeting = None
                     for m in meetings:
                         m_name = (m.get("meeting_name", "") + " " + m.get("circuit_short_name", "")).lower()
-                        if any(word in m_name for word in circuit_name.split()[:2]) or \
-                           any(word in m_name for word in race_name.replace("grand prix", "").split()[:2]):
+                        if any(word in m_name for word in circuit_name.split()[:2]) or any(
+                            word in m_name for word in race_name.replace("grand prix", "").split()[:2]
+                        ):
                             meeting = m
                             break
                     if meeting:
@@ -371,7 +443,9 @@ async def auto_sync_and_save(race_id: str, user_id: str) -> dict:
                             race_session = next((s for s in sessions if s.get("session_name") == "Race"), None)
                             if race_session:
                                 session_key = race_session.get("session_key")
-                                rc_resp = await client.get(f"{OPENF1_API}/race_control", params={"session_key": session_key})
+                                rc_resp = await client.get(
+                                    f"{OPENF1_API}/race_control", params={"session_key": session_key}
+                                )
                                 if rc_resp.status_code == 200:
                                     rc_messages = rc_resp.json()
                                     for msg in rc_messages:
@@ -382,7 +456,9 @@ async def auto_sync_and_save(race_id: str, user_id: str) -> dict:
                                             break
                                     if fetched_data["bonus"]["safety_car"] is None:
                                         fetched_data["bonus"]["safety_car"] = False
-                                pos_resp = await client.get(f"{OPENF1_API}/position", params={"session_key": session_key})
+                                pos_resp = await client.get(
+                                    f"{OPENF1_API}/position", params={"session_key": session_key}
+                                )
                                 if pos_resp.status_code == 200:
                                     positions = pos_resp.json()
                                     p1_positions = [p for p in positions if p.get("position") == 1]
@@ -408,8 +484,15 @@ async def auto_sync_and_save(race_id: str, user_id: str) -> dict:
 
         await db.race_results.update_one(
             {"race_id": race_id},
-            {"$set": {"race_id": race_id, "results": results, "entered_by": user_id,
-                      "entered_at": datetime.now(timezone.utc).isoformat(), "auto_synced": True}},
+            {
+                "$set": {
+                    "race_id": race_id,
+                    "results": results,
+                    "entered_by": user_id,
+                    "entered_at": datetime.now(UTC).isoformat(),
+                    "auto_synced": True,
+                }
+            },
             upsert=True,
         )
 
@@ -427,15 +510,22 @@ async def auto_sync_and_save(race_id: str, user_id: str) -> dict:
                     await db.users.update_one({"id": pred["user_id"]}, {"$set": {"level": new_level}})
                     await send_user_notification(pred["user_id"], f"Niveau {new_level} atteint !", "level_up")
 
-                await send_user_notification(pred["user_id"], f"Résultats {race['name']}: +{points['total']} pts!", "results")
+                await send_user_notification(
+                    pred["user_id"], f"Résultats {race['name']}: +{points['total']} pts!", "results"
+                )
                 points_calculated += 1
 
         success_items: list[str] = []
-        if fetched_data["quali_pole"]: success_items.append("Pole position")
-        if len(fetched_data["quali_top10"]) == 10: success_items.append("Top 10 qualifs")
-        if fetched_data["race_winner"]: success_items.append("Vainqueur course")
-        if len(fetched_data["race_top10"]) == 10: success_items.append("Top 10 course")
-        if fetched_data["bonus"]["fastest_lap"]: success_items.append("Meilleur tour")
+        if fetched_data["quali_pole"]:
+            success_items.append("Pole position")
+        if len(fetched_data["quali_top10"]) == 10:
+            success_items.append("Top 10 qualifs")
+        if fetched_data["race_winner"]:
+            success_items.append("Vainqueur course")
+        if len(fetched_data["race_top10"]) == 10:
+            success_items.append("Top 10 course")
+        if fetched_data["bonus"]["fastest_lap"]:
+            success_items.append("Meilleur tour")
         if fetched_data["bonus"]["safety_car"] is not None:
             success_items.append(f"Safety Car: {'OUI' if fetched_data['bonus']['safety_car'] else 'NON'}")
         if fetched_data["bonus"]["dnf_drivers"]:
@@ -470,8 +560,12 @@ async def sync_race_from_api(race: dict) -> dict:
     number_to_id = _number_to_id_map()
 
     fetched_data: dict[str, Any] = {
-        "quali_pole": None, "quali_top10": [], "sprint_quali_top10": [],
-        "sprint_race_top10": [], "race_winner": None, "race_top10": [],
+        "quali_pole": None,
+        "quali_top10": [],
+        "sprint_quali_top10": [],
+        "sprint_race_top10": [],
+        "race_winner": None,
+        "race_top10": [],
         "bonus": {"safety_car": None, "dnf_drivers": [], "fastest_lap": None, "first_corner_leader": None},
     }
 
@@ -495,7 +589,13 @@ async def sync_race_from_api(race: dict) -> dict:
 
             quali_resp = await client.get(f"{JOLPICA_API}/{year}/{round_number}/qualifying.json")
             if quali_resp.status_code == 200:
-                quali_results = quali_resp.json().get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0].get("QualifyingResults", [])
+                quali_results = (
+                    quali_resp.json()
+                    .get("MRData", {})
+                    .get("RaceTable", {})
+                    .get("Races", [{}])[0]
+                    .get("QualifyingResults", [])
+                )
                 if quali_results:
                     pole_num = quali_results[0].get("Driver", {}).get("permanentNumber")
                     if pole_num:
@@ -507,7 +607,9 @@ async def sync_race_from_api(race: dict) -> dict:
 
             race_resp = await client.get(f"{JOLPICA_API}/{year}/{round_number}/results.json")
             if race_resp.status_code == 200:
-                race_results = race_resp.json().get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0].get("Results", [])
+                race_results = (
+                    race_resp.json().get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0].get("Results", [])
+                )
                 if race_results:
                     winner_num = race_results[0].get("Driver", {}).get("permanentNumber")
                     if winner_num:
@@ -530,8 +632,14 @@ async def sync_race_from_api(race: dict) -> dict:
         if fetched_data["race_winner"]:
             await db.race_results.update_one(
                 {"race_id": race_id},
-                {"$set": {"race_id": race_id, "results": fetched_data,
-                          "entered_at": datetime.now(timezone.utc).isoformat(), "auto_synced": True}},
+                {
+                    "$set": {
+                        "race_id": race_id,
+                        "results": fetched_data,
+                        "entered_at": datetime.now(UTC).isoformat(),
+                        "auto_synced": True,
+                    }
+                },
                 upsert=True,
             )
 
@@ -540,12 +648,16 @@ async def sync_race_from_api(race: dict) -> dict:
                 try:
                     points = calculate_points(pred, fetched_data)
                     await db.users.update_one({"id": pred["user_id"]}, {"$inc": {"xp": points["xp_earned"]}})
-                    await send_user_notification(pred["user_id"], f"Résultats {race['name']}: +{points['total']} pts!", "results")
+                    await send_user_notification(
+                        pred["user_id"], f"Résultats {race['name']}: +{points['total']} pts!", "results"
+                    )
                     leagues = await db.leagues.find({"members": pred["user_id"]}, {"_id": 0}).to_list(100)
                     for league in leagues:
                         entry = await db.leaderboard.find_one({"league_id": league["id"], "user_id": pred["user_id"]})
                         if entry:
-                            all_entries = await db.leaderboard.find({"league_id": league["id"]}, {"_id": 0}).to_list(100)
+                            all_entries = await db.leaderboard.find({"league_id": league["id"]}, {"_id": 0}).to_list(
+                                100
+                            )
                             all_entries.sort(key=lambda x: x.get("total_points", 0), reverse=True)
                             current_pos = next(
                                 (i + 1 for i, e in enumerate(all_entries) if e["user_id"] == pred["user_id"]),
@@ -553,8 +665,10 @@ async def sync_race_from_api(race: dict) -> dict:
                             )
                             await db.leaderboard.update_one(
                                 {"id": entry["id"]},
-                                {"$inc": {"total_points": points["total"]},
-                                 "$set": {"last_race_points": points["total"], "previous_position": current_pos}},
+                                {
+                                    "$inc": {"total_points": points["total"]},
+                                    "$set": {"last_race_points": points["total"], "previous_position": current_pos},
+                                },
                             )
                 except Exception:
                     pass
@@ -569,7 +683,7 @@ async def sync_race_from_api(race: dict) -> dict:
 
 async def sync_all_pending() -> dict:
     """Sync every past race that does not yet have results stored."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     synced: list[dict] = []
     failed: list[dict] = []
 
@@ -594,7 +708,7 @@ async def sync_all_pending() -> dict:
 
 async def sync_status() -> dict:
     """Read-only snapshot of the auto-sync state for every race."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     races_status: list[dict] = []
 
     for race in F1_RACES_2026:
@@ -608,14 +722,16 @@ async def sync_status() -> dict:
         elif now > race_date:
             status = "pending_sync"
 
-        races_status.append({
-            "id": race["id"],
-            "name": race["name"],
-            "date": race["date"],
-            "status": status,
-            "has_results": has_results,
-            "auto_synced": result_doc.get("auto_synced", False) if result_doc else False,
-        })
+        races_status.append(
+            {
+                "id": race["id"],
+                "name": race["name"],
+                "date": race["date"],
+                "status": status,
+                "has_results": has_results,
+                "auto_synced": result_doc.get("auto_synced", False) if result_doc else False,
+            }
+        )
 
     return {
         "auto_sync_enabled": True,
@@ -631,7 +747,7 @@ async def sync_status() -> dict:
 
 async def send_reminders() -> dict:
     """Notify users who have not pronostiqued for a race closing in ~24h."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     notifications_sent = 0
 
     for race in F1_RACES_2026:
@@ -664,7 +780,7 @@ async def auto_sync_loop() -> None:
         try:
             await asyncio.sleep(AUTO_SYNC_INTERVAL_HOURS * 3600)
 
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             logger.info(f"[Auto-Sync] Starting automatic results synchronization at {now.isoformat()}")
 
             synced_races: list[str] = []

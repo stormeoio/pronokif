@@ -20,6 +20,7 @@ Wires three things on the application:
    not break in fresh dev environments. Install with:
        pip install slowapi
 """
+
 from __future__ import annotations
 
 import os
@@ -29,7 +30,6 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
-
 
 # --------------------------------------------------------------------------- #
 # 1. CORS                                                                     #
@@ -66,8 +66,7 @@ def install_cors(app: FastAPI) -> None:
             origins = ["http://localhost:3000"]
         else:
             raise RuntimeError(
-                "CORS_ORIGINS is required outside of development. "
-                "Set it in the environment to a comma-separated list."
+                "CORS_ORIGINS is required outside of development. Set it in the environment to a comma-separated list."
             )
 
     app.add_middleware(

@@ -9,13 +9,16 @@ task lifecycle. All business logic lives in services/ + repositories.
 This module deliberately stays under 100 lines. If you find yourself
 adding a handler here, route it through a module under routes/ instead.
 """
+
 from __future__ import annotations
 
 import asyncio
+import contextlib
 
 from fastapi import FastAPI
 
 from config import client, logger
+from middleware.security import install as install_security
 
 # Route modules — one router per business domain.
 from routes.admin_members import router as admin_members_router
@@ -34,10 +37,7 @@ from routes.predictions import router as predictions_router
 from routes.profile import router as profile_router
 from routes.races import router as races_router
 from routes.results import router as results_router
-
-from middleware.security import install as install_security
 from services.sync import auto_sync_loop
-
 
 app = FastAPI(title="PRONOKIF API", description="F1 Predictions Game API")
 
@@ -87,8 +87,6 @@ async def shutdown_event() -> None:
     global auto_sync_task
     if auto_sync_task is not None:
         auto_sync_task.cancel()
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await auto_sync_task
-        except asyncio.CancelledError:
-            pass
     client.close()

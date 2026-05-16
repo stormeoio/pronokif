@@ -7,6 +7,7 @@ These tests require a running server. Start it with:
 Override the base URL with the TEST_API_URL environment variable:
     TEST_API_URL=http://localhost:8000 pytest tests/
 """
+
 import os
 
 import pytest
