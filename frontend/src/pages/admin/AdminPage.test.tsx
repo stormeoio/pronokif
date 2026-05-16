@@ -7,27 +7,45 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderWithProviders, screen, waitFor, mockAdminUser, mockUser } from "@/test/utils";
 
-// Mock apiClient — all pages use it for data fetching
-vi.mock("@/lib/api", () => ({
-  apiClient: {
-    get: vi.fn(),
-    post: vi.fn(),
-    put: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn(),
-  },
-  API: "http://localhost:8000/api",
+// Mock apiClient + api — pages use typed api.* helpers which call apiClient internally
+const mockApiClient = vi.hoisted(() => ({
+  get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  patch: vi.fn(),
+  delete: vi.fn(),
 }));
+
+vi.mock("@/lib/api", () => {
+  const unwrap = (p: Promise<{ data: unknown }>) => p.then((r) => r.data);
+  return {
+    apiClient: mockApiClient,
+    API: "http://localhost:8000/api",
+    api: {
+      admin: {
+        races: () => unwrap(mockApiClient.get("/admin/races")),
+        members: () => unwrap(mockApiClient.get("/admin/members")),
+        feedback: () => unwrap(mockApiClient.get("/admin/feedback")),
+      },
+      drivers: {
+        list: () => unwrap(mockApiClient.get("/drivers")),
+      },
+    },
+    getApiError: (e: unknown, fallback = "Erreur") => {
+      const err = e as { response?: { data?: { detail?: string } } };
+      return err.response?.data?.detail || fallback;
+    },
+  };
+});
 
 // Mock sonner (toast)
 vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
 
-import { apiClient } from "@/lib/api";
 import AdminPage from "./AdminPage";
 
-const mockedApi = vi.mocked(apiClient);
+const mockedApi = mockApiClient;
 
 beforeEach(() => {
   vi.clearAllMocks();

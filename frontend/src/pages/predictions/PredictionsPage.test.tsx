@@ -11,25 +11,47 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthContext } from "@/lib/auth";
 import { mockAuthValue, mockUser } from "@/test/utils";
 
-vi.mock("@/lib/api", () => ({
-  apiClient: {
-    get: vi.fn(),
-    post: vi.fn(),
-    put: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn(),
-  },
-  API: "http://localhost:8000/api",
+const mockApiClient = vi.hoisted(() => ({
+  get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  patch: vi.fn(),
+  delete: vi.fn(),
 }));
+
+vi.mock("@/lib/api", () => {
+  const unwrap = (p: Promise<{ data: unknown }>) => p.then((r) => r.data);
+  return {
+    apiClient: mockApiClient,
+    API: "http://localhost:8000/api",
+    api: {
+      races: {
+        get: (id: string) => unwrap(mockApiClient.get(`/races/${id}`)),
+      },
+      drivers: {
+        list: () => unwrap(mockApiClient.get("/drivers")),
+      },
+      predictions: {
+        get: (raceId: string) => unwrap(mockApiClient.get(`/predictions/race/${raceId}`)),
+        saveSprint: (body: unknown) => unwrap(mockApiClient.post("/predictions/sprint", body)),
+        saveMain: (body: unknown) => unwrap(mockApiClient.post("/predictions/main", body)),
+        delete: (raceId: string) => unwrap(mockApiClient.delete(`/predictions/race/${raceId}`)),
+      },
+    },
+    getApiError: (e: unknown, fallback = "Erreur") => {
+      const err = e as { response?: { data?: { detail?: string } } };
+      return err.response?.data?.detail || fallback;
+    },
+  };
+});
 
 vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
 
-import { apiClient } from "@/lib/api";
 import PredictionsPage from "./PredictionsPage";
 
-const mockedApi = vi.mocked(apiClient);
+const mockedApi = mockApiClient;
 
 const mockRace = {
   id: "race-1",

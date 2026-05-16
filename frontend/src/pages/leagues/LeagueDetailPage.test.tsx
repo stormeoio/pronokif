@@ -11,25 +11,44 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthContext } from "@/lib/auth";
 import { mockAuthValue, mockUser } from "@/test/utils";
 
-vi.mock("@/lib/api", () => ({
-  apiClient: {
-    get: vi.fn(),
-    post: vi.fn(),
-    put: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn(),
-  },
-  API: "http://localhost:8000/api",
+const mockApiClient = vi.hoisted(() => ({
+  get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  patch: vi.fn(),
+  delete: vi.fn(),
 }));
+
+vi.mock("@/lib/api", () => {
+  const unwrap = (p: Promise<{ data: unknown }>) => p.then((r) => r.data);
+  return {
+    apiClient: mockApiClient,
+    API: "http://localhost:8000/api",
+    api: {
+      leagues: {
+        get: (id: string) => unwrap(mockApiClient.get(`/leagues/${id}`)),
+        members: (id: string) => unwrap(mockApiClient.get(`/leagues/${id}/members`)),
+        leaderboard: (id: string) => unwrap(mockApiClient.get(`/leagues/${id}/leaderboard`)),
+        update: (id: string, body: unknown) => unwrap(mockApiClient.put(`/leagues/${id}`, body)),
+      },
+      avatars: {
+        list: () => unwrap(mockApiClient.get("/avatars")),
+      },
+    },
+    getApiError: (e: unknown, fallback = "Erreur") => {
+      const err = e as { response?: { data?: { detail?: string } } };
+      return err.response?.data?.detail || fallback;
+    },
+  };
+});
 
 vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
 
-import { apiClient } from "@/lib/api";
 import LeagueDetailPage from "./LeagueDetailPage";
 
-const mockedApi = vi.mocked(apiClient);
+const mockedApi = mockApiClient;
 
 const mockLeague = {
   id: "league-1",
