@@ -1,0 +1,119 @@
+# Pronokif CD — auto-deploy on push to main (after CI passes).
+#
+# Strategy:
+#   1. Build Docker images for backend + frontend
+#   2. Push to DigitalOcean Container Registry (DOCR)
+#   3. Trigger app re-deployment via doctl
+#
+# Required secrets:
+#   DIGITALOCEAN_ACCESS_TOKEN — DO API token with read/write
+#   DIGITALOCEAN_APP_ID_BACKEND — App Platform app ID (backend)
+#   DIGITALOCEAN_APP_ID_FRONTEND — App Platform app ID (frontend)
+#   VITE_BACKEND_URL — production backend URL
+#   VITE_SENTRY_DSN — Sentry DSN for frontend (optional)
+
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: registry.digitalocean.com/pronokif
+  BACKEND_IMAGE: pronokif-backend
+  FRONTEND_IMAGE: pronokif-frontend
+
+jobs:
+  # Wait for CI to pass before deploying
+  ci-check:
+    name: Wait for CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for CI workflow
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.sha }}
+          check-name: "Frontend (lint + typecheck + test + build)"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+
+  deploy-backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+    needs: [ci-check]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Login to DOCR
+        run: doctl registry login --expiry-seconds 300
+
+      - name: Build & push backend image
+        run: |
+          docker build -t ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }} \
+                       -t ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:latest \
+                       ./backend
+          docker push ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:latest
+
+      - name: Trigger backend re-deploy
+        if: ${{ vars.DIGITALOCEAN_APP_ID_BACKEND != '' }}
+        run: |
+          doctl apps create-deployment ${{ vars.DIGITALOCEAN_APP_ID_BACKEND }} --force-rebuild --wait
+
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: [ci-check]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Login to DOCR
+        run: doctl registry login --expiry-seconds 300
+
+      - name: Build & push frontend image
+        run: |
+          docker build -t ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }} \
+                       -t ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:latest \
+                       --build-arg VITE_BACKEND_URL=${{ secrets.VITE_BACKEND_URL }} \
+                       --build-arg VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }} \
+                       ./frontend
+          docker push ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:latest
+
+      - name: Trigger frontend re-deploy
+        if: ${{ vars.DIGITALOCEAN_APP_ID_FRONTEND != '' }}
+        run: |
+          doctl apps create-deployment ${{ vars.DIGITALOCEAN_APP_ID_FRONTEND }} --force-rebuild --wait
+
+  notify:
+    name: Notify deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-frontend]
+    if: always()
+
+    steps:
+      - name: Deployment summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend:** ${{ needs.deploy-backend.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend:** ${{ needs.deploy-frontend.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Author:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
