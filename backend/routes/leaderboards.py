@@ -12,7 +12,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends
 
-from models.schemas import GlobalLeaderboardEntry, RaceWeekendLeaderboardEntry
+from features import GlobalLeaderboardEntry, RaceWeekendLeaderboardEntry
 from services import leaderboards as leaderboards_service
 from services.auth import get_current_user
 
