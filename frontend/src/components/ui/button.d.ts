@@ -1,21 +1,11 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
-import type { VariantProps } from "class-variance-authority";
+import * as React from "react";
 
-declare const buttonVariants: (props?: {
-  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link" | null;
-  size?: "default" | "sm" | "lg" | "icon" | null;
-  className?: string;
-}) => string;
-
-export interface ButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  size?: "default" | "sm" | "lg" | "icon";
   asChild?: boolean;
-  children?: ReactNode;
 }
 
-export declare const Button: React.ForwardRefExoticComponent<
-  ButtonProps & React.RefAttributes<HTMLButtonElement>
->;
+declare const Button: React.ForwardRefExoticComponent<ButtonProps & React.RefAttributes<HTMLButtonElement>>;
 
-export { buttonVariants };
+export { Button };
