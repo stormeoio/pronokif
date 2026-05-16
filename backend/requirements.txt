@@ -13,10 +13,7 @@ dnspython==2.8.0
 
 # Auth
 PyJWT==2.11.0
-python-jose==3.5.0
 bcrypt==4.1.3
-passlib==1.7.4
-cryptography==46.0.5
 
 # Validation & serialization
 pydantic==2.12.5

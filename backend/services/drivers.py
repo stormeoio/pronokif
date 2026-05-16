@@ -11,7 +11,7 @@ import random
 from typing import Optional
 
 from config import db
-from drivers_data import (
+from data.drivers_data import (
     F1_DRIVERS_DETAILED_2026,
     get_all_drivers_detailed,
     get_driver_details,
