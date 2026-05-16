@@ -27,7 +27,7 @@ router = APIRouter(prefix="/leagues", tags=["Leagues"])
 
 
 @router.post("", response_model=LeagueResponse)
-async def create_league(data: LeagueCreate, user=Depends(get_current_user)):
+async def create_league(data: LeagueCreate, user: dict = Depends(get_current_user)):
     """Create a new league"""
     league_id = str(uuid.uuid4())
     code = generate_league_code()
@@ -59,7 +59,7 @@ async def create_league(data: LeagueCreate, user=Depends(get_current_user)):
 
 
 @router.post("/join", response_model=LeagueResponse)
-async def join_league(data: LeagueJoin, user=Depends(get_current_user)):
+async def join_league(data: LeagueJoin, user: dict = Depends(get_current_user)):
     """Join a league with invitation code"""
     league = await db.leagues.find_one({"code": data.code.upper()}, {"_id": 0})
     if not league:
@@ -84,14 +84,14 @@ async def join_league(data: LeagueJoin, user=Depends(get_current_user)):
 
 
 @router.get("/my", response_model=list[LeagueResponse])
-async def get_my_leagues(user=Depends(get_current_user)):
+async def get_my_leagues(user: dict = Depends(get_current_user)):
     """Get all leagues the user is a member of"""
     leagues = await db.leagues.find({"members": user["id"]}, {"_id": 0}).to_list(100)
     return [LeagueResponse(**league) for league in leagues]
 
 
 @router.get("/unread-messages")
-async def get_unread_messages_count(user=Depends(get_current_user)):
+async def get_unread_messages_count(user: dict = Depends(get_current_user)) -> dict:
     """Get count of unread messages for all user's leagues"""
     leagues = await db.leagues.find({"members": user["id"]}, {"_id": 0}).to_list(100)
 
@@ -116,7 +116,7 @@ async def get_unread_messages_count(user=Depends(get_current_user)):
 
 
 @router.get("/by-code/{code}")
-async def get_league_by_code(code: str):
+async def get_league_by_code(code: str) -> dict:
     """Get league info by invitation code (public endpoint for join links)"""
     league = await db.leagues.find_one({"code": code.upper()}, {"_id": 0})
     if not league:
@@ -132,7 +132,7 @@ async def get_league_by_code(code: str):
 
 
 @router.get("/{league_id}", response_model=LeagueResponse)
-async def get_league(league_id: str, user=Depends(get_current_user)):
+async def get_league(league_id: str, user: dict = Depends(get_current_user)):
     """Get league details"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league:
@@ -143,7 +143,7 @@ async def get_league(league_id: str, user=Depends(get_current_user)):
 
 
 @router.get("/{league_id}/leaderboard", response_model=list[LeaderboardEntry])
-async def get_leaderboard(league_id: str, user=Depends(get_current_user)):
+async def get_leaderboard(league_id: str, user: dict = Depends(get_current_user)):
     """Get league leaderboard"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league:
@@ -174,7 +174,7 @@ async def get_leaderboard(league_id: str, user=Depends(get_current_user)):
 
 
 @router.post("/{league_id}/select")
-async def select_league(league_id: str, user=Depends(get_current_user)):
+async def select_league(league_id: str, user: dict = Depends(get_current_user)) -> dict:
     """Select a league as current"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league or user["id"] not in league["members"]:
@@ -183,8 +183,8 @@ async def select_league(league_id: str, user=Depends(get_current_user)):
     return {"message": "League selected", "league_id": league_id}
 
 
-@router.put("/{league_id}")
-async def update_league(league_id: str, data: LeagueUpdate, user=Depends(get_current_user)):
+@router.put("/{league_id}", response_model=LeagueResponse)
+async def update_league(league_id: str, data: LeagueUpdate, user: dict = Depends(get_current_user)):
     """Update league name and/or description (owner only)"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league:
@@ -208,7 +208,7 @@ async def update_league(league_id: str, data: LeagueUpdate, user=Depends(get_cur
 
 
 @router.post("/{league_id}/leave")
-async def leave_league(league_id: str, user=Depends(get_current_user)):
+async def leave_league(league_id: str, user: dict = Depends(get_current_user)) -> dict:
     """Leave a league"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league:
@@ -247,7 +247,7 @@ async def leave_league(league_id: str, user=Depends(get_current_user)):
 
 
 @router.delete("/{league_id}")
-async def delete_league(league_id: str, user=Depends(get_current_user)):
+async def delete_league(league_id: str, user: dict = Depends(get_current_user)) -> dict:
     """Delete a league (creator only)"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league:
@@ -272,7 +272,9 @@ async def delete_league(league_id: str, user=Depends(get_current_user)):
 
 
 @router.post("/{league_id}/transfer")
-async def transfer_league_ownership(league_id: str, data: TransferOwnershipRequest, user=Depends(get_current_user)):
+async def transfer_league_ownership(
+    league_id: str, data: TransferOwnershipRequest, user: dict = Depends(get_current_user)
+) -> dict:
     """Transfer league ownership to another member (creator only)"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league:
@@ -305,7 +307,7 @@ async def transfer_league_ownership(league_id: str, data: TransferOwnershipReque
 
 
 @router.post("/{league_id}/messages")
-async def send_league_message(league_id: str, data: ChatMessage, user=Depends(get_current_user)):
+async def send_league_message(league_id: str, data: ChatMessage, user: dict = Depends(get_current_user)) -> dict:
     """Send a message to the league chat"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league or user["id"] not in league["members"]:
@@ -333,7 +335,9 @@ async def send_league_message(league_id: str, data: ChatMessage, user=Depends(ge
 
 
 @router.get("/{league_id}/messages")
-async def get_league_messages(league_id: str, limit: int = 50, before: str = None, user=Depends(get_current_user)):
+async def get_league_messages(
+    league_id: str, limit: int = 50, before: str = None, user: dict = Depends(get_current_user)
+) -> list[dict]:
     """Get messages from the league chat"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league or user["id"] not in league["members"]:
@@ -348,7 +352,7 @@ async def get_league_messages(league_id: str, limit: int = 50, before: str = Non
 
 
 @router.get("/{league_id}/members")
-async def get_league_members(league_id: str, user=Depends(get_current_user)):
+async def get_league_members(league_id: str, user: dict = Depends(get_current_user)) -> list[dict]:
     """Get all members of a league with their basic info"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league or user["id"] not in league["members"]:
@@ -374,7 +378,7 @@ async def get_league_members(league_id: str, user=Depends(get_current_user)):
 
 
 @router.post("/{league_id}/messages/read")
-async def mark_league_messages_read(league_id: str, user=Depends(get_current_user)):
+async def mark_league_messages_read(league_id: str, user: dict = Depends(get_current_user)) -> dict:
     """Mark all messages in a league as read for the current user"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league or user["id"] not in league["members"]:

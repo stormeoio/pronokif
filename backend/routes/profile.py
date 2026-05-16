@@ -21,7 +21,7 @@ router = APIRouter(tags=["profile"])
 
 
 @router.get("/users/{user_id}/profile")
-async def get_user_public_profile(user_id: str, user=Depends(get_current_user)):
+async def get_user_public_profile(user_id: str, user: dict = Depends(get_current_user)) -> dict:
     """Public profile of a user (stats, common leagues, recent picks)."""
     try:
         return await profile_service.get_public_profile(target_user_id=user_id, requesting_user_id=user["id"])
@@ -30,19 +30,19 @@ async def get_user_public_profile(user_id: str, user=Depends(get_current_user)):
 
 
 @router.get("/user/stats")
-async def get_user_stats(user=Depends(get_current_user)):
+async def get_user_stats(user: dict = Depends(get_current_user)) -> dict:
     """Return (and lazily create) the caller's stats document."""
     return await profile_service.get_or_create_stats(user["id"])
 
 
 @router.get("/user/missions")
-async def get_user_missions(user=Depends(get_current_user)):
+async def get_user_missions(user: dict = Depends(get_current_user)) -> dict:
     """Return mission progress grouped by category."""
     return await profile_service.list_missions(user["id"])
 
 
 @router.post("/user/missions/{mission_id}/claim")
-async def claim_mission_reward(mission_id: str, user=Depends(get_current_user)):
+async def claim_mission_reward(mission_id: str, user: dict = Depends(get_current_user)) -> dict:
     """Award XP for a completed mission. 400 if not eligible, 404 if unknown."""
     try:
         return await profile_service.claim_mission(user["id"], mission_id)

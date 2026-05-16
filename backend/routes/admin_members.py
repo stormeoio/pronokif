@@ -22,13 +22,13 @@ router = APIRouter(tags=["admin-members"])
 
 
 @router.get("/admin/members")
-async def get_all_members(_admin=Depends(require_admin)):
+async def get_all_members(_admin: dict = Depends(require_admin)) -> list[dict]:
     """List all registered members enriched with prediction + league counts."""
     return await admin_members_service.list_all()
 
 
 @router.get("/admin/members/{member_id}")
-async def get_member_details(member_id: str, _admin=Depends(require_admin)):
+async def get_member_details(member_id: str, _admin: dict = Depends(require_admin)) -> dict:
     """Detailed profile of a specific member."""
     try:
         return await admin_members_service.get_details(member_id)
@@ -37,7 +37,7 @@ async def get_member_details(member_id: str, _admin=Depends(require_admin)):
 
 
 @router.get("/admin/members/{member_id}/activity")
-async def get_member_activity(member_id: str, _admin=Depends(require_admin)):
+async def get_member_activity(member_id: str, _admin: dict = Depends(require_admin)) -> dict:
     """Login activity history for a specific member."""
     try:
         return await admin_members_service.get_activity(member_id)
@@ -46,7 +46,7 @@ async def get_member_activity(member_id: str, _admin=Depends(require_admin)):
 
 
 @router.delete("/admin/members/{member_id}")
-async def delete_member(member_id: str, admin=Depends(require_admin)):
+async def delete_member(member_id: str, admin: dict = Depends(require_admin)) -> dict:
     """Delete a member account and cascade-cleanup all their data."""
     try:
         return await admin_members_service.delete(member_id, acting_admin_id=admin["id"])

@@ -19,7 +19,7 @@ router = APIRouter(tags=["leaderboards"])
 
 
 @router.get("/leaderboard/global")
-async def get_global_leaderboard(limit: int = 100, user=Depends(get_current_user)):
+async def get_global_leaderboard(limit: int = 100, user: dict = Depends(get_current_user)) -> dict:
     """Top ``limit`` players ranked by total points across all leagues."""
     data = await leaderboards_service.build_global(current_user_id=user["id"], limit=limit)
     data["leaderboard"] = [GlobalLeaderboardEntry(**e) for e in data["leaderboard"]]
@@ -30,8 +30,8 @@ async def get_global_leaderboard(limit: int = 100, user=Depends(get_current_user
 async def get_race_weekend_leaderboard(
     race_id: str,
     league_id: str | None = None,
-    user=Depends(get_current_user),
-):
+    user: dict = Depends(get_current_user),
+) -> dict:
     """Per-race weekend leaderboard, optionally scoped to a league."""
     data = await leaderboards_service.build_race_weekend(race_id=race_id, league_id=league_id)
     if data.get("leaderboard"):

@@ -49,7 +49,7 @@ def get_sprint_predictions_close_time(race: dict):
 
 
 @router.post("")
-async def create_prediction(data: PredictionCreate, user=Depends(get_current_user)):
+async def create_prediction(data: PredictionCreate, user: dict = Depends(get_current_user)) -> dict:
     """Create or update a prediction for a race"""
     race = next((r for r in F1_RACES_2026 if r["id"] == data.race_id), None)
     if not race:
@@ -108,14 +108,14 @@ async def create_prediction(data: PredictionCreate, user=Depends(get_current_use
 
 
 @router.get("/race/{race_id}")
-async def get_my_prediction(race_id: str, user=Depends(get_current_user)):
+async def get_my_prediction(race_id: str, user: dict = Depends(get_current_user)) -> dict | None:
     """Get user's prediction for a specific race"""
     prediction = await db.predictions.find_one({"user_id": user["id"], "race_id": race_id}, {"_id": 0})
     return prediction
 
 
 @router.delete("/race/{race_id}")
-async def delete_my_prediction(race_id: str, user=Depends(get_current_user)):
+async def delete_my_prediction(race_id: str, user: dict = Depends(get_current_user)) -> dict:
     """Delete user's prediction for a specific race"""
     race = next((r for r in F1_RACES_2026 if r["id"] == race_id), None)
     if not race:
@@ -134,14 +134,14 @@ async def delete_my_prediction(race_id: str, user=Depends(get_current_user)):
 
 
 @router.get("/history")
-async def get_prediction_history(user=Depends(get_current_user)):
+async def get_prediction_history(user: dict = Depends(get_current_user)) -> list[dict]:
     """Get all predictions history for the user"""
     predictions = await db.predictions.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
     return predictions
 
 
 @router.get("/stats")
-async def get_prediction_stats(user=Depends(get_current_user)):
+async def get_prediction_stats(user: dict = Depends(get_current_user)) -> dict:
     """Get prediction statistics for the current user"""
     total_predictions = await count_individual_predictions(user["id"])
     races_participated = await db.predictions.count_documents({"user_id": user["id"]})
@@ -150,7 +150,7 @@ async def get_prediction_stats(user=Depends(get_current_user)):
 
 
 @router.get("/points-history")
-async def get_points_history(user=Depends(get_current_user)):
+async def get_points_history(user: dict = Depends(get_current_user)) -> dict:
     """Get detailed points history for the user"""
     predictions = await db.predictions.find({"user_id": user["id"]}, {"_id": 0}).to_list(100)
 
@@ -230,7 +230,7 @@ async def get_points_history(user=Depends(get_current_user)):
 
 
 @router.post("/sprint")
-async def save_sprint_prediction(data: SprintPredictionCreate, user=Depends(get_current_user)):
+async def save_sprint_prediction(data: SprintPredictionCreate, user: dict = Depends(get_current_user)) -> dict:
     """Save sprint predictions separately (closes 15 min before SQ1)"""
     race = next((r for r in F1_RACES_2026 if r["id"] == data.race_id), None)
     if not race:
@@ -277,7 +277,7 @@ async def save_sprint_prediction(data: SprintPredictionCreate, user=Depends(get_
 
 
 @router.post("/main")
-async def save_main_prediction(data: MainPredictionCreate, user=Depends(get_current_user)):
+async def save_main_prediction(data: MainPredictionCreate, user: dict = Depends(get_current_user)) -> dict:
     """Save main race predictions separately (closes 15 min before Q1)"""
     race = next((r for r in F1_RACES_2026 if r["id"] == data.race_id), None)
     if not race:
@@ -324,7 +324,7 @@ async def save_main_prediction(data: MainPredictionCreate, user=Depends(get_curr
 
 
 @router.post("/custom")
-async def create_custom_prediction(data: CustomPredictionCreate, user=Depends(get_current_user)):
+async def create_custom_prediction(data: CustomPredictionCreate, user: dict = Depends(get_current_user)) -> dict:
     """Create a custom prediction for a league"""
     league = await db.leagues.find_one({"id": data.league_id}, {"_id": 0})
     if not league or user["id"] not in league["members"]:
@@ -357,7 +357,9 @@ async def create_custom_prediction(data: CustomPredictionCreate, user=Depends(ge
 
 
 @router.get("/custom/league/{league_id}/race/{race_id}")
-async def get_league_custom_predictions(league_id: str, race_id: str, user=Depends(get_current_user)):
+async def get_league_custom_predictions(
+    league_id: str, race_id: str, user: dict = Depends(get_current_user)
+) -> list[dict]:
     """Get custom predictions for a league and race"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league or user["id"] not in league["members"]:
@@ -370,7 +372,7 @@ async def get_league_custom_predictions(league_id: str, race_id: str, user=Depen
 
 
 @router.post("/custom/{prediction_id}/answer")
-async def answer_custom_prediction(prediction_id: str, answer: dict, user=Depends(get_current_user)):
+async def answer_custom_prediction(prediction_id: str, answer: dict, user: dict = Depends(get_current_user)) -> dict:
     """Submit an answer to a custom prediction"""
     custom_pred = await db.custom_predictions.find_one({"id": prediction_id}, {"_id": 0})
     if not custom_pred:
@@ -392,7 +394,7 @@ async def answer_custom_prediction(prediction_id: str, answer: dict, user=Depend
 
 
 @router.post("/custom/{prediction_id}/set-correct")
-async def set_correct_answer(prediction_id: str, data: dict, user=Depends(get_current_user)):
+async def set_correct_answer(prediction_id: str, data: dict, user: dict = Depends(get_current_user)) -> dict:
     """Set the correct answer for a custom prediction (creator only)"""
     custom_pred = await db.custom_predictions.find_one({"id": prediction_id}, {"_id": 0})
     if not custom_pred:

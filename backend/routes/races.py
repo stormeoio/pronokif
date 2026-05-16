@@ -47,7 +47,7 @@ async def get_drivers():
 
 
 @router.get("/drivers/{driver_id}")
-async def get_driver(driver_id: str):
+async def get_driver(driver_id: str) -> dict:
     """Get a specific driver's info"""
     driver = next((d for d in F1_DRIVERS_2026 if d["id"] == driver_id), None)
     if not driver:
@@ -164,7 +164,7 @@ async def get_next_race():
 
 
 @router.get("/races/upcoming")
-async def get_upcoming_races():
+async def get_upcoming_races() -> list[dict]:
     """Get all upcoming races for the season (for predictions calendar)"""
     now = datetime.now(UTC)
     upcoming = []
@@ -206,7 +206,7 @@ async def get_upcoming_races():
 
 
 @router.get("/races/{race_id}")
-async def get_race(race_id: str):
+async def get_race(race_id: str) -> dict:
     """Get detailed info for a specific race"""
     for race in F1_RACES_2026:
         if race["id"] == race_id:
@@ -261,7 +261,7 @@ async def get_race(race_id: str):
 
 
 @router.get("/races/{race_id}/details")
-async def get_race_details(race_id: str):
+async def get_race_details(race_id: str) -> dict:
     """Get detailed information for a specific race including circuit info and session times"""
     for race in F1_RACES_2026:
         if race["id"] == race_id:

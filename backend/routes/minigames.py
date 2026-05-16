@@ -39,7 +39,7 @@ class MinigameLeaderboardEntry(BaseModel):
 
 
 @router.post("/result")
-async def save_minigame_result(data: MinigameResultCreate, user=Depends(get_current_user)):
+async def save_minigame_result(data: MinigameResultCreate, user: dict = Depends(get_current_user)) -> dict:
     """Save a mini-game result"""
     if data.game_type not in ["reaction", "batak"]:
         raise HTTPException(status_code=400, detail="Invalid game type")
@@ -96,7 +96,9 @@ async def save_minigame_result(data: MinigameResultCreate, user=Depends(get_curr
 
 
 @router.get("/leaderboard/{game_type}/{league_id}/{race_id}")
-async def get_minigame_leaderboard(game_type: str, league_id: str, race_id: str, user=Depends(get_current_user)):
+async def get_minigame_leaderboard(
+    game_type: str, league_id: str, race_id: str, user: dict = Depends(get_current_user)
+) -> dict:
     """Get mini-game leaderboard for a specific race weekend"""
     if game_type not in ["reaction", "batak"]:
         raise HTTPException(status_code=400, detail="Invalid game type")
@@ -153,7 +155,9 @@ async def get_minigame_leaderboard(game_type: str, league_id: str, race_id: str,
 
 
 @router.get("/attempts/{game_type}/{league_id}/{race_id}")
-async def get_my_minigame_attempts(game_type: str, league_id: str, race_id: str, user=Depends(get_current_user)):
+async def get_my_minigame_attempts(
+    game_type: str, league_id: str, race_id: str, user: dict = Depends(get_current_user)
+) -> dict:
     """Get user's attempts for a specific mini-game"""
     results = await db.minigame_results.find(
         {
@@ -170,7 +174,7 @@ async def get_my_minigame_attempts(game_type: str, league_id: str, race_id: str,
 
 
 @router.get("/global-leaderboard/{game_type}")
-async def get_global_minigame_leaderboard(game_type: str, user=Depends(get_current_user)):
+async def get_global_minigame_leaderboard(game_type: str, user: dict = Depends(get_current_user)) -> dict:
     """Get global mini-game leaderboard (all time best scores)"""
     if game_type not in ["reaction", "batak"]:
         raise HTTPException(status_code=400, detail="Invalid game type")

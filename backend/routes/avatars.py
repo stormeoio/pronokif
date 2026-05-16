@@ -19,13 +19,13 @@ router = APIRouter(tags=["avatars"])
 
 
 @router.get("/avatars")
-async def get_available_avatars():
+async def get_available_avatars() -> list[dict]:
     """List all available avatars grouped by category."""
     return avatar_service.list_catalog()
 
 
-@router.post("/user/avatar")
-async def update_user_avatar(data: AvatarUpdate, user=Depends(get_current_user)):
+@router.post("/user/avatar", response_model=UserResponse)
+async def update_user_avatar(data: AvatarUpdate, user: dict = Depends(get_current_user)):
     """Switch the caller's avatar to a predefined ID or a custom URL."""
     try:
         updated = await avatar_service.set_avatar(
@@ -50,7 +50,7 @@ async def update_user_avatar(data: AvatarUpdate, user=Depends(get_current_user))
 
 
 @router.post("/user/avatar/upload")
-async def upload_custom_avatar(file: UploadFile = File(...), user=Depends(get_current_user)):
+async def upload_custom_avatar(file: UploadFile = File(...), user: dict = Depends(get_current_user)) -> dict:
     """Upload a custom avatar image; stored inline as a base64 data URL."""
     contents = await file.read()
     try:

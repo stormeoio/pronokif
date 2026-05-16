@@ -28,7 +28,7 @@ class FeedbackCreate(BaseModel):
 
 
 @router.post("/feedback")
-async def submit_feedback(data: FeedbackCreate, user=Depends(get_current_user)):
+async def submit_feedback(data: FeedbackCreate, user: dict = Depends(get_current_user)) -> dict:
     """Submit feedback to admin."""
     try:
         feedback = await feedback_service.submit(user=user, message=data.message, category=data.category)
@@ -38,13 +38,13 @@ async def submit_feedback(data: FeedbackCreate, user=Depends(get_current_user)):
 
 
 @router.get("/admin/feedback")
-async def get_all_feedback(_admin=Depends(require_admin)):
+async def get_all_feedback(_admin: dict = Depends(require_admin)) -> list[dict]:
     """List all feedback entries (admin only)."""
     return await feedback_service.list_all()
 
 
 @router.put("/admin/feedback/{feedback_id}/read")
-async def mark_feedback_read(feedback_id: str, _admin=Depends(require_admin)):
+async def mark_feedback_read(feedback_id: str, _admin: dict = Depends(require_admin)) -> dict:
     """Mark a feedback entry as read (admin only)."""
     if not await feedback_service.mark_read(feedback_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Feedback not found")

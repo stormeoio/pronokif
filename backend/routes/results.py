@@ -36,7 +36,7 @@ class RaceResultsInput(BaseModel):
 
 
 @router.get("/results/{race_id}")
-async def get_race_results(race_id: str, user=Depends(get_current_user)):
+async def get_race_results(race_id: str, user: dict = Depends(get_current_user)) -> dict:
     """Official results for a race + the caller's own prediction + points."""
     return await results_service.get_official(race_id, user)
 
@@ -45,8 +45,8 @@ async def get_race_results(race_id: str, user=Depends(get_current_user)):
 async def set_race_results(
     race_id: str,
     data: RaceResultsInput,
-    user=Depends(require_league_creator),
-):
+    user: dict = Depends(require_league_creator),
+) -> dict:
     """Persist official results then score every prediction for the race.
 
     Triggers XP increments, level-up notifications, "+N pts" notifications,
@@ -58,12 +58,12 @@ async def set_race_results(
 
 
 @router.get("/admin/races")
-async def get_admin_races(_user=Depends(require_league_creator)):
+async def get_admin_races(_user: dict = Depends(require_league_creator)) -> list[dict]:
     """Calendar with has_results / is_past / is_sprint flags."""
     return await results_service.list_admin_races()
 
 
 @router.get("/admin/results/{race_id}")
-async def get_admin_results(race_id: str, _user=Depends(require_league_creator)):
+async def get_admin_results(race_id: str, _user: dict = Depends(require_league_creator)) -> dict | None:
     """Raw stored race_results document."""
     return await results_service.get_admin_detail(race_id)
