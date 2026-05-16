@@ -1,0 +1,57 @@
+# DigitalOcean App Platform — Pronokif full-stack spec
+# Deploy: doctl apps create --spec .do/app.yaml
+# Update: doctl apps update <app-id> --spec .do/app.yaml
+
+name: pronokif
+region: fra
+
+services:
+  - name: api
+    github:
+      repo: catalanbaptiste123-source/pronokif
+      branch: main
+      deploy_on_push: true
+    source_dir: /backend
+    dockerfile_path: backend/Dockerfile
+    http_port: 8000
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    health_check:
+      http_path: /docs
+      initial_delay_seconds: 15
+      period_seconds: 30
+    envs:
+      - key: MONGO_URL
+        value: "${MONGO_URL}"
+        type: SECRET
+      - key: DB_NAME
+        value: pronokif
+      - key: JWT_SECRET
+        value: "${JWT_SECRET}"
+        type: SECRET
+      - key: CORS_ORIGINS
+        value: "${APP_URL}"
+      - key: SENTRY_DSN
+        value: "${SENTRY_BACKEND_DSN}"
+        type: SECRET
+      - key: ENVIRONMENT
+        value: production
+
+static_sites:
+  - name: web
+    github:
+      repo: catalanbaptiste123-source/pronokif
+      branch: main
+      deploy_on_push: true
+    source_dir: /frontend
+    build_command: npm ci --legacy-peer-deps && npm run build
+    output_dir: build
+    index_document: index.html
+    error_document: index.html
+    envs:
+      - key: VITE_BACKEND_URL
+        value: "${API_URL}"
+      - key: VITE_SENTRY_DSN
+        value: "${SENTRY_FRONTEND_DSN}"
+      - key: VITE_ENVIRONMENT
+        value: production
