@@ -10,15 +10,35 @@ from motor.motor_asyncio import AsyncIOMotorClient
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+
+def _required_env(key: str) -> str:
+    """Read a required env var or fail fast at boot with a clear message."""
+    value = os.environ.get(key)
+    if not value:
+        raise RuntimeError(
+            f"Missing required environment variable: {key}. "
+            f"See backend/.env.example for the full template."
+        )
+    return value
+
+
 # MongoDB connection
-MONGO_URL = os.environ['MONGO_URL']
-DB_NAME = os.environ['DB_NAME']
+MONGO_URL = _required_env('MONGO_URL')
+DB_NAME = _required_env('DB_NAME')
 
 client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
 
 # JWT Configuration
-JWT_SECRET = os.environ.get('JWT_SECRET', 'pronokif-secret-key-2026')
+# SECURITY: no fallback. JWT_SECRET MUST come from the environment.
+# Generate a strong secret with:
+#   python -c "import secrets; print(secrets.token_urlsafe(48))"
+JWT_SECRET = _required_env('JWT_SECRET')
+if len(JWT_SECRET) < 32:
+    raise RuntimeError(
+        "JWT_SECRET is too short (< 32 chars). Generate a stronger one with "
+        "`python -c 'import secrets; print(secrets.token_urlsafe(48))'`."
+    )
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24 * 7
 
