@@ -53,7 +53,9 @@ export default function ConstructorStandings({ constructorsStandings }: Construc
                 <p className="font-body text-xs text-gray-500">{constructor?.nationality}</p>
               </div>
               <div className="text-right">
-                <p className={`font-data text-2xl ${parseInt(entry.position) <= 3 ? "text-yellow-400" : "text-white"}`}>
+                <p
+                  className={`font-data text-2xl ${parseInt(entry.position) <= 3 ? "text-yellow-400" : "text-white"}`}
+                >
                   {entry.points}
                 </p>
                 <p className="font-body text-[10px] text-gray-500 uppercase">pts</p>

@@ -1,14 +1,12 @@
 import { useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth";
-import { apiClient } from "@/lib/api";
+import { ChevronLeft, Trophy, Flag, Calendar, MapPin, Clock } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import {
-  ChevronLeft, Trophy, Flag, Calendar, MapPin, Clock
-} from "lucide-react";
 import ResultComparisonCard from "./results/ResultComparisonCard";
+import { useAuth } from "@/lib/auth";
+import { apiClient } from "@/lib/api";
 
 export default function ResultsPage() {
   const { raceId } = useParams();
@@ -71,7 +69,12 @@ export default function ResultsPage() {
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="text-zinc-400 hover:text-white">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/")}
+            className="text-zinc-400 hover:text-white"
+          >
             <ChevronLeft className="w-6 h-6" />
           </Button>
           <h1 className="font-heading text-2xl uppercase tracking-tight italic text-white">
@@ -103,8 +106,12 @@ export default function ResultsPage() {
           <Card className="bg-card border-white/10">
             <CardContent className="p-8 text-center">
               <Clock className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-              <p className="font-heading text-xl uppercase text-zinc-400 mb-2">Aucun resultat disponible</p>
-              <p className="font-body text-sm text-zinc-500">Les resultats seront disponibles apres chaque course</p>
+              <p className="font-heading text-xl uppercase text-zinc-400 mb-2">
+                Aucun resultat disponible
+              </p>
+              <p className="font-body text-sm text-zinc-500">
+                Les resultats seront disponibles apres chaque course
+              </p>
             </CardContent>
           </Card>
         )}
@@ -124,7 +131,10 @@ export default function ResultsPage() {
                     </span>
                     <span className="flex items-center gap-1 text-sm font-body">
                       <Calendar className="w-4 h-4" />
-                      {new Date(selectedRace.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
+                      {new Date(selectedRace.date).toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "long",
+                      })}
                     </span>
                   </div>
                 </div>
@@ -144,7 +154,9 @@ export default function ResultsPage() {
                   <div className="flex items-center gap-3">
                     <Trophy className="w-8 h-8 text-emerald-500" />
                     <div>
-                      <p className="font-heading text-lg uppercase text-white">+{result.points.total} points</p>
+                      <p className="font-heading text-lg uppercase text-white">
+                        +{result.points.total} points
+                      </p>
                       <p className="font-body text-sm text-emerald-400">Gagnes sur ce Grand Prix</p>
                     </div>
                   </div>
@@ -203,8 +215,12 @@ export default function ResultsPage() {
           <Card className="bg-card border-white/10">
             <CardContent className="p-8 text-center">
               <Clock className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-              <p className="font-heading text-lg uppercase text-zinc-400 mb-2">Resultats en attente</p>
-              <p className="font-body text-sm text-zinc-500">Les resultats seront disponibles apres la course</p>
+              <p className="font-heading text-lg uppercase text-zinc-400 mb-2">
+                Resultats en attente
+              </p>
+              <p className="font-body text-sm text-zinc-500">
+                Les resultats seront disponibles apres la course
+              </p>
             </CardContent>
           </Card>
         )}

@@ -1,17 +1,24 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth";
-import { apiClient } from "@/lib/api";
-import { Button } from "../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { toast } from "sonner";
 import {
-  ChevronLeft, Zap, Target, Trophy, Medal, Dumbbell, Timer,
-  Crown, Users
+  ChevronLeft,
+  Zap,
+  Target,
+  Trophy,
+  Medal,
+  Dumbbell,
+  Timer,
+  Crown,
+  Users,
 } from "lucide-react";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { ReactionGame, BatakGame } from "../components/mini-games/MiniGames";
 import { AvatarDisplay } from "../components/AvatarDisplay";
+import { apiClient } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 export default function MiniGamesPage() {
   const navigate = useNavigate();
@@ -40,12 +47,14 @@ export default function MiniGamesPage() {
 
   const { data: globalReactionLeaderboard = [] } = useQuery({
     queryKey: ["/minigames/global-leaderboard/reaction"],
-    queryFn: async () => (await apiClient.get("/minigames/global-leaderboard/reaction")).data.leaderboard || [],
+    queryFn: async () =>
+      (await apiClient.get("/minigames/global-leaderboard/reaction")).data.leaderboard || [],
   });
 
   const { data: globalBatakLeaderboard = [] } = useQuery({
     queryKey: ["/minigames/global-leaderboard/batak"],
-    queryFn: async () => (await apiClient.get("/minigames/global-leaderboard/batak")).data.leaderboard || [],
+    queryFn: async () =>
+      (await apiClient.get("/minigames/global-leaderboard/batak")).data.leaderboard || [],
   });
 
   // ── Dependent queries (need nextRace) ─────────────────────
@@ -70,7 +79,9 @@ export default function MiniGamesPage() {
   const { data: reactionLeaderboard = [] } = useQuery({
     queryKey: ["/minigames/leaderboard/reaction", leagues[0]?.id, nextRace?.id],
     queryFn: async () => {
-      const res = await apiClient.get(`/minigames/leaderboard/reaction/${leagues[0].id}/${nextRace.id}`);
+      const res = await apiClient.get(
+        `/minigames/leaderboard/reaction/${leagues[0].id}/${nextRace.id}`,
+      );
       return res.data.leaderboard || [];
     },
     enabled: !!nextRace?.id && leagues.length > 0,
@@ -79,7 +90,9 @@ export default function MiniGamesPage() {
   const { data: batakLeaderboard = [] } = useQuery({
     queryKey: ["/minigames/leaderboard/batak", leagues[0]?.id, nextRace?.id],
     queryFn: async () => {
-      const res = await apiClient.get(`/minigames/leaderboard/batak/${leagues[0].id}/${nextRace.id}`);
+      const res = await apiClient.get(
+        `/minigames/leaderboard/batak/${leagues[0].id}/${nextRace.id}`,
+      );
       return res.data.leaderboard || [];
     },
     enabled: !!nextRace?.id && leagues.length > 0,
@@ -98,7 +111,7 @@ export default function MiniGamesPage() {
         race_id: nextRace.id,
         league_id: "global",
         reaction_time_ms: reactionTime,
-        is_training: isTraining
+        is_training: isTraining,
       });
 
       if (!isTraining) {
@@ -108,7 +121,9 @@ export default function MiniGamesPage() {
         toast.success(`Temps: ${reactionTime}ms (Entraînement)`);
       }
     } catch (e: unknown) {
-      toast.error((e as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Erreur");
+      toast.error(
+        (e as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Erreur",
+      );
     }
   };
 
@@ -119,7 +134,7 @@ export default function MiniGamesPage() {
         league_id: "global",
         score,
         time_seconds: timeSeconds,
-        is_training: isTraining
+        is_training: isTraining,
       });
 
       if (!isTraining) {
@@ -129,7 +144,9 @@ export default function MiniGamesPage() {
         toast.success(`Score: ${score} cibles (Entraînement)`);
       }
     } catch (e: unknown) {
-      toast.error((e as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Erreur");
+      toast.error(
+        (e as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Erreur",
+      );
     }
   };
 
@@ -154,7 +171,12 @@ export default function MiniGamesPage() {
       <div className="sticky top-0 z-40 bg-[#050a14]/95 backdrop-blur-md border-b border-purple-500/30">
         <div className="max-w-2xl mx-auto p-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-400 hover:text-white hover:bg-white/10">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="text-gray-400 hover:text-white hover:bg-white/10"
+            >
               <ChevronLeft className="w-6 h-6" />
             </Button>
             <div className="flex-1">
@@ -181,7 +203,10 @@ export default function MiniGamesPage() {
             </h3>
             <ul className="font-body text-xs text-gray-400 space-y-1">
               <li>• Mode compétition: 3 essais par jeu et par weekend</li>
-              <li>• Le gagnant de chaque jeu dans la ligue gagne <span className="text-orange-400">+2 points</span></li>
+              <li>
+                • Le gagnant de chaque jeu dans la ligue gagne{" "}
+                <span className="text-orange-400">+2 points</span>
+              </li>
               <li>• XP gagné à chaque partie jouée</li>
               <li>• Mode entraînement illimité pour s'améliorer!</li>
             </ul>
@@ -193,8 +218,8 @@ export default function MiniGamesPage() {
           <Button
             onClick={() => setMode("training")}
             className={`flex-1 h-12 font-heading uppercase ${
-              mode === "training" 
-                ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white border-2 border-purple-400 shadow-[0_0_15px_rgba(147,51,234,0.5)]" 
+              mode === "training"
+                ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white border-2 border-purple-400 shadow-[0_0_15px_rgba(147,51,234,0.5)]"
                 : "bg-gray-800/50 text-gray-500 border-2 border-gray-700 hover:bg-gray-700/50 hover:text-gray-300"
             }`}
           >
@@ -204,8 +229,8 @@ export default function MiniGamesPage() {
           <Button
             onClick={() => setMode("competition")}
             className={`flex-1 h-12 font-heading uppercase ${
-              mode === "competition" 
-                ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-2 border-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.5)]" 
+              mode === "competition"
+                ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-2 border-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.5)]"
                 : "bg-gray-800/50 text-gray-500 border-2 border-gray-700 hover:bg-gray-700/50 hover:text-gray-300"
             }`}
           >
@@ -224,8 +249,12 @@ export default function MiniGamesPage() {
                 : "border-gray-700 bg-gray-900/50"
             }`}
           >
-            <Zap className={`w-6 h-6 mx-auto mb-1 ${activeTab === "reaction" ? "text-orange-500" : "text-gray-500"}`} />
-            <p className={`font-heading text-sm uppercase ${activeTab === "reaction" ? "text-white" : "text-gray-400"}`}>
+            <Zap
+              className={`w-6 h-6 mx-auto mb-1 ${activeTab === "reaction" ? "text-orange-500" : "text-gray-500"}`}
+            />
+            <p
+              className={`font-heading text-sm uppercase ${activeTab === "reaction" ? "text-white" : "text-gray-400"}`}
+            >
               Reaction
             </p>
           </button>
@@ -237,8 +266,12 @@ export default function MiniGamesPage() {
                 : "border-gray-700 bg-gray-900/50"
             }`}
           >
-            <Target className={`w-6 h-6 mx-auto mb-1 ${activeTab === "batak" ? "text-cyan-500" : "text-gray-500"}`} />
-            <p className={`font-heading text-sm uppercase ${activeTab === "batak" ? "text-white" : "text-gray-400"}`}>
+            <Target
+              className={`w-6 h-6 mx-auto mb-1 ${activeTab === "batak" ? "text-cyan-500" : "text-gray-500"}`}
+            />
+            <p
+              className={`font-heading text-sm uppercase ${activeTab === "batak" ? "text-white" : "text-gray-400"}`}
+            >
               Batak
             </p>
           </button>
@@ -277,37 +310,56 @@ export default function MiniGamesPage() {
                 <p className="font-body text-xs text-gray-500 px-2 mb-2 flex items-center gap-1">
                   <Users className="w-3 h-3" /> Ligue - Ce weekend
                 </p>
-                {(activeTab === "reaction" ? reactionLeaderboard : batakLeaderboard).length === 0 ? (
+                {(activeTab === "reaction" ? reactionLeaderboard : batakLeaderboard).length ===
+                0 ? (
                   <p className="font-body text-sm text-gray-500 text-center py-4">
                     Aucun score enregistré pour ce weekend
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    {(activeTab === "reaction" ? reactionLeaderboard : batakLeaderboard).slice(0, 10).map((entry: any, i: any) => (
-                      <div
-                        key={entry.user_id}
-                        className={`flex items-center gap-3 p-2 rounded-lg ${
-                          entry.user_id === user?.id ? "bg-orange-500/10 border border-orange-500/30" : ""
-                        }`}
-                      >
-                        <div className={`w-8 h-8 rounded flex items-center justify-center ${
-                          i === 0 ? "position-1-gaming" : i === 1 ? "position-2-gaming" : i === 2 ? "position-3-gaming" : "bg-gray-700"
-                        }`}>
-                          <span className={`font-heading text-sm ${i < 3 && i !== 2 ? "text-black" : "text-white"}`}>
-                            {entry.position}
+                    {(activeTab === "reaction" ? reactionLeaderboard : batakLeaderboard)
+                      .slice(0, 10)
+                      .map((entry: any, i: any) => (
+                        <div
+                          key={entry.user_id}
+                          className={`flex items-center gap-3 p-2 rounded-lg ${
+                            entry.user_id === user?.id
+                              ? "bg-orange-500/10 border border-orange-500/30"
+                              : ""
+                          }`}
+                        >
+                          <div
+                            className={`w-8 h-8 rounded flex items-center justify-center ${
+                              i === 0
+                                ? "position-1-gaming"
+                                : i === 1
+                                  ? "position-2-gaming"
+                                  : i === 2
+                                    ? "position-3-gaming"
+                                    : "bg-gray-700"
+                            }`}
+                          >
+                            <span
+                              className={`font-heading text-sm ${i < 3 && i !== 2 ? "text-black" : "text-white"}`}
+                            >
+                              {entry.position}
+                            </span>
+                          </div>
+                          <AvatarDisplay avatar={getAvatarById(entry.avatar_id)} size="sm" />
+                          <span className="font-body text-sm text-white flex-1 truncate">
+                            {entry.username}
+                          </span>
+                          <span
+                            className={`font-data text-sm ${
+                              activeTab === "reaction" ? "text-orange-400" : "text-cyan-400"
+                            }`}
+                          >
+                            {activeTab === "reaction"
+                              ? `${entry.best_score}ms`
+                              : `${entry.best_score} pts`}
                           </span>
                         </div>
-                        <AvatarDisplay avatar={getAvatarById(entry.avatar_id)} size="sm" />
-                        <span className="font-body text-sm text-white flex-1 truncate">
-                          {entry.username}
-                        </span>
-                        <span className={`font-data text-sm ${
-                          activeTab === "reaction" ? "text-orange-400" : "text-cyan-400"
-                        }`}>
-                          {activeTab === "reaction" ? `${entry.best_score}ms` : `${entry.best_score} pts`}
-                        </span>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 )}
               </div>
@@ -318,37 +370,56 @@ export default function MiniGamesPage() {
               <p className="font-body text-xs text-gray-500 px-2 mb-2 flex items-center gap-1">
                 <Crown className="w-3 h-3" /> Classement Global (All-time)
               </p>
-              {(activeTab === "reaction" ? globalReactionLeaderboard : globalBatakLeaderboard).length === 0 ? (
+              {(activeTab === "reaction" ? globalReactionLeaderboard : globalBatakLeaderboard)
+                .length === 0 ? (
                 <p className="font-body text-sm text-gray-500 text-center py-4">
                   Aucun score enregistré
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {(activeTab === "reaction" ? globalReactionLeaderboard : globalBatakLeaderboard).slice(0, 10).map((entry: any, i: any) => (
-                    <div
-                      key={entry.user_id}
-                      className={`flex items-center gap-3 p-2 rounded-lg ${
-                        entry.user_id === user?.id ? "bg-cyan-500/10 border border-cyan-500/30" : ""
-                      }`}
-                    >
-                      <div className={`w-8 h-8 rounded flex items-center justify-center ${
-                        i === 0 ? "position-1-gaming" : i === 1 ? "position-2-gaming" : i === 2 ? "position-3-gaming" : "bg-gray-700"
-                      }`}>
-                        <span className={`font-heading text-sm ${i < 3 && i !== 2 ? "text-black" : "text-white"}`}>
-                          {entry.position}
+                  {(activeTab === "reaction" ? globalReactionLeaderboard : globalBatakLeaderboard)
+                    .slice(0, 10)
+                    .map((entry: any, i: any) => (
+                      <div
+                        key={entry.user_id}
+                        className={`flex items-center gap-3 p-2 rounded-lg ${
+                          entry.user_id === user?.id
+                            ? "bg-cyan-500/10 border border-cyan-500/30"
+                            : ""
+                        }`}
+                      >
+                        <div
+                          className={`w-8 h-8 rounded flex items-center justify-center ${
+                            i === 0
+                              ? "position-1-gaming"
+                              : i === 1
+                                ? "position-2-gaming"
+                                : i === 2
+                                  ? "position-3-gaming"
+                                  : "bg-gray-700"
+                          }`}
+                        >
+                          <span
+                            className={`font-heading text-sm ${i < 3 && i !== 2 ? "text-black" : "text-white"}`}
+                          >
+                            {entry.position}
+                          </span>
+                        </div>
+                        <AvatarDisplay avatar={getAvatarById(entry.avatar_id)} size="sm" />
+                        <span className="font-body text-sm text-white flex-1 truncate">
+                          {entry.username}
+                        </span>
+                        <span
+                          className={`font-data text-sm ${
+                            activeTab === "reaction" ? "text-orange-400" : "text-cyan-400"
+                          }`}
+                        >
+                          {activeTab === "reaction"
+                            ? `${entry.best_score}ms`
+                            : `${entry.best_score} pts`}
                         </span>
                       </div>
-                      <AvatarDisplay avatar={getAvatarById(entry.avatar_id)} size="sm" />
-                      <span className="font-body text-sm text-white flex-1 truncate">
-                        {entry.username}
-                      </span>
-                      <span className={`font-data text-sm ${
-                        activeTab === "reaction" ? "text-orange-400" : "text-cyan-400"
-                      }`}>
-                        {activeTab === "reaction" ? `${entry.best_score}ms` : `${entry.best_score} pts`}
-                      </span>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               )}
             </div>

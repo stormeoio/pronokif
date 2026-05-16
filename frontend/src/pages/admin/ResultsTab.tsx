@@ -1,11 +1,8 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Check, Flag, Trophy, Calendar, Save,
-  Loader2, Zap, RefreshCw, Medal,
-} from "lucide-react";
+import { Check, Flag, Trophy, Calendar, Save, Loader2, Zap, RefreshCw, Medal } from "lucide-react";
 import { BonusPanel, DnfPanel, DriverGrid } from "./ResultsSubComponents";
 import { useResultsState } from "./hooks/useResultsState";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 interface Race {
   id: number;
@@ -31,13 +28,32 @@ interface ResultsTabProps {
 
 export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps) {
   const {
-    selectedRace, selectRace, saving, syncing, selectionMode, setSelectionMode,
-    qualiPole, qualiTop10, sprintQualiPole, sprintQualiTop10,
-    sprintRaceWinner, sprintRaceTop10, raceWinner, raceTop10,
-    safetyCar, setSafetyCar, dnfDrivers, setDnfDrivers,
-    fastestLap, firstCornerLeader,
-    handleDriverSelect, isDriverSelected, getDriverPosition,
-    isComplete, handleSubmit, handleSyncOpenF1,
+    selectedRace,
+    selectRace,
+    saving,
+    syncing,
+    selectionMode,
+    setSelectionMode,
+    qualiPole,
+    qualiTop10,
+    sprintQualiPole,
+    sprintQualiTop10,
+    sprintRaceWinner,
+    sprintRaceTop10,
+    raceWinner,
+    raceTop10,
+    safetyCar,
+    setSafetyCar,
+    dnfDrivers,
+    setDnfDrivers,
+    fastestLap,
+    firstCornerLeader,
+    handleDriverSelect,
+    isDriverSelected,
+    getDriverPosition,
+    isComplete,
+    handleSubmit,
+    handleSyncOpenF1,
   } = useResultsState({ setRaces });
 
   // Selection steps
@@ -45,24 +61,86 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
     const steps = [];
     if (selectedRace?.is_sprint) {
       steps.push(
-        { key: "sprint_quali_pole", label: "Pole SQ", icon: Flag, done: !!sprintQualiPole, count: sprintQualiPole ? 1 : 0, max: 1, isSprint: true },
-        { key: "sprint_quali_top10", label: "Top10 SQ", icon: Medal, done: sprintQualiTop10.length === 10, count: sprintQualiTop10.length, max: 10, isSprint: true },
-        { key: "sprint_race_winner", label: "Win SR", icon: Trophy, done: !!sprintRaceWinner, count: sprintRaceWinner ? 1 : 0, max: 1, isSprint: true },
-        { key: "sprint_race_top10", label: "Top10 SR", icon: Medal, done: sprintRaceTop10.length === 10, count: sprintRaceTop10.length, max: 10, isSprint: true }
+        {
+          key: "sprint_quali_pole",
+          label: "Pole SQ",
+          icon: Flag,
+          done: !!sprintQualiPole,
+          count: sprintQualiPole ? 1 : 0,
+          max: 1,
+          isSprint: true,
+        },
+        {
+          key: "sprint_quali_top10",
+          label: "Top10 SQ",
+          icon: Medal,
+          done: sprintQualiTop10.length === 10,
+          count: sprintQualiTop10.length,
+          max: 10,
+          isSprint: true,
+        },
+        {
+          key: "sprint_race_winner",
+          label: "Win SR",
+          icon: Trophy,
+          done: !!sprintRaceWinner,
+          count: sprintRaceWinner ? 1 : 0,
+          max: 1,
+          isSprint: true,
+        },
+        {
+          key: "sprint_race_top10",
+          label: "Top10 SR",
+          icon: Medal,
+          done: sprintRaceTop10.length === 10,
+          count: sprintRaceTop10.length,
+          max: 10,
+          isSprint: true,
+        },
       );
     }
     steps.push(
-      { key: "quali_pole", label: "Pole", icon: Flag, done: !!qualiPole, count: qualiPole ? 1 : 0, max: 1 },
-      { key: "quali_top10", label: "Top 10 Q", icon: Trophy, done: qualiTop10.length === 10, count: qualiTop10.length, max: 10 },
-      { key: "race_winner", label: "Winner", icon: Trophy, done: !!raceWinner, count: raceWinner ? 1 : 0, max: 1 },
-      { key: "race_top10", label: "Top 10 R", icon: Trophy, done: raceTop10.length === 10, count: raceTop10.length, max: 10 },
-      { key: "bonus", label: "Bonus", icon: Zap, done: true, count: 0, max: 0, isBonus: true }
+      {
+        key: "quali_pole",
+        label: "Pole",
+        icon: Flag,
+        done: !!qualiPole,
+        count: qualiPole ? 1 : 0,
+        max: 1,
+      },
+      {
+        key: "quali_top10",
+        label: "Top 10 Q",
+        icon: Trophy,
+        done: qualiTop10.length === 10,
+        count: qualiTop10.length,
+        max: 10,
+      },
+      {
+        key: "race_winner",
+        label: "Winner",
+        icon: Trophy,
+        done: !!raceWinner,
+        count: raceWinner ? 1 : 0,
+        max: 1,
+      },
+      {
+        key: "race_top10",
+        label: "Top 10 R",
+        icon: Trophy,
+        done: raceTop10.length === 10,
+        count: raceTop10.length,
+        max: 10,
+      },
+      { key: "bonus", label: "Bonus", icon: Zap, done: true, count: 0, max: 0, isBonus: true },
     );
     return steps;
   };
 
   const selectionSteps = getSelectionSteps();
-  const showBonus = ["bonus", "fastest_lap", "first_corner", "dnf_select"].includes(selectionMode as string);
+  const showBonus = ["bonus", "fastest_lap", "first_corner", "dnf_select"].includes(
+    selectionMode as string,
+  );
 
   return (
     <>
@@ -76,24 +154,26 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
         </div>
         <div className="p-3">
           <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-            {races.filter(r => r.is_past).map((race) => (
-              <Button
-                key={race.id}
-                variant={selectedRace?.id === race.id ? "default" : "outline"}
-                onClick={() => selectRace(race as any)}
-                className={`flex-shrink-0 text-xs ${
-                  selectedRace?.id === race.id
-                    ? 'btn-racing'
-                    : race.has_results
-                      ? 'border-green-500/50 text-green-400'
-                      : 'border-gray-700 text-gray-300'
-                }`}
-              >
-                {race.name.replace(" Grand Prix", "")}
-                {race.has_results && <Check className="w-3 h-3 ml-1" />}
-                {race.is_sprint && <Zap className="w-3 h-3 ml-1 text-purple-400" />}
-              </Button>
-            ))}
+            {races
+              .filter((r) => r.is_past)
+              .map((race) => (
+                <Button
+                  key={race.id}
+                  variant={selectedRace?.id === race.id ? "default" : "outline"}
+                  onClick={() => selectRace(race as any)}
+                  className={`flex-shrink-0 text-xs ${
+                    selectedRace?.id === race.id
+                      ? "btn-racing"
+                      : race.has_results
+                        ? "border-green-500/50 text-green-400"
+                        : "border-gray-700 text-gray-300"
+                  }`}
+                >
+                  {race.name.replace(" Grand Prix", "")}
+                  {race.has_results && <Check className="w-3 h-3 ml-1" />}
+                  {race.is_sprint && <Zap className="w-3 h-3 ml-1 text-purple-400" />}
+                </Button>
+              ))}
           </div>
         </div>
       </div>
@@ -116,7 +196,8 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
                   <p className="font-body text-sm text-gray-400">{selectedRace.date as string}</p>
                   {selectedRace.has_results && (
                     <p className="font-body text-xs text-green-400 mt-1 flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Resultats deja enregistres (modification possible)
+                      <Check className="w-3 h-3" /> Resultats deja enregistres (modification
+                      possible)
                     </p>
                   )}
                 </div>
@@ -127,7 +208,11 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
                   size="sm"
                   className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/20"
                 >
-                  {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                  {syncing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
                   <span className="ml-1 text-xs">OpenF1</span>
                 </Button>
               </div>
@@ -146,23 +231,37 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
                   className={`flex-1 min-w-[55px] p-2 rounded-lg border-2 transition-all ${
                     isActive
                       ? step.isBonus
-                        ? 'border-yellow-500 bg-yellow-500/20 glow-yellow'
+                        ? "border-yellow-500 bg-yellow-500/20 glow-yellow"
                         : step.isSprint
-                          ? 'border-purple-500 bg-purple-500/20'
-                          : 'border-orange-500 bg-orange-500/20 glow-orange'
+                          ? "border-purple-500 bg-purple-500/20"
+                          : "border-orange-500 bg-orange-500/20 glow-orange"
                       : step.done && !step.isBonus
-                        ? 'border-green-500/50 bg-green-500/10'
-                        : 'border-gray-700 bg-gray-900/50'
+                        ? "border-green-500/50 bg-green-500/10"
+                        : "border-gray-700 bg-gray-900/50"
                   }`}
                 >
-                  <Icon className={`w-4 h-4 mx-auto mb-1 ${
-                    isActive ? step.isBonus ? 'text-yellow-500' : step.isSprint ? 'text-purple-500' : 'text-orange-500' : step.done && !step.isBonus ? 'text-green-500' : 'text-gray-500'
-                  }`} />
-                  <p className={`font-heading text-[8px] uppercase ${isActive ? 'text-white' : 'text-gray-400'}`}>
+                  <Icon
+                    className={`w-4 h-4 mx-auto mb-1 ${
+                      isActive
+                        ? step.isBonus
+                          ? "text-yellow-500"
+                          : step.isSprint
+                            ? "text-purple-500"
+                            : "text-orange-500"
+                        : step.done && !step.isBonus
+                          ? "text-green-500"
+                          : "text-gray-500"
+                    }`}
+                  />
+                  <p
+                    className={`font-heading text-[8px] uppercase ${isActive ? "text-white" : "text-gray-400"}`}
+                  >
                     {step.label}
                   </p>
                   {!step.isBonus && (
-                    <p className="font-data text-[9px] text-gray-500">{step.count}/{step.max}</p>
+                    <p className="font-data text-[9px] text-gray-500">
+                      {step.count}/{step.max}
+                    </p>
                   )}
                 </button>
               );
@@ -171,17 +270,23 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
 
           {(selectionMode as string) === "bonus" && (
             <BonusPanel
-              safetyCar={safetyCar} setSafetyCar={setSafetyCar}
-              dnfDrivers={dnfDrivers as any} setDnfDrivers={setDnfDrivers as any}
-              fastestLap={fastestLap as any} firstCornerLeader={firstCornerLeader as any}
-              drivers={drivers} setSelectionMode={setSelectionMode as any}
+              safetyCar={safetyCar}
+              setSafetyCar={setSafetyCar}
+              dnfDrivers={dnfDrivers as any}
+              setDnfDrivers={setDnfDrivers as any}
+              fastestLap={fastestLap as any}
+              firstCornerLeader={firstCornerLeader as any}
+              drivers={drivers}
+              setSelectionMode={setSelectionMode as any}
             />
           )}
 
           {selectionMode === "dnf_select" && (
             <DnfPanel
-              dnfDrivers={dnfDrivers as any} setDnfDrivers={setDnfDrivers as any}
-              drivers={drivers} setSelectionMode={setSelectionMode as any}
+              dnfDrivers={dnfDrivers as any}
+              setDnfDrivers={setDnfDrivers as any}
+              drivers={drivers}
+              setSelectionMode={setSelectionMode as any}
             />
           )}
 
@@ -190,14 +295,21 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
               <CardContent className="p-4">
                 <p className="font-body text-gray-300">
                   {selectionMode === "quali_pole" && "Selectionne le pilote en pole position"}
-                  {selectionMode === "quali_top10" && `Selectionne le Top 10 des qualifications (${qualiTop10.length}/10)`}
-                  {selectionMode === "sprint_quali_pole" && "Selectionne le pilote en pole position des qualifs sprint"}
-                  {selectionMode === "sprint_quali_top10" && `Selectionne le Top 10 des qualifs sprint (${sprintQualiTop10.length}/10)`}
-                  {selectionMode === "sprint_race_winner" && "Selectionne le vainqueur de la course sprint"}
-                  {selectionMode === "sprint_race_top10" && `Selectionne le Top 10 de la course sprint (${sprintRaceTop10.length}/10)`}
+                  {selectionMode === "quali_top10" &&
+                    `Selectionne le Top 10 des qualifications (${qualiTop10.length}/10)`}
+                  {selectionMode === "sprint_quali_pole" &&
+                    "Selectionne le pilote en pole position des qualifs sprint"}
+                  {selectionMode === "sprint_quali_top10" &&
+                    `Selectionne le Top 10 des qualifs sprint (${sprintQualiTop10.length}/10)`}
+                  {selectionMode === "sprint_race_winner" &&
+                    "Selectionne le vainqueur de la course sprint"}
+                  {selectionMode === "sprint_race_top10" &&
+                    `Selectionne le Top 10 de la course sprint (${sprintRaceTop10.length}/10)`}
                   {selectionMode === "race_winner" && "Selectionne le vainqueur de la course"}
-                  {selectionMode === "race_top10" && `Selectionne le Top 10 de la course (${raceTop10.length}/10)`}
-                  {selectionMode === "fastest_lap" && "Selectionne le pilote qui a fait le meilleur tour"}
+                  {selectionMode === "race_top10" &&
+                    `Selectionne le Top 10 de la course (${raceTop10.length}/10)`}
+                  {selectionMode === "fastest_lap" &&
+                    "Selectionne le pilote qui a fait le meilleur tour"}
                   {selectionMode === "first_corner" && "Selectionne le leader au premier virage"}
                 </p>
               </CardContent>
@@ -222,14 +334,20 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
               onClick={handleSubmit}
               disabled={!isComplete || saving}
               className={`w-full h-14 font-heading uppercase tracking-wider transition-all ${
-                isComplete ? 'btn-gaming' : 'bg-gray-800 text-gray-500 border-2 border-gray-700'
+                isComplete ? "btn-gaming" : "bg-gray-800 text-gray-500 border-2 border-gray-700"
               }`}
               data-testid="submit-results-btn"
             >
               {saving ? (
-                <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Enregistrement...</>
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Enregistrement...
+                </>
               ) : (
-                <><Save className="w-5 h-5 mr-2" />Enregistrer les resultats</>
+                <>
+                  <Save className="w-5 h-5 mr-2" />
+                  Enregistrer les resultats
+                </>
               )}
             </Button>
           </div>

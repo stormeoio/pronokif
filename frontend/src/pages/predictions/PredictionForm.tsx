@@ -1,19 +1,9 @@
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Check,
-  Flag,
-  Zap,
-  AlertTriangle,
-  Timer,
-  X,
-  Gamepad2,
-  Trophy,
-  Medal,
-} from "lucide-react";
+import { Check, Flag, Zap, AlertTriangle, Timer, X, Gamepad2, Trophy, Medal } from "lucide-react";
 import DriverPicker from "./DriverPicker";
 import type { Driver } from "./DriverPicker";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 /**
  * Selection steps grid, selection info, bonus panel, and driver picker.
@@ -97,28 +87,126 @@ export default function PredictionForm({
 
   // ── Steps definition ────────────────────────────────────────────────
   const getSprintSteps = () => [
-    { key: "sprint_quali_pole", label: "Pole", sublabel: "Sprint Q", icon: Flag, done: !!sprintQualiPole, count: sprintQualiPole ? 1 : 0, max: 1 },
-    { key: "sprint_quali_top10", label: "Top 10", sublabel: "Sprint Q", icon: Medal, done: sprintQualiTop10.length === 10, count: sprintQualiTop10.length, max: 10 },
-    { key: "sprint_race_winner", label: "Winner", sublabel: "Sprint", icon: Trophy, done: !!sprintRaceWinner, count: sprintRaceWinner ? 1 : 0, max: 1 },
-    { key: "sprint_race_top10", label: "Top 10", sublabel: "Sprint", icon: Medal, done: sprintRaceTop10.length === 10, count: sprintRaceTop10.length, max: 10 },
-    { key: "sprint_bonus", label: "Bonus", sublabel: "Sprint", icon: Zap, done: isSprintBonusComplete, count: 0, max: 0, isBonus: true },
-    { key: "minigames", label: "Jeux", sublabel: "Mini", icon: Gamepad2, done: minigamesComplete, count: 0, max: 0, isMinigames: true },
+    {
+      key: "sprint_quali_pole",
+      label: "Pole",
+      sublabel: "Sprint Q",
+      icon: Flag,
+      done: !!sprintQualiPole,
+      count: sprintQualiPole ? 1 : 0,
+      max: 1,
+    },
+    {
+      key: "sprint_quali_top10",
+      label: "Top 10",
+      sublabel: "Sprint Q",
+      icon: Medal,
+      done: sprintQualiTop10.length === 10,
+      count: sprintQualiTop10.length,
+      max: 10,
+    },
+    {
+      key: "sprint_race_winner",
+      label: "Winner",
+      sublabel: "Sprint",
+      icon: Trophy,
+      done: !!sprintRaceWinner,
+      count: sprintRaceWinner ? 1 : 0,
+      max: 1,
+    },
+    {
+      key: "sprint_race_top10",
+      label: "Top 10",
+      sublabel: "Sprint",
+      icon: Medal,
+      done: sprintRaceTop10.length === 10,
+      count: sprintRaceTop10.length,
+      max: 10,
+    },
+    {
+      key: "sprint_bonus",
+      label: "Bonus",
+      sublabel: "Sprint",
+      icon: Zap,
+      done: isSprintBonusComplete,
+      count: 0,
+      max: 0,
+      isBonus: true,
+    },
+    {
+      key: "minigames",
+      label: "Jeux",
+      sublabel: "Mini",
+      icon: Gamepad2,
+      done: minigamesComplete,
+      count: 0,
+      max: 0,
+      isMinigames: true,
+    },
   ];
 
   const getMainSteps = () => [
-    { key: "quali_pole", label: "Pole", sublabel: "Qualif", icon: Flag, done: !!qualiPole, count: qualiPole ? 1 : 0, max: 1 },
-    { key: "quali_top10", label: "Top 10", sublabel: "Qualif", icon: Medal, done: qualiTop10.length === 10, count: qualiTop10.length, max: 10 },
-    { key: "race_winner", label: "Winner", sublabel: "Course", icon: Trophy, done: !!raceWinner, count: raceWinner ? 1 : 0, max: 1 },
-    { key: "race_top10", label: "Top 10", sublabel: "Course", icon: Medal, done: raceTop10.length === 10, count: raceTop10.length, max: 10 },
-    { key: "bonus", label: "Bonus", sublabel: "Paris", icon: Zap, done: isMainBonusComplete, count: 0, max: 0, isBonus: true },
-    { key: "minigames", label: "Jeux", sublabel: "Mini", icon: Gamepad2, done: minigamesComplete, count: 0, max: 0, isMinigames: true },
+    {
+      key: "quali_pole",
+      label: "Pole",
+      sublabel: "Qualif",
+      icon: Flag,
+      done: !!qualiPole,
+      count: qualiPole ? 1 : 0,
+      max: 1,
+    },
+    {
+      key: "quali_top10",
+      label: "Top 10",
+      sublabel: "Qualif",
+      icon: Medal,
+      done: qualiTop10.length === 10,
+      count: qualiTop10.length,
+      max: 10,
+    },
+    {
+      key: "race_winner",
+      label: "Winner",
+      sublabel: "Course",
+      icon: Trophy,
+      done: !!raceWinner,
+      count: raceWinner ? 1 : 0,
+      max: 1,
+    },
+    {
+      key: "race_top10",
+      label: "Top 10",
+      sublabel: "Course",
+      icon: Medal,
+      done: raceTop10.length === 10,
+      count: raceTop10.length,
+      max: 10,
+    },
+    {
+      key: "bonus",
+      label: "Bonus",
+      sublabel: "Paris",
+      icon: Zap,
+      done: isMainBonusComplete,
+      count: 0,
+      max: 0,
+      isBonus: true,
+    },
+    {
+      key: "minigames",
+      label: "Jeux",
+      sublabel: "Mini",
+      icon: Gamepad2,
+      done: minigamesComplete,
+      count: 0,
+      max: 0,
+      isMinigames: true,
+    },
   ];
 
   const steps = activeTab === "sprint" ? getSprintSteps() : getMainSteps();
   const showBonus =
-    activeTab === "sprint"
-      ? selectionMode === "sprint_bonus"
-      : selectionMode === "bonus";
+    activeTab === "sprint" ? selectionMode === "sprint_bonus" : selectionMode === "bonus";
   const bonusModeKey = activeTab === "sprint" ? "sprint_bonus" : "bonus";
 
   // ── Position helper for DriverPicker ────────────────────────────────
@@ -206,12 +294,16 @@ export default function PredictionForm({
               <span className={`font-heading text-[10px] ${labelClass}`}>{step.label}</span>
               <span className="font-body text-[8px] text-gray-500">{step.sublabel}</span>
               {!step.isBonus && !step.isMinigames && (
-                <span className={`font-data text-xs mt-1 ${step.done ? "text-green-400" : "text-gray-400"}`}>
+                <span
+                  className={`font-data text-xs mt-1 ${step.done ? "text-green-400" : "text-gray-400"}`}
+                >
                   {step.count}/{step.max}
                 </span>
               )}
               {(step.isBonus || step.isMinigames) && (
-                <span className={`font-data text-[9px] mt-1 ${step.done ? "text-green-400" : "text-purple-400"}`}>
+                <span
+                  className={`font-data text-[9px] mt-1 ${step.done ? "text-green-400" : "text-purple-400"}`}
+                >
                   {step.done ? "✓" : "→"}
                 </span>
               )}
@@ -221,10 +313,15 @@ export default function PredictionForm({
       </div>
 
       {/* Selection Info */}
-      <SelectionInfo activeTab={activeTab} selectionMode={selectionMode}
-        sprintQualiTop10={sprintQualiTop10} sprintRaceTop10={sprintRaceTop10}
+      <SelectionInfo
+        activeTab={activeTab}
+        selectionMode={selectionMode}
+        sprintQualiTop10={sprintQualiTop10}
+        sprintRaceTop10={sprintRaceTop10}
         sprintDnfDrivers={sprintDnfDrivers}
-        qualiTop10={qualiTop10} raceTop10={raceTop10} dnfDrivers={dnfDrivers}
+        qualiTop10={qualiTop10}
+        raceTop10={raceTop10}
+        dnfDrivers={dnfDrivers}
       />
 
       {/* Bonus Section or Driver Grid */}
@@ -281,9 +378,14 @@ interface SelectionInfoProps {
 }
 
 function SelectionInfo({
-  activeTab, selectionMode,
-  sprintQualiTop10, sprintRaceTop10, sprintDnfDrivers,
-  qualiTop10, raceTop10, dnfDrivers,
+  activeTab,
+  selectionMode,
+  sprintQualiTop10,
+  sprintRaceTop10,
+  sprintDnfDrivers,
+  qualiTop10,
+  raceTop10,
+  dnfDrivers,
 }: SelectionInfoProps) {
   return (
     <Card className="game-card">
@@ -291,25 +393,35 @@ function SelectionInfo({
         <p className="font-body text-gray-300 text-sm">
           {activeTab === "sprint" ? (
             <>
-              {selectionMode === "sprint_quali_pole" && "Sélectionne le pilote en pole des qualifs sprint"}
-              {selectionMode === "sprint_quali_top10" && `Sélectionne le Top 10 des qualifs sprint (${sprintQualiTop10.length}/10)`}
-              {selectionMode === "sprint_race_winner" && "Sélectionne le vainqueur de la course sprint"}
-              {selectionMode === "sprint_race_top10" && `Sélectionne le Top 10 de la course sprint (${sprintRaceTop10.length}/10)`}
+              {selectionMode === "sprint_quali_pole" &&
+                "Sélectionne le pilote en pole des qualifs sprint"}
+              {selectionMode === "sprint_quali_top10" &&
+                `Sélectionne le Top 10 des qualifs sprint (${sprintQualiTop10.length}/10)`}
+              {selectionMode === "sprint_race_winner" &&
+                "Sélectionne le vainqueur de la course sprint"}
+              {selectionMode === "sprint_race_top10" &&
+                `Sélectionne le Top 10 de la course sprint (${sprintRaceTop10.length}/10)`}
               {selectionMode === "sprint_bonus" && "Configure tes paris bonus sprint"}
-              {selectionMode === "sprint_fastest_lap" && "Sélectionne le pilote qui fera le meilleur tour sprint"}
-              {selectionMode === "sprint_first_corner" && "Sélectionne le leader au premier virage du sprint"}
-              {selectionMode === "sprint_dnf_select" && `Sélectionne les abandons sprint (${sprintDnfDrivers.length}/5)`}
+              {selectionMode === "sprint_fastest_lap" &&
+                "Sélectionne le pilote qui fera le meilleur tour sprint"}
+              {selectionMode === "sprint_first_corner" &&
+                "Sélectionne le leader au premier virage du sprint"}
+              {selectionMode === "sprint_dnf_select" &&
+                `Sélectionne les abandons sprint (${sprintDnfDrivers.length}/5)`}
             </>
           ) : (
             <>
               {selectionMode === "quali_pole" && "Sélectionne le pilote en pole position"}
-              {selectionMode === "quali_top10" && `Sélectionne le Top 10 des qualifications (${qualiTop10.length}/10)`}
+              {selectionMode === "quali_top10" &&
+                `Sélectionne le Top 10 des qualifications (${qualiTop10.length}/10)`}
               {selectionMode === "race_winner" && "Sélectionne le vainqueur de la course"}
-              {selectionMode === "race_top10" && `Sélectionne le Top 10 de la course (${raceTop10.length}/10)`}
+              {selectionMode === "race_top10" &&
+                `Sélectionne le Top 10 de la course (${raceTop10.length}/10)`}
               {selectionMode === "bonus" && "Configure tes paris bonus"}
               {selectionMode === "fastest_lap" && "Sélectionne le pilote qui fera le meilleur tour"}
               {selectionMode === "first_corner" && "Sélectionne le leader au premier virage"}
-              {selectionMode === "dnf_select" && `Sélectionne les abandons (${dnfDrivers.length}/5)`}
+              {selectionMode === "dnf_select" &&
+                `Sélectionne les abandons (${dnfDrivers.length}/5)`}
             </>
           )}
         </p>
@@ -333,11 +445,17 @@ interface BonusPanelProps {
 }
 
 function BonusPanel({
-  activeTab, drivers, setSelectionMode,
-  safetyCar, setSafetyCar,
-  fastestLap, firstCorner,
-  noDnf, setNoDnf,
-  dnfDrivers, setDnfDrivers,
+  activeTab,
+  drivers,
+  setSelectionMode,
+  safetyCar,
+  setSafetyCar,
+  fastestLap,
+  firstCorner,
+  noDnf,
+  setNoDnf,
+  dnfDrivers,
+  setDnfDrivers,
 }: BonusPanelProps) {
   return (
     <div className="space-y-4">
@@ -360,19 +478,25 @@ function BonusPanel({
                 className={`px-4 py-2 rounded-lg font-heading text-sm transition-all ${
                   safetyCar === true ? "bg-green-500 text-white" : "bg-white/10 text-gray-400"
                 }`}
-              >OUI</button>
+              >
+                OUI
+              </button>
               <button
                 onClick={() => setSafetyCar(false)}
                 className={`px-4 py-2 rounded-lg font-heading text-sm transition-all ${
                   safetyCar === false ? "bg-red-500 text-white" : "bg-white/10 text-gray-400"
                 }`}
-              >NON</button>
+              >
+                NON
+              </button>
             </div>
           </div>
 
           {/* Fastest Lap */}
           <button
-            onClick={() => setSelectionMode(activeTab === "sprint" ? "sprint_fastest_lap" : "fastest_lap")}
+            onClick={() =>
+              setSelectionMode(activeTab === "sprint" ? "sprint_fastest_lap" : "fastest_lap")
+            }
             className="w-full flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all"
           >
             <div className="flex items-center gap-3">
@@ -388,7 +512,9 @@ function BonusPanel({
 
           {/* First Corner Leader */}
           <button
-            onClick={() => setSelectionMode(activeTab === "sprint" ? "sprint_first_corner" : "first_corner")}
+            onClick={() =>
+              setSelectionMode(activeTab === "sprint" ? "sprint_first_corner" : "first_corner")
+            }
             className="w-full flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all"
           >
             <div className="flex items-center gap-3">

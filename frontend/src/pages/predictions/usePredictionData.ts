@@ -52,12 +52,8 @@ function useMinigamesCompletion() {
           apiClient.get("/minigames/reaction/scores").catch(() => ({ data: [] })),
           apiClient.get("/minigames/batak/scores").catch(() => ({ data: [] })),
         ]);
-        const reactionComp = reactionRes.data.filter(
-          (s: any) => s.mode === "competition"
-        ).length;
-        const batakComp = batakRes.data.filter(
-          (s: any) => s.mode === "competition"
-        ).length;
+        const reactionComp = reactionRes.data.filter((s: any) => s.mode === "competition").length;
+        const batakComp = batakRes.data.filter((s: any) => s.mode === "competition").length;
         return reactionComp >= 3 && batakComp >= 3;
       } catch {
         return false;

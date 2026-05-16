@@ -78,9 +78,7 @@ const mockConstructorsResponse = {
 const mockScheduleResponse = {
   MRData: {
     RaceTable: {
-      Races: [
-        { round: "1", raceName: "Bahrain Grand Prix", Circuit: { circuitName: "Bahrain" } },
-      ],
+      Races: [{ round: "1", raceName: "Bahrain Grand Prix", Circuit: { circuitName: "Bahrain" } }],
     },
   },
 };

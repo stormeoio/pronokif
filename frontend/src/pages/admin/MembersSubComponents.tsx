@@ -1,7 +1,15 @@
-import { Button } from "@/components/ui/button";
 import {
-  Loader2, Users, X, AlertTriangle, Info, Trash2, History, Globe, Monitor,
+  Loader2,
+  Users,
+  X,
+  AlertTriangle,
+  Info,
+  Trash2,
+  History,
+  Globe,
+  Monitor,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface MemberDetails {
   id: number;
@@ -38,7 +46,12 @@ interface DeleteConfirmModalProps {
   onConfirm: () => void;
 }
 
-export function DeleteConfirmModal({ memberDetails, deletingMember, onCancel, onConfirm }: DeleteConfirmModalProps) {
+export function DeleteConfirmModal({
+  memberDetails,
+  deletingMember,
+  onCancel,
+  onConfirm,
+}: DeleteConfirmModalProps) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
       <div className="w-full max-w-md card-arcade overflow-hidden">
@@ -50,10 +63,15 @@ export function DeleteConfirmModal({ memberDetails, deletingMember, onCancel, on
         </div>
         <div className="p-4 space-y-4">
           <p className="font-body text-gray-300">
-            Etes-vous sur de vouloir supprimer le compte de <span className="text-white font-semibold">{memberDetails.username || memberDetails.email}</span> ?
+            Etes-vous sur de vouloir supprimer le compte de{" "}
+            <span className="text-white font-semibold">
+              {memberDetails.username || memberDetails.email}
+            </span>{" "}
+            ?
           </p>
           <p className="font-body text-sm text-red-400 bg-red-500/10 p-3 rounded-lg">
-            {"⚠️"} Cette action est irreversible. Toutes les donnees de ce membre seront supprimees : pronostics, scores, statistiques, etc.
+            {"⚠️"} Cette action est irreversible. Toutes les donnees de ce membre seront supprimees
+            : pronostics, scores, statistiques, etc.
           </p>
           <div className="flex gap-3">
             <Button
@@ -71,9 +89,13 @@ export function DeleteConfirmModal({ memberDetails, deletingMember, onCancel, on
               data-testid="confirm-delete-member-btn"
             >
               {deletingMember ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Suppression...</>
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Suppression...
+                </>
               ) : (
-                <><Trash2 className="w-4 h-4 mr-2" /> Supprimer</>
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" /> Supprimer
+                </>
               )}
             </Button>
           </div>
@@ -97,9 +119,16 @@ interface MemberDetailsModalProps {
 }
 
 export function MemberDetailsModal({
-  loadingMemberDetails, memberDetails, memberDetailTab, setMemberDetailTab,
-  memberActivity, loadingActivity, selectedMember, fetchMemberActivity,
-  onClose, onDelete,
+  loadingMemberDetails,
+  memberDetails,
+  memberDetailTab,
+  setMemberDetailTab,
+  memberActivity,
+  loadingActivity,
+  selectedMember,
+  fetchMemberActivity,
+  onClose,
+  onDelete,
 }: MemberDetailsModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
@@ -118,79 +147,81 @@ export function MemberDetailsModal({
           <div className="p-8 text-center">
             <Loader2 className="w-6 h-6 text-green-500 animate-spin mx-auto" />
           </div>
-        ) : memberDetails && (
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-4 space-y-4">
-              {/* Basic Info Header */}
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-heading text-xl">
-                  {memberDetails.username?.charAt(0)?.toUpperCase() || "?"}
+        ) : (
+          memberDetails && (
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-4 space-y-4">
+                {/* Basic Info Header */}
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-heading text-xl">
+                    {memberDetails.username?.charAt(0)?.toUpperCase() || "?"}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-heading text-lg text-white">
+                      {memberDetails.username || "Sans pseudo"}
+                    </h4>
+                    <p className="font-body text-sm text-gray-400">{memberDetails.email}</p>
+                    <p className="font-body text-xs text-gray-500">
+                      Inscrit le {new Date(memberDetails.created_at).toLocaleDateString("fr-FR")}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h4 className="font-heading text-lg text-white">{memberDetails.username || "Sans pseudo"}</h4>
-                  <p className="font-body text-sm text-gray-400">{memberDetails.email}</p>
-                  <p className="font-body text-xs text-gray-500">
-                    Inscrit le {new Date(memberDetails.created_at).toLocaleDateString('fr-FR')}
-                  </p>
+
+                {/* Tab Selector */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setMemberDetailTab("info")}
+                    className={`flex-1 p-2 rounded-lg font-heading text-xs uppercase transition-all flex items-center justify-center gap-2 ${
+                      memberDetailTab === "info"
+                        ? "bg-green-500/20 border-2 border-green-500 text-green-400"
+                        : "bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10"
+                    }`}
+                  >
+                    <Info className="w-4 h-4" />
+                    Infos
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMemberDetailTab("activity");
+                      if (!memberActivity) {
+                        fetchMemberActivity(selectedMember);
+                      }
+                    }}
+                    className={`flex-1 p-2 rounded-lg font-heading text-xs uppercase transition-all flex items-center justify-center gap-2 ${
+                      memberDetailTab === "activity"
+                        ? "bg-cyan-500/20 border-2 border-cyan-500 text-cyan-400"
+                        : "bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10"
+                    }`}
+                  >
+                    <History className="w-4 h-4" />
+                    Activite
+                  </button>
                 </div>
-              </div>
 
-              {/* Tab Selector */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setMemberDetailTab("info")}
-                  className={`flex-1 p-2 rounded-lg font-heading text-xs uppercase transition-all flex items-center justify-center gap-2 ${
-                    memberDetailTab === "info"
-                      ? 'bg-green-500/20 border-2 border-green-500 text-green-400'
-                      : 'bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10'
-                  }`}
-                >
-                  <Info className="w-4 h-4" />
-                  Infos
-                </button>
-                <button
-                  onClick={() => {
-                    setMemberDetailTab("activity");
-                    if (!memberActivity) {
-                      fetchMemberActivity(selectedMember);
-                    }
-                  }}
-                  className={`flex-1 p-2 rounded-lg font-heading text-xs uppercase transition-all flex items-center justify-center gap-2 ${
-                    memberDetailTab === "activity"
-                      ? 'bg-cyan-500/20 border-2 border-cyan-500 text-cyan-400'
-                      : 'bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10'
-                  }`}
-                >
-                  <History className="w-4 h-4" />
-                  Activite
-                </button>
-              </div>
+                {memberDetailTab === "info" && <MemberInfoContent memberDetails={memberDetails} />}
 
-              {memberDetailTab === "info" && (
-                <MemberInfoContent memberDetails={memberDetails} />
-              )}
+                {memberDetailTab === "activity" && (
+                  <MemberActivityContent
+                    loadingActivity={loadingActivity}
+                    memberActivity={memberActivity}
+                  />
+                )}
 
-              {memberDetailTab === "activity" && (
-                <MemberActivityContent
-                  loadingActivity={loadingActivity}
-                  memberActivity={memberActivity}
-                />
-              )}
-
-              {/* Delete Button */}
-              <div className="pt-4 border-t border-gray-700/50">
-                <Button
-                  onClick={onDelete}
-                  variant="outline"
-                  className="w-full border-red-500/50 text-red-400 hover:bg-red-500/20 hover:border-red-500"
-                  data-testid="delete-member-btn"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Supprimer ce compte
-                </Button>
+                {/* Delete Button */}
+                <div className="pt-4 border-t border-gray-700/50">
+                  <Button
+                    onClick={onDelete}
+                    variant="outline"
+                    className="w-full border-red-500/50 text-red-400 hover:bg-red-500/20 hover:border-red-500"
+                    data-testid="delete-member-btn"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Supprimer ce compte
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
+          )
         )}
       </div>
     </div>
@@ -214,7 +245,9 @@ export function MemberInfoContent({ memberDetails }: MemberInfoContentProps) {
           <p className="font-body text-xs text-gray-500">XP</p>
         </div>
         <div className="bg-white/5 rounded-lg p-3 text-center">
-          <p className="font-data text-xl text-green-400">{memberDetails.stats?.predictions_count || 0}</p>
+          <p className="font-data text-xl text-green-400">
+            {memberDetails.stats?.predictions_count || 0}
+          </p>
           <p className="font-body text-xs text-gray-500">Pronostics</p>
         </div>
         <div className="bg-white/5 rounded-lg p-3 text-center">
@@ -249,7 +282,7 @@ export function MemberInfoContent({ memberDetails }: MemberInfoContentProps) {
         <div className="bg-white/5 rounded-lg p-3">
           <h5 className="font-heading text-xs text-gray-400 uppercase mb-2">Ligues</h5>
           <div className="space-y-1">
-            {memberDetails.leagues?.map(league => (
+            {memberDetails.leagues?.map((league) => (
               <div key={league.id} className="flex justify-between text-sm">
                 <span className="text-white">{league.name}</span>
                 <span className="text-gray-500">{league.members_count} membres</span>
@@ -267,7 +300,10 @@ interface MemberActivityContentProps {
   memberActivity: MemberActivity | null;
 }
 
-export function MemberActivityContent({ loadingActivity, memberActivity }: MemberActivityContentProps) {
+export function MemberActivityContent({
+  loadingActivity,
+  memberActivity,
+}: MemberActivityContentProps) {
   return (
     <div className="space-y-3">
       {loadingActivity ? (
@@ -291,12 +327,12 @@ export function MemberActivityContent({ loadingActivity, memberActivity }: Membe
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-body text-sm text-white">
-                    {new Date(session.login_at).toLocaleDateString('fr-FR', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
+                    {new Date(session.login_at).toLocaleDateString("fr-FR", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
                     })}
                   </span>
                   {index === 0 && (

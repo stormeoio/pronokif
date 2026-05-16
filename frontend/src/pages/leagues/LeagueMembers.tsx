@@ -9,7 +9,13 @@ interface LeagueMembersProps {
   getAvatar: (member: Record<string, any>) => string | null;
 }
 
-export default function LeagueMembers({ members, leaderboard, userId, ownerId, getAvatar }: LeagueMembersProps) {
+export default function LeagueMembers({
+  members,
+  leaderboard,
+  userId,
+  ownerId,
+  getAvatar,
+}: LeagueMembersProps) {
   const navigate = useNavigate();
 
   return (
@@ -46,7 +52,9 @@ export default function LeagueMembers({ members, leaderboard, userId, ownerId, g
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className={`font-heading text-sm truncate ${isMe ? "text-cyan-400" : "text-white"}`}>
+                  <p
+                    className={`font-heading text-sm truncate ${isMe ? "text-cyan-400" : "text-white"}`}
+                  >
                     {member.username || "Anonyme"}
                   </p>
                   {isMe && (

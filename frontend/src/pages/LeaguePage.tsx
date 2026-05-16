@@ -1,21 +1,24 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth";
-import { apiClient } from "@/lib/api";
+import { toast } from "sonner";
+import { Users, Plus, LogIn, Trophy } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { toast } from "sonner";
-import { Users, Plus, LogIn, Trophy } from "lucide-react";
-
 import LeagueCreatedScreen from "./leagues/LeagueCreatedScreen";
 import LeagueList from "./leagues/LeagueList";
+import { apiClient } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 export default function LeaguePage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [createdLeague, setCreatedLeague] = useState<{ name: string; code: string; id: string } | null>(null);
+  const [createdLeague, setCreatedLeague] = useState<{
+    name: string;
+    code: string;
+    id: string;
+  } | null>(null);
   const [copied, setCopied] = useState(false);
   const { updateUser, user } = useAuth();
   const navigate = useNavigate();
@@ -30,7 +33,9 @@ export default function LeaguePage() {
   const { data: unreadByLeague = {} } = useQuery({
     queryKey: ["/leagues/unread-messages"],
     queryFn: async () => {
-      const res = await apiClient.get("/leagues/unread-messages").catch(() => ({ data: { by_league: {} } }));
+      const res = await apiClient
+        .get("/leagues/unread-messages")
+        .catch(() => ({ data: { by_league: {} } }));
       return res.data.by_league || {};
     },
   });
@@ -54,7 +59,10 @@ export default function LeaguePage() {
       invalidateLeagues();
       (e.target as HTMLFormElement).reset();
     } catch (error: unknown) {
-      toast.error((error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Code invalide");
+      toast.error(
+        (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
+          "Code invalide",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +81,10 @@ export default function LeaguePage() {
       toast.success("Ligue creee !");
       invalidateLeagues();
     } catch (error: unknown) {
-      toast.error((error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Erreur lors de la creation");
+      toast.error(
+        (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
+          "Erreur lors de la creation",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -96,7 +107,11 @@ export default function LeaguePage() {
 
     if (navigator.share) {
       try {
-        await navigator.share({ title: `PRONOKIF - ${league.name}`, text: shareText, url: shareUrl });
+        await navigator.share({
+          title: `PRONOKIF - ${league.name}`,
+          text: shareText,
+          url: shareUrl,
+        });
       } catch (e: unknown) {
         if ((e as { name?: string }).name !== "AbortError") copyCode(league.code);
       }
@@ -119,7 +134,10 @@ export default function LeaguePage() {
         copied={copied as any}
         onCopyCode={() => copyCode()}
         onShareCode={() => shareLeague(createdLeague)}
-        onDone={() => { setCreatedLeague(null); navigate("/"); }}
+        onDone={() => {
+          setCreatedLeague(null);
+          navigate("/");
+        }}
       />
     );
   }
@@ -136,9 +154,7 @@ export default function LeaguePage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-700 border-2 border-yellow-400/50 mb-4 shadow-xl animate-gold">
             <Trophy className="w-8 h-8 text-white" strokeWidth={1.5} />
           </div>
-          <h1 className="font-heading text-2xl uppercase tracking-wider text-white">
-            Mes Ligues
-          </h1>
+          <h1 className="font-heading text-2xl uppercase tracking-wider text-white">Mes Ligues</h1>
         </div>
 
         {/* My Leagues List */}
@@ -159,19 +175,25 @@ export default function LeaguePage() {
           <Tabs defaultValue="join" className="w-full">
             <div className="p-1 bg-gradient-to-r from-yellow-600/20 to-transparent">
               <TabsList className="grid w-full grid-cols-2 bg-transparent gap-1">
-                <TabsTrigger value="join"
+                <TabsTrigger
+                  value="join"
                   className="font-heading uppercase tracking-wider text-sm text-gray-400
                             data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-yellow-700
                             data-[state=active]:text-white data-[state=active]:shadow-lg
-                            rounded-lg py-2.5 transition-all" data-testid="tab-join">
+                            rounded-lg py-2.5 transition-all"
+                  data-testid="tab-join"
+                >
                   <LogIn className="w-4 h-4 mr-2" />
                   Rejoindre
                 </TabsTrigger>
-                <TabsTrigger value="create"
+                <TabsTrigger
+                  value="create"
                   className="font-heading uppercase tracking-wider text-sm text-gray-400
                             data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-700
                             data-[state=active]:text-white data-[state=active]:shadow-lg
-                            rounded-lg py-2.5 transition-all" data-testid="tab-create">
+                            rounded-lg py-2.5 transition-all"
+                  data-testid="tab-create"
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Creer
                 </TabsTrigger>
@@ -186,20 +208,38 @@ export default function LeaguePage() {
               </div>
               <form onSubmit={handleJoin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="code" className="font-heading text-xs uppercase tracking-wider text-gray-400">Code d'invitation</Label>
-                  <Input id="code" name="code" required
+                  <Label
+                    htmlFor="code"
+                    className="font-heading text-xs uppercase tracking-wider text-gray-400"
+                  >
+                    Code d'invitation
+                  </Label>
+                  <Input
+                    id="code"
+                    name="code"
+                    required
                     className="h-14 text-center font-data text-2xl uppercase tracking-[0.3em] bg-gray-900/60 border-gray-700
                              focus:border-yellow-500 focus:ring-yellow-500/20"
-                    maxLength={6} data-testid="join-code-input" />
+                    maxLength={6}
+                    data-testid="join-code-input"
+                  />
                 </div>
-                <Button type="submit" disabled={isLoading} className="w-full h-14 btn-racing font-heading uppercase tracking-wider" data-testid="join-btn">
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-14 btn-racing font-heading uppercase tracking-wider"
+                  data-testid="join-btn"
+                >
                   {isLoading ? (
                     <span className="flex items-center gap-2">
                       <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       Connexion...
                     </span>
                   ) : (
-                    <><LogIn className="w-5 h-5 mr-2" />Rejoindre la ligue</>
+                    <>
+                      <LogIn className="w-5 h-5 mr-2" />
+                      Rejoindre la ligue
+                    </>
                   )}
                 </Button>
               </form>
@@ -213,20 +253,38 @@ export default function LeaguePage() {
               </div>
               <form onSubmit={handleCreate} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="font-heading text-xs uppercase tracking-wider text-gray-400">Nom de la ligue</Label>
-                  <Input id="name" name="name" required
+                  <Label
+                    htmlFor="name"
+                    className="font-heading text-xs uppercase tracking-wider text-gray-400"
+                  >
+                    Nom de la ligue
+                  </Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    required
                     className="h-12 bg-gray-900/60 border-gray-700 font-body
                              focus:border-cyan-500 focus:ring-cyan-500/20"
-                    placeholder="Ex: Les Champions F1" data-testid="league-name-input" />
+                    placeholder="Ex: Les Champions F1"
+                    data-testid="league-name-input"
+                  />
                 </div>
-                <Button type="submit" disabled={isLoading} className="w-full h-14 btn-neon font-heading uppercase tracking-wider" data-testid="create-btn">
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-14 btn-neon font-heading uppercase tracking-wider"
+                  data-testid="create-btn"
+                >
                   {isLoading ? (
                     <span className="flex items-center gap-2">
                       <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       Creation...
                     </span>
                   ) : (
-                    <><Plus className="w-5 h-5 mr-2" />Creer ma ligue</>
+                    <>
+                      <Plus className="w-5 h-5 mr-2" />
+                      Creer ma ligue
+                    </>
                   )}
                 </Button>
               </form>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Calendar, ChevronRight, Loader2 } from "lucide-react";
-import { JOLPICA_API, OPENF1_API, isRaceCompleted } from "./championshipUtils";
 import { toast } from "sonner";
+import { JOLPICA_API, OPENF1_API, isRaceCompleted } from "./championshipUtils";
 import {
   RaceResultsList,
   QualifyingResultsList,
@@ -24,8 +24,17 @@ interface RaceResults {
   qualifying: Array<Record<string, unknown>>;
   sprint: Array<Record<string, unknown>>;
   sprintQualifying: Array<Record<string, unknown>>;
-  practice: { fp1: Array<Record<string, unknown>>; fp2: Array<Record<string, unknown>>; fp3: Array<Record<string, unknown>> };
-  fastestLap: { driver?: Record<string, unknown>; constructor?: Record<string, unknown>; time: string; lap: string } | null;
+  practice: {
+    fp1: Array<Record<string, unknown>>;
+    fp2: Array<Record<string, unknown>>;
+    fp3: Array<Record<string, unknown>>;
+  };
+  fastestLap: {
+    driver?: Record<string, unknown>;
+    constructor?: Record<string, unknown>;
+    time: string;
+    lap: string;
+  } | null;
   firstCornerLeader: number | null;
   sprintFirstCornerLeader: number | null;
   hasSprint: boolean;
@@ -59,7 +68,11 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
       const qualifyingData = qualifyingRes.ok ? await qualifyingRes.json() : null;
       const sprintData = sprintRes?.ok ? await sprintRes.json() : null;
 
-      let practiceData: { fp1: Record<string, unknown>[]; fp2: Record<string, unknown>[]; fp3: Record<string, unknown>[] } = { fp1: [], fp2: [], fp3: [] };
+      const practiceData: {
+        fp1: Record<string, unknown>[];
+        fp2: Record<string, unknown>[];
+        fp3: Record<string, unknown>[];
+      } = { fp1: [], fp2: [], fp3: [] };
       let fastestLap: RaceResults["fastestLap"] = null;
       let firstCornerLeader: number | null = null;
       let sprintFirstCornerLeader: number | null = null;
@@ -74,12 +87,12 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
               m.circuit_short_name?.toLowerCase().includes(circuitName) ||
               m.meeting_name
                 ?.toLowerCase()
-                .includes(race.raceName?.toLowerCase().replace(" grand prix", ""))
+                .includes(race.raceName?.toLowerCase().replace(" grand prix", "")),
           );
 
           if (meeting) {
             const sessionsRes = await fetch(
-              `${OPENF1_API}/sessions?meeting_key=${meeting.meeting_key}`
+              `${OPENF1_API}/sessions?meeting_key=${meeting.meeting_key}`,
             );
             if (sessionsRes.ok) {
               const sessions = await sessionsRes.json();
@@ -87,11 +100,14 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
               for (const session of sessions) {
                 if (session.session_name?.includes("Practice")) {
                   const lapsRes = await fetch(
-                    `${OPENF1_API}/laps?session_key=${session.session_key}`
+                    `${OPENF1_API}/laps?session_key=${session.session_key}`,
                   );
                   if (lapsRes.ok) {
                     const laps = await lapsRes.json();
-                    const bestLaps: Record<number, { driver_number: number; lap_duration: number }> = {};
+                    const bestLaps: Record<
+                      number,
+                      { driver_number: number; lap_duration: number }
+                    > = {};
                     laps.forEach((lap: { driver_number: number; lap_duration: number }) => {
                       if (
                         lap.lap_duration &&
@@ -102,7 +118,8 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
                       }
                     });
                     const sortedLaps = Object.values(bestLaps).sort(
-                      (a: { lap_duration: number }, b: { lap_duration: number }) => a.lap_duration - b.lap_duration
+                      (a: { lap_duration: number }, b: { lap_duration: number }) =>
+                        a.lap_duration - b.lap_duration,
                     );
 
                     if (session.session_name === "Practice 1") practiceData.fp1 = sortedLaps;
@@ -113,11 +130,13 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
 
                 if (session.session_name === "Race") {
                   const positionsRes = await fetch(
-                    `${OPENF1_API}/position?session_key=${session.session_key}`
+                    `${OPENF1_API}/position?session_key=${session.session_key}`,
                   );
                   if (positionsRes.ok) {
                     const positions = await positionsRes.json();
-                    const firstPositions = positions.filter((p: any) => p.position === 1).slice(0, 5);
+                    const firstPositions = positions
+                      .filter((p: any) => p.position === 1)
+                      .slice(0, 5);
                     if (firstPositions.length > 1) {
                       firstCornerLeader =
                         firstPositions[1]?.driver_number || firstPositions[0]?.driver_number;
@@ -127,11 +146,13 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
 
                 if (session.session_name === "Sprint") {
                   const positionsRes = await fetch(
-                    `${OPENF1_API}/position?session_key=${session.session_key}`
+                    `${OPENF1_API}/position?session_key=${session.session_key}`,
                   );
                   if (positionsRes.ok) {
                     const positions = await positionsRes.json();
-                    const firstPositions = positions.filter((p: any) => p.position === 1).slice(0, 5);
+                    const firstPositions = positions
+                      .filter((p: any) => p.position === 1)
+                      .slice(0, 5);
                     if (firstPositions.length > 1) {
                       sprintFirstCornerLeader =
                         firstPositions[1]?.driver_number || firstPositions[0]?.driver_number;
@@ -277,9 +298,15 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
               </div>
 
               {resultsTab === "race" && <RaceResultsList results={raceResults.race as any} />}
-              {resultsTab === "qualifying" && <QualifyingResultsList results={raceResults.qualifying as any} />}
-              {resultsTab === "sprint" && raceResults.hasSprint && <SprintResultsList results={raceResults.sprint as any} />}
-              {resultsTab === "practice" && <PracticeResultsList practice={raceResults.practice as any} />}
+              {resultsTab === "qualifying" && (
+                <QualifyingResultsList results={raceResults.qualifying as any} />
+              )}
+              {resultsTab === "sprint" && raceResults.hasSprint && (
+                <SprintResultsList results={raceResults.sprint as any} />
+              )}
+              {resultsTab === "practice" && (
+                <PracticeResultsList practice={raceResults.practice as any} />
+              )}
               {resultsTab === "extras" && <ExtrasPanel raceResults={raceResults as any} />}
             </>
           ) : (

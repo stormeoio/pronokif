@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/lib/auth";
+import { toast } from "sonner";
+import { Mail, Lock, ChevronRight } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { toast } from "sonner";
-import { Mail, Lock, ChevronRight } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 
 // Hero banner with F1 car (no text - we overlay via CSS)
-const HERO_BANNER = "https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/d9b6f1a65194f54bbc34bb7e15e4af8069ab64dab312c6c3be1db79b2ca45259.png";
+const HERO_BANNER =
+  "https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/d9b6f1a65194f54bbc34bb7e15e4af8069ab64dab312c6c3be1db79b2ca45259.png";
 
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -26,12 +27,11 @@ export default function AuthPage() {
     const password = formData.get("password") as string;
 
     try {
-      const user = type === "login" 
-        ? await login(email, password)
-        : await register(email, password);
+      const user =
+        type === "login" ? await login(email, password) : await register(email, password);
 
       toast.success(type === "login" ? "Connexion réussie !" : "Compte créé !");
-      
+
       if (!user.username) {
         navigate("/set-username");
       } else if (!user.current_league_id) {
@@ -40,7 +40,9 @@ export default function AuthPage() {
         navigate("/");
       }
     } catch (error: unknown) {
-      const message = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Une erreur est survenue";
+      const message =
+        (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
+        "Une erreur est survenue";
       toast.error(message);
     } finally {
       setIsLoading(false);
@@ -51,9 +53,9 @@ export default function AuthPage() {
     <div className="min-h-screen flex flex-col bg-app-main relative overflow-hidden">
       {/* Hero Banner - Top Section */}
       <div className="relative w-full h-64 flex-shrink-0">
-        <img 
-          src={HERO_BANNER} 
-          alt="PRONOKIF - Pronostics F1" 
+        <img
+          src={HERO_BANNER}
+          alt="PRONOKIF - Pronostics F1"
           className="w-full h-full object-cover object-top"
         />
         {/* Gradient overlay at bottom */}
@@ -82,8 +84,8 @@ export default function AuthPage() {
               {/* Tab Headers */}
               <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 p-1">
                 <TabsList className="grid w-full grid-cols-2 bg-transparent gap-1">
-                  <TabsTrigger 
-                    value="login" 
+                  <TabsTrigger
+                    value="login"
                     className="font-heading uppercase tracking-wider text-sm text-gray-400 
                               data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-700
                               data-[state=active]:text-white data-[state=active]:shadow-lg
@@ -92,7 +94,7 @@ export default function AuthPage() {
                   >
                     Connexion
                   </TabsTrigger>
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="register"
                     className="font-heading uppercase tracking-wider text-sm text-gray-400 
                               data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-700
@@ -118,7 +120,9 @@ export default function AuthPage() {
                   </CardHeader>
                   <CardContent className="space-y-4 pb-6">
                     <div className="space-y-2">
-                      <Label htmlFor="login-email" className="font-body text-gray-300 text-sm">Email</Label>
+                      <Label htmlFor="login-email" className="font-body text-gray-300 text-sm">
+                        Email
+                      </Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                         <Input
@@ -134,7 +138,9 @@ export default function AuthPage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="login-password" className="font-body text-gray-300 text-sm">Mot de passe</Label>
+                      <Label htmlFor="login-password" className="font-body text-gray-300 text-sm">
+                        Mot de passe
+                      </Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                         <Input
@@ -150,8 +156,8 @@ export default function AuthPage() {
                         />
                       </div>
                     </div>
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       disabled={isLoading}
                       className="w-full h-14 btn-racing font-heading uppercase tracking-wider text-base mt-2"
                       data-testid="login-submit"
@@ -176,7 +182,9 @@ export default function AuthPage() {
                   </CardHeader>
                   <CardContent className="space-y-4 pb-6">
                     <div className="space-y-2">
-                      <Label htmlFor="register-email" className="font-body text-gray-300 text-sm">Email</Label>
+                      <Label htmlFor="register-email" className="font-body text-gray-300 text-sm">
+                        Email
+                      </Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                         <Input
@@ -192,7 +200,12 @@ export default function AuthPage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="register-password" className="font-body text-gray-300 text-sm">Mot de passe</Label>
+                      <Label
+                        htmlFor="register-password"
+                        className="font-body text-gray-300 text-sm"
+                      >
+                        Mot de passe
+                      </Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                         <Input
@@ -208,8 +221,8 @@ export default function AuthPage() {
                         />
                       </div>
                     </div>
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       disabled={isLoading}
                       className="w-full h-14 btn-racing font-heading uppercase tracking-wider text-base mt-2"
                       data-testid="register-submit"

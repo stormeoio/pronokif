@@ -1,12 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth";
-import { apiClient } from "@/lib/api";
-import { Button } from "../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { toast } from "sonner";
 import { ChevronLeft, Crown, Trophy, Users, Globe, Zap } from "lucide-react";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { AvatarDisplay } from "../components/AvatarDisplay";
+import { apiClient } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 interface LeaderboardEntry {
   user_id: string;
@@ -52,7 +52,7 @@ export default function GlobalLeaderboardPage() {
   const totalPlayers = lbData?.total_players || 0;
 
   const getAvatarById = (avatarId: string | undefined): any => {
-    return avatars?.all?.find(a => a.id === avatarId) || null;
+    return avatars?.all?.find((a) => a.id === avatarId) || null;
   };
 
   if (loading) {
@@ -61,7 +61,9 @@ export default function GlobalLeaderboardPage() {
         <div className="max-w-2xl mx-auto space-y-4">
           <div className="h-8 w-48 skeleton-arcade rounded" />
           <div className="space-y-2">
-            {[1,2,3,4,5].map(i => <div key={i} className="h-16 skeleton-arcade rounded-md" />)}
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-16 skeleton-arcade rounded-md" />
+            ))}
           </div>
         </div>
       </div>
@@ -78,7 +80,12 @@ export default function GlobalLeaderboardPage() {
       <div className="sticky top-0 z-40 bg-[#050a14]/95 backdrop-blur-md border-b border-cyan-500/30">
         <div className="max-w-2xl mx-auto p-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-400 hover:text-white hover:bg-white/10">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="text-gray-400 hover:text-white hover:bg-white/10"
+            >
               <ChevronLeft className="w-6 h-6" />
             </Button>
             <div className="flex-1">
@@ -100,7 +107,11 @@ export default function GlobalLeaderboardPage() {
         {myPosition && (
           <div className="card-arcade border-cyan-500/50 p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <AvatarDisplay avatar={getAvatarById(user?.avatar_id)} customUrl={user?.custom_avatar_url as any} size="md" />
+              <AvatarDisplay
+                avatar={getAvatarById(user?.avatar_id)}
+                customUrl={user?.custom_avatar_url as any}
+                size="md"
+              />
               <div>
                 <p className="font-heading text-sm text-white uppercase">{user?.username}</p>
                 <p className="font-body text-xs text-gray-400">Ta position</p>
@@ -119,28 +130,34 @@ export default function GlobalLeaderboardPage() {
             {/* 2nd Place */}
             <div className="flex flex-col items-center">
               <AvatarDisplay avatar={getAvatarById(podium[1]?.avatar_id)} size="lg" />
-              <p className="font-heading text-sm text-white mt-2 truncate max-w-[80px]">{podium[1]?.username}</p>
+              <p className="font-heading text-sm text-white mt-2 truncate max-w-[80px]">
+                {podium[1]?.username}
+              </p>
               <p className="font-data text-xs text-gray-400">{podium[1]?.total_points} pts</p>
               <div className="w-20 h-16 position-2 rounded-t-lg mt-2 flex items-center justify-center">
                 <span className="font-heading text-2xl">2</span>
               </div>
             </div>
-            
+
             {/* 1st Place */}
             <div className="flex flex-col items-center -mt-4">
               <Crown className="w-8 h-8 text-yellow-500 mb-1 animate-gold" />
               <AvatarDisplay avatar={getAvatarById(podium[0]?.avatar_id)} size="xl" />
-              <p className="font-heading text-sm text-white mt-2 truncate max-w-[90px]">{podium[0]?.username}</p>
+              <p className="font-heading text-sm text-white mt-2 truncate max-w-[90px]">
+                {podium[0]?.username}
+              </p>
               <p className="font-data text-xs text-yellow-400">{podium[0]?.total_points} pts</p>
               <div className="w-24 h-24 position-1 rounded-t-lg mt-2 flex items-center justify-center">
                 <span className="font-heading text-3xl">1</span>
               </div>
             </div>
-            
+
             {/* 3rd Place */}
             <div className="flex flex-col items-center">
               <AvatarDisplay avatar={getAvatarById(podium[2]?.avatar_id)} size="lg" />
-              <p className="font-heading text-sm text-white mt-2 truncate max-w-[80px]">{podium[2]?.username}</p>
+              <p className="font-heading text-sm text-white mt-2 truncate max-w-[80px]">
+                {podium[2]?.username}
+              </p>
               <p className="font-data text-xs text-gray-400">{podium[2]?.total_points} pts</p>
               <div className="w-20 h-12 position-3 rounded-t-lg mt-2 flex items-center justify-center">
                 <span className="font-heading text-2xl">3</span>
@@ -174,13 +191,13 @@ export default function GlobalLeaderboardPage() {
                       }`}
                     >
                       <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-gray-800">
-                        <span className="font-heading text-sm text-gray-400">
-                          {entry.position}
-                        </span>
+                        <span className="font-heading text-sm text-gray-400">{entry.position}</span>
                       </div>
                       <AvatarDisplay avatar={getAvatarById(entry.avatar_id)} size="sm" />
                       <div className="flex-1 min-w-0">
-                        <p className={`font-body text-sm truncate ${isMe ? "text-cyan-400" : "text-white"}`}>
+                        <p
+                          className={`font-body text-sm truncate ${isMe ? "text-cyan-400" : "text-white"}`}
+                        >
                           {entry.username}
                           {isMe && <span className="text-xs text-gray-500 ml-1">(toi)</span>}
                         </p>

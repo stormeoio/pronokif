@@ -9,7 +9,6 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
-
 import { AuthProvider, ProtectedRoute, useAuth } from "@/lib/auth";
 import { queryClient } from "@/lib/queryClient";
 import "@/App.css";
@@ -29,7 +28,9 @@ const NotificationsPage = lazy(() => import("@/pages/NotificationsPage"));
 const MiniGamesPage = lazy(() => import("@/pages/MiniGamesPage"));
 const MissionsPage = lazy(() => import("@/pages/MissionsPage"));
 const GlobalLeaderboardPage = lazy(() => import("@/pages/GlobalLeaderboardPage"));
-const CustomPredictionsPage = lazy(() => import("@/pages/custom-predictions/CustomPredictionsPage"));
+const CustomPredictionsPage = lazy(
+  () => import("@/pages/custom-predictions/CustomPredictionsPage"),
+);
 const GrandPrixDetailPage = lazy(() => import("@/pages/GrandPrixDetailPage"));
 const LeagueChatPage = lazy(() => import("@/pages/LeagueChatPage"));
 const MemberProfilePage = lazy(() => import("@/pages/MemberProfilePage"));
@@ -95,30 +96,208 @@ function AppRouter() {
       />
 
       {/* Protected */}
-      <Route path="/set-username" element={<ProtectedRoute>{user?.username ? <Navigate to={user.current_league_id ? "/" : "/league"} replace /> : <SetUsernamePage />}</ProtectedRoute>} />
-      <Route path="/league" element={<ProtectedRoute>{!user?.username ? <Navigate to="/set-username" replace /> : <LeaguePage />}</ProtectedRoute>} />
-      <Route path="/" element={<ProtectedRoute>{!user?.username ? <Navigate to="/set-username" replace /> : !user?.current_league_id ? <Navigate to="/league" replace /> : <DashboardPage />}</ProtectedRoute>} />
-      <Route path="/predictions" element={<ProtectedRoute><RaceCalendarPage /></ProtectedRoute>} />
-      <Route path="/predictions/:raceId" element={<ProtectedRoute><PredictionsPage /></ProtectedRoute>} />
-      <Route path="/leaderboard" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
-      <Route path="/championship" element={<ProtectedRoute><ChampionshipPage /></ProtectedRoute>} />
-      <Route path="/results" element={<ProtectedRoute><ResultsPage /></ProtectedRoute>} />
-      <Route path="/results/:raceId" element={<ProtectedRoute><ResultsPage /></ProtectedRoute>} />
-      <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-      <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
-      <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
-      <Route path="/minigames" element={<ProtectedRoute><MiniGamesPage /></ProtectedRoute>} />
-      <Route path="/missions" element={<ProtectedRoute><MissionsPage /></ProtectedRoute>} />
-      <Route path="/leaderboard/global" element={<ProtectedRoute><GlobalLeaderboardPage /></ProtectedRoute>} />
-      <Route path="/custom-predictions" element={<ProtectedRoute><CustomPredictionsPage /></ProtectedRoute>} />
-      <Route path="/custom-predictions/:leagueId" element={<ProtectedRoute><CustomPredictionsPage /></ProtectedRoute>} />
-      <Route path="/race/:raceId" element={<ProtectedRoute><GrandPrixDetailPage /></ProtectedRoute>} />
-      <Route path="/league/:leagueId/chat" element={<ProtectedRoute><LeagueChatPage /></ProtectedRoute>} />
-      <Route path="/league/:leagueId/details" element={<ProtectedRoute><LeagueDetailPage /></ProtectedRoute>} />
-      <Route path="/profile/:userId" element={<ProtectedRoute><MemberProfilePage /></ProtectedRoute>} />
-      <Route path="/join/:code" element={<ProtectedRoute><JoinLeaguePage /></ProtectedRoute>} />
-      <Route path="/driver/:driverId" element={<ProtectedRoute><DriverDetailPage /></ProtectedRoute>} />
-      <Route path="/compare" element={<ProtectedRoute><DriverComparisonPage /></ProtectedRoute>} />
+      <Route
+        path="/set-username"
+        element={
+          <ProtectedRoute>
+            {user?.username ? (
+              <Navigate to={user.current_league_id ? "/" : "/league"} replace />
+            ) : (
+              <SetUsernamePage />
+            )}
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/league"
+        element={
+          <ProtectedRoute>
+            {!user?.username ? <Navigate to="/set-username" replace /> : <LeaguePage />}
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            {!user?.username ? (
+              <Navigate to="/set-username" replace />
+            ) : !user?.current_league_id ? (
+              <Navigate to="/league" replace />
+            ) : (
+              <DashboardPage />
+            )}
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/predictions"
+        element={
+          <ProtectedRoute>
+            <RaceCalendarPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/predictions/:raceId"
+        element={
+          <ProtectedRoute>
+            <PredictionsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/leaderboard"
+        element={
+          <ProtectedRoute>
+            <LeaderboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/championship"
+        element={
+          <ProtectedRoute>
+            <ChampionshipPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/results"
+        element={
+          <ProtectedRoute>
+            <ResultsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/results/:raceId"
+        element={
+          <ProtectedRoute>
+            <ResultsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/minigames"
+        element={
+          <ProtectedRoute>
+            <MiniGamesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/missions"
+        element={
+          <ProtectedRoute>
+            <MissionsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/leaderboard/global"
+        element={
+          <ProtectedRoute>
+            <GlobalLeaderboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/custom-predictions"
+        element={
+          <ProtectedRoute>
+            <CustomPredictionsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/custom-predictions/:leagueId"
+        element={
+          <ProtectedRoute>
+            <CustomPredictionsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/race/:raceId"
+        element={
+          <ProtectedRoute>
+            <GrandPrixDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/league/:leagueId/chat"
+        element={
+          <ProtectedRoute>
+            <LeagueChatPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/league/:leagueId/details"
+        element={
+          <ProtectedRoute>
+            <LeagueDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile/:userId"
+        element={
+          <ProtectedRoute>
+            <MemberProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/join/:code"
+        element={
+          <ProtectedRoute>
+            <JoinLeaguePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/driver/:driverId"
+        element={
+          <ProtectedRoute>
+            <DriverDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/compare"
+        element={
+          <ProtectedRoute>
+            <DriverComparisonPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />

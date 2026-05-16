@@ -1,8 +1,22 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  Trophy, Medal, Award, Flag, Zap, Timer, Calendar,
-  FileText, DollarSign, MapPin, Ruler, Car, Play, Target, Hash,
-  Shield, Info
+  Trophy,
+  Medal,
+  Award,
+  Flag,
+  Zap,
+  Timer,
+  Calendar,
+  FileText,
+  DollarSign,
+  MapPin,
+  Ruler,
+  Car,
+  Play,
+  Target,
+  Hash,
+  Shield,
+  Info,
 } from "lucide-react";
 
 // Team colors mapping
@@ -12,21 +26,21 @@ export interface TeamColors {
 }
 
 const teamColors: Record<string, TeamColors> = {
-  "mclaren": { primary: "#FF8000", secondary: "#FF8000" },
-  "mercedes": { primary: "#27F4D2", secondary: "#00A19C" },
-  "ferrari": { primary: "#E80020", secondary: "#DC0000" },
-  "red_bull": { primary: "#3671C6", secondary: "#1E5BC6" },
-  "aston_martin": { primary: "#229971", secondary: "#006F62" },
-  "alpine": { primary: "#0093CC", secondary: "#0078C1" },
-  "williams": { primary: "#64C4FF", secondary: "#005AFF" },
-  "rb": { primary: "#6692FF", secondary: "#1E41FF" },
-  "haas": { primary: "#B6BABD", secondary: "#FFFFFF" },
-  "sauber": { primary: "#52E252", secondary: "#00E701" },
-  "cadillac": { primary: "#C4A747", secondary: "#1C1C1C" },
+  mclaren: { primary: "#FF8000", secondary: "#FF8000" },
+  mercedes: { primary: "#27F4D2", secondary: "#00A19C" },
+  ferrari: { primary: "#E80020", secondary: "#DC0000" },
+  red_bull: { primary: "#3671C6", secondary: "#1E5BC6" },
+  aston_martin: { primary: "#229971", secondary: "#006F62" },
+  alpine: { primary: "#0093CC", secondary: "#0078C1" },
+  williams: { primary: "#64C4FF", secondary: "#005AFF" },
+  rb: { primary: "#6692FF", secondary: "#1E41FF" },
+  haas: { primary: "#B6BABD", secondary: "#FFFFFF" },
+  sauber: { primary: "#52E252", secondary: "#00E701" },
+  cadillac: { primary: "#C4A747", secondary: "#1C1C1C" },
 };
 
 export function getTeamColors(teamId: string | undefined): TeamColors {
-  const id = teamId?.toLowerCase().replace(/\s+/g, '_');
+  const id = teamId?.toLowerCase().replace(/\s+/g, "_");
   return (id && teamColors[id]) || { primary: "#666666", secondary: "#444444" };
 }
 
@@ -84,5 +98,5 @@ export function StatCard({ value, label, color, bgColor }: StatCardProps) {
 export function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return "-";
   const date = new Date(dateStr);
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  return date.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 }

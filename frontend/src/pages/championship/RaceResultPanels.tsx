@@ -53,13 +53,18 @@ export function RaceResultsList({ results }: { results: RaceResult[] }) {
         <Flag className="w-3 h-3" /> Classement Course
       </h4>
       {results.length === 0 ? (
-        <p className="font-body text-sm text-gray-500 text-center py-4">Résultats non disponibles</p>
+        <p className="font-body text-sm text-gray-500 text-center py-4">
+          Résultats non disponibles
+        </p>
       ) : (
         results.slice(0, 10).map((result) => (
           <div
             key={result.Driver.driverId}
             className={`p-2 rounded-lg border flex items-center gap-2 ${getRankStyle(result.position)}`}
-            style={{ borderLeftWidth: "3px", borderLeftColor: getTeamColor(result.Constructor?.constructorId) }}
+            style={{
+              borderLeftWidth: "3px",
+              borderLeftColor: getTeamColor(result.Constructor?.constructorId),
+            }}
           >
             <span className="font-data text-sm w-6 text-center">{result.position}</span>
             <div className="flex-1 min-w-0">
@@ -68,7 +73,9 @@ export function RaceResultsList({ results }: { results: RaceResult[] }) {
               </p>
             </div>
             <span className="font-data text-xs text-cyan-400">{result.points} pts</span>
-            <span className="font-body text-xs text-gray-500">{result.Time?.time || result.status}</span>
+            <span className="font-body text-xs text-gray-500">
+              {result.Time?.time || result.status}
+            </span>
           </div>
         ))
       )}
@@ -83,13 +90,18 @@ export function QualifyingResultsList({ results }: { results: QualifyingResult[]
         <Clock className="w-3 h-3" /> Classement Qualifications
       </h4>
       {results.length === 0 ? (
-        <p className="font-body text-sm text-gray-500 text-center py-4">Résultats non disponibles</p>
+        <p className="font-body text-sm text-gray-500 text-center py-4">
+          Résultats non disponibles
+        </p>
       ) : (
         results.slice(0, 10).map((result) => (
           <div
             key={result.Driver.driverId}
             className={`p-2 rounded-lg border flex items-center gap-2 ${getRankStyle(result.position)}`}
-            style={{ borderLeftWidth: "3px", borderLeftColor: getTeamColor(result.Constructor?.constructorId) }}
+            style={{
+              borderLeftWidth: "3px",
+              borderLeftColor: getTeamColor(result.Constructor?.constructorId),
+            }}
           >
             <span className="font-data text-sm w-6 text-center">{result.position}</span>
             <div className="flex-1 min-w-0">
@@ -116,13 +128,18 @@ export function SprintResultsList({ results }: { results: RaceResult[] }) {
         <Zap className="w-3 h-3" /> Classement Sprint
       </h4>
       {results.length === 0 ? (
-        <p className="font-body text-sm text-gray-500 text-center py-4">Résultats non disponibles</p>
+        <p className="font-body text-sm text-gray-500 text-center py-4">
+          Résultats non disponibles
+        </p>
       ) : (
         results.slice(0, 10).map((result) => (
           <div
             key={result.Driver.driverId}
             className={`p-2 rounded-lg border flex items-center gap-2 ${getRankStyle(result.position)}`}
-            style={{ borderLeftWidth: "3px", borderLeftColor: getTeamColor(result.Constructor?.constructorId) }}
+            style={{
+              borderLeftWidth: "3px",
+              borderLeftColor: getTeamColor(result.Constructor?.constructorId),
+            }}
           >
             <span className="font-data text-sm w-6 text-center">{result.position}</span>
             <div className="flex-1 min-w-0">
@@ -131,7 +148,9 @@ export function SprintResultsList({ results }: { results: RaceResult[] }) {
               </p>
             </div>
             <span className="font-data text-xs text-purple-400">{result.points} pts</span>
-            <span className="font-body text-xs text-gray-500">{result.Time?.time || result.status}</span>
+            <span className="font-body text-xs text-gray-500">
+              {result.Time?.time || result.status}
+            </span>
           </div>
         ))
       )}
@@ -199,7 +218,8 @@ export function ExtrasPanel({ raceResults }: { raceResults: RaceResultsData }) {
             </div>
             <div className="flex-1">
               <p className="font-heading text-sm text-white">
-                {raceResults.fastestLap.driver?.givenName} {raceResults.fastestLap.driver?.familyName}
+                {raceResults.fastestLap.driver?.givenName}{" "}
+                {raceResults.fastestLap.driver?.familyName}
               </p>
               <p className="font-body text-xs text-gray-500">
                 {raceResults.fastestLap.constructor?.name}
@@ -207,7 +227,9 @@ export function ExtrasPanel({ raceResults }: { raceResults: RaceResultsData }) {
             </div>
             <div className="text-right">
               <p className="font-data text-lg text-purple-400">{raceResults.fastestLap.time}</p>
-              <p className="font-body text-[10px] text-gray-500">Tour {raceResults.fastestLap.lap}</p>
+              <p className="font-body text-[10px] text-gray-500">
+                Tour {raceResults.fastestLap.lap}
+              </p>
             </div>
           </div>
         ) : (

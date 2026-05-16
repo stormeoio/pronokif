@@ -1,11 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api";
-import { Button } from "../components/ui/button";
 import {
-  ArrowLeft, Bell, Check, Info, Zap, AlertTriangle, CheckCheck, type LucideIcon
+  ArrowLeft,
+  Bell,
+  Check,
+  Info,
+  Zap,
+  AlertTriangle,
+  CheckCheck,
+  type LucideIcon,
 } from "lucide-react";
+import { Button } from "../components/ui/button";
+import { apiClient } from "@/lib/api";
 
 interface Notification {
   id: string;
@@ -16,10 +23,18 @@ interface Notification {
   created_at: string;
 }
 
-const TYPE_CONFIG: Record<string, { icon: LucideIcon; color: string; bgColor: string; label: string }> = {
+const TYPE_CONFIG: Record<
+  string,
+  { icon: LucideIcon; color: string; bgColor: string; label: string }
+> = {
   info: { icon: Info, color: "text-blue-400", bgColor: "bg-blue-500/20", label: "Information" },
   update: { icon: Zap, color: "text-green-400", bgColor: "bg-green-500/20", label: "Mise à jour" },
-  important: { icon: AlertTriangle, color: "text-yellow-400", bgColor: "bg-yellow-500/20", label: "Important" }
+  important: {
+    icon: AlertTriangle,
+    color: "text-yellow-400",
+    bgColor: "bg-yellow-500/20",
+    label: "Important",
+  },
 };
 
 export default function NotificationsPage() {
@@ -67,12 +82,12 @@ export default function NotificationsPage() {
 
   const formatDate = (isoString: string) => {
     const date = new Date(isoString);
-    return date.toLocaleDateString('fr-FR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleDateString("fr-FR", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -95,7 +110,7 @@ export default function NotificationsPage() {
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={() => navigate(-1)}
                 className="p-2 rounded-lg text-cyan-400 hover:bg-cyan-500/10 transition-colors"
               >
@@ -107,7 +122,9 @@ export default function NotificationsPage() {
                   Notifications
                 </h1>
                 <p className="font-body text-xs text-gray-400">
-                  {unreadCount > 0 ? `${unreadCount} non lue${unreadCount > 1 ? 's' : ''}` : 'Toutes lues'}
+                  {unreadCount > 0
+                    ? `${unreadCount} non lue${unreadCount > 1 ? "s" : ""}`
+                    : "Toutes lues"}
                 </p>
               </div>
             </div>
@@ -130,7 +147,9 @@ export default function NotificationsPage() {
         {notifications.length === 0 ? (
           <div className="card-arcade p-8 text-center">
             <Bell className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-            <h3 className="font-heading text-lg text-gray-400 uppercase mb-1">Aucune notification</h3>
+            <h3 className="font-heading text-lg text-gray-400 uppercase mb-1">
+              Aucune notification
+            </h3>
             <p className="font-body text-sm text-gray-500">
               Vous recevrez ici les actualités et mises à jour de PRONOKIF
             </p>
@@ -139,16 +158,18 @@ export default function NotificationsPage() {
           notifications.map((notif: Notification) => {
             const config = (TYPE_CONFIG[notif.type] || TYPE_CONFIG.info)!;
             const Icon = config.icon;
-            
+
             return (
               <div
                 key={notif.id}
                 className={`card-arcade overflow-hidden transition-all ${
-                  !notif.is_read ? 'ring-2 ring-cyan-500/30' : ''
+                  !notif.is_read ? "ring-2 ring-cyan-500/30" : ""
                 }`}
                 data-testid={`notification-item-${notif.id}`}
               >
-                <div className={`px-4 py-2 border-b border-gray-800 flex items-center justify-between ${config.bgColor}`}>
+                <div
+                  className={`px-4 py-2 border-b border-gray-800 flex items-center justify-between ${config.bgColor}`}
+                >
                   <div className="flex items-center gap-2">
                     <Icon className={`w-4 h-4 ${config.color}`} />
                     <span className={`font-body text-xs uppercase tracking-wider ${config.color}`}>
@@ -159,11 +180,13 @@ export default function NotificationsPage() {
                     {formatDate(notif.created_at)}
                   </span>
                 </div>
-                
+
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
-                      <h3 className={`font-heading text-lg ${!notif.is_read ? 'text-white' : 'text-gray-300'}`}>
+                      <h3
+                        className={`font-heading text-lg ${!notif.is_read ? "text-white" : "text-gray-300"}`}
+                      >
                         {notif.title}
                       </h3>
                       <p className="font-body text-sm text-gray-400 mt-2 whitespace-pre-wrap">

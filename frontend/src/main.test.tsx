@@ -19,8 +19,6 @@ function Hello({ name }: { name: string }) {
 describe("toolchain smoke", () => {
   it("renders a TSX component through @testing-library", () => {
     render(<Hello name="Pronokif" />);
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "Hello, Pronokif",
-    );
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Hello, Pronokif");
   });
 });

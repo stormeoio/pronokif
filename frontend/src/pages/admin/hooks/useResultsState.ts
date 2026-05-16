@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { apiClient } from "@/lib/api";
 import { toast } from "sonner";
+import { apiClient } from "@/lib/api";
 
 type SelectionMode =
   | "quali_pole"
@@ -13,80 +13,80 @@ type SelectionMode =
   | "race_top10"
   | "fastest_lap"
   | "first_corner"
-  | "dnf_select"
+  | "dnf_select";
 
 interface Race {
-  id: number | string
-  has_results: boolean
-  is_sprint: boolean
-  [key: string]: unknown
+  id: number | string;
+  has_results: boolean;
+  is_sprint: boolean;
+  [key: string]: unknown;
 }
 
 interface ResultsData {
-  quali_pole?: string | null
-  quali_top10?: string[]
-  sprint_quali_pole?: string | null
-  sprint_quali_top10?: string[]
-  sprint_race_winner?: string | null
-  sprint_race_top10?: string[]
-  race_winner?: string | null
-  race_top10?: string[]
+  quali_pole?: string | null;
+  quali_top10?: string[];
+  sprint_quali_pole?: string | null;
+  sprint_quali_top10?: string[];
+  sprint_race_winner?: string | null;
+  sprint_race_top10?: string[];
+  race_winner?: string | null;
+  race_top10?: string[];
   bonus?: {
-    safety_car?: boolean | null
-    dnf_drivers?: string[]
-    fastest_lap?: string | null
-    first_corner_leader?: string | null
-  }
+    safety_car?: boolean | null;
+    dnf_drivers?: string[];
+    fastest_lap?: string | null;
+    first_corner_leader?: string | null;
+  };
 }
 
 interface SyncFetchedData {
-  quali_pole?: string | null
-  quali_top10?: string[]
-  sprint_quali_pole?: string | null
-  sprint_quali_top10?: string[]
-  sprint_race_winner?: string | null
-  sprint_race_top10?: string[]
-  race_winner?: string | null
-  race_top10?: string[]
+  quali_pole?: string | null;
+  quali_top10?: string[];
+  sprint_quali_pole?: string | null;
+  sprint_quali_top10?: string[];
+  sprint_race_winner?: string | null;
+  sprint_race_top10?: string[];
+  race_winner?: string | null;
+  race_top10?: string[];
   bonus?: {
-    safety_car?: boolean | null
-    dnf_drivers?: string[]
-    fastest_lap?: string | null
-    first_corner_leader?: string | null
-  }
+    safety_car?: boolean | null;
+    dnf_drivers?: string[];
+    fastest_lap?: string | null;
+    first_corner_leader?: string | null;
+  };
 }
 
 interface UseResultsStateParams {
-  setRaces: (races: Race[]) => void
+  setRaces: (races: Race[]) => void;
 }
 
 interface UseResultsStateReturn {
-  selectedRace: Race | null
-  selectRace: (race: Race) => Promise<void>
-  saving: boolean
-  syncing: boolean
-  selectionMode: SelectionMode
-  setSelectionMode: (mode: SelectionMode) => void
-  qualiPole: string | null
-  qualiTop10: string[]
-  sprintQualiPole: string | null
-  sprintQualiTop10: string[]
-  sprintRaceWinner: string | null
-  sprintRaceTop10: string[]
-  raceWinner: string | null
-  raceTop10: string[]
-  safetyCar: boolean
-  setSafetyCar: (value: boolean) => void
-  dnfDrivers: string[]
-  setDnfDrivers: (drivers: string[]) => void
-  fastestLap: string | null
-  firstCornerLeader: string | null
-  handleDriverSelect: (driverId: string) => void
-  isDriverSelected: (driverId: string) => boolean
-  getDriverPosition: (driverId: string) => number | null
-  isComplete: boolean | string | null
-  handleSubmit: () => Promise<void>
-  handleSyncOpenF1: () => Promise<void>
+  selectedRace: Race | null;
+  selectRace: (race: Race) => Promise<void>;
+  saving: boolean;
+  syncing: boolean;
+  selectionMode: SelectionMode;
+  setSelectionMode: (mode: SelectionMode) => void;
+  qualiPole: string | null;
+  qualiTop10: string[];
+  sprintQualiPole: string | null;
+  sprintQualiTop10: string[];
+  sprintRaceWinner: string | null;
+  sprintRaceTop10: string[];
+  raceWinner: string | null;
+  raceTop10: string[];
+  safetyCar: boolean;
+  setSafetyCar: (value: boolean) => void;
+  dnfDrivers: string[];
+  setDnfDrivers: (drivers: string[]) => void;
+  fastestLap: string | null;
+  firstCornerLeader: string | null;
+  handleDriverSelect: (driverId: string) => void;
+  isDriverSelected: (driverId: string) => boolean;
+  getDriverPosition: (driverId: string) => number | null;
+  isComplete: boolean | string | null;
+  handleSubmit: () => Promise<void>;
+  handleSyncOpenF1: () => Promise<void>;
 }
 
 /**
@@ -162,81 +162,117 @@ export function useResultsState({ setRaces }: UseResultsStateParams): UseResults
   const handleDriverSelect = (driverId: string): void => {
     switch (selectionMode) {
       case "quali_pole":
-        setQualiPole(driverId); break;
+        setQualiPole(driverId);
+        break;
       case "quali_top10":
-        if (qualiTop10.includes(driverId)) setQualiTop10(qualiTop10.filter(d => d !== driverId));
+        if (qualiTop10.includes(driverId)) setQualiTop10(qualiTop10.filter((d) => d !== driverId));
         else if (qualiTop10.length < 10) setQualiTop10([...qualiTop10, driverId]);
         break;
       case "sprint_quali_pole":
-        setSprintQualiPole(driverId); break;
+        setSprintQualiPole(driverId);
+        break;
       case "sprint_quali_top10":
-        if (sprintQualiTop10.includes(driverId)) setSprintQualiTop10(sprintQualiTop10.filter(d => d !== driverId));
+        if (sprintQualiTop10.includes(driverId))
+          setSprintQualiTop10(sprintQualiTop10.filter((d) => d !== driverId));
         else if (sprintQualiTop10.length < 10) setSprintQualiTop10([...sprintQualiTop10, driverId]);
         break;
       case "sprint_race_winner":
-        setSprintRaceWinner(driverId); break;
+        setSprintRaceWinner(driverId);
+        break;
       case "sprint_race_top10":
-        if (sprintRaceTop10.includes(driverId)) setSprintRaceTop10(sprintRaceTop10.filter(d => d !== driverId));
+        if (sprintRaceTop10.includes(driverId))
+          setSprintRaceTop10(sprintRaceTop10.filter((d) => d !== driverId));
         else if (sprintRaceTop10.length < 10) setSprintRaceTop10([...sprintRaceTop10, driverId]);
         break;
       case "race_winner":
-        setRaceWinner(driverId); break;
+        setRaceWinner(driverId);
+        break;
       case "race_top10":
-        if (raceTop10.includes(driverId)) setRaceTop10(raceTop10.filter(d => d !== driverId));
+        if (raceTop10.includes(driverId)) setRaceTop10(raceTop10.filter((d) => d !== driverId));
         else if (raceTop10.length < 10) setRaceTop10([...raceTop10, driverId]);
         break;
       case "fastest_lap":
-        setFastestLap(driverId === fastestLap ? null : driverId); break;
+        setFastestLap(driverId === fastestLap ? null : driverId);
+        break;
       case "first_corner":
-        setFirstCornerLeader(driverId === firstCornerLeader ? null : driverId); break;
+        setFirstCornerLeader(driverId === firstCornerLeader ? null : driverId);
+        break;
       case "dnf_select":
-        if (dnfDrivers.includes(driverId)) setDnfDrivers(dnfDrivers.filter(d => d !== driverId));
+        if (dnfDrivers.includes(driverId)) setDnfDrivers(dnfDrivers.filter((d) => d !== driverId));
         else setDnfDrivers([...dnfDrivers, driverId]);
         break;
-      default: break;
+      default:
+        break;
     }
   };
 
   const isDriverSelected = (driverId: string): boolean => {
     switch (selectionMode) {
-      case "quali_pole": return qualiPole === driverId;
-      case "quali_top10": return qualiTop10.includes(driverId);
-      case "sprint_quali_pole": return sprintQualiPole === driverId;
-      case "sprint_quali_top10": return sprintQualiTop10.includes(driverId);
-      case "sprint_race_winner": return sprintRaceWinner === driverId;
-      case "sprint_race_top10": return sprintRaceTop10.includes(driverId);
-      case "race_winner": return raceWinner === driverId;
-      case "race_top10": return raceTop10.includes(driverId);
-      case "fastest_lap": return fastestLap === driverId;
-      case "first_corner": return firstCornerLeader === driverId;
-      case "dnf_select": return dnfDrivers.includes(driverId);
-      default: return false;
+      case "quali_pole":
+        return qualiPole === driverId;
+      case "quali_top10":
+        return qualiTop10.includes(driverId);
+      case "sprint_quali_pole":
+        return sprintQualiPole === driverId;
+      case "sprint_quali_top10":
+        return sprintQualiTop10.includes(driverId);
+      case "sprint_race_winner":
+        return sprintRaceWinner === driverId;
+      case "sprint_race_top10":
+        return sprintRaceTop10.includes(driverId);
+      case "race_winner":
+        return raceWinner === driverId;
+      case "race_top10":
+        return raceTop10.includes(driverId);
+      case "fastest_lap":
+        return fastestLap === driverId;
+      case "first_corner":
+        return firstCornerLeader === driverId;
+      case "dnf_select":
+        return dnfDrivers.includes(driverId);
+      default:
+        return false;
     }
   };
 
   const getDriverPosition = (driverId: string): number | null => {
     if (selectionMode === "quali_top10") return qualiTop10.indexOf(driverId) + 1 || null;
-    if (selectionMode === "sprint_quali_top10") return sprintQualiTop10.indexOf(driverId) + 1 || null;
+    if (selectionMode === "sprint_quali_top10")
+      return sprintQualiTop10.indexOf(driverId) + 1 || null;
     if (selectionMode === "sprint_race_top10") return sprintRaceTop10.indexOf(driverId) + 1 || null;
     if (selectionMode === "race_top10") return raceTop10.indexOf(driverId) + 1 || null;
     return null;
   };
 
-  const isSprintComplete = !selectedRace?.is_sprint || (
-    sprintQualiPole && sprintQualiTop10.length === 10 &&
-    sprintRaceWinner && sprintRaceTop10.length === 10
-  );
-  const isComplete = qualiPole && qualiTop10.length === 10 && raceWinner && raceTop10.length === 10 && isSprintComplete;
+  const isSprintComplete =
+    !selectedRace?.is_sprint ||
+    (sprintQualiPole &&
+      sprintQualiTop10.length === 10 &&
+      sprintRaceWinner &&
+      sprintRaceTop10.length === 10);
+  const isComplete =
+    qualiPole &&
+    qualiTop10.length === 10 &&
+    raceWinner &&
+    raceTop10.length === 10 &&
+    isSprintComplete;
 
   const handleSubmit = async (): Promise<void> => {
-    if (!isComplete) { toast.error("Complete tous les resultats obligatoires"); return; }
+    if (!isComplete) {
+      toast.error("Complete tous les resultats obligatoires");
+      return;
+    }
     setSaving(true);
     try {
       const payload: Record<string, unknown> = {
-        quali_pole: qualiPole, quali_top10: qualiTop10,
-        race_winner: raceWinner, race_top10: raceTop10,
-        safety_car: safetyCar, dnf_drivers: dnfDrivers,
-        fastest_lap: fastestLap, first_corner_leader: firstCornerLeader,
+        quali_pole: qualiPole,
+        quali_top10: qualiTop10,
+        race_winner: raceWinner,
+        race_top10: raceTop10,
+        safety_car: safetyCar,
+        dnf_drivers: dnfDrivers,
+        fastest_lap: fastestLap,
+        first_corner_leader: firstCornerLeader,
       };
       if (selectedRace?.is_sprint) {
         payload["sprint_quali_pole"] = sprintQualiPole;
@@ -251,7 +287,9 @@ export function useResultsState({ setRaces }: UseResultsStateParams): UseResults
     } catch (error: unknown) {
       const axiosError = error as { response?: { data?: { detail?: string } } };
       toast.error(axiosError.response?.data?.detail ?? "Erreur lors de l'enregistrement");
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSyncOpenF1 = async (): Promise<void> => {
@@ -260,11 +298,11 @@ export function useResultsState({ setRaces }: UseResultsStateParams): UseResults
     try {
       const res = await apiClient.post(`/admin/sync-results/${selectedRace.id}`);
       const resData = res.data as {
-        status: string
-        message?: string
-        fetched_data: SyncFetchedData
-        success_items?: string[]
-        errors?: string[]
+        status: string;
+        message?: string;
+        fetched_data: SyncFetchedData;
+        success_items?: string[];
+        errors?: string[];
       };
       if (resData.status === "success" || resData.status === "partial") {
         const f = resData.fetched_data;
@@ -277,13 +315,17 @@ export function useResultsState({ setRaces }: UseResultsStateParams): UseResults
         if (f.race_winner) setRaceWinner(f.race_winner);
         if (f.race_top10?.length) setRaceTop10(f.race_top10);
         if (f.bonus) {
-          if (f.bonus.safety_car !== null && f.bonus.safety_car !== undefined) setSafetyCar(f.bonus.safety_car);
+          if (f.bonus.safety_car !== null && f.bonus.safety_car !== undefined)
+            setSafetyCar(f.bonus.safety_car);
           if (f.bonus.dnf_drivers?.length) setDnfDrivers(f.bonus.dnf_drivers);
           if (f.bonus.fastest_lap) setFastestLap(f.bonus.fastest_lap);
           if (f.bonus.first_corner_leader) setFirstCornerLeader(f.bonus.first_corner_leader);
         }
         const items = resData.success_items ?? [];
-        if (items.length > 0) toast.success(`Donnees recuperees automatiquement !\n${items.join(', ')}`, { duration: 5000 });
+        if (items.length > 0)
+          toast.success(`Donnees recuperees automatiquement !\n${items.join(", ")}`, {
+            duration: 5000,
+          });
         else toast.warning("Aucune donnee disponible via l'API. Saisie manuelle requise.");
         if ((resData.errors?.length ?? 0) > 0) console.log("Sync errors:", resData.errors);
       } else {
@@ -292,16 +334,37 @@ export function useResultsState({ setRaces }: UseResultsStateParams): UseResults
     } catch (error) {
       console.error("Sync error:", error);
       toast.error("Erreur lors de la synchronisation avec les APIs");
-    } finally { setSyncing(false); }
+    } finally {
+      setSyncing(false);
+    }
   };
 
   return {
-    selectedRace, selectRace, saving, syncing, selectionMode, setSelectionMode,
-    qualiPole, qualiTop10, sprintQualiPole, sprintQualiTop10,
-    sprintRaceWinner, sprintRaceTop10, raceWinner, raceTop10,
-    safetyCar, setSafetyCar, dnfDrivers, setDnfDrivers,
-    fastestLap, firstCornerLeader,
-    handleDriverSelect, isDriverSelected, getDriverPosition,
-    isComplete, handleSubmit, handleSyncOpenF1,
+    selectedRace,
+    selectRace,
+    saving,
+    syncing,
+    selectionMode,
+    setSelectionMode,
+    qualiPole,
+    qualiTop10,
+    sprintQualiPole,
+    sprintQualiTop10,
+    sprintRaceWinner,
+    sprintRaceTop10,
+    raceWinner,
+    raceTop10,
+    safetyCar,
+    setSafetyCar,
+    dnfDrivers,
+    setDnfDrivers,
+    fastestLap,
+    firstCornerLeader,
+    handleDriverSelect,
+    isDriverSelected,
+    getDriverPosition,
+    isComplete,
+    handleSubmit,
+    handleSyncOpenF1,
   };
 }

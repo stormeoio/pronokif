@@ -1,38 +1,46 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import {
+  ChevronRight,
+  Calendar,
+  MapPin,
+  Flag,
+  Clock,
+  Check,
+  Lock,
+  Zap,
+  Trophy,
+  Target,
+} from "lucide-react";
+import { Button } from "../components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { apiClient } from "@/lib/api";
-import { Button } from "../components/ui/button";
-import { toast } from "sonner";
-import { 
-  ChevronRight, Calendar, MapPin, Flag, Clock, 
-  Check, Lock, Zap, Trophy, Target
-} from "lucide-react";
 
 // Country flag emojis mapping
 const COUNTRY_FLAGS = {
-  "Australia": "🇦🇺",
-  "China": "🇨🇳",
-  "Japan": "🇯🇵",
-  "Bahrain": "🇧🇭",
+  Australia: "🇦🇺",
+  China: "🇨🇳",
+  Japan: "🇯🇵",
+  Bahrain: "🇧🇭",
   "Saudi Arabia": "🇸🇦",
-  "USA": "🇺🇸",
-  "Italy": "🇮🇹",
-  "Monaco": "🇲🇨",
-  "Spain": "🇪🇸",
-  "Canada": "🇨🇦",
-  "Austria": "🇦🇹",
-  "UK": "🇬🇧",
-  "Belgium": "🇧🇪",
-  "Hungary": "🇭🇺",
-  "Netherlands": "🇳🇱",
-  "Azerbaijan": "🇦🇿",
-  "Singapore": "🇸🇬",
-  "Mexico": "🇲🇽",
-  "Brazil": "🇧🇷",
-  "Qatar": "🇶🇦",
-  "UAE": "🇦🇪"
+  USA: "🇺🇸",
+  Italy: "🇮🇹",
+  Monaco: "🇲🇨",
+  Spain: "🇪🇸",
+  Canada: "🇨🇦",
+  Austria: "🇦🇹",
+  UK: "🇬🇧",
+  Belgium: "🇧🇪",
+  Hungary: "🇭🇺",
+  Netherlands: "🇳🇱",
+  Azerbaijan: "🇦🇿",
+  Singapore: "🇸🇬",
+  Mexico: "🇲🇽",
+  Brazil: "🇧🇷",
+  Qatar: "🇶🇦",
+  UAE: "🇦🇪",
 };
 
 export default function RaceCalendarPage() {
@@ -54,7 +62,9 @@ export default function RaceCalendarPage() {
     queryFn: async () => {
       const res = await apiClient.get("/predictions/history");
       const predsMap: Record<string, unknown> = {};
-      res.data.forEach((p: { race_id: string }) => { predsMap[p.race_id] = p; });
+      res.data.forEach((p: { race_id: string }) => {
+        predsMap[p.race_id] = p;
+      });
       return predsMap;
     },
   });
@@ -73,21 +83,23 @@ export default function RaceCalendarPage() {
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
   };
 
   const formatCloseTime = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleString('fr-FR', { 
-      day: 'numeric', 
-      month: 'short',
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return date.toLocaleString("fr-FR", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const filteredRaces = getFilteredRaces();
-  const upcomingCount = races.filter((r: any) => r.status === "upcoming" || r.status === "in_progress").length;
+  const upcomingCount = races.filter(
+    (r: any) => r.status === "upcoming" || r.status === "in_progress",
+  ).length;
   const completedCount = races.filter((r: any) => r.status === "finished").length;
 
   if (loading) {
@@ -116,15 +128,15 @@ export default function RaceCalendarPage() {
             Pronostique en avance sur tous les GP • Clôture 15min avant FP1
           </p>
         </div>
-        
+
         {/* Filter Tabs */}
         <div className="max-w-2xl mx-auto px-4 pb-3">
           <div className="flex gap-2">
             <button
               onClick={() => setFilter("upcoming")}
               className={`flex-1 py-2 px-3 rounded-lg font-body text-sm transition-all ${
-                filter === "upcoming" 
-                  ? "bg-red-500 text-white shadow-lg" 
+                filter === "upcoming"
+                  ? "bg-red-500 text-white shadow-lg"
                   : "bg-white/5 text-gray-400 hover:bg-white/10"
               }`}
             >
@@ -133,8 +145,8 @@ export default function RaceCalendarPage() {
             <button
               onClick={() => setFilter("completed")}
               className={`flex-1 py-2 px-3 rounded-lg font-body text-sm transition-all ${
-                filter === "completed" 
-                  ? "bg-red-500 text-white shadow-lg" 
+                filter === "completed"
+                  ? "bg-red-500 text-white shadow-lg"
                   : "bg-white/5 text-gray-400 hover:bg-white/10"
               }`}
             >
@@ -143,8 +155,8 @@ export default function RaceCalendarPage() {
             <button
               onClick={() => setFilter("all")}
               className={`flex-1 py-2 px-3 rounded-lg font-body text-sm transition-all ${
-                filter === "all" 
-                  ? "bg-red-500 text-white shadow-lg" 
+                filter === "all"
+                  ? "bg-red-500 text-white shadow-lg"
                   : "bg-white/5 text-gray-400 hover:bg-white/10"
               }`}
             >
@@ -160,7 +172,9 @@ export default function RaceCalendarPage() {
             <Calendar className="w-12 h-12 text-gray-600 mx-auto mb-4" />
             <p className="font-heading text-lg uppercase text-gray-400">Aucune course</p>
             <p className="font-body text-sm text-gray-500 mt-2">
-              {filter === "upcoming" ? "Toutes les courses sont terminées" : "Aucune course terminée"}
+              {filter === "upcoming"
+                ? "Toutes les courses sont terminées"
+                : "Aucune course terminée"}
             </p>
           </div>
         ) : (
@@ -169,7 +183,7 @@ export default function RaceCalendarPage() {
             const canPredict = race.can_predict;
             const isNextRace = index === 0 && filter === "upcoming";
             const flag = (COUNTRY_FLAGS as Record<string, string>)[race.country] || "🏁";
-            
+
             return (
               <div
                 key={race.id}
@@ -181,22 +195,26 @@ export default function RaceCalendarPage() {
                 <div className="p-4">
                   <div className="flex items-start gap-3">
                     {/* Round number */}
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-heading text-lg ${
-                      race.status === "finished" 
-                        ? "bg-gray-700 text-gray-400"
-                        : isNextRace 
-                          ? "bg-gradient-to-br from-red-500 to-red-700 text-white shadow-lg"
-                          : "bg-gradient-to-br from-blue-600 to-blue-800 text-white"
-                    }`}>
+                    <div
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center font-heading text-lg ${
+                        race.status === "finished"
+                          ? "bg-gray-700 text-gray-400"
+                          : isNextRace
+                            ? "bg-gradient-to-br from-red-500 to-red-700 text-white shadow-lg"
+                            : "bg-gradient-to-br from-blue-600 to-blue-800 text-white"
+                      }`}
+                    >
                       {index + 1}
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xl">{flag}</span>
-                        <h3 className={`font-heading text-base uppercase truncate ${
-                          race.status === "finished" ? "text-gray-400" : "text-white"
-                        }`}>
+                        <h3
+                          className={`font-heading text-base uppercase truncate ${
+                            race.status === "finished" ? "text-gray-400" : "text-white"
+                          }`}
+                        >
                           {race.name.replace(" Grand Prix", "")}
                         </h3>
                         {race.is_sprint_weekend && (
@@ -205,7 +223,7 @@ export default function RaceCalendarPage() {
                           </span>
                         )}
                       </div>
-                      
+
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                         <span className="font-body text-gray-400 flex items-center gap-1">
                           <MapPin className="w-3 h-3" /> {race.circuit}
@@ -214,7 +232,7 @@ export default function RaceCalendarPage() {
                           <Flag className="w-3 h-3" /> {formatDate(race.date)}
                         </span>
                       </div>
-                      
+
                       {/* Prediction close info */}
                       {canPredict && (
                         <p className="font-body text-[10px] text-cyan-400 mt-2 flex items-center gap-1">
@@ -223,7 +241,7 @@ export default function RaceCalendarPage() {
                         </p>
                       )}
                     </div>
-                    
+
                     {/* Status / Action */}
                     <div className="flex-shrink-0">
                       {race.status === "finished" ? (
@@ -246,7 +264,7 @@ export default function RaceCalendarPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Action bar */}
                 {race.status !== "finished" && (
                   <>
@@ -263,7 +281,9 @@ export default function RaceCalendarPage() {
                           {hasPrediction ? (
                             <>Modifier mes pronos</>
                           ) : (
-                            <>Faire mes pronos <ChevronRight className="w-4 h-4 ml-1" /></>
+                            <>
+                              Faire mes pronos <ChevronRight className="w-4 h-4 ml-1" />
+                            </>
                           )}
                         </Button>
                       ) : (
@@ -277,7 +297,7 @@ export default function RaceCalendarPage() {
                     </div>
                   </>
                 )}
-                
+
                 {/* Kerb stripe for next race */}
                 {isNextRace && <div className="h-1.5 bg-kerb-stripe" />}
               </div>

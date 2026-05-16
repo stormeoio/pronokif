@@ -1,16 +1,30 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth";
-import { apiClient } from "@/lib/api";
+import { toast } from "sonner";
+import {
+  ChevronLeft,
+  Trophy,
+  Target,
+  Users,
+  Gamepad2,
+  Check,
+  Lock,
+  Star,
+  Crown,
+  Medal,
+  Zap,
+  Flag,
+  Calendar,
+  Eye,
+  AlertTriangle,
+  Timer,
+} from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Progress } from "../components/ui/progress";
-import { toast } from "sonner";
-import {
-  ChevronLeft, Trophy, Target, Users, Gamepad2, Check, Lock,
-  Star, Crown, Medal, Zap, Flag, Calendar, Eye, AlertTriangle, Timer
-} from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { apiClient } from "@/lib/api";
 
 const ICON_MAP = {
   target: Target,
@@ -77,7 +91,9 @@ export default function MissionsPage() {
       queryClient.invalidateQueries({ queryKey: ["/user/missions"] });
       queryClient.invalidateQueries({ queryKey: ["/user/stats"] });
     } catch (e: unknown) {
-      toast.error((e as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Erreur");
+      toast.error(
+        (e as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Erreur",
+      );
     } finally {
       setClaiming(null);
     }
@@ -103,7 +119,9 @@ export default function MissionsPage() {
         <div className="max-w-2xl mx-auto space-y-4">
           <div className="h-8 w-48 skeleton-arcade rounded" />
           <div className="grid grid-cols-2 gap-4">
-            {[1,2,3,4].map(i => <div key={i} className="h-32 skeleton-arcade rounded-md" />)}
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-32 skeleton-arcade rounded-md" />
+            ))}
           </div>
         </div>
       </div>
@@ -120,7 +138,12 @@ export default function MissionsPage() {
       <div className="sticky top-0 z-40 bg-[#050a14]/95 backdrop-blur-md border-b border-yellow-500/30">
         <div className="max-w-2xl mx-auto p-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-400 hover:text-white hover:bg-white/10">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="text-gray-400 hover:text-white hover:bg-white/10"
+            >
               <ChevronLeft className="w-6 h-6" />
             </Button>
             <div className="flex-1">
@@ -145,25 +168,29 @@ export default function MissionsPage() {
       <div className="max-w-2xl mx-auto p-4 space-y-6">
         {/* Category Tabs */}
         <div className="flex gap-2 overflow-x-auto no-scrollbar">
-          {categoryTabs.map(tab => {
+          {categoryTabs.map((tab) => {
             const TabIcon = tab.icon;
             const isActive = activeCategory === tab.id;
             const categoryMissions = categories[tab.id] || [];
             const completed = categoryMissions.filter((m: any) => m.completed).length;
             const claimable = categoryMissions.filter((m: any) => m.completed && !m.claimed).length;
-            
+
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveCategory(tab.id)}
                 className={`flex-shrink-0 px-4 py-3 rounded-lg border-2 transition-all relative ${
-                  isActive 
-                    ? "border-orange-500 bg-orange-500/20" 
+                  isActive
+                    ? "border-orange-500 bg-orange-500/20"
                     : "border-gray-700 bg-gray-900/50 hover:border-gray-600"
                 }`}
               >
-                <TabIcon className={`w-5 h-5 mx-auto mb-1 ${isActive ? tab.color : "text-gray-500"}`} />
-                <p className={`font-heading text-xs uppercase ${isActive ? "text-white" : "text-gray-400"}`}>
+                <TabIcon
+                  className={`w-5 h-5 mx-auto mb-1 ${isActive ? tab.color : "text-gray-500"}`}
+                />
+                <p
+                  className={`font-heading text-xs uppercase ${isActive ? "text-white" : "text-gray-400"}`}
+                >
                   {tab.label}
                 </p>
                 <p className="font-data text-[10px] text-gray-500">
@@ -208,7 +235,7 @@ export default function MissionsPage() {
         {/* Category Progress */}
         <div className="flex items-center justify-between">
           <h2 className="font-heading text-sm uppercase text-gray-400">
-            {categoryTabs.find(t => t.id === activeCategory)?.label}
+            {categoryTabs.find((t) => t.id === activeCategory)?.label}
           </h2>
           <p className="font-body text-sm text-gray-500">
             {completedCount}/{currentMissions.length} complétées
@@ -226,12 +253,12 @@ export default function MissionsPage() {
             const canClaim = mission.completed && !mission.claimed;
 
             return (
-              <Card 
+              <Card
                 key={mission.mission_id}
                 className={`game-card overflow-hidden transition-all ${
-                  mission.claimed 
-                    ? "opacity-60 border-gray-700" 
-                    : canClaim 
+                  mission.claimed
+                    ? "opacity-60 border-gray-700"
+                    : canClaim
                       ? "border-green-500/50 glow-green"
                       : ""
                 }`}
@@ -239,19 +266,23 @@ export default function MissionsPage() {
                 <CardContent className="p-4">
                   <div className="flex items-start gap-4">
                     {/* Icon */}
-                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      mission.claimed 
-                        ? "bg-green-500/20 border border-green-500/50"
-                        : mission.completed
-                          ? "bg-yellow-500/20 border border-yellow-500/50"
-                          : "bg-gray-800 border border-gray-700"
-                    }`}>
+                    <div
+                      className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                        mission.claimed
+                          ? "bg-green-500/20 border border-green-500/50"
+                          : mission.completed
+                            ? "bg-yellow-500/20 border border-yellow-500/50"
+                            : "bg-gray-800 border border-gray-700"
+                      }`}
+                    >
                       {mission.claimed ? (
                         <Check className="w-6 h-6 text-green-500" />
                       ) : (
-                        <MissionIcon className={`w-6 h-6 ${
-                          mission.completed ? "text-yellow-500" : "text-gray-500"
-                        }`} />
+                        <MissionIcon
+                          className={`w-6 h-6 ${
+                            mission.completed ? "text-yellow-500" : "text-gray-500"
+                          }`}
+                        />
                       )}
                     </div>
 
@@ -259,9 +290,11 @@ export default function MissionsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <h3 className={`font-heading text-sm uppercase ${
-                            mission.claimed ? "text-gray-400" : "text-white"
-                          }`}>
+                          <h3
+                            className={`font-heading text-sm uppercase ${
+                              mission.claimed ? "text-gray-400" : "text-white"
+                            }`}
+                          >
                             {mission.name}
                           </h3>
                           <p className="font-body text-xs text-gray-500 mt-0.5">
@@ -286,12 +319,12 @@ export default function MissionsPage() {
                           </p>
                         </div>
                         <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                          <div 
+                          <div
                             className={`h-full transition-all ${
-                              mission.claimed 
-                                ? "bg-green-500" 
-                                : mission.completed 
-                                  ? "bg-yellow-500" 
+                              mission.claimed
+                                ? "bg-green-500"
+                                : mission.completed
+                                  ? "bg-yellow-500"
                                   : "bg-orange-500"
                             }`}
                             style={{ width: `${Math.min(100, progress)}%` }}

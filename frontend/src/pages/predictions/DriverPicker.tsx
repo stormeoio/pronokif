@@ -50,17 +50,13 @@ export default function DriverPicker({
               </div>
             )}
             <div className="flex items-center gap-2">
-              <span className="font-data text-lg text-gray-500">
-                {driver.number}
-              </span>
+              <span className="font-data text-lg text-gray-500">{driver.number}</span>
               <div className="text-left">
                 <p className="font-body text-sm text-white">{driver.name}</p>
                 <p className="font-body text-xs text-gray-500">{driver.team}</p>
               </div>
             </div>
-            {selected && (
-              <Check className="absolute top-2 right-2 w-4 h-4 text-cyan-400" />
-            )}
+            {selected && <Check className="absolute top-2 right-2 w-4 h-4 text-cyan-400" />}
           </button>
         );
       })}

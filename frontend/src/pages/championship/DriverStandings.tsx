@@ -71,7 +71,9 @@ export default function DriverStandings({ driversStandings }: DriverStandingsPro
               </div>
               <div className="text-right flex items-center gap-2">
                 <div>
-                  <p className={`font-data text-xl ${parseInt(entry.position) <= 3 ? "text-yellow-400" : "text-white"}`}>
+                  <p
+                    className={`font-data text-xl ${parseInt(entry.position) <= 3 ? "text-yellow-400" : "text-white"}`}
+                  >
                     {entry.points}
                   </p>
                   <p className="font-body text-[10px] text-gray-500 uppercase">pts</p>

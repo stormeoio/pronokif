@@ -1,20 +1,34 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import {
+  ArrowLeft,
+  Trophy,
+  Target,
+  Zap,
+  Medal,
+  Gamepad2,
+  Timer,
+  BarChart3,
+  Calendar,
+  Crown,
+  Users,
+  Flag,
+} from "lucide-react";
+import { Button } from "../components/ui/button";
+import { AvatarDisplay } from "../components/AvatarDisplay";
 import { useAuth } from "@/lib/auth";
 import { apiClient } from "@/lib/api";
-import { Button } from "../components/ui/button";
-import {
-  ArrowLeft, Trophy, Target, Zap, Medal, Gamepad2,
-  Timer, BarChart3, Calendar, Crown, Users, Flag
-} from "lucide-react";
-import { AvatarDisplay } from "../components/AvatarDisplay";
 
 export default function MemberProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const { data: profile = null, isLoading: profileLoading, error: profileError } = useQuery({
+  const {
+    data: profile = null,
+    isLoading: profileLoading,
+    error: profileError,
+  } = useQuery({
     queryKey: ["/users", userId, "profile"],
     queryFn: async () => {
       const res = await apiClient.get(`/users/${userId}/profile`);
@@ -41,9 +55,9 @@ export default function MemberProfilePage() {
 
   const formatDate = (isoString: string | undefined) => {
     if (!isoString) return "N/A";
-    return new Date(isoString).toLocaleDateString('fr-FR', { 
-      month: 'long', 
-      year: 'numeric' 
+    return new Date(isoString).toLocaleDateString("fr-FR", {
+      month: "long",
+      year: "numeric",
     });
   };
 
@@ -65,7 +79,10 @@ export default function MemberProfilePage() {
     return (
       <div className="min-h-screen bg-app-main p-4 pt-6">
         <div className="max-w-2xl mx-auto">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-cyan-400 mb-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-cyan-400 mb-4"
+          >
             <ArrowLeft className="w-5 h-5" /> Retour
           </button>
           <div className="card-arcade p-6 text-center">
@@ -81,7 +98,7 @@ export default function MemberProfilePage() {
       {/* Header */}
       <div className="bg-gradient-to-b from-[#0a1628] to-transparent p-4">
         <div className="max-w-2xl mx-auto">
-          <button 
+          <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors"
             data-testid="back-btn"
@@ -98,10 +115,10 @@ export default function MemberProfilePage() {
           <div className="p-6 bg-gradient-to-b from-blue-900/20 to-transparent">
             <div className="flex items-center gap-4">
               <div className="ring-4 ring-yellow-500/50 rounded-full p-1">
-                <AvatarDisplay 
-                  avatar={getAvatarById(profile.avatar_id)} 
+                <AvatarDisplay
+                  avatar={getAvatarById(profile.avatar_id)}
                   customUrl={profile.custom_avatar_url}
-                  size="lg" 
+                  size="lg"
                 />
               </div>
               <div className="flex-1">
@@ -135,7 +152,7 @@ export default function MemberProfilePage() {
               Statistiques
             </h2>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-3 p-4">
             <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
               <Target className="w-6 h-6 text-cyan-400 mx-auto mb-2" />
@@ -158,7 +175,7 @@ export default function MemberProfilePage() {
               <p className="font-body text-xs text-gray-400">Poles exactes</p>
             </div>
           </div>
-          
+
           <div className="h-2 bg-kerb-stripe" />
         </div>
 
@@ -171,19 +188,23 @@ export default function MemberProfilePage() {
                 Mini-Jeux
               </h2>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-3 p-4">
               {profile.minigames.reaction_best_ms && (
                 <div className="bg-gradient-to-br from-cyan-900/30 to-transparent border border-cyan-500/30 rounded-xl p-4 text-center">
                   <Timer className="w-6 h-6 text-cyan-400 mx-auto mb-2" />
-                  <p className="font-data text-2xl text-cyan-400">{profile.minigames.reaction_best_ms} ms</p>
+                  <p className="font-data text-2xl text-cyan-400">
+                    {profile.minigames.reaction_best_ms} ms
+                  </p>
                   <p className="font-body text-xs text-gray-400">Meilleur temps réaction</p>
                 </div>
               )}
               {profile.minigames.batak_best_score && (
                 <div className="bg-gradient-to-br from-purple-900/30 to-transparent border border-purple-500/30 rounded-xl p-4 text-center">
                   <Target className="w-6 h-6 text-purple-400 mx-auto mb-2" />
-                  <p className="font-data text-2xl text-purple-400">{profile.minigames.batak_best_score}</p>
+                  <p className="font-data text-2xl text-purple-400">
+                    {profile.minigames.batak_best_score}
+                  </p>
                   <p className="font-body text-xs text-gray-400">Meilleur score Batak</p>
                 </div>
               )}
@@ -200,25 +221,32 @@ export default function MemberProfilePage() {
                 Ligues en commun
               </h2>
             </div>
-            
+
             <div className="p-4 space-y-2">
               {profile.leagues.map((league: any) => (
-                <div 
+                <div
                   key={league.id}
                   className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl p-3"
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-heading text-lg ${
-                      league.position === 1 ? 'position-1' :
-                      league.position === 2 ? 'position-2' :
-                      league.position === 3 ? 'position-3' :
-                      'bg-gray-700 text-gray-300'
-                    }`}>
-                      {league.position || '-'}
+                    <div
+                      className={`w-10 h-10 rounded-lg flex items-center justify-center font-heading text-lg ${
+                        league.position === 1
+                          ? "position-1"
+                          : league.position === 2
+                            ? "position-2"
+                            : league.position === 3
+                              ? "position-3"
+                              : "bg-gray-700 text-gray-300"
+                      }`}
+                    >
+                      {league.position || "-"}
                     </div>
                     <div>
                       <p className="font-body text-sm text-white">{league.name}</p>
-                      <p className="font-body text-xs text-gray-500">{league.members_count} membres</p>
+                      <p className="font-body text-xs text-gray-500">
+                        {league.members_count} membres
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -228,7 +256,7 @@ export default function MemberProfilePage() {
                 </div>
               ))}
             </div>
-            
+
             <div className="h-2 bg-kerb-stripe" />
           </div>
         )}
@@ -242,10 +270,10 @@ export default function MemberProfilePage() {
                 Derniers Pronostics
               </h2>
             </div>
-            
+
             <div className="p-4 space-y-2">
               {profile.recent_predictions.map((pred: any) => (
-                <div 
+                <div
                   key={pred.id}
                   className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl p-3"
                 >

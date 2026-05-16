@@ -23,7 +23,8 @@ export function useAdminData() {
     enabled: racesQuery.isSuccess, // only fetch if admin check passed
   });
 
-  const is403 = racesQuery.error &&
+  const is403 =
+    racesQuery.error &&
     typeof racesQuery.error === "object" &&
     "response" in racesQuery.error &&
     (racesQuery.error as any).response?.status === 403;

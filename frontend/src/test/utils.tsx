@@ -8,8 +8,8 @@
 import { render, type RenderOptions } from "@testing-library/react";
 import { MemoryRouter, type MemoryRouterProps } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthContext, type User } from "@/lib/auth";
 import type { ReactElement, ReactNode } from "react";
+import { AuthContext, type User } from "@/lib/auth";
 
 // --------------------------------------------------------- mock user ---
 
@@ -70,9 +70,7 @@ function AllProviders({ children, user = mockUser, routerProps }: ProvidersProps
   return (
     <MemoryRouter {...routerProps}>
       <QueryClientProvider client={queryClient}>
-        <AuthContext.Provider value={auth}>
-          {children}
-        </AuthContext.Provider>
+        <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>
       </QueryClientProvider>
     </MemoryRouter>
   );

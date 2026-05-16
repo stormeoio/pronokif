@@ -1,13 +1,11 @@
 import { useState } from "react";
+import { toast } from "sonner";
+import { Bell, Send, Loader2, Zap, AlertTriangle, Info } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import {
-  Bell, Send, Loader2, Zap, AlertTriangle, Info,
-} from "lucide-react";
 
 export default function NotificationsTab() {
   const [notifTitle, setNotifTitle] = useState("");
@@ -26,7 +24,7 @@ export default function NotificationsTab() {
       await apiClient.post("/admin/notifications", {
         title: notifTitle.trim(),
         message: notifMessage.trim(),
-        type: notifType
+        type: notifType,
       });
       toast.success("Notification envoyee a tous les membres !");
       setNotifTitle("");
@@ -56,7 +54,7 @@ export default function NotificationsTab() {
               {[
                 { id: "info", label: "Info", icon: Info, color: "blue" },
                 { id: "update", label: "Mise a jour", icon: Zap, color: "green" },
-                { id: "important", label: "Important", icon: AlertTriangle, color: "yellow" }
+                { id: "important", label: "Important", icon: AlertTriangle, color: "yellow" },
               ].map((type) => {
                 const Icon = type.icon;
                 const isSelected = notifType === type.id;
@@ -67,17 +65,39 @@ export default function NotificationsTab() {
                     className={`p-3 rounded-xl border-2 transition-all ${
                       isSelected
                         ? `bg-${type.color}-500/20 border-${type.color}-500 text-${type.color}-400`
-                        : 'bg-white/5 border-gray-700 text-gray-400 hover:bg-white/10'
+                        : "bg-white/5 border-gray-700 text-gray-400 hover:bg-white/10"
                     }`}
-                    style={isSelected ? {
-                      backgroundColor: type.color === 'blue' ? 'rgba(59,130,246,0.2)' :
-                                     type.color === 'green' ? 'rgba(34,197,94,0.2)' : 'rgba(234,179,8,0.2)',
-                      borderColor: type.color === 'blue' ? '#3b82f6' :
-                                  type.color === 'green' ? '#22c55e' : '#eab308'
-                    } : {}}
+                    style={
+                      isSelected
+                        ? {
+                            backgroundColor:
+                              type.color === "blue"
+                                ? "rgba(59,130,246,0.2)"
+                                : type.color === "green"
+                                  ? "rgba(34,197,94,0.2)"
+                                  : "rgba(234,179,8,0.2)",
+                            borderColor:
+                              type.color === "blue"
+                                ? "#3b82f6"
+                                : type.color === "green"
+                                  ? "#22c55e"
+                                  : "#eab308",
+                          }
+                        : {}
+                    }
                   >
-                    <Icon className="w-5 h-5 mx-auto mb-1"
-                          style={{ color: isSelected ? (type.color === 'blue' ? '#60a5fa' : type.color === 'green' ? '#4ade80' : '#facc15') : undefined }} />
+                    <Icon
+                      className="w-5 h-5 mx-auto mb-1"
+                      style={{
+                        color: isSelected
+                          ? type.color === "blue"
+                            ? "#60a5fa"
+                            : type.color === "green"
+                              ? "#4ade80"
+                              : "#facc15"
+                          : undefined,
+                      }}
+                    />
                     <p className="font-body text-xs">{type.label}</p>
                   </button>
                 );
@@ -120,9 +140,13 @@ export default function NotificationsTab() {
             className="btn-racing w-full h-12"
           >
             {sendingNotif ? (
-              <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Envoi en cours...</>
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Envoi en cours...
+              </>
             ) : (
-              <><Send className="w-5 h-5 mr-2" /> Envoyer a tous les membres</>
+              <>
+                <Send className="w-5 h-5 mr-2" /> Envoyer a tous les membres
+              </>
             )}
           </Button>
         </div>

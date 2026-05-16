@@ -4,21 +4,21 @@ import { TEAM_COLORS } from "@/lib/constants";
 
 // Map team IDs (snake_case) to team colors
 const teamIdColors: Record<string, string> = {
-  "mclaren": "#FF8000",
-  "mercedes": "#27F4D2",
-  "ferrari": "#E80020",
-  "red_bull": "#3671C6",
-  "aston_martin": "#229971",
-  "alpine": "#0093CC",
-  "williams": "#64C4FF",
-  "rb": "#6692FF",
-  "haas": "#B6BABD",
-  "sauber": "#52E252",
-  "cadillac": "#C4A747",
+  mclaren: "#FF8000",
+  mercedes: "#27F4D2",
+  ferrari: "#E80020",
+  red_bull: "#3671C6",
+  aston_martin: "#229971",
+  alpine: "#0093CC",
+  williams: "#64C4FF",
+  rb: "#6692FF",
+  haas: "#B6BABD",
+  sauber: "#52E252",
+  cadillac: "#C4A747",
 };
 
 export function getTeamColor(teamId: string | undefined): string {
-  const id = teamId?.toLowerCase().replace(/\s+/g, '_');
+  const id = teamId?.toLowerCase().replace(/\s+/g, "_");
   return (id && teamIdColors[id]) || "#666666";
 }
 
@@ -41,9 +41,13 @@ export function DriverCard({ driver }: DriverCardProps) {
       <div className="flex flex-col items-center">
         <div
           className="w-16 h-16 rounded-full overflow-hidden border-3 mb-2"
-          style={{ borderColor: teamColor, borderWidth: '3px' }}
+          style={{ borderColor: teamColor, borderWidth: "3px" }}
         >
-          <img src={driver.photo_url} alt={driver.full_name} className="w-full h-full object-cover" />
+          <img
+            src={driver.photo_url}
+            alt={driver.full_name}
+            className="w-full h-full object-cover"
+          />
         </div>
         <p className="font-heading text-sm text-white text-center">{driver.first_name}</p>
         <p className="font-heading text-base text-center" style={{ color: teamColor }}>
@@ -75,7 +79,14 @@ interface ComparisonBarProps {
   color2: string;
 }
 
-export function ComparisonBar({ label, icon: Icon, value1, value2, color1, color2 }: ComparisonBarProps) {
+export function ComparisonBar({
+  label,
+  icon: Icon,
+  value1,
+  value2,
+  color1,
+  color2,
+}: ComparisonBarProps) {
   const total = Math.max(value1 + value2, 1);
   const percent1 = (value1 / total) * 100;
   const percent2 = (value2 / total) * 100;
@@ -84,13 +95,26 @@ export function ComparisonBar({ label, icon: Icon, value1, value2, color1, color
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <span className={`font-data text-sm ${winner === 1 ? 'text-white' : 'text-gray-500'}`}>{value1}</span>
-        <span className="font-body text-xs text-gray-400 flex items-center gap-1"><Icon className="w-3 h-3" />{label}</span>
-        <span className={`font-data text-sm ${winner === 2 ? 'text-white' : 'text-gray-500'}`}>{value2}</span>
+        <span className={`font-data text-sm ${winner === 1 ? "text-white" : "text-gray-500"}`}>
+          {value1}
+        </span>
+        <span className="font-body text-xs text-gray-400 flex items-center gap-1">
+          <Icon className="w-3 h-3" />
+          {label}
+        </span>
+        <span className={`font-data text-sm ${winner === 2 ? "text-white" : "text-gray-500"}`}>
+          {value2}
+        </span>
       </div>
       <div className="flex h-2 rounded-full overflow-hidden bg-gray-800">
-        <div className="h-full transition-all duration-500" style={{ width: `${percent1}%`, backgroundColor: color1 }} />
-        <div className="h-full transition-all duration-500" style={{ width: `${percent2}%`, backgroundColor: color2 }} />
+        <div
+          className="h-full transition-all duration-500"
+          style={{ width: `${percent1}%`, backgroundColor: color1 }}
+        />
+        <div
+          className="h-full transition-all duration-500"
+          style={{ width: `${percent2}%`, backgroundColor: color2 }}
+        />
       </div>
     </div>
   );
@@ -106,7 +130,14 @@ interface EfficiencyCardProps {
   suffix: string;
 }
 
-export function EfficiencyCard({ label, value1, value2, driver1, driver2, suffix }: EfficiencyCardProps) {
+export function EfficiencyCard({
+  label,
+  value1,
+  value2,
+  driver1,
+  driver2,
+  suffix,
+}: EfficiencyCardProps) {
   const winner = value1 > value2 ? 1 : value2 > value1 ? 2 : 0;
 
   return (
@@ -114,12 +145,18 @@ export function EfficiencyCard({ label, value1, value2, driver1, driver2, suffix
       <p className="font-body text-[10px] text-gray-500 uppercase mb-2">{label}</p>
       <div className="flex justify-between items-center">
         <div className="text-center">
-          <p className={`font-data text-lg ${winner === 1 ? 'text-green-400' : 'text-white'}`}>{value1}{suffix}</p>
+          <p className={`font-data text-lg ${winner === 1 ? "text-green-400" : "text-white"}`}>
+            {value1}
+            {suffix}
+          </p>
           <p className="font-body text-[9px] text-gray-500">{driver1.code}</p>
         </div>
         <div className="text-gray-600 font-body text-xs">VS</div>
         <div className="text-center">
-          <p className={`font-data text-lg ${winner === 2 ? 'text-green-400' : 'text-white'}`}>{value2}{suffix}</p>
+          <p className={`font-data text-lg ${winner === 2 ? "text-green-400" : "text-white"}`}>
+            {value2}
+            {suffix}
+          </p>
           <p className="font-body text-[9px] text-gray-500">{driver2.code}</p>
         </div>
       </div>
@@ -128,7 +165,11 @@ export function EfficiencyCard({ label, value1, value2, driver1, driver2, suffix
 }
 
 // Generate verdict based on comparison
-export function getVerdict(comparison: Record<string, any>, d1: Record<string, any>, d2: Record<string, any>): string {
+export function getVerdict(
+  comparison: Record<string, any>,
+  d1: Record<string, any>,
+  d2: Record<string, any>,
+): string {
   const stats = comparison.stats_comparison;
   let d1Wins = 0;
   let d2Wins = 0;

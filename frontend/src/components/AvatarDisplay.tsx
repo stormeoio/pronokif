@@ -1,7 +1,18 @@
 import { useState } from "react";
 import {
-  Bird, Award, Crown, Star, Rocket, Flame, Zap, Target, Shield, Gem,
-  Gamepad2, Trophy, User
+  Bird,
+  Award,
+  Crown,
+  Star,
+  Rocket,
+  Flame,
+  Zap,
+  Target,
+  Shield,
+  Gem,
+  Gamepad2,
+  Trophy,
+  User,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ChangeEvent } from "react";
@@ -95,7 +106,9 @@ export function AvatarDisplay({ avatar, size = "md", customUrl = null }: AvatarD
   // No avatar set - default
   if (!avatar) {
     return (
-      <div className={`${sizeClasses[size]} rounded-lg bg-gradient-to-b from-orange-500 to-orange-700 border-2 border-orange-400 flex items-center justify-center`}>
+      <div
+        className={`${sizeClasses[size]} rounded-lg bg-gradient-to-b from-orange-500 to-orange-700 border-2 border-orange-400 flex items-center justify-center`}
+      >
         <User className={`${iconSizes[size]} text-white`} />
       </div>
     );
@@ -146,7 +159,9 @@ export function AvatarDisplay({ avatar, size = "md", customUrl = null }: AvatarD
   // Default icon avatar
   const Icon: LucideIcon = (avatar.icon ? ICON_MAP[avatar.icon] : undefined) ?? Star;
   return (
-    <div className={`${sizeClasses[size]} rounded-lg bg-gradient-to-b from-gray-700 to-gray-900 border-2 border-gray-600 flex items-center justify-center`}>
+    <div
+      className={`${sizeClasses[size]} rounded-lg bg-gradient-to-b from-gray-700 to-gray-900 border-2 border-gray-600 flex items-center justify-center`}
+    >
       <Icon className={`${iconSizes[size]} text-orange-500`} />
     </div>
   );
@@ -159,7 +174,13 @@ interface Category {
   label: string;
 }
 
-export function AvatarSelector({ avatars, selectedId, onSelect, customUrl, onUpload }: AvatarSelectorProps) {
+export function AvatarSelector({
+  avatars,
+  selectedId,
+  onSelect,
+  customUrl,
+  onUpload,
+}: AvatarSelectorProps) {
   const [category, setCategory] = useState("default");
   const [uploading, setUploading] = useState(false);
 
@@ -174,7 +195,7 @@ export function AvatarSelector({ avatars, selectedId, onSelect, customUrl, onUpl
     avatars?.all?.filter(
       (a) =>
         a.category === category ||
-        (category === "default" && ["animals", "gaming", "abstract"].includes(a.category))
+        (category === "default" && ["animals", "gaming", "abstract"].includes(a.category)),
     ) ?? [];
 
   const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>): Promise<void> => {
@@ -218,16 +239,15 @@ export function AvatarSelector({ avatars, selectedId, onSelect, customUrl, onUpl
         <div className="space-y-4">
           <div className="flex items-center justify-center p-8 border-2 border-dashed border-gray-600 rounded-lg">
             <label className="cursor-pointer text-center">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
+              <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
               <div className="space-y-2">
                 <div className="w-16 h-16 mx-auto rounded-lg bg-gray-800 flex items-center justify-center">
                   {customUrl ? (
-                    <img src={customUrl} alt="Current" className="w-full h-full object-cover rounded-lg" />
+                    <img
+                      src={customUrl}
+                      alt="Current"
+                      className="w-full h-full object-cover rounded-lg"
+                    />
                   ) : (
                     <User className="w-8 h-8 text-gray-500" />
                   )}

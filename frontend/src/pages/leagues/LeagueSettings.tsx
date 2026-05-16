@@ -1,11 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiClient } from "@/lib/api";
-import { Button } from "../../components/ui/button";
 import { toast } from "sonner";
 import {
-  Crown, LogOut, Trash2, UserCog, Users, X, Check, Loader2, AlertTriangle,
+  Crown,
+  LogOut,
+  Trash2,
+  UserCog,
+  Users,
+  X,
+  Check,
+  Loader2,
+  AlertTriangle,
 } from "lucide-react";
+import { Button } from "../../components/ui/button";
+import { apiClient } from "@/lib/api";
 
 interface LeagueSettingsProps {
   league: Record<string, any>;
@@ -18,7 +26,13 @@ interface LeagueSettingsProps {
 }
 
 export default function LeagueSettings({
-  league, leagueId, members, avatars, userId, isOwner, onRefresh,
+  league,
+  leagueId,
+  members,
+  avatars,
+  userId,
+  isOwner,
+  onRefresh,
 }: LeagueSettingsProps) {
   const navigate = useNavigate();
 
@@ -141,7 +155,10 @@ export default function LeagueSettings({
                 Transférer la propriété
               </h3>
               <button
-                onClick={() => { setShowTransferModal(false); setSelectedNewOwner(null); }}
+                onClick={() => {
+                  setShowTransferModal(false);
+                  setSelectedNewOwner(null);
+                }}
                 className="text-gray-400 hover:text-white"
               >
                 <X className="w-5 h-5" />
@@ -154,31 +171,39 @@ export default function LeagueSettings({
               </p>
 
               <div className="space-y-2">
-                {members.filter((m) => m.id !== userId).map((member) => (
-                  <button
-                    key={member.id}
-                    onClick={() => setSelectedNewOwner(member.id)}
-                    className={`w-full p-3 rounded-lg border transition-all text-left flex items-center gap-3 ${
-                      selectedNewOwner === member.id
-                        ? "bg-cyan-500/20 border-cyan-500"
-                        : "bg-gray-800/30 border-gray-700/50 hover:border-cyan-500/50"
-                    }`}
-                  >
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-white font-heading"
-                      style={{ backgroundColor: avatars[member.id]?.color || "#3b82f6" }}
+                {members
+                  .filter((m) => m.id !== userId)
+                  .map((member) => (
+                    <button
+                      key={member.id}
+                      onClick={() => setSelectedNewOwner(member.id)}
+                      className={`w-full p-3 rounded-lg border transition-all text-left flex items-center gap-3 ${
+                        selectedNewOwner === member.id
+                          ? "bg-cyan-500/20 border-cyan-500"
+                          : "bg-gray-800/30 border-gray-700/50 hover:border-cyan-500/50"
+                      }`}
                     >
-                      {avatars[member.id]?.emoji || member.username?.charAt(0)?.toUpperCase() || "?"}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-heading text-sm text-white">
-                        {member.username || "Sans pseudo"}
-                      </p>
-                      <p className="font-body text-xs text-gray-500">Niveau {member.level || 1}</p>
-                    </div>
-                    {selectedNewOwner === member.id && <Check className="w-5 h-5 text-cyan-400" />}
-                  </button>
-                ))}
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-heading"
+                        style={{ backgroundColor: avatars[member.id]?.color || "#3b82f6" }}
+                      >
+                        {avatars[member.id]?.emoji ||
+                          member.username?.charAt(0)?.toUpperCase() ||
+                          "?"}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-heading text-sm text-white">
+                          {member.username || "Sans pseudo"}
+                        </p>
+                        <p className="font-body text-xs text-gray-500">
+                          Niveau {member.level || 1}
+                        </p>
+                      </div>
+                      {selectedNewOwner === member.id && (
+                        <Check className="w-5 h-5 text-cyan-400" />
+                      )}
+                    </button>
+                  ))}
 
                 {members.filter((m) => m.id !== userId).length === 0 && (
                   <div className="text-center py-6">
@@ -192,7 +217,10 @@ export default function LeagueSettings({
 
               <div className="flex gap-3 pt-2">
                 <Button
-                  onClick={() => { setShowTransferModal(false); setSelectedNewOwner(null); }}
+                  onClick={() => {
+                    setShowTransferModal(false);
+                    setSelectedNewOwner(null);
+                  }}
                   variant="outline"
                   className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800"
                   disabled={transferring}
@@ -206,9 +234,13 @@ export default function LeagueSettings({
                   data-testid="confirm-transfer-btn"
                 >
                   {transferring ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Transfert...</>
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Transfert...
+                    </>
                   ) : (
-                    <><UserCog className="w-4 h-4 mr-2" /> Transférer</>
+                    <>
+                      <UserCog className="w-4 h-4 mr-2" /> Transférer
+                    </>
                   )}
                 </Button>
               </div>
@@ -259,9 +291,13 @@ export default function LeagueSettings({
                   data-testid="confirm-delete-league-btn"
                 >
                   {deleting ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Suppression...</>
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Suppression...
+                    </>
                   ) : (
-                    <><Trash2 className="w-4 h-4 mr-2" /> Supprimer</>
+                    <>
+                      <Trash2 className="w-4 h-4 mr-2" /> Supprimer
+                    </>
                   )}
                 </Button>
               </div>
@@ -301,9 +337,13 @@ export default function LeagueSettings({
                   data-testid="confirm-leave-btn"
                 >
                   {leaving ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Départ...</>
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Départ...
+                    </>
                   ) : (
-                    <><LogOut className="w-4 h-4 mr-2" /> Quitter</>
+                    <>
+                      <LogOut className="w-4 h-4 mr-2" /> Quitter
+                    </>
                   )}
                 </Button>
               </div>

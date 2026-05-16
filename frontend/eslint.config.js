@@ -1,32 +1,31 @@
 import js from "@eslint/js";
 import globals from "globals";
+import tseslint from "typescript-eslint";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
+import importPlugin from "eslint-plugin-import";
 
 /**
  * Pronokif frontend — ESLint v9 flat config.
  *
- * Two passes: a JS/JSX pass for the still-unmigrated files (allowJs in
- * tsconfig.json keeps them compiling) and a TS/TSX pass that adds the
- * react-refresh rule. Both share react-hooks rules.
- *
- * Strict TS lint is layered in Sprint 3 when @typescript-eslint becomes
- * worth the install cost (today only main.tsx + vite-env.d.ts are TS).
+ * TypeScript + React + import ordering.
  */
-export default [
-  {
-    ignores: ["build", "dist", "node_modules", "coverage", "public"],
-  },
+export default tseslint.config(
+  { ignores: ["build", "dist", "node_modules", "coverage", "public"] },
 
-  // Common rules across JS, JSX, TS, TSX.
+  // Base recommended
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+
+  // All source files
   {
-    files: ["**/*.{js,jsx,ts,tsx}"],
+    files: ["src/**/*.{ts,tsx,js,jsx}"],
     languageOptions: {
-      ecmaVersion: 2022,
+      ecmaVersion: "latest",
       sourceType: "module",
       globals: {
         ...globals.browser,
-        ...globals.node,
+        ...globals.es2021,
       },
       parserOptions: {
         ecmaFeatures: { jsx: true },
@@ -35,17 +34,38 @@ export default [
     plugins: {
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
+      import: importPlugin,
     },
     rules: {
-      ...js.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": [
+
+      // React
+      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+
+      // TypeScript
+      "@typescript-eslint/no-unused-vars": [
         "warn",
-        { allowConstantExport: true },
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
-      // React 19 -> jsx-runtime, no need to import React in scope.
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-empty-object-type": "off",
+      "no-unused-vars": "off",
+
+      // General
       "no-undef": "off",
-      "no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+      "no-console": ["warn", { allow: ["warn", "error"] }],
+      "prefer-const": "error",
+      "no-var": "error",
+
+      // Imports
+      "import/order": [
+        "warn",
+        {
+          groups: ["builtin", "external", "internal", "parent", "sibling", "index"],
+          "newlines-between": "never",
+        },
+      ],
+      "import/no-duplicates": "warn",
     },
   },
-];
+);

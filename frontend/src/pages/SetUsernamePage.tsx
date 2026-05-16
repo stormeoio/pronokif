@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/lib/auth";
+import { toast } from "sonner";
+import { User, ChevronRight, Zap, Trophy } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { toast } from "sonner";
-import { User, ChevronRight, Zap, Trophy } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 
 export default function SetUsernamePage() {
   const [username, setUsernameValue] = useState("");
@@ -16,7 +16,7 @@ export default function SetUsernamePage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (username.length < 3) {
       toast.error("Le pseudo doit avoir au moins 3 caractères");
       return;
@@ -28,7 +28,9 @@ export default function SetUsernamePage() {
       toast.success("Pseudo enregistré !");
       navigate("/league");
     } catch (error: unknown) {
-      const message = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Ce pseudo est déjà pris";
+      const message =
+        (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
+        "Ce pseudo est déjà pris";
       toast.error(message);
     } finally {
       setIsLoading(false);
@@ -70,7 +72,9 @@ export default function SetUsernamePage() {
             </CardHeader>
             <CardContent className="space-y-6 pb-6">
               <div className="space-y-2">
-                <Label htmlFor="username" className="font-body text-gray-300 text-sm">Pseudo</Label>
+                <Label htmlFor="username" className="font-body text-gray-300 text-sm">
+                  Pseudo
+                </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                   <Input
@@ -92,8 +96,8 @@ export default function SetUsernamePage() {
                 </p>
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isLoading || username.length < 3}
                 className="w-full h-14 btn-racing font-heading uppercase tracking-wider text-base"
                 data-testid="username-submit"

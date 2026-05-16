@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api";
 import { toast } from "sonner";
 import { Loader2, Users, RefreshCw } from "lucide-react";
 import { DeleteConfirmModal, MemberDetailsModal } from "./MembersSubComponents";
+import { apiClient } from "@/lib/api";
 
 interface MemberListItem {
   id: number;
@@ -42,7 +42,11 @@ interface MemberActivity {
 export default function MembersTab() {
   const queryClient = useQueryClient();
 
-  const { data: membersList = [], isLoading: loadingMembers, refetch: fetchMembers } = useQuery({
+  const {
+    data: membersList = [],
+    isLoading: loadingMembers,
+    refetch: fetchMembers,
+  } = useQuery({
     queryKey: ["/admin/members"],
     queryFn: async (): Promise<MemberListItem[]> => {
       const res = await apiClient.get("/admin/members");
@@ -151,7 +155,7 @@ export default function MembersTab() {
             </span>
           </h3>
           <button onClick={() => fetchMembers()} className="text-gray-400 hover:text-white">
-            <RefreshCw className={`w-4 h-4 ${loadingMembers ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loadingMembers ? "animate-spin" : ""}`} />
           </button>
         </div>
 
@@ -169,19 +173,26 @@ export default function MembersTab() {
             {membersList.map((member) => (
               <button
                 key={member.id}
-                onClick={() => { setSelectedMember(member.id); fetchMemberDetails(member.id); }}
+                onClick={() => {
+                  setSelectedMember(member.id);
+                  fetchMemberDetails(member.id);
+                }}
                 className="w-full p-4 flex items-center gap-3 hover:bg-white/5 transition-colors text-left"
               >
                 <div className="w-10 h-10 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center text-white font-heading text-sm">
                   {member.username?.charAt(0)?.toUpperCase() || "?"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-body text-sm text-white truncate">{member.username || "Sans pseudo"}</p>
+                  <p className="font-body text-sm text-white truncate">
+                    {member.username || "Sans pseudo"}
+                  </p>
                   <p className="font-body text-xs text-gray-500 truncate">{member.email}</p>
                 </div>
                 <div className="text-right">
                   <p className="font-data text-sm text-cyan-400">Niv. {member.level || 1}</p>
-                  <p className="font-body text-xs text-gray-500">{member.predictions_count || 0} pronos</p>
+                  <p className="font-body text-xs text-gray-500">
+                    {member.predictions_count || 0} pronos
+                  </p>
                 </div>
               </button>
             ))}
@@ -191,4 +202,3 @@ export default function MembersTab() {
     </div>
   );
 }
-

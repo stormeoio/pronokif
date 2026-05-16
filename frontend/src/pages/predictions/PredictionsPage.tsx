@@ -1,17 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useAuth } from "@/lib/auth";
-import { apiClient } from "@/lib/api";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import {
-  ChevronLeft, Check, AlertCircle, Zap, Flag, Trash2,
-} from "lucide-react";
-
+import { ChevronLeft, Check, AlertCircle, Zap, Flag, Trash2 } from "lucide-react";
 import PredictionTimer from "./PredictionTimer";
 import PredictionForm from "./PredictionForm";
 import { useDriverSelection } from "./useDriverSelection";
 import { usePredictionData } from "./usePredictionData";
+import { Button } from "@/components/ui/button";
+import { apiClient } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 export default function PredictionsPage() {
   const { raceId } = useParams();
@@ -28,7 +25,9 @@ export default function PredictionsPage() {
   } = usePredictionData(raceId);
 
   const [saving, setSaving] = useState(false);
-  const [existingPrediction, setExistingPrediction] = useState<Record<string, unknown> | null>(null);
+  const [existingPrediction, setExistingPrediction] = useState<Record<string, unknown> | null>(
+    null,
+  );
 
   // Tab for sprint weekends
   const [activeTab, setActiveTab] = useState("sprint");
@@ -109,28 +108,64 @@ export default function PredictionsPage() {
 
   // ── Driver selection (extracted hook) ─────────────────────────────────
   const { handleDriverSelect, isDriverSelected } = useDriverSelection({
-    activeTab, selectionMode, setSelectionMode,
-    sprintQualiPole, setSprintQualiPole,
-    sprintQualiTop10, setSprintQualiTop10,
-    sprintRaceWinner, setSprintRaceWinner,
-    sprintRaceTop10, setSprintRaceTop10,
-    sprintFastestLap, setSprintFastestLap,
-    sprintFirstCorner, setSprintFirstCorner,
-    sprintDnfDrivers, setSprintDnfDrivers,
-    qualiPole, setQualiPole,
-    qualiTop10, setQualiTop10,
-    raceWinner, setRaceWinner,
-    raceTop10, setRaceTop10,
-    fastestLapDriver, setFastestLapDriver,
-    firstCornerLeader, setFirstCornerLeader,
-    dnfDrivers, setDnfDrivers,
+    activeTab,
+    selectionMode,
+    setSelectionMode,
+    sprintQualiPole,
+    setSprintQualiPole,
+    sprintQualiTop10,
+    setSprintQualiTop10,
+    sprintRaceWinner,
+    setSprintRaceWinner,
+    sprintRaceTop10,
+    setSprintRaceTop10,
+    sprintFastestLap,
+    setSprintFastestLap,
+    sprintFirstCorner,
+    setSprintFirstCorner,
+    sprintDnfDrivers,
+    setSprintDnfDrivers,
+    qualiPole,
+    setQualiPole,
+    qualiTop10,
+    setQualiTop10,
+    raceWinner,
+    setRaceWinner,
+    raceTop10,
+    setRaceTop10,
+    fastestLapDriver,
+    setFastestLapDriver,
+    firstCornerLeader,
+    setFirstCornerLeader,
+    dnfDrivers,
+    setDnfDrivers,
   });
 
   // ── Completion checks ───────────────────────────────────────────────
-  const isSprintComplete = !!(sprintQualiPole && sprintQualiTop10.length === 10 && sprintRaceWinner && sprintRaceTop10.length === 10);
-  const isMainComplete = !!(qualiPole && qualiTop10.length === 10 && raceWinner && raceTop10.length === 10);
-  const isSprintBonusComplete = !!(sprintSafetyCar !== null && sprintFastestLap && sprintFirstCorner && (sprintNoDnf || sprintDnfDrivers.length > 0));
-  const isMainBonusComplete = !!(safetyCar !== null && fastestLapDriver && firstCornerLeader && (noDnf || dnfDrivers.length > 0));
+  const isSprintComplete = !!(
+    sprintQualiPole &&
+    sprintQualiTop10.length === 10 &&
+    sprintRaceWinner &&
+    sprintRaceTop10.length === 10
+  );
+  const isMainComplete = !!(
+    qualiPole &&
+    qualiTop10.length === 10 &&
+    raceWinner &&
+    raceTop10.length === 10
+  );
+  const isSprintBonusComplete = !!(
+    sprintSafetyCar !== null &&
+    sprintFastestLap &&
+    sprintFirstCorner &&
+    (sprintNoDnf || sprintDnfDrivers.length > 0)
+  );
+  const isMainBonusComplete = !!(
+    safetyCar !== null &&
+    fastestLapDriver &&
+    firstCornerLeader &&
+    (noDnf || dnfDrivers.length > 0)
+  );
 
   // ── Save / Delete handlers ──────────────────────────────────────────
   const handleDeletePredictions = async () => {
@@ -139,12 +174,24 @@ export default function PredictionsPage() {
       await apiClient.delete(`/predictions/race/${raceId}`);
       toast.success("Pronostics supprimés !");
       setExistingPrediction(null);
-      setQualiPole(null); setQualiTop10([]); setRaceWinner(null); setRaceTop10([]);
-      setSafetyCar(null); setDnfDrivers([]); setNoDnf(false);
-      setFastestLapDriver(null); setFirstCornerLeader(null);
-      setSprintQualiPole(null); setSprintQualiTop10([]); setSprintRaceWinner(null); setSprintRaceTop10([]);
-      setSprintSafetyCar(null); setSprintDnfDrivers([]); setSprintNoDnf(false);
-      setSprintFastestLap(null); setSprintFirstCorner(null);
+      setQualiPole(null);
+      setQualiTop10([]);
+      setRaceWinner(null);
+      setRaceTop10([]);
+      setSafetyCar(null);
+      setDnfDrivers([]);
+      setNoDnf(false);
+      setFastestLapDriver(null);
+      setFirstCornerLeader(null);
+      setSprintQualiPole(null);
+      setSprintQualiTop10([]);
+      setSprintRaceWinner(null);
+      setSprintRaceTop10([]);
+      setSprintSafetyCar(null);
+      setSprintDnfDrivers([]);
+      setSprintNoDnf(false);
+      setSprintFastestLap(null);
+      setSprintFirstCorner(null);
       setSelectionMode(race?.is_sprint_weekend ? "sprint_quali_pole" : "quali_pole");
       setShowDeleteConfirm(false);
     } catch (error: unknown) {
@@ -159,7 +206,9 @@ export default function PredictionsPage() {
     const isSprint = activeTab === "sprint";
     const complete = isSprint ? isSprintComplete : isMainComplete;
     if (!complete) {
-      toast.error(isSprint ? "Complete tous les pronostics sprint" : "Complete tous les pronostics course");
+      toast.error(
+        isSprint ? "Complete tous les pronostics sprint" : "Complete tous les pronostics course",
+      );
       return;
     }
     setSaving(true);
@@ -248,13 +297,23 @@ export default function PredictionsPage() {
               </div>
             </div>
             <p className="font-body text-sm text-gray-300 mb-6">
-              Veux-tu vraiment supprimer tous tes pronostics pour le <strong className="text-white">{race.name}</strong> ?
+              Veux-tu vraiment supprimer tous tes pronostics pour le{" "}
+              <strong className="text-white">{race.name}</strong> ?
             </p>
             <div className="flex gap-3">
-              <Button onClick={() => setShowDeleteConfirm(false)} variant="outline" className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800" disabled={deleting}>
+              <Button
+                onClick={() => setShowDeleteConfirm(false)}
+                variant="outline"
+                className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800"
+                disabled={deleting}
+              >
                 Annuler
               </Button>
-              <Button onClick={handleDeletePredictions} className="flex-1 bg-red-500 hover:bg-red-600 text-white" disabled={deleting}>
+              <Button
+                onClick={handleDeletePredictions}
+                className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                disabled={deleting}
+              >
                 {deleting ? "Suppression..." : "Supprimer"}
               </Button>
             </div>
@@ -266,16 +325,29 @@ export default function PredictionsPage() {
       <div className="bg-gradient-to-b from-[#0a1628] to-transparent p-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate(-1)} className="p-2 text-cyan-400" data-testid="back-btn">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 text-cyan-400"
+              data-testid="back-btn"
+            >
               <ChevronLeft className="w-6 h-6" />
             </button>
             <div>
-              <p className="font-body text-xs text-cyan-400 uppercase tracking-widest">Pronostics</p>
-              <h1 className="font-heading text-xl text-white uppercase">{race.name.replace(" Grand Prix", "")}</h1>
+              <p className="font-body text-xs text-cyan-400 uppercase tracking-widest">
+                Pronostics
+              </p>
+              <h1 className="font-heading text-xl text-white uppercase">
+                {race.name.replace(" Grand Prix", "")}
+              </h1>
             </div>
           </div>
           {existingPrediction && (canPredictMain || canPredictSprint) && (
-            <button onClick={() => setShowDeleteConfirm(true)} className="p-2 rounded-lg text-red-400 hover:bg-red-500/20 transition-colors" data-testid="delete-predictions-btn" title="Supprimer mes pronostics">
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="p-2 rounded-lg text-red-400 hover:bg-red-500/20 transition-colors"
+              data-testid="delete-predictions-btn"
+              title="Supprimer mes pronostics"
+            >
               <Trash2 className="w-5 h-5" />
             </button>
           )}
@@ -286,15 +358,31 @@ export default function PredictionsPage() {
         {/* Sprint/Main tabs */}
         {race.is_sprint_weekend && (
           <div className="grid grid-cols-2 gap-2 mb-4">
-            <button onClick={() => setActiveTab("sprint")} disabled={!canPredictSprint} className={`p-3 rounded-xl font-heading text-sm uppercase transition-all ${activeTab === "sprint" ? "bg-yellow-500/20 border-2 border-yellow-500 text-yellow-400" : canPredictSprint ? "bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10" : "bg-gray-800/50 border-2 border-gray-800 text-gray-600 cursor-not-allowed"}`} data-testid="tab-sprint">
-              <Zap className="w-5 h-5 mx-auto mb-1" />Sprint
+            <button
+              onClick={() => setActiveTab("sprint")}
+              disabled={!canPredictSprint}
+              className={`p-3 rounded-xl font-heading text-sm uppercase transition-all ${activeTab === "sprint" ? "bg-yellow-500/20 border-2 border-yellow-500 text-yellow-400" : canPredictSprint ? "bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10" : "bg-gray-800/50 border-2 border-gray-800 text-gray-600 cursor-not-allowed"}`}
+              data-testid="tab-sprint"
+            >
+              <Zap className="w-5 h-5 mx-auto mb-1" />
+              Sprint
               {!canPredictSprint && <span className="block text-[10px] text-red-400">Fermé</span>}
-              {isSprintComplete && canPredictSprint && <Check className="w-4 h-4 mx-auto mt-1 text-green-400" />}
+              {isSprintComplete && canPredictSprint && (
+                <Check className="w-4 h-4 mx-auto mt-1 text-green-400" />
+              )}
             </button>
-            <button onClick={() => setActiveTab("main")} disabled={!canPredictMain} className={`p-3 rounded-xl font-heading text-sm uppercase transition-all ${activeTab === "main" ? "bg-cyan-500/20 border-2 border-cyan-500 text-cyan-400" : canPredictMain ? "bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10" : "bg-gray-800/50 border-2 border-gray-800 text-gray-600 cursor-not-allowed"}`} data-testid="tab-main">
-              <Flag className="w-5 h-5 mx-auto mb-1" />Course
+            <button
+              onClick={() => setActiveTab("main")}
+              disabled={!canPredictMain}
+              className={`p-3 rounded-xl font-heading text-sm uppercase transition-all ${activeTab === "main" ? "bg-cyan-500/20 border-2 border-cyan-500 text-cyan-400" : canPredictMain ? "bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10" : "bg-gray-800/50 border-2 border-gray-800 text-gray-600 cursor-not-allowed"}`}
+              data-testid="tab-main"
+            >
+              <Flag className="w-5 h-5 mx-auto mb-1" />
+              Course
               {!canPredictMain && <span className="block text-[10px] text-red-400">Fermé</span>}
-              {isMainComplete && canPredictMain && <Check className="w-4 h-4 mx-auto mt-1 text-green-400" />}
+              {isMainComplete && canPredictMain && (
+                <Check className="w-4 h-4 mx-auto mt-1 text-green-400" />
+              )}
             </button>
           </div>
         )}
@@ -306,21 +394,35 @@ export default function PredictionsPage() {
           selectionMode={selectionMode}
           setSelectionMode={setSelectionMode}
           drivers={drivers}
-          sprintQualiPole={sprintQualiPole} sprintQualiTop10={sprintQualiTop10}
-          sprintRaceWinner={sprintRaceWinner} sprintRaceTop10={sprintRaceTop10}
-          sprintSafetyCar={sprintSafetyCar} setSprintSafetyCar={setSprintSafetyCar}
-          sprintDnfDrivers={sprintDnfDrivers} setSprintDnfDrivers={setSprintDnfDrivers}
-          sprintNoDnf={sprintNoDnf} setSprintNoDnf={setSprintNoDnf}
-          sprintFastestLap={sprintFastestLap} sprintFirstCorner={sprintFirstCorner}
-          qualiPole={qualiPole} qualiTop10={qualiTop10}
-          raceWinner={raceWinner} raceTop10={raceTop10}
-          safetyCar={safetyCar} setSafetyCar={setSafetyCar}
-          dnfDrivers={dnfDrivers} setDnfDrivers={setDnfDrivers}
-          noDnf={noDnf} setNoDnf={setNoDnf}
-          fastestLapDriver={fastestLapDriver} firstCornerLeader={firstCornerLeader}
-          isSprintBonusComplete={isSprintBonusComplete} isMainBonusComplete={isMainBonusComplete}
+          sprintQualiPole={sprintQualiPole}
+          sprintQualiTop10={sprintQualiTop10}
+          sprintRaceWinner={sprintRaceWinner}
+          sprintRaceTop10={sprintRaceTop10}
+          sprintSafetyCar={sprintSafetyCar}
+          setSprintSafetyCar={setSprintSafetyCar}
+          sprintDnfDrivers={sprintDnfDrivers}
+          setSprintDnfDrivers={setSprintDnfDrivers}
+          sprintNoDnf={sprintNoDnf}
+          setSprintNoDnf={setSprintNoDnf}
+          sprintFastestLap={sprintFastestLap}
+          sprintFirstCorner={sprintFirstCorner}
+          qualiPole={qualiPole}
+          qualiTop10={qualiTop10}
+          raceWinner={raceWinner}
+          raceTop10={raceTop10}
+          safetyCar={safetyCar}
+          setSafetyCar={setSafetyCar}
+          dnfDrivers={dnfDrivers}
+          setDnfDrivers={setDnfDrivers}
+          noDnf={noDnf}
+          setNoDnf={setNoDnf}
+          fastestLapDriver={fastestLapDriver}
+          firstCornerLeader={firstCornerLeader}
+          isSprintBonusComplete={isSprintBonusComplete}
+          isMainBonusComplete={isMainBonusComplete}
           minigamesComplete={minigamesComplete}
-          handleDriverSelect={handleDriverSelect} isDriverSelected={isDriverSelected}
+          handleDriverSelect={handleDriverSelect}
+          isDriverSelected={isDriverSelected}
         />
       </div>
 
@@ -329,7 +431,11 @@ export default function PredictionsPage() {
         <div className="max-w-2xl mx-auto">
           <Button
             onClick={handleSave}
-            disabled={saving || (activeTab === "sprint" ? !isSprintComplete : !isMainComplete) || (activeTab === "sprint" ? !canPredictSprint : !canPredictMain)}
+            disabled={
+              saving ||
+              (activeTab === "sprint" ? !isSprintComplete : !isMainComplete) ||
+              (activeTab === "sprint" ? !canPredictSprint : !canPredictMain)
+            }
             className={`w-full h-14 font-heading text-lg ${activeTab === "sprint" ? "btn-gold" : "btn-racing"}`}
             data-testid="save-predictions-btn"
           >
@@ -338,7 +444,10 @@ export default function PredictionsPage() {
             ) : (activeTab === "sprint" ? !canPredictSprint : !canPredictMain) ? (
               "Pronostics fermés"
             ) : (activeTab === "sprint" ? isSprintComplete : isMainComplete) ? (
-              <><Check className="w-5 h-5 mr-2" />Enregistrer Pronos</>
+              <>
+                <Check className="w-5 h-5 mr-2" />
+                Enregistrer Pronos
+              </>
             ) : (
               "Complète tous les pronostics"
             )}

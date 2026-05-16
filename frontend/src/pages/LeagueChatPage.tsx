@@ -1,16 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth";
-import { apiClient } from "@/lib/api";
+import { toast } from "sonner";
+import { ArrowLeft, Send, Users, MessageCircle, RefreshCw, Crown, Clock } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { toast } from "sonner";
-import {
-  ArrowLeft, Send, Users, MessageCircle, RefreshCw,
-  Crown, Clock
-} from "lucide-react";
 import { AvatarDisplay } from "../components/AvatarDisplay";
+import { apiClient } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 export default function LeagueChatPage() {
   const { leagueId } = useParams();
@@ -72,7 +69,7 @@ export default function LeagueChatPage() {
     setSending(true);
     try {
       await apiClient.post(`/leagues/${leagueId}/messages`, {
-        content: newMessage.trim()
+        content: newMessage.trim(),
       });
       setNewMessage("");
       queryClient.invalidateQueries({ queryKey: ["/leagues", leagueId, "messages"] });
@@ -96,11 +93,17 @@ export default function LeagueChatPage() {
     const date = new Date(isoString);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
-    
+
     if (diff < 60000) return "À l'instant";
     if (diff < 3600000) return `${Math.floor(diff / 60000)} min`;
-    if (diff < 86400000) return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    if (diff < 86400000)
+      return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   const navigateToProfile = (userId: any) => {
@@ -122,7 +125,10 @@ export default function LeagueChatPage() {
     return (
       <div className="min-h-screen bg-app-main p-4 pt-6">
         <div className="max-w-2xl mx-auto">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-cyan-400 mb-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-cyan-400 mb-4"
+          >
             <ArrowLeft className="w-5 h-5" /> Retour
           </button>
           <div className="card-arcade p-6 text-center">
@@ -140,7 +146,7 @@ export default function LeagueChatPage() {
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={() => navigate(-1)}
                 className="p-2 rounded-lg text-cyan-400 hover:bg-cyan-500/10 transition-colors"
                 data-testid="back-btn"
@@ -152,9 +158,7 @@ export default function LeagueChatPage() {
                   <MessageCircle className="w-5 h-5 text-cyan-400" />
                   {league.name}
                 </h1>
-                <p className="font-body text-xs text-gray-400">
-                  {members.length} membres
-                </p>
+                <p className="font-body text-xs text-gray-400">{members.length} membres</p>
               </div>
             </div>
             <button
@@ -180,19 +184,21 @@ export default function LeagueChatPage() {
                 data-testid={`member-${member.id}`}
               >
                 <div className="relative">
-                  <AvatarDisplay 
-                    avatar={getAvatarById(member.avatar_id)} 
+                  <AvatarDisplay
+                    avatar={getAvatarById(member.avatar_id)}
                     customUrl={member.custom_avatar_url}
-                    size="sm" 
+                    size="sm"
                   />
                   {member.is_owner && (
                     <Crown className="w-3 h-3 text-yellow-500 absolute -top-1 -right-1" />
                   )}
                 </div>
-                <span className={`font-body text-[10px] truncate max-w-[50px] ${
-                  member.id === user?.id ? 'text-cyan-400' : 'text-gray-400'
-                }`}>
-                  {member.id === user?.id ? 'Toi' : member.username}
+                <span
+                  className={`font-body text-[10px] truncate max-w-[50px] ${
+                    member.id === user?.id ? "text-cyan-400" : "text-gray-400"
+                  }`}
+                >
+                  {member.id === user?.id ? "Toi" : member.username}
                 </span>
               </button>
             ))}
@@ -201,10 +207,10 @@ export default function LeagueChatPage() {
       </div>
 
       {/* Chat Messages */}
-      <div 
+      <div
         ref={chatContainerRef}
         className="flex-1 overflow-y-auto p-4 pb-24"
-        style={{ maxHeight: 'calc(100vh - 250px)' }}
+        style={{ maxHeight: "calc(100vh - 250px)" }}
       >
         <div className="max-w-2xl mx-auto space-y-3">
           {messages.length === 0 ? (
@@ -217,49 +223,53 @@ export default function LeagueChatPage() {
             messages.map((msg: any, index: any) => {
               const isMe = msg.user_id === user?.id;
               const showAvatar = index === 0 || messages[index - 1]?.user_id !== msg.user_id;
-              
+
               return (
-                <div 
-                  key={msg.id} 
-                  className={`flex gap-2 ${isMe ? 'flex-row-reverse' : ''}`}
+                <div
+                  key={msg.id}
+                  className={`flex gap-2 ${isMe ? "flex-row-reverse" : ""}`}
                   data-testid={`message-${msg.id}`}
                 >
                   {showAvatar ? (
-                    <button 
+                    <button
                       onClick={() => navigateToProfile(msg.user_id)}
                       className="flex-shrink-0 hover:opacity-80 transition-opacity"
                     >
-                      <AvatarDisplay 
-                        avatar={getAvatarById(msg.avatar_id)} 
+                      <AvatarDisplay
+                        avatar={getAvatarById(msg.avatar_id)}
                         customUrl={msg.custom_avatar_url}
-                        size="sm" 
+                        size="sm"
                       />
                     </button>
                   ) : (
                     <div className="w-8" />
                   )}
-                  
-                  <div className={`max-w-[75%] ${isMe ? 'items-end' : 'items-start'}`}>
+
+                  <div className={`max-w-[75%] ${isMe ? "items-end" : "items-start"}`}>
                     {showAvatar && (
-                      <button 
+                      <button
                         onClick={() => navigateToProfile(msg.user_id)}
                         className={`font-body text-xs mb-1 hover:underline ${
-                          isMe ? 'text-cyan-400 text-right block' : 'text-gray-400'
+                          isMe ? "text-cyan-400 text-right block" : "text-gray-400"
                         }`}
                       >
-                        {isMe ? 'Toi' : msg.username}
+                        {isMe ? "Toi" : msg.username}
                       </button>
                     )}
-                    <div className={`rounded-2xl px-4 py-2 ${
-                      isMe 
-                        ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-tr-sm' 
-                        : 'bg-gray-800 text-gray-100 rounded-tl-sm'
-                    }`}>
+                    <div
+                      className={`rounded-2xl px-4 py-2 ${
+                        isMe
+                          ? "bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-tr-sm"
+                          : "bg-gray-800 text-gray-100 rounded-tl-sm"
+                      }`}
+                    >
                       <p className="font-body text-sm break-words">{msg.content}</p>
                     </div>
-                    <p className={`font-body text-[10px] text-gray-500 mt-1 flex items-center gap-1 ${
-                      isMe ? 'justify-end' : ''
-                    }`}>
+                    <p
+                      className={`font-body text-[10px] text-gray-500 mt-1 flex items-center gap-1 ${
+                        isMe ? "justify-end" : ""
+                      }`}
+                    >
                       <Clock className="w-3 h-3" />
                       {formatTime(msg.created_at)}
                     </p>
@@ -285,8 +295,8 @@ export default function LeagueChatPage() {
                         focus:border-cyan-500 focus:ring-cyan-500/30 rounded-xl h-12"
               data-testid="message-input"
             />
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={!newMessage.trim() || sending}
               className="btn-racing h-12 px-4"
               data-testid="send-btn"

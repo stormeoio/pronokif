@@ -1,8 +1,23 @@
 import {
-  Trophy, Flag, History, Lightbulb, Info,
-  User, FileText, Star, Instagram, Twitter
+  Trophy,
+  Flag,
+  History,
+  Lightbulb,
+  Info,
+  User,
+  FileText,
+  Star,
+  Instagram,
+  Twitter,
 } from "lucide-react";
-import { InfoRow, StatCard, formatDate, factIcons, getTeamColors, type TeamColors } from "./driverHelpers";
+import {
+  InfoRow,
+  StatCard,
+  formatDate,
+  factIcons,
+  getTeamColors,
+  type TeamColors,
+} from "./driverHelpers";
 
 interface TabProps {
   driver: Record<string, any>;
@@ -43,7 +58,9 @@ export function ProfileTab({ driver, colors }: TabProps) {
           <InfoRow label="Points permis" value={`${driver.license_points || 12}/12`} />
         </div>
         {contract.notes && (
-          <p className="mt-3 font-body text-xs text-gray-500 italic border-t border-gray-800 pt-3">{contract.notes}</p>
+          <p className="mt-3 font-body text-xs text-gray-500 italic border-t border-gray-800 pt-3">
+            {contract.notes}
+          </p>
         )}
       </div>
 
@@ -55,15 +72,23 @@ export function ProfileTab({ driver, colors }: TabProps) {
           </h3>
           <div className="flex gap-3">
             {driver.social.instagram && (
-              <a href={`https://instagram.com/${driver.social.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer"
-                className="flex-1 p-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg flex items-center justify-center gap-2 hover:border-purple-500/50 transition-colors">
+              <a
+                href={`https://instagram.com/${driver.social.instagram.replace("@", "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 p-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg flex items-center justify-center gap-2 hover:border-purple-500/50 transition-colors"
+              >
                 <Instagram className="w-5 h-5 text-purple-400" />
                 <span className="font-body text-sm text-white">{driver.social.instagram}</span>
               </a>
             )}
             {driver.social.twitter && (
-              <a href={`https://twitter.com/${driver.social.twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer"
-                className="flex-1 p-3 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30 rounded-lg flex items-center justify-center gap-2 hover:border-blue-500/50 transition-colors">
+              <a
+                href={`https://twitter.com/${driver.social.twitter.replace("@", "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 p-3 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30 rounded-lg flex items-center justify-center gap-2 hover:border-blue-500/50 transition-colors"
+              >
                 <Twitter className="w-5 h-5 text-blue-400" />
                 <span className="font-body text-sm text-white">{driver.social.twitter}</span>
               </a>
@@ -86,12 +111,42 @@ export function PalmaresTab({ driver, colors }: TabProps) {
           <Trophy className="w-4 h-4 text-yellow-500" /> Carriere F1
         </h3>
         <div className="grid grid-cols-3 gap-3 mb-4">
-          <StatCard value={f1Stats.world_championships || 0} label="Titres" color="text-yellow-400" bgColor="bg-yellow-500/10" />
-          <StatCard value={f1Stats.wins || 0} label="Victoires" color="text-green-400" bgColor="bg-green-500/10" />
-          <StatCard value={f1Stats.podiums || 0} label="Podiums" color="text-cyan-400" bgColor="bg-cyan-500/10" />
-          <StatCard value={f1Stats.poles || 0} label="Poles" color="text-purple-400" bgColor="bg-purple-500/10" />
-          <StatCard value={f1Stats.fastest_laps || 0} label="Meilleurs tours" color="text-pink-400" bgColor="bg-pink-500/10" />
-          <StatCard value={f1Stats.points || 0} label="Points" color="text-white" bgColor="bg-gray-500/10" />
+          <StatCard
+            value={f1Stats.world_championships || 0}
+            label="Titres"
+            color="text-yellow-400"
+            bgColor="bg-yellow-500/10"
+          />
+          <StatCard
+            value={f1Stats.wins || 0}
+            label="Victoires"
+            color="text-green-400"
+            bgColor="bg-green-500/10"
+          />
+          <StatCard
+            value={f1Stats.podiums || 0}
+            label="Podiums"
+            color="text-cyan-400"
+            bgColor="bg-cyan-500/10"
+          />
+          <StatCard
+            value={f1Stats.poles || 0}
+            label="Poles"
+            color="text-purple-400"
+            bgColor="bg-purple-500/10"
+          />
+          <StatCard
+            value={f1Stats.fastest_laps || 0}
+            label="Meilleurs tours"
+            color="text-pink-400"
+            bgColor="bg-pink-500/10"
+          />
+          <StatCard
+            value={f1Stats.points || 0}
+            label="Points"
+            color="text-white"
+            bgColor="bg-gray-500/10"
+          />
         </div>
         <div className="border-t border-gray-800 pt-3">
           <div className="flex justify-between items-center">
@@ -116,19 +171,31 @@ export function PalmaresTab({ driver, colors }: TabProps) {
           </h3>
           <div className="space-y-2">
             {juniorCareer.map((season: any, idx: any) => (
-              <div key={idx} className={`p-3 rounded-lg border ${
-                season.position === 1 ? "bg-yellow-500/10 border-yellow-500/30" :
-                season.position === 2 ? "bg-gray-400/10 border-gray-400/30" :
-                season.position === 3 ? "bg-amber-600/10 border-amber-600/30" :
-                "bg-gray-800/30 border-gray-700/50"
-              }`}>
+              <div
+                key={idx}
+                className={`p-3 rounded-lg border ${
+                  season.position === 1
+                    ? "bg-yellow-500/10 border-yellow-500/30"
+                    : season.position === 2
+                      ? "bg-gray-400/10 border-gray-400/30"
+                      : season.position === 3
+                        ? "bg-amber-600/10 border-amber-600/30"
+                        : "bg-gray-800/30 border-gray-700/50"
+                }`}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className={`font-data text-xl ${
-                      season.position === 1 ? "text-yellow-400" :
-                      season.position === 2 ? "text-gray-300" :
-                      season.position === 3 ? "text-amber-500" : "text-gray-500"
-                    }`}>
+                    <span
+                      className={`font-data text-xl ${
+                        season.position === 1
+                          ? "text-yellow-400"
+                          : season.position === 2
+                            ? "text-gray-300"
+                            : season.position === 3
+                              ? "text-amber-500"
+                              : "text-gray-500"
+                      }`}
+                    >
                       {season.position === 1 && <Trophy className="w-5 h-5 inline" />}
                       {season.position !== 1 && `P${season.position}`}
                     </span>
@@ -139,10 +206,14 @@ export function PalmaresTab({ driver, colors }: TabProps) {
                   </div>
                   <div className="text-right">
                     <p className="font-data text-lg text-white">{season.year}</p>
-                    {season.wins > 0 && <p className="font-body text-xs text-green-400">{season.wins} victoires</p>}
+                    {season.wins > 0 && (
+                      <p className="font-body text-xs text-green-400">{season.wins} victoires</p>
+                    )}
                   </div>
                 </div>
-                {season.note && <p className="font-body text-xs text-gray-500 mt-2 italic">{season.note}</p>}
+                {season.note && (
+                  <p className="font-body text-xs text-gray-500 mt-2 italic">{season.note}</p>
+                )}
               </div>
             ))}
           </div>
@@ -161,14 +232,23 @@ export function FactsTab({ driver, colors }: TabProps) {
         <h3 className="font-heading text-sm text-white flex items-center gap-2">
           <Lightbulb className="w-4 h-4 text-yellow-400" /> 10 infos utiles sur {driver.first_name}
         </h3>
-        <p className="font-body text-xs text-gray-500 mt-1">Des faits interessants pour vos pronostics</p>
+        <p className="font-body text-xs text-gray-500 mt-1">
+          Des faits interessants pour vos pronostics
+        </p>
       </div>
 
       {facts.map((fact: any, idx: any) => {
         const IconComponent = factIcons[fact.icon] || Info;
         return (
-          <div key={idx} className="card-arcade p-4 flex items-start gap-3" style={{ borderLeftWidth: '3px', borderLeftColor: colors.primary }}>
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${colors.primary}20` }}>
+          <div
+            key={idx}
+            className="card-arcade p-4 flex items-start gap-3"
+            style={{ borderLeftWidth: "3px", borderLeftColor: colors.primary }}
+          >
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: `${colors.primary}20` }}
+            >
               <IconComponent className="w-5 h-5" style={{ color: colors.primary }} />
             </div>
             <div className="flex-1">

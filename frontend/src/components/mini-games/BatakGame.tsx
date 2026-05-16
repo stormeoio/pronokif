@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { Trophy, Timer, RotateCcw, Play, Target, Share2, X, MessageCircle } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Trophy, Timer, RotateCcw, Play, Target, Share2, X, MessageCircle } from "lucide-react";
 import { apiClient } from "@/lib/api";
-import { toast } from "sonner";
 
 interface BatakGameProps {
   onSubmit?: (score: number, duration: number, isTraining: boolean) => Promise<void>;
@@ -45,28 +45,45 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
     setTimeLeft(30);
     setTargets([generateTarget()]);
     timerRef.current = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) { if (timerRef.current) clearInterval(timerRef.current); setGameState("result"); return 0; }
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          setGameState("result");
+          return 0;
+        }
         return prev - 1;
       });
     }, 1000);
   }, [generateTarget]);
 
-  const handleTargetClick = useCallback((targetId: number) => {
-    setScore(prev => prev + 1);
-    setTargets([generateTarget()]);
-  }, [generateTarget]);
+  const handleTargetClick = useCallback(
+    (targetId: number) => {
+      setScore((prev) => prev + 1);
+      setTargets([generateTarget()]);
+    },
+    [generateTarget],
+  );
 
   const resetGame = () => {
     if (timerRef.current) clearInterval(timerRef.current);
-    setGameState("idle"); setScore(0); setTimeLeft(30); setTargets([]);
+    setGameState("idle");
+    setScore(0);
+    setTimeLeft(30);
+    setTargets([]);
   };
 
   const handleSubmit = async () => {
-    if (onSubmit) { await onSubmit(score, 30, isTraining); resetGame(); }
+    if (onSubmit) {
+      await onSubmit(score, 30, isTraining);
+      resetGame();
+    }
   };
 
-  useEffect(() => { return () => { if (timerRef.current) clearInterval(timerRef.current); }; }, []);
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
 
   const getResultMessage = (s: number): string => {
     if (s >= 40) return "INCROYABLE! 🔥";
@@ -79,12 +96,21 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
 
   const fetchUserLeagues = async () => {
     setLoadingLeagues(true);
-    try { const res = await apiClient.get("/leagues/my"); setUserLeagues(res.data || []); }
-    catch (error: unknown) { console.error("Error fetching leagues:", error); setUserLeagues([]); }
-    finally { setLoadingLeagues(false); }
+    try {
+      const res = await apiClient.get("/leagues/my");
+      setUserLeagues(res.data || []);
+    } catch (error: unknown) {
+      console.error("Error fetching leagues:", error);
+      setUserLeagues([]);
+    } finally {
+      setLoadingLeagues(false);
+    }
   };
 
-  const handleOpenShareModal = () => { fetchUserLeagues(); setShowShareModal(true); };
+  const handleOpenShareModal = () => {
+    fetchUserLeagues();
+    setShowShareModal(true);
+  };
 
   const handleShareToLeague = async (leagueId: number, leagueName: string) => {
     setSharing(true);
@@ -93,8 +119,11 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
       await apiClient.post(`/leagues/${leagueId}/messages`, { content: message });
       toast.success(`Score partagé dans ${leagueName} !`);
       setShowShareModal(false);
-    } catch (error: unknown) { toast.error("Erreur lors du partage"); }
-    finally { setSharing(false); }
+    } catch (error: unknown) {
+      toast.error("Erreur lors du partage");
+    } finally {
+      setSharing(false);
+    }
   };
 
   return (
@@ -105,14 +134,20 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
           {isTraining && <span className="text-xs text-orange-400 ml-2">(Entraînement)</span>}
         </CardTitle>
         {!isTraining && attemptsRemaining !== undefined && (
-          <p className="font-body text-sm text-gray-400">Essais restants: <span className="text-cyan-400">{attemptsRemaining}</span>/3</p>
+          <p className="font-body text-sm text-gray-400">
+            Essais restants: <span className="text-cyan-400">{attemptsRemaining}</span>/3
+          </p>
         )}
       </CardHeader>
       <CardContent className="p-4 space-y-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Timer className={`w-5 h-5 ${timeLeft <= 10 ? 'text-red-500' : 'text-cyan-400'}`} />
-            <span className={`font-data text-2xl ${timeLeft <= 10 ? 'text-red-500' : 'text-white'}`}>{timeLeft}s</span>
+            <Timer className={`w-5 h-5 ${timeLeft <= 10 ? "text-red-500" : "text-cyan-400"}`} />
+            <span
+              className={`font-data text-2xl ${timeLeft <= 10 ? "text-red-500" : "text-white"}`}
+            >
+              {timeLeft}s
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-yellow-500" />
@@ -122,20 +157,29 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
 
         <div className="grid grid-cols-4 gap-1.5">
           {Array.from({ length: gridSize.cols * gridSize.rows }).map((_, i) => {
-            const target = targets.find(t => t.position === i);
+            const target = targets.find((t) => t.position === i);
             return (
-              <button key={i} onClick={() => target && handleTargetClick(target.id)} disabled={gameState !== "playing"}
-                className={`h-14 sm:h-16 rounded-lg transition-all ${target ? "bg-gradient-to-b from-cyan-400 to-cyan-600 border-2 border-cyan-300 shadow-[0_0_15px_#22d3ee] animate-pulse" : "bg-gray-800 border-2 border-gray-700"}`} />
+              <button
+                key={i}
+                onClick={() => target && handleTargetClick(target.id)}
+                disabled={gameState !== "playing"}
+                className={`h-14 sm:h-16 rounded-lg transition-all ${target ? "bg-gradient-to-b from-cyan-400 to-cyan-600 border-2 border-cyan-300 shadow-[0_0_15px_#22d3ee] animate-pulse" : "bg-gray-800 border-2 border-gray-700"}`}
+              />
             );
           })}
         </div>
 
         {gameState === "idle" && (
           <div className="text-center py-2">
-            <p className="font-body text-gray-400 text-sm mb-3">Clique sur les cibles le plus vite possible !</p>
-            <Button onClick={startGame}
+            <p className="font-body text-gray-400 text-sm mb-3">
+              Clique sur les cibles le plus vite possible !
+            </p>
+            <Button
+              onClick={startGame}
               className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-heading h-12 text-base"
-              disabled={!isTraining && attemptsRemaining === 0} data-testid="batak-start-btn">
+              disabled={!isTraining && attemptsRemaining === 0}
+              data-testid="batak-start-btn"
+            >
               <Play className="w-5 h-5 mr-2" /> DÉMARRER (30s)
             </Button>
           </div>
@@ -149,18 +193,25 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
             </div>
             <div className="flex flex-col gap-3">
               <div className="flex gap-3">
-                <Button onClick={resetGame} className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white h-12">
+                <Button
+                  onClick={resetGame}
+                  className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white h-12"
+                >
                   <RotateCcw className="w-5 h-5 mr-2" /> Réessayer
                 </Button>
-                <Button onClick={handleSubmit}
+                <Button
+                  onClick={handleSubmit}
                   className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white h-12"
-                  disabled={!isTraining && attemptsRemaining === 0}>
+                  disabled={!isTraining && attemptsRemaining === 0}
+                >
                   <Trophy className="w-5 h-5 mr-2" /> Enregistrer
                 </Button>
               </div>
-              <Button onClick={handleOpenShareModal}
+              <Button
+                onClick={handleOpenShareModal}
                 className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white h-12"
-                data-testid="batak-share-btn">
+                data-testid="batak-share-btn"
+              >
                 <Share2 className="w-5 h-5 mr-2" /> Partager dans une ligue
               </Button>
             </div>
@@ -171,11 +222,19 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
       {showShareModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-[#0a1628] border-2 border-cyan-500/30 rounded-xl max-w-md w-full p-6 relative">
-            <button onClick={() => setShowShareModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white">
+            <button
+              onClick={() => setShowShareModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+            >
               <X className="w-6 h-6" />
             </button>
-            <h3 className="font-heading text-xl text-cyan-400 mb-2 flex items-center gap-2"><Share2 className="w-5 h-5" /> Partager mon score</h3>
-            <p className="font-body text-gray-400 text-sm mb-4">Score: <span className="text-cyan-400 font-data">{score} cibles</span> - {getResultMessage(score)}</p>
+            <h3 className="font-heading text-xl text-cyan-400 mb-2 flex items-center gap-2">
+              <Share2 className="w-5 h-5" /> Partager mon score
+            </h3>
+            <p className="font-body text-gray-400 text-sm mb-4">
+              Score: <span className="text-cyan-400 font-data">{score} cibles</span> -{" "}
+              {getResultMessage(score)}
+            </p>
             {loadingLeagues ? (
               <div className="text-center py-8">
                 <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto" />
@@ -189,9 +248,15 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
             ) : (
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {userLeagues.map((league) => (
-                  <button key={league.id} onClick={() => handleShareToLeague(league.id, league.name)} disabled={sharing}
-                    className="w-full p-3 rounded-lg bg-gray-800/50 border border-gray-700 hover:border-cyan-500 hover:bg-cyan-500/10 transition-all flex items-center justify-between group">
-                    <span className="font-heading text-white group-hover:text-cyan-400">{league.name}</span>
+                  <button
+                    key={league.id}
+                    onClick={() => handleShareToLeague(league.id, league.name)}
+                    disabled={sharing}
+                    className="w-full p-3 rounded-lg bg-gray-800/50 border border-gray-700 hover:border-cyan-500 hover:bg-cyan-500/10 transition-all flex items-center justify-between group"
+                  >
+                    <span className="font-heading text-white group-hover:text-cyan-400">
+                      {league.name}
+                    </span>
                     <Share2 className="w-4 h-4 text-gray-500 group-hover:text-cyan-400" />
                   </button>
                 ))}

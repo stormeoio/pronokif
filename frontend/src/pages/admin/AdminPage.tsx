@@ -1,16 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/lib/auth";
-import { Button } from "@/components/ui/button";
-import {
-  ChevronLeft, Shield, Loader2, Trophy, Bell, MessageSquare, Users,
-} from "lucide-react";
-
+import { ChevronLeft, Shield, Loader2, Trophy, Bell, MessageSquare, Users } from "lucide-react";
 import ResultsTab from "./ResultsTab";
 import NotificationsTab from "./NotificationsTab";
 import FeedbackTab from "./FeedbackTab";
 import MembersTab from "./MembersTab";
 import { useAdminData } from "./useAdminData";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
 
 export default function AdminPage() {
   const navigate = useNavigate();
@@ -24,7 +21,10 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-4 pt-6" style={{ background: 'linear-gradient(180deg, #0a0f1a 0%, #151c2c 50%, #0a0f1a 100%)' }}>
+      <div
+        className="min-h-screen p-4 pt-6"
+        style={{ background: "linear-gradient(180deg, #0a0f1a 0%, #151c2c 50%, #0a0f1a 100%)" }}
+      >
         <div className="max-w-2xl mx-auto flex items-center justify-center h-[60vh]">
           <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
         </div>
@@ -64,7 +64,12 @@ export default function AdminPage() {
       <div className="sticky top-0 z-40 bg-[#050a14]/95 backdrop-blur-md border-b border-red-500/30">
         <div className="max-w-2xl mx-auto p-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-400 hover:text-white hover:bg-white/10">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="text-gray-400 hover:text-white hover:bg-white/10"
+            >
               <ChevronLeft className="w-6 h-6" />
             </Button>
             <div className="flex-1">
@@ -90,7 +95,7 @@ export default function AdminPage() {
                 className={`p-3 rounded-xl font-heading text-xs uppercase transition-all ${
                   isActive
                     ? `bg-${activeColor}-500/20 border-2 border-${activeColor}-500 text-${activeColor}-400`
-                    : 'bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10'
+                    : "bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10"
                 }`}
               >
                 <Icon className="w-5 h-5 mx-auto mb-1" />

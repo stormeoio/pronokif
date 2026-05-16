@@ -9,7 +9,8 @@ function getRankIcon(rank: number): ReactNode {
 }
 
 function getRankStyle(rank: number): string {
-  if (rank === 1) return "bg-gradient-to-r from-yellow-500/20 to-yellow-600/10 border-yellow-500/50";
+  if (rank === 1)
+    return "bg-gradient-to-r from-yellow-500/20 to-yellow-600/10 border-yellow-500/50";
   if (rank === 2) return "bg-gradient-to-r from-gray-400/20 to-gray-500/10 border-gray-400/50";
   if (rank === 3) return "bg-gradient-to-r from-amber-600/20 to-amber-700/10 border-amber-600/50";
   return "bg-gray-800/30 border-gray-700/50";
@@ -22,7 +23,12 @@ interface LeagueLeaderboardProps {
   getAvatar: (member: Record<string, any>) => string | null;
 }
 
-export default function LeagueLeaderboard({ leaderboard, members, userId, getAvatar }: LeagueLeaderboardProps) {
+export default function LeagueLeaderboard({
+  leaderboard,
+  members,
+  userId,
+  getAvatar,
+}: LeagueLeaderboardProps) {
   if (leaderboard.length === 0) {
     return (
       <div className="card-arcade p-8 text-center">
@@ -50,9 +56,7 @@ export default function LeagueLeaderboard({ leaderboard, members, userId, getAva
           >
             <div className="flex items-center gap-3">
               {/* Rank */}
-              <div className="w-8 h-8 flex items-center justify-center">
-                {getRankIcon(rank)}
-              </div>
+              <div className="w-8 h-8 flex items-center justify-center">{getRankIcon(rank)}</div>
 
               {/* Avatar */}
               <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-700 flex-shrink-0">
@@ -67,7 +71,9 @@ export default function LeagueLeaderboard({ leaderboard, members, userId, getAva
 
               {/* Name */}
               <div className="flex-1 min-w-0">
-                <p className={`font-heading text-sm truncate ${isMe ? "text-cyan-400" : "text-white"}`}>
+                <p
+                  className={`font-heading text-sm truncate ${isMe ? "text-cyan-400" : "text-white"}`}
+                >
                   {entry.username || "Anonyme"}
                   {isMe && <span className="text-xs text-cyan-400/70 ml-2">(toi)</span>}
                 </p>

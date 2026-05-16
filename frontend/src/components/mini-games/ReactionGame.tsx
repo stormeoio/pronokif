@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from "react";
+import { Zap, Trophy, RotateCcw, Play } from "lucide-react";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Zap, Trophy, RotateCcw, Play } from "lucide-react";
 
 type ReactionGameState = "idle" | "waiting" | "ready" | "go" | "result" | "false_start";
 
@@ -11,7 +11,11 @@ interface ReactionGameProps {
   isTraining?: boolean;
 }
 
-export function ReactionGame({ onSubmit, attemptsRemaining, isTraining = false }: ReactionGameProps) {
+export function ReactionGame({
+  onSubmit,
+  attemptsRemaining,
+  isTraining = false,
+}: ReactionGameProps) {
   const [gameState, setGameState] = useState<ReactionGameState>("idle");
   const [lights, setLights] = useState([false, false, false, false, false]);
   const [reactionTime, setReactionTime] = useState<number | null>(null);
@@ -33,7 +37,7 @@ export function ReactionGame({ onSubmit, attemptsRemaining, isTraining = false }
 
     let lightIndex = 0;
     const lightInterval = setInterval(() => {
-      setLights(prev => {
+      setLights((prev) => {
         const newLights = [...prev];
         newLights[lightIndex] = true;
         return newLights;
@@ -98,25 +102,49 @@ export function ReactionGame({ onSubmit, attemptsRemaining, isTraining = false }
           {isTraining && <span className="text-xs text-cyan-400 ml-2">(Entraînement)</span>}
         </CardTitle>
         {!isTraining && attemptsRemaining !== undefined && (
-          <p className="font-body text-sm text-gray-400">Essais restants: <span className="text-orange-400">{attemptsRemaining}</span>/3</p>
+          <p className="font-body text-sm text-gray-400">
+            Essais restants: <span className="text-orange-400">{attemptsRemaining}</span>/3
+          </p>
         )}
       </CardHeader>
       <CardContent className="p-4 space-y-4">
         <div className="flex justify-center gap-2">
           {lights.map((lit, i) => (
-            <div key={i} className={`w-12 h-12 rounded-full border-4 transition-all duration-200 ${lit ? "bg-red-500 border-red-400 shadow-[0_0_20px_#ef4444]" : "bg-gray-800 border-gray-600"}`} />
+            <div
+              key={i}
+              className={`w-12 h-12 rounded-full border-4 transition-all duration-200 ${lit ? "bg-red-500 border-red-400 shadow-[0_0_20px_#ef4444]" : "bg-gray-800 border-gray-600"}`}
+            />
           ))}
         </div>
 
-        <div className={`h-32 rounded-lg flex items-center justify-center cursor-pointer transition-all ${
-          gameState === "go" ? "bg-green-500/20 border-2 border-green-500 animate-pulse" :
-          gameState === "false_start" ? "bg-red-500/20 border-2 border-red-500" :
-          "bg-gray-800/50 border-2 border-gray-700"
-        }`} onClick={handleClick}>
-          {gameState === "idle" && <p className="font-heading text-gray-400 text-center">Cliquer sur DÉMARRER pour commencer</p>}
-          {gameState === "waiting" && <p className="font-heading text-yellow-500 text-center animate-pulse">Attendez les feux...</p>}
-          {gameState === "ready" && <p className="font-heading text-red-500 text-center animate-pulse">PRÊT... Attendez l'extinction!</p>}
-          {gameState === "go" && <p className="font-heading text-2xl text-green-400 text-center">GO! CLIQUEZ!</p>}
+        <div
+          className={`h-32 rounded-lg flex items-center justify-center cursor-pointer transition-all ${
+            gameState === "go"
+              ? "bg-green-500/20 border-2 border-green-500 animate-pulse"
+              : gameState === "false_start"
+                ? "bg-red-500/20 border-2 border-red-500"
+                : "bg-gray-800/50 border-2 border-gray-700"
+          }`}
+          onClick={handleClick}
+        >
+          {gameState === "idle" && (
+            <p className="font-heading text-gray-400 text-center">
+              Cliquer sur DÉMARRER pour commencer
+            </p>
+          )}
+          {gameState === "waiting" && (
+            <p className="font-heading text-yellow-500 text-center animate-pulse">
+              Attendez les feux...
+            </p>
+          )}
+          {gameState === "ready" && (
+            <p className="font-heading text-red-500 text-center animate-pulse">
+              PRÊT... Attendez l'extinction!
+            </p>
+          )}
+          {gameState === "go" && (
+            <p className="font-heading text-2xl text-green-400 text-center">GO! CLIQUEZ!</p>
+          )}
           {gameState === "false_start" && (
             <div className="text-center">
               <p className="font-heading text-2xl text-red-500">FAUX DÉPART!</p>
@@ -125,7 +153,9 @@ export function ReactionGame({ onSubmit, attemptsRemaining, isTraining = false }
           )}
           {gameState === "result" && (
             <div className="text-center">
-              <p className={`font-data text-4xl ${getResultColor(reactionTime!)}`}>{reactionTime} ms</p>
+              <p className={`font-data text-4xl ${getResultColor(reactionTime!)}`}>
+                {reactionTime} ms
+              </p>
               <p className="font-heading text-lg mt-2">{getResultMessage(reactionTime!)}</p>
             </div>
           )}
@@ -133,21 +163,29 @@ export function ReactionGame({ onSubmit, attemptsRemaining, isTraining = false }
 
         <div className="flex gap-3">
           {gameState === "idle" && (
-            <Button onClick={startSequence}
+            <Button
+              onClick={startSequence}
               className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white font-heading h-12 text-base"
-              disabled={!isTraining && attemptsRemaining === 0} data-testid="reaction-start-btn">
+              disabled={!isTraining && attemptsRemaining === 0}
+              data-testid="reaction-start-btn"
+            >
               <Play className="w-5 h-5 mr-2" /> DÉMARRER
             </Button>
           )}
           {(gameState === "false_start" || gameState === "result") && (
             <>
-              <Button onClick={resetGame} className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white h-12">
+              <Button
+                onClick={resetGame}
+                className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white h-12"
+              >
                 <RotateCcw className="w-5 h-5 mr-2" /> Réessayer
               </Button>
               {gameState === "result" && (
-                <Button onClick={handleSubmit}
+                <Button
+                  onClick={handleSubmit}
                   className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white h-12"
-                  disabled={!isTraining && attemptsRemaining === 0}>
+                  disabled={!isTraining && attemptsRemaining === 0}
+                >
                   <Trophy className="w-5 h-5 mr-2" /> Enregistrer
                 </Button>
               )}

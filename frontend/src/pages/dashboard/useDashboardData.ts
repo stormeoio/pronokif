@@ -87,10 +87,7 @@ export function useDashboardData() {
     predictions[race.id] = predictionQueries[i]?.data ?? null;
   });
 
-  const loading =
-    racesQuery.isLoading ||
-    avatarsQuery.isLoading ||
-    leaguesQuery.isLoading;
+  const loading = racesQuery.isLoading || avatarsQuery.isLoading || leaguesQuery.isLoading;
 
   return {
     loading,

@@ -19,14 +19,10 @@ export default function PredictionTimer({ activeTab }: PredictionTimerProps) {
     >
       <div className="flex items-center gap-2">
         <Clock
-          className={`w-4 h-4 ${
-            activeTab === "sprint" ? "text-yellow-400" : "text-cyan-400"
-          }`}
+          className={`w-4 h-4 ${activeTab === "sprint" ? "text-yellow-400" : "text-cyan-400"}`}
         />
         <span className="font-body text-sm text-gray-300">
-          {activeTab === "sprint"
-            ? "Clôture 15 min avant SQ1"
-            : "Clôture 15 min avant Q1"}
+          {activeTab === "sprint" ? "Clôture 15 min avant SQ1" : "Clôture 15 min avant Q1"}
         </span>
       </div>
     </div>

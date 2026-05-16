@@ -56,16 +56,12 @@ describe("AdminPage", () => {
     mockedApi.get.mockImplementation((url: string) => {
       if (url.includes("/admin/races")) {
         return Promise.resolve({
-          data: [
-            { id: "r1", name: "Monaco GP", round: 6, status: "upcoming" },
-          ],
+          data: [{ id: "r1", name: "Monaco GP", round: 6, status: "upcoming" }],
         });
       }
       if (url.includes("/drivers")) {
         return Promise.resolve({
-          data: [
-            { id: "d1", name: "Max Verstappen", team: "Red Bull Racing" },
-          ],
+          data: [{ id: "d1", name: "Max Verstappen", team: "Red Bull Racing" }],
         });
       }
       return Promise.resolve({ data: [] });

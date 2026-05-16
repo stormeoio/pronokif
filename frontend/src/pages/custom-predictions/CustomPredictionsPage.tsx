@@ -1,20 +1,26 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useAuth } from "@/lib/auth";
-import { apiClient } from "@/lib/api";
+import { toast } from "sonner";
+import {
+  ChevronLeft,
+  Plus,
+  X,
+  HelpCircle,
+  Users,
+  MessageSquare,
+  CheckCircle,
+  Edit3,
+} from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Switch } from "../../components/ui/switch";
-import { toast } from "sonner";
-import {
-  ChevronLeft, Plus, X, HelpCircle, Users,
-  MessageSquare, CheckCircle, Edit3
-} from "lucide-react";
 import PredictionCard from "./PredictionCard";
 import SetCorrectAnswerModal from "./SetCorrectAnswerModal";
 import { useCustomPredictionsData } from "./useCustomPredictionsData";
+import { apiClient } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 interface League {
   id: string;
@@ -59,17 +65,15 @@ export default function CustomPredictionsPage() {
   const [question, setQuestion] = useState("");
   const [answerType, setAnswerType] = useState("yes_no");
   const [multipleChoice, setMultipleChoice] = useState(false);
-  const [choices, setChoices] = useState<Choice[]>([{ text: "", points: 2 }, { text: "", points: 2 }]);
+  const [choices, setChoices] = useState<Choice[]>([
+    { text: "", points: 2 },
+    { text: "", points: 2 },
+  ]);
   const [creating, setCreating] = useState(false);
 
   // ── Data fetching (TanStack Query) ──────────────────────────────────
-  const {
-    loading,
-    allRaces,
-    defaultLeague,
-    predictions,
-    refetchPredictions,
-  } = useCustomPredictionsData(leagueId, league, selectedRace);
+  const { loading, allRaces, defaultLeague, predictions, refetchPredictions } =
+    useCustomPredictionsData(leagueId, league, selectedRace);
 
   // Hydrate league and selectedRace from query data once
   const hydratedRef = useRef(false);
@@ -81,9 +85,13 @@ export default function CustomPredictionsPage() {
   }, [loading, defaultLeague, allRaces]);
 
   const handleCreatePrediction = async () => {
-    if (!question.trim()) { toast.error("Ajoute une question"); return; }
-    if (answerType === "choice" && choices.filter(c => c.text.trim()).length < 2) {
-      toast.error("Ajoute au moins 2 choix"); return;
+    if (!question.trim()) {
+      toast.error("Ajoute une question");
+      return;
+    }
+    if (answerType === "choice" && choices.filter((c) => c.text.trim()).length < 2) {
+      toast.error("Ajoute au moins 2 choix");
+      return;
     }
     setCreating(true);
     try {
@@ -93,7 +101,7 @@ export default function CustomPredictionsPage() {
         question: question.trim(),
         answer_type: answerType,
         multiple_choice: multipleChoice,
-        choices: answerType === "choice" ? choices.filter(c => c.text.trim()) : null
+        choices: answerType === "choice" ? choices.filter((c) => c.text.trim()) : null,
       };
       await apiClient.post("/custom-predictions", payload);
       toast.success("Pronostic créé !");
@@ -113,12 +121,16 @@ export default function CustomPredictionsPage() {
       await apiClient.post(`/custom-predictions/${predictionId}/answer`, { answer });
       toast.success("Réponse enregistrée !");
       refetchPredictions();
-    } catch (e: unknown) { toast.error("Erreur"); }
+    } catch (e: unknown) {
+      toast.error("Erreur");
+    }
   };
 
   const handleSetCorrectAnswer = async (predictionId: string, correctAnswer: string | string[]) => {
     try {
-      await apiClient.post(`/custom-predictions/${predictionId}/set-correct`, { correct_answer: correctAnswer });
+      await apiClient.post(`/custom-predictions/${predictionId}/set-correct`, {
+        correct_answer: correctAnswer,
+      });
       toast.success("Réponse correcte définie ! Points attribués.");
       setSelectedPrediction(null);
       refetchPredictions();
@@ -132,12 +144,23 @@ export default function CustomPredictionsPage() {
     setQuestion("");
     setAnswerType("yes_no");
     setMultipleChoice(false);
-    setChoices([{ text: "", points: 2 }, { text: "", points: 2 }]);
+    setChoices([
+      { text: "", points: 2 },
+      { text: "", points: 2 },
+    ]);
   };
 
-  const addChoice = () => { setChoices([...choices, { text: "", points: 2 }]); };
-  const removeChoice = (index: number) => { if (choices.length > 2) setChoices(choices.filter((_: any, i: number) => i !== index)); };
-  const updateChoice = (index: number, text: string) => { const nc = [...choices]; if (nc[index]) nc[index].text = text; setChoices(nc); };
+  const addChoice = () => {
+    setChoices([...choices, { text: "", points: 2 }]);
+  };
+  const removeChoice = (index: number) => {
+    if (choices.length > 2) setChoices(choices.filter((_: any, i: number) => i !== index));
+  };
+  const updateChoice = (index: number, text: string) => {
+    const nc = [...choices];
+    if (nc[index]) nc[index].text = text;
+    setChoices(nc);
+  };
 
   if (loading) {
     return (
@@ -159,7 +182,12 @@ export default function CustomPredictionsPage() {
       <div className="sticky top-0 z-40 bg-[#050a14]/95 backdrop-blur-md border-b border-pink-500/30">
         <div className="max-w-2xl mx-auto p-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-gray-400 hover:text-white hover:bg-white/10">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="text-gray-400 hover:text-white hover:bg-white/10"
+            >
               <ChevronLeft className="w-6 h-6" />
             </Button>
             <div className="flex-1">
@@ -176,10 +204,14 @@ export default function CustomPredictionsPage() {
 
           {allRaces.length > 0 && (
             <div className="mt-3">
-              <Label className="text-xs text-gray-400 uppercase font-heading mb-1 block">Grand Prix</Label>
+              <Label className="text-xs text-gray-400 uppercase font-heading mb-1 block">
+                Grand Prix
+              </Label>
               <select
                 value={selectedRace?.id || ""}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedRace(allRaces.find((r: Race) => r.id === e.target.value) ?? null)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setSelectedRace(allRaces.find((r: Race) => r.id === e.target.value) ?? null)
+                }
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-white font-body focus:border-pink-500 focus:outline-none"
               >
                 {allRaces.map((race: any) => (
@@ -201,9 +233,12 @@ export default function CustomPredictionsPage() {
               <HelpCircle className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-body text-sm text-gray-300">
-                  Crée des pronostics fun pour ta ligue ! Le créateur définit la bonne réponse après la course.
+                  Crée des pronostics fun pour ta ligue ! Le créateur définit la bonne réponse après
+                  la course.
                 </p>
-                <p className="font-body text-xs text-gray-500 mt-1">+2 points pour chaque bonne réponse</p>
+                <p className="font-body text-xs text-gray-500 mt-1">
+                  +2 points pour chaque bonne réponse
+                </p>
               </div>
             </div>
           </CardContent>
@@ -223,8 +258,11 @@ export default function CustomPredictionsPage() {
                       <div className="flex-1">
                         <p className="font-body text-white">{pred.question}</p>
                         <p className="font-body text-xs text-gray-500 mt-1">
-                          {pred.answer_type === "yes_no" ? "Oui/Non" :
-                           pred.answer_type === "choice" ? "Choix multiple" : "Texte libre"}
+                          {pred.answer_type === "yes_no"
+                            ? "Oui/Non"
+                            : pred.answer_type === "choice"
+                              ? "Choix multiple"
+                              : "Texte libre"}
                         </p>
                       </div>
                       {pred.correct_answer ? (
@@ -233,7 +271,11 @@ export default function CustomPredictionsPage() {
                           <span className="font-body text-xs">Terminé</span>
                         </div>
                       ) : (
-                        <Button onClick={() => setSelectedPrediction(pred)} size="sm" className="btn-gaming-blue">
+                        <Button
+                          onClick={() => setSelectedPrediction(pred)}
+                          size="sm"
+                          className="btn-gaming-blue"
+                        >
                           Définir réponse
                         </Button>
                       )}
@@ -255,13 +297,20 @@ export default function CustomPredictionsPage() {
               <CardContent className="p-8 text-center">
                 <MessageSquare className="w-12 h-12 text-gray-600 mx-auto mb-3" />
                 <p className="font-body text-gray-400">Aucun pronostic pour le moment</p>
-                <p className="font-body text-xs text-gray-500 mt-1">Sois le premier à créer un prono pour ta ligue !</p>
+                <p className="font-body text-xs text-gray-500 mt-1">
+                  Sois le premier à créer un prono pour ta ligue !
+                </p>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-3">
               {otherPredictions.map((pred: any) => (
-                <PredictionCard key={pred.id} prediction={pred} onAnswer={handleAnswer} userId={user?.id} />
+                <PredictionCard
+                  key={pred.id}
+                  prediction={pred}
+                  onAnswer={handleAnswer}
+                  userId={user?.id}
+                />
               ))}
             </div>
           )}
@@ -270,26 +319,52 @@ export default function CustomPredictionsPage() {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80" onClick={() => setShowCreateModal(false)}>
-          <div className="bg-gray-900 rounded-lg border border-orange-500/30 w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80"
+          onClick={() => setShowCreateModal(false)}
+        >
+          <div
+            className="bg-gray-900 rounded-lg border border-orange-500/30 w-full max-w-lg max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="sticky top-0 bg-gray-900 p-4 border-b border-gray-800">
               <div className="flex items-center justify-between">
-                <h2 className="font-heading text-lg uppercase text-orange-500">Créer un Pronostic</h2>
-                <Button variant="ghost" size="sm" onClick={() => setShowCreateModal(false)}><X className="w-5 h-5" /></Button>
+                <h2 className="font-heading text-lg uppercase text-orange-500">
+                  Créer un Pronostic
+                </h2>
+                <Button variant="ghost" size="sm" onClick={() => setShowCreateModal(false)}>
+                  <X className="w-5 h-5" />
+                </Button>
               </div>
             </div>
             <div className="p-4 space-y-4">
               <div>
                 <Label className="font-body text-gray-300">Question</Label>
-                <Input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Ex: Qui finira devant, Hamilton ou Leclerc ?" className="mt-1 bg-gray-800 border-gray-700" />
+                <Input
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  placeholder="Ex: Qui finira devant, Hamilton ou Leclerc ?"
+                  className="mt-1 bg-gray-800 border-gray-700"
+                />
               </div>
               <div>
                 <Label className="font-body text-gray-300">Type de réponse</Label>
                 <div className="grid grid-cols-3 gap-2 mt-2">
-                  {[{ id: "yes_no", label: "Oui/Non" }, { id: "text", label: "Texte" }, { id: "choice", label: "Choix" }].map(type => (
-                    <button key={type.id} onClick={() => setAnswerType(type.id)}
-                      className={`p-3 rounded-lg border-2 transition-all ${answerType === type.id ? "border-orange-500 bg-orange-500/20" : "border-gray-700 bg-gray-800"}`}>
-                      <p className={`font-body text-sm ${answerType === type.id ? "text-white" : "text-gray-400"}`}>{type.label}</p>
+                  {[
+                    { id: "yes_no", label: "Oui/Non" },
+                    { id: "text", label: "Texte" },
+                    { id: "choice", label: "Choix" },
+                  ].map((type) => (
+                    <button
+                      key={type.id}
+                      onClick={() => setAnswerType(type.id)}
+                      className={`p-3 rounded-lg border-2 transition-all ${answerType === type.id ? "border-orange-500 bg-orange-500/20" : "border-gray-700 bg-gray-800"}`}
+                    >
+                      <p
+                        className={`font-body text-sm ${answerType === type.id ? "text-white" : "text-gray-400"}`}
+                      >
+                        {type.label}
+                      </p>
                     </button>
                   ))}
                 </div>
@@ -306,21 +381,37 @@ export default function CustomPredictionsPage() {
                   <div className="space-y-2">
                     {choices.map((choice, i) => (
                       <div key={i} className="flex gap-2">
-                        <Input value={choice.text} onChange={(e) => updateChoice(i, e.target.value)} placeholder={`Option ${i + 1}`} className="flex-1 bg-gray-800 border-gray-700" />
+                        <Input
+                          value={choice.text}
+                          onChange={(e) => updateChoice(i, e.target.value)}
+                          placeholder={`Option ${i + 1}`}
+                          className="flex-1 bg-gray-800 border-gray-700"
+                        />
                         {choices.length > 2 && (
-                          <Button variant="ghost" size="icon" onClick={() => removeChoice(i)}><X className="w-4 h-4 text-red-400" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => removeChoice(i)}>
+                            <X className="w-4 h-4 text-red-400" />
+                          </Button>
                         )}
                       </div>
                     ))}
                     {choices.length < 6 && (
-                      <Button variant="outline" size="sm" onClick={addChoice} className="w-full border-dashed">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={addChoice}
+                        className="w-full border-dashed"
+                      >
                         <Plus className="w-4 h-4 mr-1" /> Ajouter une option
                       </Button>
                     )}
                   </div>
                 </div>
               )}
-              <Button onClick={handleCreatePrediction} disabled={creating} className="w-full btn-gaming h-12">
+              <Button
+                onClick={handleCreatePrediction}
+                disabled={creating}
+                className="w-full btn-gaming h-12"
+              >
                 {creating ? "Création..." : "Créer le pronostic"}
               </Button>
             </div>

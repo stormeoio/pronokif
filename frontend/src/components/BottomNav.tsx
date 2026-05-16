@@ -1,9 +1,9 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { Home, Trophy, Target, User, Users, MessageCircle, Flag } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { apiClient } from "@/lib/api";
-import { useState, useEffect } from "react";
 
 // ------------------------------------------------------------------ types ---
 
@@ -49,10 +49,7 @@ export default function BottomNav() {
   }, [user]);
 
   return (
-    <nav
-      className="fixed bottom-0 left-0 right-0 z-50"
-      data-testid="bottom-nav"
-    >
+    <nav className="fixed bottom-0 left-0 right-0 z-50" data-testid="bottom-nav">
       {/* Kerb stripe decoration top */}
       <div className="h-2 bg-kerb-stripe" />
 

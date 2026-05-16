@@ -104,8 +104,7 @@ async function del<T = void>(url: string): Promise<T> {
 export const api = {
   // ── Auth ─────────────────────────────────────────────────────
   auth: {
-    login: (body: { email: string; password: string }) =>
-      post<TokenResponse>("/auth/login", body),
+    login: (body: { email: string; password: string }) => post<TokenResponse>("/auth/login", body),
     register: (body: { email: string; password: string; username: string }) =>
       post<TokenResponse>("/auth/register", body),
     me: () => get<User>("/auth/me"),
@@ -124,8 +123,7 @@ export const api = {
   drivers: {
     list: () => get<Driver[]>("/drivers"),
     get: (id: string) => get<DriverDetails>(`/drivers/${id}`),
-    compare: (id1: string, id2: string) =>
-      get<DriverComparison>(`/drivers/compare/${id1}/${id2}`),
+    compare: (id1: string, id2: string) => get<DriverComparison>(`/drivers/compare/${id1}/${id2}`),
   },
 
   // ── Leagues ──────────────────────────────────────────────────
@@ -147,8 +145,7 @@ export const api = {
       get<ChatMessageResponse[]>(`/leagues/${leagueId}/chat?limit=${limit}`),
     send: (leagueId: string, body: { content: string }) =>
       post<ChatMessageResponse>(`/leagues/${leagueId}/chat`, body),
-    markRead: (leagueId: string) =>
-      post<void>(`/leagues/${leagueId}/chat/read`),
+    markRead: (leagueId: string) => post<void>(`/leagues/${leagueId}/chat/read`),
   },
 
   // ── Predictions ──────────────────────────────────────────────
@@ -171,8 +168,7 @@ export const api = {
 
   // ── Leaderboard ──────────────────────────────────────────────
   leaderboard: {
-    global: (limit = 100) =>
-      get<GlobalLeaderboardResponse>(`/leaderboard/global?limit=${limit}`),
+    global: (limit = 100) => get<GlobalLeaderboardResponse>(`/leaderboard/global?limit=${limit}`),
   },
 
   // ── Minigames ────────────────────────────────────────────────
@@ -197,16 +193,13 @@ export const api = {
         `/minigames/leaderboard/${game}/${leagueId}/${raceId}`,
       ),
     globalLeaderboard: (game: string) =>
-      get<{ leaderboard: MinigameLeaderboardEntry[] }>(
-        `/minigames/global-leaderboard/${game}`,
-      ),
+      get<{ leaderboard: MinigameLeaderboardEntry[] }>(`/minigames/global-leaderboard/${game}`),
   },
 
   // ── Missions ─────────────────────────────────────────────────
   missions: {
     list: () => get<MissionsResponse>("/user/missions"),
-    claim: (missionId: string) =>
-      post<MissionClaimResponse>(`/user/missions/${missionId}/claim`),
+    claim: (missionId: string) => post<MissionClaimResponse>(`/user/missions/${missionId}/claim`),
   },
 
   // ── Notifications ────────────────────────────────────────────
@@ -231,7 +224,6 @@ export const api = {
   admin: {
     members: () => get<AdminMember[]>("/admin/members"),
     feedback: () => get<FeedbackItem[]>("/admin/feedback"),
-    markFeedbackRead: (id: number) =>
-      patch<void>(`/admin/feedback/${id}/read`),
+    markFeedbackRead: (id: number) => patch<void>(`/admin/feedback/${id}/read`),
   },
 } as const;

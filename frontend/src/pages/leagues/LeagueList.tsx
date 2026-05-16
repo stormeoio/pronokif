@@ -1,8 +1,6 @@
 import { useNavigate } from "react-router-dom";
+import { Users, Copy, Share2, Check, MessageCircle, ChevronRight, Star } from "lucide-react";
 import { Button } from "../../components/ui/button";
-import {
-  Users, Copy, Share2, Check, MessageCircle, ChevronRight, Star,
-} from "lucide-react";
 
 // ------------------------------------------------------------------ types ---
 
@@ -112,7 +110,10 @@ export default function LeagueList({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={(e) => { e.stopPropagation(); onShareLeague(league); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onShareLeague(league);
+                  }}
                   className="text-green-400 hover:text-green-300 hover:bg-green-500/10 h-8 w-8"
                   title="Partager"
                 >
@@ -122,7 +123,10 @@ export default function LeagueList({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={(e) => { e.stopPropagation(); onCopyCode(league.code); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCopyCode(league.code);
+                  }}
                   className="text-gray-500 hover:text-white hover:bg-white/10 h-8 w-8"
                 >
                   {copied === league.code ? (
@@ -135,7 +139,10 @@ export default function LeagueList({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={(e) => { e.stopPropagation(); navigate(`/league/${league.id}/chat`); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/league/${league.id}/chat`);
+                  }}
                   className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 h-8 w-8 relative"
                 >
                   <MessageCircle className="w-4 h-4" />

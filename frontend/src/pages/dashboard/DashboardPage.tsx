@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/lib/auth";
 import { Zap, ChevronRight } from "lucide-react";
 import { AvatarDisplay } from "../../components/AvatarDisplay";
 import type { AvatarObject, AvatarsData } from "../../components/AvatarDisplay";
@@ -10,18 +9,26 @@ import HamburgerMenu from "../../components/hamburger-menu/HamburgerMenu";
 import RaceSlider from "./RaceSlider";
 import { LeaguesList, NoLeagueCTA, HelpAdminCard } from "./LeaguesList";
 import { useDashboardData } from "./useDashboardData";
+import { useAuth } from "@/lib/auth";
 
-const HERO_BANNER = "https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/d9b6f1a65194f54bbc34bb7e15e4af8069ab64dab312c6c3be1db79b2ca45259.png";
+const HERO_BANNER =
+  "https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/d9b6f1a65194f54bbc34bb7e15e4af8069ab64dab312c6c3be1db79b2ca45259.png";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const { loading, upcomingRaces, avatars, userLeagues, unreadChatByLeague, predictions } = useDashboardData();
+  const { loading, upcomingRaces, avatars, userLeagues, unreadChatByLeague, predictions } =
+    useDashboardData();
 
   const [currentRaceIndex, setCurrentRaceIndex] = useState(0);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [sprintCountdown, setSprintCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [sprintCountdown, setSprintCountdown] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
   // Countdown timer (stays as local state — not server data)
@@ -37,7 +44,7 @@ export default function DashboardPage() {
           days: Math.floor(mainDiff / (1000 * 60 * 60 * 24)),
           hours: Math.floor((mainDiff / (1000 * 60 * 60)) % 24),
           minutes: Math.floor((mainDiff / (1000 * 60)) % 60),
-          seconds: Math.floor((mainDiff / 1000) % 60)
+          seconds: Math.floor((mainDiff / 1000) % 60),
         });
       }
       if (currentRace.is_sprint_weekend && currentRace.sprint_predictions_close_at) {
@@ -49,7 +56,7 @@ export default function DashboardPage() {
             days: Math.floor(sprintDiff / (1000 * 60 * 60 * 24)),
             hours: Math.floor((sprintDiff / (1000 * 60 * 60)) % 24),
             minutes: Math.floor((sprintDiff / (1000 * 60)) % 60),
-            seconds: Math.floor((sprintDiff / 1000) % 60)
+            seconds: Math.floor((sprintDiff / 1000) % 60),
           });
         }
       }
@@ -80,17 +87,30 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-app-main pb-24" data-testid="dashboard-page">
       {/* Compact Profile Banner */}
-      <div onClick={() => navigate("/profile")}
+      <div
+        onClick={() => navigate("/profile")}
         className="relative z-20 bg-gradient-to-r from-[#0a1628] via-[#0c1a30] to-[#0a1628] cursor-pointer hover:from-[#0c1a30] hover:via-[#0f1f3a] hover:to-[#0c1a30] transition-all border-b border-cyan-500/20"
-        data-testid="profile-banner">
+        data-testid="profile-banner"
+      >
         <div className="max-w-2xl mx-auto px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <AvatarDisplay avatar={getAvatarById(user?.avatar_id)} customUrl={user?.custom_avatar_url as string | null} size="sm" />
+            <AvatarDisplay
+              avatar={getAvatarById(user?.avatar_id)}
+              customUrl={user?.custom_avatar_url as string | null}
+              size="sm"
+            />
             <div>
-              <p className="font-heading text-sm text-white uppercase tracking-wide">{user?.username}</p>
+              <p className="font-heading text-sm text-white uppercase tracking-wide">
+                {user?.username}
+              </p>
               <div className="flex items-center gap-2">
-                <span className="font-body text-[10px] text-white bg-gradient-to-r from-blue-600 to-blue-800 px-1.5 py-0.5 rounded-full shadow">Niv. {(user?.level as number) || 1}</span>
-                <span className="font-data text-[10px] text-yellow-400 flex items-center gap-1"><Zap className="w-3 h-3 fill-yellow-500 text-yellow-400" /> {(user?.xp as number) || 0} XP</span>
+                <span className="font-body text-[10px] text-white bg-gradient-to-r from-blue-600 to-blue-800 px-1.5 py-0.5 rounded-full shadow">
+                  Niv. {(user?.level as number) || 1}
+                </span>
+                <span className="font-data text-[10px] text-yellow-400 flex items-center gap-1">
+                  <Zap className="w-3 h-3 fill-yellow-500 text-yellow-400" />{" "}
+                  {(user?.xp as number) || 0} XP
+                </span>
               </div>
             </div>
           </div>
@@ -98,11 +118,17 @@ export default function DashboardPage() {
             {userLeagues.length > 0 && (
               <div className="text-right hidden sm:block">
                 <p className="font-body text-[9px] text-gray-500 uppercase tracking-wider">Ligue</p>
-                <p className="font-heading text-xs text-cyan-400">{userLeagues.find((l: { id: string | number; name: string }) => l.id === user?.current_league_id)?.name || userLeagues[0]?.name}</p>
+                <p className="font-heading text-xs text-cyan-400">
+                  {userLeagues.find(
+                    (l: { id: string | number; name: string }) => l.id === user?.current_league_id,
+                  )?.name || userLeagues[0]?.name}
+                </p>
               </div>
             )}
             <div className="flex items-center gap-1 bg-cyan-500/20 px-2 py-1 rounded-full">
-              <span className="font-body text-xs text-cyan-400 uppercase tracking-wide">Profil</span>
+              <span className="font-body text-xs text-cyan-400 uppercase tracking-wide">
+                Profil
+              </span>
               <ChevronRight className="w-4 h-4 text-cyan-400" />
             </div>
           </div>
@@ -115,10 +141,22 @@ export default function DashboardPage() {
           <HamburgerMenu />
           <NotificationBell />
         </div>
-        <img src={HERO_BANNER} alt="PRONOKIF" className="w-full h-full object-cover object-center" />
+        <img
+          src={HERO_BANNER}
+          alt="PRONOKIF"
+          className="w-full h-full object-cover object-center"
+        />
         <div className="absolute top-3 left-0 right-0 text-center z-10">
-          <h1 className="font-heading text-3xl text-white tracking-wider uppercase" style={{textShadow: '0 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7)'}}>PRONOKIF</h1>
-          <p className="font-body text-[10px] text-white tracking-[0.08em] font-medium mt-1" style={{textShadow: '0 1px 4px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.9)'}}>
+          <h1
+            className="font-heading text-3xl text-white tracking-wider uppercase"
+            style={{ textShadow: "0 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7)" }}
+          >
+            PRONOKIF
+          </h1>
+          <p
+            className="font-body text-[10px] text-white tracking-[0.08em] font-medium mt-1"
+            style={{ textShadow: "0 1px 4px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.9)" }}
+          >
             Pronostique 🔹 Défie tes amis 🔹 Domine le classement
           </p>
         </div>
@@ -137,7 +175,11 @@ export default function DashboardPage() {
         />
 
         {userLeagues.length > 0 ? (
-          <LeaguesList userLeagues={userLeagues} user={user} unreadChatByLeague={unreadChatByLeague} />
+          <LeaguesList
+            userLeagues={userLeagues}
+            user={user}
+            unreadChatByLeague={unreadChatByLeague}
+          />
         ) : (
           <NoLeagueCTA />
         )}

@@ -1,26 +1,35 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "@/lib/auth";
-import { apiClient } from "@/lib/api";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
 import { toast } from "sonner";
 import {
-  ChevronLeft, Users, Trophy, Copy, Check, Edit2, X, Save,
-  FileText, Share2, MessageCircle,
+  ChevronLeft,
+  Users,
+  Trophy,
+  Copy,
+  Check,
+  Edit2,
+  X,
+  Save,
+  FileText,
+  Share2,
+  MessageCircle,
 } from "lucide-react";
-
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
 import LeagueLeaderboard from "./LeagueLeaderboard";
 import LeagueMembers from "./LeagueMembers";
 import LeagueSettings from "./LeagueSettings";
 import { useLeagueDetailData } from "./useLeagueDetailData";
+import { apiClient } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 export default function LeagueDetailPage() {
   const { leagueId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const { loading, error, league, members, leaderboard, avatars, refetch } = useLeagueDetailData(leagueId);
+  const { loading, error, league, members, leaderboard, avatars, refetch } =
+    useLeagueDetailData(leagueId);
 
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState("leaderboard");
@@ -61,7 +70,11 @@ export default function LeagueDetailPage() {
 
     if (navigator.share) {
       try {
-        await navigator.share({ title: `PRONOKIF - ${league.name}`, text: shareText, url: shareUrl });
+        await navigator.share({
+          title: `PRONOKIF - ${league.name}`,
+          text: shareText,
+          url: shareUrl,
+        });
       } catch (e: unknown) {
         if ((e as DOMException).name !== "AbortError") copyCode();
       }
@@ -132,18 +145,32 @@ export default function LeagueDetailPage() {
       <div className="sticky top-0 z-40 bg-[#050a14]/95 backdrop-blur-md border-b border-yellow-500/30">
         <div className="max-w-2xl mx-auto p-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/league")} className="text-gray-400 hover:text-white hover:bg-white/10">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/league")}
+              className="text-gray-400 hover:text-white hover:bg-white/10"
+            >
               <ChevronLeft className="w-6 h-6" />
             </Button>
             <div className="flex-1">
               {isEditing ? (
-                <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="font-heading text-xl bg-gray-800 border-yellow-500 h-9" placeholder="Nom de la ligue" />
+                <Input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="font-heading text-xl bg-gray-800 border-yellow-500 h-9"
+                  placeholder="Nom de la ligue"
+                />
               ) : (
                 <h1 className="font-heading text-xl uppercase tracking-tight text-white flex items-center gap-2">
                   <Trophy className="w-5 h-5 text-yellow-500" />
                   {league.name}
                   {isOwner && !isEditing && (
-                    <button onClick={startEditing} className="ml-2 p-1 text-gray-500 hover:text-yellow-400 transition-colors" title="Modifier la ligue">
+                    <button
+                      onClick={startEditing}
+                      className="ml-2 p-1 text-gray-500 hover:text-yellow-400 transition-colors"
+                      title="Modifier la ligue"
+                    >
                       <Edit2 className="w-4 h-4" />
                     </button>
                   )}
@@ -154,7 +181,10 @@ export default function LeagueDetailPage() {
                   <Users className="w-3 h-3" />
                   {members.length} membres
                 </span>
-                <button onClick={copyCode} className="font-data text-xs text-yellow-400 hover:text-yellow-300 flex items-center gap-1">
+                <button
+                  onClick={copyCode}
+                  className="font-data text-xs text-yellow-400 hover:text-yellow-300 flex items-center gap-1"
+                >
                   {league.code}
                   {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                 </button>
@@ -162,19 +192,42 @@ export default function LeagueDetailPage() {
             </div>
             {isEditing ? (
               <div className="flex gap-2">
-                <Button size="sm" onClick={cancelEditing} className="bg-gray-700 hover:bg-gray-600 text-white" disabled={saving}>
+                <Button
+                  size="sm"
+                  onClick={cancelEditing}
+                  className="bg-gray-700 hover:bg-gray-600 text-white"
+                  disabled={saving}
+                >
                   <X className="w-4 h-4" />
                 </Button>
-                <Button size="sm" onClick={saveChanges} className="bg-green-600 hover:bg-green-500 text-white" disabled={saving}>
-                  {saving ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+                <Button
+                  size="sm"
+                  onClick={saveChanges}
+                  className="bg-green-600 hover:bg-green-500 text-white"
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
             ) : (
               <div className="flex gap-2">
-                <Button size="sm" onClick={shareLeague} className="bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30" title="Partager">
+                <Button
+                  size="sm"
+                  onClick={shareLeague}
+                  className="bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30"
+                  title="Partager"
+                >
                   <Share2 className="w-4 h-4" />
                 </Button>
-                <Button size="sm" onClick={() => navigate(`/league/${leagueId}/chat`)} className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30">
+                <Button
+                  size="sm"
+                  onClick={() => navigate(`/league/${leagueId}/chat`)}
+                  className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30"
+                >
                   <MessageCircle className="w-4 h-4 mr-1" />
                   Chat
                 </Button>
@@ -192,7 +245,14 @@ export default function LeagueDetailPage() {
               <FileText className="w-4 h-4" />
               Description de la ligue
             </label>
-            <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white font-body text-sm resize-none focus:border-yellow-500 focus:outline-none" rows={3} placeholder="Décris ta ligue en quelques mots... (optionnel)" maxLength={500} />
+            <textarea
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white font-body text-sm resize-none focus:border-yellow-500 focus:outline-none"
+              rows={3}
+              placeholder="Décris ta ligue en quelques mots... (optionnel)"
+              maxLength={500}
+            />
             <p className="text-right text-xs text-gray-500 mt-1">{editDescription.length}/500</p>
           </div>
         ) : league.description ? (
@@ -200,7 +260,10 @@ export default function LeagueDetailPage() {
             <p className="font-body text-sm text-gray-300 leading-relaxed">{league.description}</p>
           </div>
         ) : isOwner ? (
-          <button onClick={startEditing} className="w-full card-arcade p-4 mb-4 border-dashed border-2 border-gray-700 hover:border-yellow-500/50 transition-colors text-center group">
+          <button
+            onClick={startEditing}
+            className="w-full card-arcade p-4 mb-4 border-dashed border-2 border-gray-700 hover:border-yellow-500/50 transition-colors text-center group"
+          >
             <FileText className="w-6 h-6 text-gray-600 group-hover:text-yellow-500 mx-auto mb-2 transition-colors" />
             <p className="font-body text-sm text-gray-500 group-hover:text-gray-400 transition-colors">
               Ajouter une description à ta ligue
@@ -210,11 +273,17 @@ export default function LeagueDetailPage() {
 
         {/* Tab Toggle */}
         <div className="flex gap-2 p-1 bg-gray-800/50 rounded-lg">
-          <button onClick={() => setActiveTab("leaderboard")} className={`flex-1 py-2 px-4 rounded-lg font-heading text-sm uppercase transition-all flex items-center justify-center gap-2 ${activeTab === "leaderboard" ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-lg" : "text-gray-400 hover:text-white hover:bg-white/5"}`}>
+          <button
+            onClick={() => setActiveTab("leaderboard")}
+            className={`flex-1 py-2 px-4 rounded-lg font-heading text-sm uppercase transition-all flex items-center justify-center gap-2 ${activeTab === "leaderboard" ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-lg" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+          >
             <Trophy className="w-4 h-4" />
             Classement
           </button>
-          <button onClick={() => setActiveTab("members")} className={`flex-1 py-2 px-4 rounded-lg font-heading text-sm uppercase transition-all flex items-center justify-center gap-2 ${activeTab === "members" ? "bg-gradient-to-r from-cyan-500 to-cyan-600 text-white shadow-lg" : "text-gray-400 hover:text-white hover:bg-white/5"}`}>
+          <button
+            onClick={() => setActiveTab("members")}
+            className={`flex-1 py-2 px-4 rounded-lg font-heading text-sm uppercase transition-all flex items-center justify-center gap-2 ${activeTab === "members" ? "bg-gradient-to-r from-cyan-500 to-cyan-600 text-white shadow-lg" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+          >
             <Users className="w-4 h-4" />
             Membres
           </button>
@@ -224,9 +293,20 @@ export default function LeagueDetailPage() {
       {/* Content */}
       <div className="max-w-2xl mx-auto p-4">
         {activeTab === "leaderboard" ? (
-          <LeagueLeaderboard leaderboard={leaderboard} members={members} userId={user?.id as any} getAvatar={getAvatar} />
+          <LeagueLeaderboard
+            leaderboard={leaderboard}
+            members={members}
+            userId={user?.id as any}
+            getAvatar={getAvatar}
+          />
         ) : (
-          <LeagueMembers members={members} leaderboard={leaderboard} userId={user?.id as any} ownerId={league.owner_id} getAvatar={getAvatar} />
+          <LeagueMembers
+            members={members}
+            leaderboard={leaderboard}
+            userId={user?.id as any}
+            ownerId={league.owner_id}
+            getAvatar={getAvatar}
+          />
         )}
 
         <LeagueSettings

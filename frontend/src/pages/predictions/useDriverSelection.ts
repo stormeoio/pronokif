@@ -41,20 +41,34 @@ export function useDriverSelection({
   activeTab,
   selectionMode,
   setSelectionMode,
-  sprintQualiPole, setSprintQualiPole,
-  sprintQualiTop10, setSprintQualiTop10,
-  sprintRaceWinner, setSprintRaceWinner,
-  sprintRaceTop10, setSprintRaceTop10,
-  sprintFastestLap, setSprintFastestLap,
-  sprintFirstCorner, setSprintFirstCorner,
-  sprintDnfDrivers, setSprintDnfDrivers,
-  qualiPole, setQualiPole,
-  qualiTop10, setQualiTop10,
-  raceWinner, setRaceWinner,
-  raceTop10, setRaceTop10,
-  fastestLapDriver, setFastestLapDriver,
-  firstCornerLeader, setFirstCornerLeader,
-  dnfDrivers, setDnfDrivers,
+  sprintQualiPole,
+  setSprintQualiPole,
+  sprintQualiTop10,
+  setSprintQualiTop10,
+  sprintRaceWinner,
+  setSprintRaceWinner,
+  sprintRaceTop10,
+  setSprintRaceTop10,
+  sprintFastestLap,
+  setSprintFastestLap,
+  sprintFirstCorner,
+  setSprintFirstCorner,
+  sprintDnfDrivers,
+  setSprintDnfDrivers,
+  qualiPole,
+  setQualiPole,
+  qualiTop10,
+  setQualiTop10,
+  raceWinner,
+  setRaceWinner,
+  raceTop10,
+  setRaceTop10,
+  fastestLapDriver,
+  setFastestLapDriver,
+  firstCornerLeader,
+  setFirstCornerLeader,
+  dnfDrivers,
+  setDnfDrivers,
 }: UseDriverSelectionParams) {
   const handleDriverSelect = (driverId: string): void => {
     if (activeTab === "sprint") handleSprintSelect(driverId);
@@ -104,7 +118,8 @@ export function useDriverSelection({
           setSprintDnfDrivers([...sprintDnfDrivers, driverId]);
         }
         break;
-      default: break;
+      default:
+        break;
     }
   };
 
@@ -151,32 +166,49 @@ export function useDriverSelection({
           setDnfDrivers([...dnfDrivers, driverId]);
         }
         break;
-      default: break;
+      default:
+        break;
     }
   };
 
   const isDriverSelected = (driverId: string): boolean => {
     if (activeTab === "sprint") {
       switch (selectionMode) {
-        case "sprint_quali_pole": return sprintQualiPole === driverId;
-        case "sprint_quali_top10": return sprintQualiTop10.includes(driverId);
-        case "sprint_race_winner": return sprintRaceWinner === driverId;
-        case "sprint_race_top10": return sprintRaceTop10.includes(driverId);
-        case "sprint_fastest_lap": return sprintFastestLap === driverId;
-        case "sprint_first_corner": return sprintFirstCorner === driverId;
-        case "sprint_dnf_select": return sprintDnfDrivers.includes(driverId);
-        default: return false;
+        case "sprint_quali_pole":
+          return sprintQualiPole === driverId;
+        case "sprint_quali_top10":
+          return sprintQualiTop10.includes(driverId);
+        case "sprint_race_winner":
+          return sprintRaceWinner === driverId;
+        case "sprint_race_top10":
+          return sprintRaceTop10.includes(driverId);
+        case "sprint_fastest_lap":
+          return sprintFastestLap === driverId;
+        case "sprint_first_corner":
+          return sprintFirstCorner === driverId;
+        case "sprint_dnf_select":
+          return sprintDnfDrivers.includes(driverId);
+        default:
+          return false;
       }
     }
     switch (selectionMode) {
-      case "quali_pole": return qualiPole === driverId;
-      case "quali_top10": return qualiTop10.includes(driverId);
-      case "race_winner": return raceWinner === driverId;
-      case "race_top10": return raceTop10.includes(driverId);
-      case "fastest_lap": return fastestLapDriver === driverId;
-      case "first_corner": return firstCornerLeader === driverId;
-      case "dnf_select": return dnfDrivers.includes(driverId);
-      default: return false;
+      case "quali_pole":
+        return qualiPole === driverId;
+      case "quali_top10":
+        return qualiTop10.includes(driverId);
+      case "race_winner":
+        return raceWinner === driverId;
+      case "race_top10":
+        return raceTop10.includes(driverId);
+      case "fastest_lap":
+        return fastestLapDriver === driverId;
+      case "first_corner":
+        return firstCornerLeader === driverId;
+      case "dnf_select":
+        return dnfDrivers.includes(driverId);
+      default:
+        return false;
     }
   };
 

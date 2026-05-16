@@ -1,5 +1,5 @@
-import { Button } from "../../components/ui/button";
 import { Check, Copy, Share2, Flag } from "lucide-react";
+import { Button } from "../../components/ui/button";
 
 // ------------------------------------------------------------------ types ---
 
@@ -72,14 +72,16 @@ export default function LeagueCreatedScreen({
             className="flex-1 h-12 btn-neon font-heading uppercase tracking-wider text-sm"
             data-testid="share-code-btn"
           >
-            <Share2 className="w-4 h-4 mr-2" />Partager
+            <Share2 className="w-4 h-4 mr-2" />
+            Partager
           </Button>
           <Button
             onClick={onCopyCode}
             className="flex-1 h-12 btn-chrome font-heading uppercase tracking-wider text-sm"
             data-testid="copy-btn"
           >
-            <Copy className="w-4 h-4 mr-2" />Copier
+            <Copy className="w-4 h-4 mr-2" />
+            Copier
           </Button>
         </div>
 

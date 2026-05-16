@@ -56,15 +56,10 @@ export function useChampionshipData() {
   const constructorsQuery = useConstructorStandings();
   const scheduleQuery = useRaceSchedule();
 
-  const loading =
-    driversQuery.isLoading ||
-    constructorsQuery.isLoading ||
-    scheduleQuery.isLoading;
+  const loading = driversQuery.isLoading || constructorsQuery.isLoading || scheduleQuery.isLoading;
 
   const refreshing =
-    driversQuery.isRefetching ||
-    constructorsQuery.isRefetching ||
-    scheduleQuery.isRefetching;
+    driversQuery.isRefetching || constructorsQuery.isRefetching || scheduleQuery.isRefetching;
 
   const refetchAll = async () => {
     await Promise.all([
@@ -83,8 +78,6 @@ export function useChampionshipData() {
     raceSchedule: scheduleQuery.data ?? [],
     refetchAll,
     // Expose dataUpdatedAt for "last updated" display
-    lastUpdated: driversQuery.dataUpdatedAt
-      ? new Date(driversQuery.dataUpdatedAt)
-      : null,
+    lastUpdated: driversQuery.dataUpdatedAt ? new Date(driversQuery.dataUpdatedAt) : null,
   };
 }

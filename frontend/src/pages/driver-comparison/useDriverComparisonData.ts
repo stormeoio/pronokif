@@ -16,16 +16,11 @@ export function useAllDrivers() {
   });
 }
 
-export function useDriverComparison(
-  driver1Id: string,
-  driver2Id: string
-) {
+export function useDriverComparison(driver1Id: string, driver2Id: string) {
   return useQuery({
     queryKey: ["/drivers/compare", driver1Id, driver2Id],
     queryFn: async () => {
-      const res = await apiClient.get(
-        `/drivers/compare?driver1=${driver1Id}&driver2=${driver2Id}`
-      );
+      const res = await apiClient.get(`/drivers/compare?driver1=${driver1Id}&driver2=${driver2Id}`);
       return res.data;
     },
     enabled: !!driver1Id && !!driver2Id && driver1Id !== driver2Id,

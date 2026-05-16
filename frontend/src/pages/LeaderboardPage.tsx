@@ -1,21 +1,30 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth";
-import { apiClient } from "@/lib/api";
-import { Button } from "../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import {
-  Trophy, TrendingUp, TrendingDown, Minus, Users,
-  Share2, Copy, Check, ChevronDown, MessageCircle, Plus
+  Trophy,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Users,
+  Share2,
+  Copy,
+  Check,
+  ChevronDown,
+  MessageCircle,
+  Plus,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
+import { apiClient } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 interface League {
   id: string;
@@ -52,7 +61,7 @@ export default function LeaderboardPage() {
   const activeLeagueId = selectedLeagueId || user?.current_league_id;
   const currentLeague = useMemo(
     () => leagues.find((l: any) => l.id === activeLeagueId) || null,
-    [leagues, activeLeagueId]
+    [leagues, activeLeagueId],
   );
 
   const { data: leaderboard = [], isLoading: lbLoading } = useQuery({
@@ -91,9 +100,9 @@ export default function LeaderboardPage() {
 
   const shareLeague = async () => {
     if (!currentLeague) return;
-    
+
     const shareText = `Rejoins ma ligue F1 "${currentLeague.name}" sur PRONOKIF ! Code: ${currentLeague.code}`;
-    
+
     if (navigator.share) {
       try {
         await navigator.share({ title: "PRONOKIF", text: shareText });
@@ -111,7 +120,9 @@ export default function LeaderboardPage() {
       <div className="min-h-screen bg-app-main p-4 pt-6">
         <div className="max-w-2xl mx-auto space-y-4">
           <div className="h-8 w-48 skeleton-arcade rounded" />
-          {[...Array(8)].map((_, i) => <div key={i} className="h-16 skeleton-arcade rounded-md" />)}
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="h-16 skeleton-arcade rounded-md" />
+          ))}
         </div>
       </div>
     );
@@ -130,7 +141,11 @@ export default function LeaderboardPage() {
           {leagues.length > 1 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="border-gray-700 bg-gray-900/50 font-body" data-testid="league-selector">
+                <Button
+                  variant="outline"
+                  className="border-gray-700 bg-gray-900/50 font-body"
+                  data-testid="league-selector"
+                >
                   {currentLeague?.name || "Sélectionner"}
                   <ChevronDown className="w-4 h-4 ml-2" />
                 </Button>
@@ -140,7 +155,7 @@ export default function LeaderboardPage() {
                   <DropdownMenuItem
                     key={league.id}
                     onClick={() => switchLeague(league.id)}
-                    className={`font-body ${league.id === currentLeague?.id ? 'text-orange-500' : ''}`}
+                    className={`font-body ${league.id === currentLeague?.id ? "text-orange-500" : ""}`}
                   >
                     {league.name}
                   </DropdownMenuItem>
@@ -159,32 +174,49 @@ export default function LeaderboardPage() {
                   {currentLeague.name}
                 </p>
                 <p className="font-body text-sm text-gray-400">
-                  {currentLeague.members.length} membres • Code: <span className="font-data text-yellow-500">{currentLeague.code}</span>
+                  {currentLeague.members.length} membres • Code:{" "}
+                  <span className="font-data text-yellow-500">{currentLeague.code}</span>
                 </p>
               </div>
               <div className="flex gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => navigate(`/league/${currentLeague.id}/chat`)} 
-                  className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10" 
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(`/league/${currentLeague.id}/chat`)}
+                  className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
                   data-testid="chat-btn"
                 >
                   <MessageCircle className="w-5 h-5" />
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => navigate("/league")} 
-                  className="text-green-400 hover:text-green-300 hover:bg-green-500/10" 
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate("/league")}
+                  className="text-green-400 hover:text-green-300 hover:bg-green-500/10"
                   data-testid="add-league-btn"
                 >
                   <Plus className="w-5 h-5" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={copyCode} className="text-gray-400 hover:text-white hover:bg-white/10" data-testid="copy-code-btn">
-                  {copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={copyCode}
+                  className="text-gray-400 hover:text-white hover:bg-white/10"
+                  data-testid="copy-code-btn"
+                >
+                  {copied ? (
+                    <Check className="w-5 h-5 text-green-500" />
+                  ) : (
+                    <Copy className="w-5 h-5" />
+                  )}
                 </Button>
-                <Button variant="ghost" size="icon" onClick={shareLeague} className="text-gray-400 hover:text-white hover:bg-white/10" data-testid="share-league-btn">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={shareLeague}
+                  className="text-gray-400 hover:text-white hover:bg-white/10"
+                  data-testid="share-league-btn"
+                >
                   <Share2 className="w-5 h-5" />
                 </Button>
               </div>
@@ -205,34 +237,43 @@ export default function LeaderboardPage() {
           <div>
             {leaderboard.map((entry: any, index: any) => {
               const isMe = entry.user_id === user?.id;
-              
+
               return (
-                <div 
+                <div
                   key={entry.user_id}
                   onClick={() => navigate(`/profile/${entry.user_id}`)}
                   className={`grid grid-cols-12 gap-2 items-center p-4 border-b border-gray-800 transition-colors hover:bg-white/5 cursor-pointer ${
-                    isMe ? 'bg-orange-500/10' : ''
+                    isMe ? "bg-orange-500/10" : ""
                   }`}
                   data-testid={`leaderboard-row-${index}`}
                 >
                   <div className="col-span-2 flex justify-center">
-                    <span className={`inline-flex items-center justify-center w-10 h-10 rounded-lg font-heading text-lg ${
-                      index === 0 ? 'position-1' :
-                      index === 1 ? 'position-2' :
-                      index === 2 ? 'position-3' :
-                      'bg-gray-800 text-gray-300 border border-gray-700'
-                    }`}>
+                    <span
+                      className={`inline-flex items-center justify-center w-10 h-10 rounded-lg font-heading text-lg ${
+                        index === 0
+                          ? "position-1"
+                          : index === 1
+                            ? "position-2"
+                            : index === 2
+                              ? "position-3"
+                              : "bg-gray-800 text-gray-300 border border-gray-700"
+                      }`}
+                    >
                       {entry.position}
                     </span>
                   </div>
 
                   <div className="col-span-5">
-                    <p className={`font-body truncate ${isMe ? 'text-cyan-400 font-semibold' : 'text-white'}`}>
+                    <p
+                      className={`font-body truncate ${isMe ? "text-cyan-400 font-semibold" : "text-white"}`}
+                    >
                       {entry.username}
                       {isMe && " (toi)"}
                     </p>
                     {entry.last_race_points > 0 && (
-                      <p className="font-data text-xs text-green-400">+{entry.last_race_points} dernière course</p>
+                      <p className="font-data text-xs text-green-400">
+                        +{entry.last_race_points} dernière course
+                      </p>
                     )}
                   </div>
 
@@ -249,7 +290,8 @@ export default function LeaderboardPage() {
                     )}
                     {entry.position_change < 0 && (
                       <span className="flex items-center text-red-400 font-data text-sm bg-red-500/20 px-2 py-1 rounded">
-                        <TrendingDown className="w-3 h-3 mr-1" />{entry.position_change}
+                        <TrendingDown className="w-3 h-3 mr-1" />
+                        {entry.position_change}
                       </span>
                     )}
                     {entry.position_change === 0 && (
@@ -265,11 +307,20 @@ export default function LeaderboardPage() {
             {leaderboard.length === 0 && (
               <div className="p-8 text-center">
                 <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                <p className="font-heading text-lg uppercase text-gray-400 mb-2">Aucun classement</p>
-                <p className="font-body text-sm text-gray-500 mb-4">Invite tes amis pour commencer !</p>
+                <p className="font-heading text-lg uppercase text-gray-400 mb-2">
+                  Aucun classement
+                </p>
+                <p className="font-body text-sm text-gray-500 mb-4">
+                  Invite tes amis pour commencer !
+                </p>
                 {currentLeague && (
-                  <Button onClick={shareLeague} className="btn-racing" data-testid="invite-friends-btn">
-                    <Share2 className="w-4 h-4 mr-2" />Inviter des amis
+                  <Button
+                    onClick={shareLeague}
+                    className="btn-racing"
+                    data-testid="invite-friends-btn"
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Inviter des amis
                   </Button>
                 )}
               </div>

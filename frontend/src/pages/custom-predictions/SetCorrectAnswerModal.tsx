@@ -1,7 +1,7 @@
 import { useState } from "react";
+import { CheckCircle } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
-import { CheckCircle } from "lucide-react";
 
 interface Choice {
   text: string;
@@ -22,13 +22,20 @@ interface SetCorrectAnswerModalProps {
   onSubmit: (predictionId: string, correctAnswer: string | string[]) => void;
 }
 
-export default function SetCorrectAnswerModal({ prediction, onClose, onSubmit }: SetCorrectAnswerModalProps) {
+export default function SetCorrectAnswerModal({
+  prediction,
+  onClose,
+  onSubmit,
+}: SetCorrectAnswerModalProps) {
   const [correctAnswer, setCorrectAnswer] = useState("");
   const [selectedChoices, setSelectedChoices] = useState<string[]>([]);
 
   const handleSubmit = () => {
     if (prediction.answer_type === "choice") {
-      onSubmit(prediction.id, prediction.multiple_choice ? selectedChoices : (selectedChoices[0] || ""));
+      onSubmit(
+        prediction.id,
+        prediction.multiple_choice ? selectedChoices : selectedChoices[0] || "",
+      );
     } else {
       onSubmit(prediction.id, correctAnswer);
     }
@@ -37,7 +44,7 @@ export default function SetCorrectAnswerModal({ prediction, onClose, onSubmit }:
   const toggleChoice = (choiceText: string) => {
     if (prediction.multiple_choice) {
       if (selectedChoices.includes(choiceText)) {
-        setSelectedChoices(selectedChoices.filter(c => c !== choiceText));
+        setSelectedChoices(selectedChoices.filter((c) => c !== choiceText));
       } else {
         setSelectedChoices([...selectedChoices, choiceText]);
       }
@@ -47,10 +54,18 @@ export default function SetCorrectAnswerModal({ prediction, onClose, onSubmit }:
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80" onClick={onClose}>
-      <div className="bg-gray-900 rounded-lg border border-green-500/30 w-full max-w-md" onClick={e => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80"
+      onClick={onClose}
+    >
+      <div
+        className="bg-gray-900 rounded-lg border border-green-500/30 w-full max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="p-4 border-b border-gray-800">
-          <h2 className="font-heading text-lg uppercase text-green-400">Définir la bonne réponse</h2>
+          <h2 className="font-heading text-lg uppercase text-green-400">
+            Définir la bonne réponse
+          </h2>
         </div>
 
         <div className="p-4 space-y-4">
@@ -96,9 +111,11 @@ export default function SetCorrectAnswerModal({ prediction, onClose, onSubmit }:
                       : "border-gray-700 bg-gray-800"
                   }`}
                 >
-                  <span className={`font-body text-sm ${
-                    selectedChoices.includes(choice.text) ? "text-white" : "text-gray-400"
-                  }`}>
+                  <span
+                    className={`font-body text-sm ${
+                      selectedChoices.includes(choice.text) ? "text-white" : "text-gray-400"
+                    }`}
+                  >
                     {choice.text}
                   </span>
                 </button>

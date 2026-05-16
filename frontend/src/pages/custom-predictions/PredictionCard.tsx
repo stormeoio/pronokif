@@ -1,8 +1,8 @@
 import { useState } from "react";
+import { Clock, Send } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
-import { Clock, Send } from "lucide-react";
 
 interface Choice {
   text: string;
@@ -28,10 +28,14 @@ interface PredictionCardProps {
 
 export default function PredictionCard({ prediction, onAnswer, userId }: PredictionCardProps) {
   const [answer, setAnswer] = useState<string>(
-    typeof prediction.user_answer === "string" ? prediction.user_answer : ""
+    typeof prediction.user_answer === "string" ? prediction.user_answer : "",
   );
   const [selectedChoices, setSelectedChoices] = useState<string[]>(
-    prediction.user_answer ? (Array.isArray(prediction.user_answer) ? prediction.user_answer : [prediction.user_answer]) : []
+    prediction.user_answer
+      ? Array.isArray(prediction.user_answer)
+        ? prediction.user_answer
+        : [prediction.user_answer]
+      : [],
   );
 
   const hasAnswered = prediction.has_answered;
@@ -39,7 +43,10 @@ export default function PredictionCard({ prediction, onAnswer, userId }: Predict
 
   const handleSubmit = () => {
     if (prediction.answer_type === "choice") {
-      onAnswer(prediction.id, prediction.multiple_choice ? selectedChoices : (selectedChoices[0] || ""));
+      onAnswer(
+        prediction.id,
+        prediction.multiple_choice ? selectedChoices : selectedChoices[0] || "",
+      );
     } else {
       onAnswer(prediction.id, answer);
     }
@@ -48,7 +55,7 @@ export default function PredictionCard({ prediction, onAnswer, userId }: Predict
   const toggleChoice = (choiceText: string) => {
     if (prediction.multiple_choice) {
       if (selectedChoices.includes(choiceText)) {
-        setSelectedChoices(selectedChoices.filter(c => c !== choiceText));
+        setSelectedChoices(selectedChoices.filter((c) => c !== choiceText));
       } else {
         setSelectedChoices([...selectedChoices, choiceText]);
       }
@@ -58,7 +65,7 @@ export default function PredictionCard({ prediction, onAnswer, userId }: Predict
   };
 
   return (
-    <Card className={`game-card ${isResolved ? 'border-green-500/30' : ''}`}>
+    <Card className={`game-card ${isResolved ? "border-green-500/30" : ""}`}>
       <CardContent className="p-4">
         <p className="font-body text-white mb-3">{prediction.question}</p>
 
@@ -67,9 +74,13 @@ export default function PredictionCard({ prediction, onAnswer, userId }: Predict
             <p className="font-body text-xs text-gray-500">Réponse correcte:</p>
             <p className="font-heading text-green-400">{prediction.correct_answer}</p>
             {hasAnswered && (
-              <p className={`font-body text-xs ${
-                prediction.user_answer === prediction.correct_answer ? "text-green-400" : "text-red-400"
-              }`}>
+              <p
+                className={`font-body text-xs ${
+                  prediction.user_answer === prediction.correct_answer
+                    ? "text-green-400"
+                    : "text-red-400"
+                }`}
+              >
                 Ta réponse: {prediction.user_answer}
                 {prediction.user_answer === prediction.correct_answer ? " ✓ +2 pts" : " ✗"}
               </p>
@@ -121,9 +132,11 @@ export default function PredictionCard({ prediction, onAnswer, userId }: Predict
                         : "border-gray-700 bg-gray-800"
                     }`}
                   >
-                    <span className={`font-body text-sm ${
-                      selectedChoices.includes(choice.text) ? "text-white" : "text-gray-400"
-                    }`}>
+                    <span
+                      className={`font-body text-sm ${
+                        selectedChoices.includes(choice.text) ? "text-white" : "text-gray-400"
+                      }`}
+                    >
                       {choice.text}
                     </span>
                   </button>

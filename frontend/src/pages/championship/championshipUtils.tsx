@@ -50,14 +50,29 @@ export function getRankIcon(position: string | number): React.ReactNode {
 
 // --- Driver-ID mapping (Ergast → Pronokif internal) -------------------------
 export const DRIVER_ID_MAP: Record<string, string> = {
-  norris: "norris", piastri: "piastri", russell: "russell",
-  leclerc: "leclerc", hamilton: "hamilton", verstappen: "verstappen",
-  sainz: "sainz", albon: "albon", lawson: "lawson",
-  alonso: "alonso", stroll: "stroll", ocon: "ocon",
-  bearman: "bearman", gasly: "gasly", colapinto: "colapinto",
-  hulkenberg: "hulkenberg", bortoleto: "bortoleto", perez: "perez",
-  bottas: "bottas", antonelli: "antonelli", hadjar: "hadjar",
-  lindblad: "lindblad", max_verstappen: "verstappen",
+  norris: "norris",
+  piastri: "piastri",
+  russell: "russell",
+  leclerc: "leclerc",
+  hamilton: "hamilton",
+  verstappen: "verstappen",
+  sainz: "sainz",
+  albon: "albon",
+  lawson: "lawson",
+  alonso: "alonso",
+  stroll: "stroll",
+  ocon: "ocon",
+  bearman: "bearman",
+  gasly: "gasly",
+  colapinto: "colapinto",
+  hulkenberg: "hulkenberg",
+  bortoleto: "bortoleto",
+  perez: "perez",
+  bottas: "bottas",
+  antonelli: "antonelli",
+  hadjar: "hadjar",
+  lindblad: "lindblad",
+  max_verstappen: "verstappen",
 };
 
 // --- Misc -------------------------------------------------------------------

@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../../components/ui/button";
 import { toast } from "sonner";
-import {
-  Flag, Trophy, RefreshCw, Loader2, Car, Calendar, GitCompare,
-} from "lucide-react";
+import { Flag, Trophy, RefreshCw, Loader2, Car, Calendar, GitCompare } from "lucide-react";
+import { Button } from "../../components/ui/button";
 import DriverStandings from "./DriverStandings";
 import ConstructorStandings from "./ConstructorStandings";
 import SeasonProgress from "./SeasonProgress";
@@ -113,7 +111,9 @@ export default function ChampionshipPage() {
         </div>
 
         {activeTab === "drivers" && <DriverStandings driversStandings={driversStandings} />}
-        {activeTab === "constructors" && <ConstructorStandings constructorsStandings={constructorsStandings} />}
+        {activeTab === "constructors" && (
+          <ConstructorStandings constructorsStandings={constructorsStandings} />
+        )}
         {activeTab === "results" && <SeasonProgress raceSchedule={raceSchedule} />}
 
         {/* API Attribution */}

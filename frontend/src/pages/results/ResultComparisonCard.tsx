@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Check, X } from "lucide-react";
 import type { ReactNode } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 
 // ------------------------------------------------------------------ types ---
 
@@ -80,8 +80,8 @@ export default function ResultComparisonCard({
                         i === 0
                           ? "bg-amber-500 text-black"
                           : i === 1
-                          ? "bg-zinc-300 text-black"
-                          : "bg-amber-700 text-white"
+                            ? "bg-zinc-300 text-black"
+                            : "bg-amber-700 text-white"
                       }`}
                     >
                       {i + 1}
@@ -99,8 +99,8 @@ export default function ResultComparisonCard({
                                 pred === driverId
                                   ? "text-emerald-500"
                                   : predictionTop3.includes(driverId)
-                                  ? "text-amber-500"
-                                  : "text-zinc-400"
+                                    ? "text-amber-500"
+                                    : "text-zinc-400"
                               }`}
                             >
                               {pred !== undefined ? getDriverName(pred) : "—"}
