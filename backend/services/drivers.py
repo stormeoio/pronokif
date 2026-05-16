@@ -1,0 +1,312 @@
+"""
+PRONOKIF - Drivers detail service.
+
+Wraps the static ``drivers_data`` catalogue with photo URLs, "useful
+facts" generation, and side-by-side comparison metrics. The routes layer
+stays a thin adapter over these helpers.
+"""
+from __future__ import annotations
+
+import random
+from typing import Optional
+
+from config import db
+from drivers_data import (
+    F1_DRIVERS_DETAILED_2026,
+    get_all_drivers_detailed,
+    get_driver_details,
+)
+
+
+# Official F1 headshots (race suits). Fallback to Norris if unknown.
+DRIVER_PHOTOS: dict[str, str] = {
+    "norris": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LANNOR01_Lando_Norris/lannor01.png.transform/1col/image.png",
+    "piastri": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/O/OSCPIA01_Oscar_Piastri/oscpia01.png.transform/1col/image.png",
+    "russell": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/G/GEORUS01_George_Russell/georus01.png.transform/1col/image.png",
+    "antonelli": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/A/ANDANT01_Andrea_Kimi_Antonelli/andant01.png.transform/1col/image.png",
+    "leclerc": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/C/CHALEC01_Charles_Leclerc/chalec01.png.transform/1col/image.png",
+    "hamilton": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LEWHAM01_Lewis_Hamilton/lewham01.png.transform/1col/image.png",
+    "verstappen": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png.transform/1col/image.png",
+    "hadjar": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/I/ISAHAD01_Isack_Hadjar/isahad01.png.transform/1col/image.png",
+    "sainz": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/C/CARSAI01_Carlos_Sainz/carsai01.png.transform/1col/image.png",
+    "albon": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/A/ALEALB01_Alexander_Albon/alealb01.png.transform/1col/image.png",
+    "lawson": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LIALAW01_Liam_Lawson/lialaw01.png.transform/1col/image.png",
+    "lindblad": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/A/ARVLIN01_Arvid_Lindblad/arvlin01.png.transform/1col/image.png",
+    "alonso": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/F/FERALO01_Fernando_Alonso/feralo01.png.transform/1col/image.png",
+    "stroll": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LANSTR01_Lance_Stroll/lanstr01.png.transform/1col/image.png",
+    "ocon": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/E/ESTOCO01_Esteban_Ocon/estoco01.png.transform/1col/image.png",
+    "bearman": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/O/OLIBEA01_Oliver_Bearman/olibea01.png.transform/1col/image.png",
+    "gasly": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/P/PIEGAS01_Pierre_Gasly/piegas01.png.transform/1col/image.png",
+    "colapinto": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/F/FRACOL01_Franco_Colapinto/fracol01.png.transform/1col/image.png",
+    "hulkenberg": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/N/NICHUL01_Nico_Hulkenberg/nichul01.png.transform/1col/image.png",
+    "bortoleto": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/G/GABBOR01_Gabriel_Bortoleto/gabbor01.png.transform/1col/image.png",
+    "perez": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/S/SERPER01_Sergio_Perez/serper01.png.transform/1col/image.png",
+    "bottas": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/V/VALBOT01_Valtteri_Bottas/valbot01.png.transform/1col/image.png",
+}
+
+
+def _photo_for(driver_id: str) -> str:
+    return DRIVER_PHOTOS.get(driver_id, DRIVER_PHOTOS["norris"])
+
+
+def _generate_driver_facts(driver: dict, next_race: Optional[dict] = None) -> list[dict]:
+    """Build up to 10 random "fun fact" cards for the driver detail page.
+
+    Picks from a pool seeded by palmares, contract, demographics, and
+    physical attributes — whatever is present in ``drivers_data``. Random
+    so the user sees fresh angles on repeat visits.
+    """
+    f1_stats = driver.get("palmares", {}).get("f1", {})
+    junior = driver.get("palmares", {}).get("junior", [])
+    contract = driver.get("contract", {})
+
+    all_facts: list[dict] = []
+
+    if f1_stats.get("world_championships", 0) > 0:
+        all_facts.append({
+            "type": "achievement",
+            "title": "Champion du Monde",
+            "text": f"{driver['first_name']} a remporté {f1_stats['world_championships']} titre(s) mondial(aux) en F1.",
+            "icon": "trophy",
+        })
+
+    if f1_stats.get("wins", 0) > 0:
+        all_facts.append({
+            "type": "stat",
+            "title": "Victoires en F1",
+            "text": f"Total de {f1_stats['wins']} victoire(s) en Grand Prix.",
+            "icon": "flag",
+        })
+
+    if f1_stats.get("podiums", 0) > 0:
+        all_facts.append({
+            "type": "stat",
+            "title": "Podiums",
+            "text": f"{f1_stats['podiums']} podium(s) au total dans sa carrière F1.",
+            "icon": "medal",
+        })
+
+    if f1_stats.get("poles", 0) > 0:
+        all_facts.append({
+            "type": "stat",
+            "title": "Pole Positions",
+            "text": f"{f1_stats['poles']} pole position(s) en qualifications.",
+            "icon": "zap",
+        })
+
+    if f1_stats.get("fastest_laps", 0) > 0:
+        all_facts.append({
+            "type": "stat",
+            "title": "Meilleurs Tours",
+            "text": f"{f1_stats['fastest_laps']} meilleur(s) tour(s) en course.",
+            "icon": "timer",
+        })
+
+    for junior_season in junior[:3]:
+        if junior_season.get("position") == 1:
+            all_facts.append({
+                "type": "junior",
+                "title": f"Champion {junior_season['series']}",
+                "text": f"Champion de {junior_season['series']} en {junior_season['year']} avec {junior_season.get('team', 'N/A')}.",
+                "icon": "award",
+            })
+
+    if contract.get("end_year"):
+        years_left = contract["end_year"] - 2026
+        if years_left > 0:
+            all_facts.append({
+                "type": "contract",
+                "title": "Contrat actuel",
+                "text": f"Sous contrat avec {driver['team']} jusqu'en {contract['end_year']} ({years_left} an(s) restant(s)).",
+                "icon": "file",
+            })
+
+    if contract.get("salary_estimate"):
+        all_facts.append({
+            "type": "contract",
+            "title": "Salaire estimé",
+            "text": f"Rémunération estimée : {contract['salary_estimate']}.",
+            "icon": "dollar",
+        })
+
+    age = 2026 - int(driver.get("date_of_birth", "2000-01-01").split("-")[0])
+    all_facts.append({
+        "type": "personal",
+        "title": "Âge",
+        "text": f"{driver['first_name']} a {age} ans (né le {driver.get('date_of_birth', 'N/A')}).",
+        "icon": "calendar",
+    })
+
+    all_facts.append({
+        "type": "personal",
+        "title": "Nationalité",
+        "text": f"Représente {driver.get('country_name', driver.get('country', 'N/A'))} en Formule 1.",
+        "icon": "flag",
+    })
+
+    all_facts.append({
+        "type": "personal",
+        "title": "Lieu de naissance",
+        "text": f"Né à {driver.get('place_of_birth', 'N/A')}.",
+        "icon": "map",
+    })
+
+    if driver.get("height_cm"):
+        all_facts.append({
+            "type": "physical",
+            "title": "Taille",
+            "text": f"Mesure {driver['height_cm']} cm.",
+            "icon": "ruler",
+        })
+
+    all_facts.append({
+        "type": "team",
+        "title": "Équipe actuelle",
+        "text": f"Pilote pour {driver['team']} avec le numéro {driver.get('number', 'N/A')}.",
+        "icon": "car",
+    })
+
+    if f1_stats.get("first_team"):
+        all_facts.append({
+            "type": "career",
+            "title": "Débuts en F1",
+            "text": f"A débuté en F1 avec {f1_stats['first_team']} ({f1_stats.get('seasons', 'N/A')}).",
+            "icon": "play",
+        })
+
+    if f1_stats.get("entries", 0) > 0:
+        all_facts.append({
+            "type": "experience",
+            "title": "Expérience",
+            "text": f"{f1_stats['entries']} Grand(s) Prix disputé(s) en carrière.",
+            "icon": "target",
+        })
+
+    if f1_stats.get("points", 0) > 0:
+        all_facts.append({
+            "type": "stat",
+            "title": "Points en carrière",
+            "text": f"Total de {f1_stats['points']} points marqués en F1.",
+            "icon": "hash",
+        })
+
+    if driver.get("license_points"):
+        all_facts.append({
+            "type": "misc",
+            "title": "Points de permis",
+            "text": f"Actuellement {driver['license_points']}/12 points sur sa super-licence.",
+            "icon": "shield",
+        })
+
+    if contract.get("notes"):
+        all_facts.append({
+            "type": "info",
+            "title": "Info contrat",
+            "text": contract["notes"],
+            "icon": "info",
+        })
+
+    random.shuffle(all_facts)
+    return all_facts[:10]
+
+
+async def get_details(driver_id: str) -> Optional[dict]:
+    """Look up a driver by slug, falling back to the 3-letter code (VER,
+    HAM…). Enriches the result with a photo URL and 10 useful facts
+    contextualised on the next upcoming race. Returns None if unknown.
+    """
+    driver = get_driver_details(driver_id)
+
+    if not driver:
+        for d in F1_DRIVERS_DETAILED_2026.values():
+            if d.get("code", "").lower() == driver_id.lower():
+                driver = d
+                break
+
+    if not driver:
+        return None
+
+    driver["photo_url"] = _photo_for(driver["id"])
+
+    next_race = await db.races.find_one(
+        {"status": {"$in": ["upcoming", "active"]}},
+        {"_id": 0},
+        sort=[("date", 1)],
+    )
+
+    driver["useful_facts"] = _generate_driver_facts(driver, next_race)
+    return driver
+
+
+def get_all() -> list[dict]:
+    """Return the full grid with photo URLs attached."""
+    drivers = get_all_drivers_detailed()
+    for driver in drivers:
+        driver["photo_url"] = _photo_for(driver["id"])
+    return drivers
+
+
+def _winner(a: int, b: int) -> str:
+    if a > b:
+        return "driver1"
+    if b > a:
+        return "driver2"
+    return "tie"
+
+
+def compare(driver1_id: str, driver2_id: str) -> Optional[dict]:
+    """Build a side-by-side comparison of two drivers (F1 palmares +
+    derived rates). Returns None if either driver is unknown so the route
+    can raise 404.
+    """
+    d1 = get_driver_details(driver1_id)
+    d2 = get_driver_details(driver2_id)
+
+    if not d1 or not d2:
+        return None
+
+    d1["photo_url"] = _photo_for(d1["id"])
+    d2["photo_url"] = _photo_for(d2["id"])
+
+    d1_f1 = d1.get("palmares", {}).get("f1", {})
+    d2_f1 = d2.get("palmares", {}).get("f1", {})
+
+    metrics = (
+        "world_championships",
+        "wins",
+        "podiums",
+        "poles",
+        "fastest_laps",
+        "points",
+        "entries",
+    )
+    stats_comparison = {
+        m: {
+            "driver1": d1_f1.get(m, 0),
+            "driver2": d2_f1.get(m, 0),
+            "winner": _winner(d1_f1.get(m, 0), d2_f1.get(m, 0)),
+        }
+        for m in metrics
+    }
+
+    def _rate(stat: str, d_f1: dict) -> float:
+        return round((d_f1.get(stat, 0) / max(d_f1.get("entries", 1), 1)) * 100, 1)
+
+    return {
+        "driver1": d1,
+        "driver2": d2,
+        "stats_comparison": stats_comparison,
+        "win_rate": {"driver1": _rate("wins", d1_f1), "driver2": _rate("wins", d2_f1)},
+        "podium_rate": {
+            "driver1": _rate("podiums", d1_f1),
+            "driver2": _rate("podiums", d2_f1),
+        },
+        "pole_rate": {
+            "driver1": _rate("poles", d1_f1),
+            "driver2": _rate("poles", d2_f1),
+        },
+        "points_per_race": {
+            "driver1": round(d1_f1.get("points", 0) / max(d1_f1.get("entries", 1), 1), 2),
+            "driver2": round(d2_f1.get("points", 0) / max(d2_f1.get("entries", 1), 1), 2),
+        },
+    }

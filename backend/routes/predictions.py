@@ -14,6 +14,7 @@ from models.schemas import (
 )
 from services.auth import get_current_user
 from services.scoring import calculate_points
+from services.predictions import count_individual_predictions  # re-export for backward compat
 from data.f1_data import F1_RACES_2026
 
 router = APIRouter(prefix="/predictions", tags=["Predictions"])
@@ -41,26 +42,8 @@ def get_sprint_predictions_close_time(race: dict):
     return None
 
 
-async def count_individual_predictions(user_id: str) -> int:
-    """Count individual prediction elements for a user"""
-    predictions = await db.predictions.find({"user_id": user_id}, {"_id": 0}).to_list(1000)
-    total = 0
-    for pred in predictions:
-        if pred.get("quali_pole"): total += 1
-        if pred.get("quali_top10"): total += 1
-        if pred.get("race_winner"): total += 1
-        if pred.get("race_top10"): total += 1
-        if pred.get("sprint_quali_pole"): total += 1
-        if pred.get("sprint_quali_top10"): total += 1
-        if pred.get("sprint_race_winner"): total += 1
-        if pred.get("sprint_race_top10"): total += 1
-        bonus = pred.get("bonus_bets", {})
-        if bonus:
-            if "safety_car" in bonus: total += 1
-            if bonus.get("dnf_drivers"): total += 1
-            if bonus.get("fastest_lap_driver"): total += 1
-            if bonus.get("first_corner_leader"): total += 1
-    return total
+# count_individual_predictions moved to services/predictions.py (S1 lot 3 dedup).
+# Re-exported above so existing in-file callers keep working unchanged.
 
 
 # ==================== MAIN PREDICTION ENDPOINTS ====================
