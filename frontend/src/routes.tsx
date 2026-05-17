@@ -32,6 +32,9 @@ const JoinLeaguePage = lazy(() => import("@/pages/JoinLeaguePage"));
 const ChampionshipPage = lazy(() => import("@/pages/championship/ChampionshipPage"));
 const DriverDetailPage = lazy(() => import("@/pages/driver-detail/DriverDetailPage"));
 const DriverComparisonPage = lazy(() => import("@/pages/driver-comparison/DriverComparisonPage"));
+const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
+const AdminAuthPage = lazy(() => import("@/pages/admin-bo/AdminAuthPage"));
+const AdminLayout = lazy(() => import("@/pages/admin-bo/AdminLayout"));
 
 // --- Simple protected routes (path → component) ---
 const PROTECTED_ROUTES: Array<{ path: string; element: React.ReactNode }> = [
@@ -137,8 +140,12 @@ export function AppRouter() {
         <Route key={path} path={path} element={<ProtectedRoute>{element}</ProtectedRoute>} />
       ))}
 
-      {/* Catch all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Admin Back-Office (separate auth) */}
+      <Route path="/admin-bo/auth" element={<AdminAuthPage />} />
+      <Route path="/admin-bo" element={<AdminLayout />} />
+
+      {/* 404 page */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

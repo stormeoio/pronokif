@@ -51,6 +51,7 @@ from routes.notifications import router as notifications_router
 from routes.predictions import router as predictions_router
 from routes.profile import router as profile_router
 from routes.races import router as races_router
+from routes.admin_backoffice import router as admin_backoffice_router
 from routes.results import router as results_router
 from services.sync import auto_sync_loop
 
@@ -59,6 +60,7 @@ app = FastAPI(title="PRONOKIF API", description="F1 Predictions Game API")
 # Mount every domain router under /api. Keep this list alphabetical so
 # diffs stay clean as new domains arrive.
 for _router in (
+    admin_backoffice_router,
     admin_members_router,
     admin_sync_router,
     auth_router,

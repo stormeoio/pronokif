@@ -27,14 +27,21 @@ from services.auth import get_current_user
 
 # Admin identity is keyed by email today. Override via env so staging /
 # prod can have a different operator without code changes.
-ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "catalan.baptiste123@gmail.com")
+# Supports comma-separated list for multiple admins.
+ADMIN_EMAILS = [
+    e.strip().lower()
+    for e in os.environ.get(
+        "ADMIN_EMAILS",
+        os.environ.get("ADMIN_EMAIL", "catalan.baptiste123@gmail.com,baptiste.catalan123@gmail.com,fred@stormeo.io"),
+    ).split(",")
+]
 
 
 async def check_is_admin(user: dict) -> bool:
-    """Return True when the given user dict belongs to the admin account."""
+    """Return True when the given user dict belongs to an admin account."""
     if not user:
         return False
-    return user.get("email", "").lower() == ADMIN_EMAIL.lower()
+    return user.get("email", "").lower() in ADMIN_EMAILS
 
 
 async def require_admin(user: dict = Depends(get_current_user)) -> dict:
