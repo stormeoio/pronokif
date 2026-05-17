@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useCallback, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
   ChevronLeft,
@@ -23,8 +24,25 @@ import {
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Progress } from "../components/ui/progress";
+import RewardCelebration from "../components/RewardCelebration";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
+import { haptic } from "@/lib/haptics";
+
+const VictoryExplosion = lazy(() => import("../components/three/VictoryExplosion"));
+
+// Local mission type matching actual API response shape
+interface MissionItem {
+  mission_id: string;
+  name: string;
+  description: string;
+  icon: string;
+  xp_reward: number;
+  current: number;
+  target: number;
+  completed: boolean;
+  claimed: boolean;
+}
 
 const ICON_MAP = {
   target: Target,
@@ -51,6 +69,13 @@ export default function MissionsPage() {
 
   const [activeCategory, setActiveCategory] = useState<string>("assiduity");
   const [claiming, setClaiming] = useState<string | null>(null);
+  const [celebration, setCelebration] = useState<{
+    show: boolean;
+    xp: number;
+    levelUp: { from: number; to: number } | null;
+  }>({ show: false, xp: 0, levelUp: null });
+
+  const dismissCelebration = useCallback(() => setCelebration((c) => ({ ...c, show: false })), []);
 
   const { data: missionsData, isLoading: missionsLoading } = useQuery({
     queryKey: ["/user/missions"],
@@ -64,17 +89,20 @@ export default function MissionsPage() {
 
   const loading = missionsLoading || statsLoading;
   const missions = missionsData?.missions || [];
-  const categories = missionsData?.categories || {};
+  const categories = (missionsData?.categories || {}) as unknown as Record<string, MissionItem[]>;
 
   const handleClaimMission = async (missionId: string) => {
     setClaiming(missionId);
     try {
       const res = await api.missions.claim(missionId);
-      toast.success(`+${res.xp_earned} XP !`);
+      haptic("success");
 
-      if (res.level_up) {
-        toast.success(`Niveau ${res.new_level} atteint !`, { icon: "🎉" });
-      }
+      // Trigger celebration instead of toast
+      setCelebration({
+        show: true,
+        xp: res.xp_earned,
+        levelUp: res.level_up ? { from: res.new_level - 1, to: res.new_level } : null,
+      });
 
       // Update user data
       if (updateUser) {
@@ -85,6 +113,7 @@ export default function MissionsPage() {
       queryClient.invalidateQueries({ queryKey: ["/user/missions"] });
       queryClient.invalidateQueries({ queryKey: ["/user/stats"] });
     } catch (e: unknown) {
+      haptic("error");
       toast.error(
         (e as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Erreur",
       );
@@ -100,7 +129,7 @@ export default function MissionsPage() {
     { id: "minigames", label: "Mini-jeux", icon: Gamepad2, color: "text-purple-400" },
   ];
 
-  const getProgressColor = (progress: any) => {
+  const getProgressColor = (progress: { current: number; target: number }) => {
     const ratio = progress.current / progress.target;
     if (ratio >= 1) return "bg-green-500";
     if (ratio >= 0.5) return "bg-yellow-500";
@@ -123,11 +152,24 @@ export default function MissionsPage() {
   }
 
   const currentMissions = categories[activeCategory] || [];
-  const completedCount = currentMissions.filter((m: any) => m.completed).length;
-  const claimableCount = currentMissions.filter((m: any) => m.completed && !m.claimed).length;
+  const completedCount = currentMissions.filter((m) => m.completed).length;
+  const claimableCount = currentMissions.filter((m) => m.completed && !m.claimed).length;
 
   return (
     <div className="min-h-screen bg-app-main pb-24" data-testid="missions-page">
+      {/* 3D Victory Explosion */}
+      <Suspense fallback={null}>
+        <VictoryExplosion show={celebration.show} onDone={dismissCelebration} />
+      </Suspense>
+
+      <RewardCelebration
+        show={celebration.show}
+        onDone={dismissCelebration}
+        xpEarned={celebration.xp}
+        message="Mission completee !"
+        levelUp={celebration.levelUp}
+      />
+
       {/* Header */}
       <div className="sticky top-0 z-40 bg-[#050a14]/95 backdrop-blur-md border-b border-yellow-500/30">
         <div className="max-w-2xl mx-auto p-4">
@@ -166,8 +208,8 @@ export default function MissionsPage() {
             const TabIcon = tab.icon;
             const isActive = activeCategory === tab.id;
             const categoryMissions = categories[tab.id] || [];
-            const completed = categoryMissions.filter((m: any) => m.completed).length;
-            const claimable = categoryMissions.filter((m: any) => m.completed && !m.claimed).length;
+            const completed = categoryMissions.filter((m) => m.completed).length;
+            const claimable = categoryMissions.filter((m) => m.completed && !m.claimed).length;
 
             return (
               <button
@@ -240,16 +282,31 @@ export default function MissionsPage() {
         </div>
 
         {/* Missions Grid */}
-        <div className="space-y-3">
-          {currentMissions.map((mission: any) => {
-            const MissionIcon = (ICON_MAP as Record<string, any>)[mission.icon] || Star;
+        <AnimatePresence mode="wait">
+        <motion.div
+          className="space-y-3"
+          key={activeCategory}
+          initial="hidden"
+          animate="visible"
+          exit="hidden"
+          variants={{ visible: { transition: { staggerChildren: 0.07 } }, hidden: {} }}
+        >
+          {currentMissions.map((mission) => {
+            const MissionIcon = (ICON_MAP as Record<string, typeof Star>)[mission.icon] || Star;
             const progress = (mission.current / mission.target) * 100;
             const canClaim = mission.completed && !mission.claimed;
 
             return (
-              <Card
+              <motion.div
                 key={mission.mission_id}
-                className={`game-card overflow-hidden transition-all ${
+                variants={{
+                  hidden: { opacity: 0, x: -20, scale: 0.97 },
+                  visible: { opacity: 1, x: 0, scale: 1, transition: { duration: 0.35 } },
+                }}
+                whileHover={{ scale: 1.01, x: 4 }}
+              >
+              <Card
+                className={`game-card overflow-hidden transition-all glass-card ${
                   mission.claimed
                     ? "opacity-60 border-gray-700"
                     : canClaim
@@ -353,9 +410,11 @@ export default function MissionsPage() {
                   </div>
                 </CardContent>
               </Card>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );

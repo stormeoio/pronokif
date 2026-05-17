@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, ChevronRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { JOLPICA_API, OPENF1_API, isRaceCompleted } from "./championshipUtils";
@@ -70,7 +71,7 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
           const meetings = await meetingsRes.json();
           const circuitName = race.Circuit?.circuitId?.toLowerCase() || "";
           const meeting = meetings.find(
-            (m: any) =>
+            (m: { circuit_short_name?: string; meeting_name?: string; meeting_key?: number }) =>
               m.circuit_short_name?.toLowerCase().includes(circuitName) ||
               m.meeting_name
                 ?.toLowerCase()
@@ -122,7 +123,7 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
                   if (positionsRes.ok) {
                     const positions = await positionsRes.json();
                     const firstPositions = positions
-                      .filter((p: any) => p.position === 1)
+                      .filter((p: { position: number; driver_number?: number }) => p.position === 1)
                       .slice(0, 5);
                     if (firstPositions.length > 1) {
                       firstCornerLeader =
@@ -138,7 +139,7 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
                   if (positionsRes.ok) {
                     const positions = await positionsRes.json();
                     const firstPositions = positions
-                      .filter((p: any) => p.position === 1)
+                      .filter((p: { position: number; driver_number?: number }) => p.position === 1)
                       .slice(0, 5);
                     if (firstPositions.length > 1) {
                       sprintFirstCornerLeader =
@@ -155,7 +156,7 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
       }
 
       const raceResultsList = raceData?.MRData?.RaceTable?.Races?.[0]?.Results || [];
-      const fastestLapResult = raceResultsList.find((r: any) => r.FastestLap?.rank === "1");
+      const fastestLapResult = raceResultsList.find((r: { FastestLap?: { rank?: string; Time?: { time?: string } }; Driver?: unknown; Constructor?: unknown }) => r.FastestLap?.rank === "1");
       if (fastestLapResult) {
         fastestLap = {
           driver: fastestLapResult.Driver,
@@ -195,18 +196,23 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
   return (
     <div className="space-y-4">
       {/* Race Selector */}
-      <div className="card-arcade p-4">
+      <div className="card-arcade p-4 glass-card">
         <h3 className="font-heading text-sm text-gray-400 uppercase mb-3 flex items-center gap-2">
           <Calendar className="w-4 h-4" />
           Sélectionner un Grand Prix
         </h3>
-        <div className="space-y-2 max-h-64 overflow-y-auto">
+        <motion.div
+          className="space-y-2 max-h-64 overflow-y-auto"
+          initial="hidden"
+          animate="visible"
+          variants={{ visible: { transition: { staggerChildren: 0.03 } }, hidden: {} }}
+        >
           {raceSchedule.map((race) => {
             const completed = isRaceCompleted(race);
             const isSelected = selectedRace?.round === race.round;
 
             return (
-              <button
+              <motion.button
                 key={race.round}
                 onClick={() => completed && setSelectedRace(race)}
                 disabled={!completed}
@@ -217,6 +223,9 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
                       ? "bg-gray-800/30 border-gray-700/50 hover:border-cyan-500/50 hover:bg-cyan-500/5"
                       : "bg-gray-800/10 border-gray-800/30 opacity-50 cursor-not-allowed"
                 }`}
+                variants={{ hidden: { opacity: 0, x: -8 }, visible: { opacity: 1, x: 0 } }}
+                whileHover={completed ? { x: 3 } : undefined}
+                whileTap={completed ? { scale: 0.98 } : undefined}
               >
                 <div className="flex items-center gap-3">
                   <span className="font-data text-lg text-gray-500 w-8">{race.round}</span>
@@ -238,10 +247,10 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
                 ) : (
                   <span className="font-body text-xs text-gray-600">À venir</span>
                 )}
-              </button>
+              </motion.button>
             );
           })}
-        </div>
+        </motion.div>
       </div>
 
       {/* Selected Race Results */}

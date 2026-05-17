@@ -28,7 +28,7 @@ function useExistingPrediction(raceId: string | undefined) {
     queryKey: queryKeys.predictions.get(raceId!),
     queryFn: async () => {
       try {
-        return ((await api.predictions.get(raceId!)) as any) || null;
+        return (await api.predictions.get(raceId!)) || null;
       } catch {
         return null;
       }
@@ -46,8 +46,8 @@ function useMinigamesCompletion() {
           apiClient.get("/minigames/reaction/scores").catch(() => ({ data: [] })),
           apiClient.get("/minigames/batak/scores").catch(() => ({ data: [] })),
         ]);
-        const reactionComp = reactionRes.data.filter((s: any) => s.mode === "competition").length;
-        const batakComp = batakRes.data.filter((s: any) => s.mode === "competition").length;
+        const reactionComp = reactionRes.data.filter((s: { mode: string }) => s.mode === "competition").length;
+        const batakComp = batakRes.data.filter((s: { mode: string }) => s.mode === "competition").length;
         return reactionComp >= 3 && batakComp >= 3;
       } catch {
         return false;

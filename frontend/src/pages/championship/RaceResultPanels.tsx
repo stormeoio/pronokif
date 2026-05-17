@@ -1,8 +1,12 @@
 /**
  * Sub-panels rendered inside SeasonProgress for each results tab.
  */
+import { motion } from "framer-motion";
 import { Clock, Flag, Target, Timer, Zap } from "lucide-react";
 import { getTeamColor, getRankStyle, formatLapTime } from "./championshipUtils";
+
+const listStagger = { visible: { transition: { staggerChildren: 0.04 } }, hidden: {} };
+const itemSlide = { hidden: { opacity: 0, x: -10 }, visible: { opacity: 1, x: 0 } };
 
 export interface RaceResult {
   position: string;
@@ -48,7 +52,7 @@ export interface RaceResultsData {
 
 export function RaceResultsList({ results }: { results: RaceResult[] }) {
   return (
-    <div className="space-y-2">
+    <motion.div className="space-y-2" initial="hidden" animate="visible" variants={listStagger}>
       <h4 className="font-heading text-xs text-red-400 uppercase mb-2 flex items-center gap-2">
         <Flag className="w-3 h-3" /> Classement Course
       </h4>
@@ -58,9 +62,11 @@ export function RaceResultsList({ results }: { results: RaceResult[] }) {
         </p>
       ) : (
         results.slice(0, 10).map((result) => (
-          <div
+          <motion.div
             key={result.Driver.driverId}
             className={`p-2 rounded-lg border flex items-center gap-2 ${getRankStyle(result.position)}`}
+            variants={itemSlide}
+            whileHover={{ x: 4 }}
             style={{
               borderLeftWidth: "3px",
               borderLeftColor: getTeamColor(result.Constructor?.constructorId),
@@ -76,16 +82,16 @@ export function RaceResultsList({ results }: { results: RaceResult[] }) {
             <span className="font-body text-xs text-gray-500">
               {result.Time?.time || result.status}
             </span>
-          </div>
+          </motion.div>
         ))
       )}
-    </div>
+    </motion.div>
   );
 }
 
 export function QualifyingResultsList({ results }: { results: QualifyingResult[] }) {
   return (
-    <div className="space-y-2">
+    <motion.div className="space-y-2" initial="hidden" animate="visible" variants={listStagger}>
       <h4 className="font-heading text-xs text-yellow-400 uppercase mb-2 flex items-center gap-2">
         <Clock className="w-3 h-3" /> Classement Qualifications
       </h4>
@@ -95,9 +101,11 @@ export function QualifyingResultsList({ results }: { results: QualifyingResult[]
         </p>
       ) : (
         results.slice(0, 10).map((result) => (
-          <div
+          <motion.div
             key={result.Driver.driverId}
             className={`p-2 rounded-lg border flex items-center gap-2 ${getRankStyle(result.position)}`}
+            variants={itemSlide}
+            whileHover={{ x: 4 }}
             style={{
               borderLeftWidth: "3px",
               borderLeftColor: getTeamColor(result.Constructor?.constructorId),
@@ -114,16 +122,16 @@ export function QualifyingResultsList({ results }: { results: QualifyingResult[]
                 {result.Q3 || result.Q2 || result.Q1 || "-"}
               </span>
             </div>
-          </div>
+          </motion.div>
         ))
       )}
-    </div>
+    </motion.div>
   );
 }
 
 export function SprintResultsList({ results }: { results: RaceResult[] }) {
   return (
-    <div className="space-y-2">
+    <motion.div className="space-y-2" initial="hidden" animate="visible" variants={listStagger}>
       <h4 className="font-heading text-xs text-purple-400 uppercase mb-2 flex items-center gap-2">
         <Zap className="w-3 h-3" /> Classement Sprint
       </h4>
@@ -133,9 +141,11 @@ export function SprintResultsList({ results }: { results: RaceResult[] }) {
         </p>
       ) : (
         results.slice(0, 10).map((result) => (
-          <div
+          <motion.div
             key={result.Driver.driverId}
             className={`p-2 rounded-lg border flex items-center gap-2 ${getRankStyle(result.position)}`}
+            variants={itemSlide}
+            whileHover={{ x: 4 }}
             style={{
               borderLeftWidth: "3px",
               borderLeftColor: getTeamColor(result.Constructor?.constructorId),
@@ -151,10 +161,10 @@ export function SprintResultsList({ results }: { results: RaceResult[] }) {
             <span className="font-body text-xs text-gray-500">
               {result.Time?.time || result.status}
             </span>
-          </div>
+          </motion.div>
         ))
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -174,7 +184,7 @@ export function PracticeResultsList({ practice }: { practice: PracticeData }) {
               <p className="font-body text-xs text-gray-500 py-2">Données non disponibles</p>
             ) : (
               <div className="space-y-1">
-                {sessionData.slice(0, 5).map((lap: any, idx: any) => (
+                {sessionData.slice(0, 5).map((lap: { driver_number: number; lap_duration: number }, idx: number) => (
                   <div
                     key={`${session}-${lap.driver_number}`}
                     className="p-2 rounded-lg bg-gray-800/30 border border-gray-700/50 flex items-center gap-2"

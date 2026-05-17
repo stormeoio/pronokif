@@ -1,5 +1,6 @@
-import React from "react";
+import React, { lazy, Suspense, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Flag,
   Clock,
@@ -12,6 +13,11 @@ import {
   Info,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
+import SocialProofBadge from "../../components/SocialProofBadge";
+import OnboardingTooltip from "../../components/OnboardingTooltip";
+import AnimatedCard3D from "../../components/three/AnimatedCard3D";
+
+const RaceCountdownOrb = lazy(() => import("../../components/three/RaceCountdownOrb"));
 
 // GP Background images
 const GP_BACKGROUNDS = {
@@ -116,7 +122,8 @@ export default function RaceSlider({
         </button>
       </div>
 
-      {/* GP Scenic Background */}
+      {/* GP Scenic Background with 3D tilt */}
+      <AnimatedCard3D className="rounded-none" glowColor="rgba(251, 191, 36, 0.2)" intensity={0.5}>
       <div
         className="relative h-40 bg-cover bg-center cursor-pointer group"
         style={{ backgroundImage: `url(${getGPBackground(currentRace.name)})` }}
@@ -166,6 +173,7 @@ export default function RaceSlider({
           </div>
         </div>
       </div>
+      </AnimatedCard3D>
 
       {/* Countdown Section */}
       {currentRace.is_sprint_weekend ? (
@@ -186,13 +194,22 @@ export default function RaceSlider({
           />
         </div>
       ) : currentRace.can_predict ? (
-        <div className="p-3 border-t border-blue-500/30">
-          <CountdownRow
-            label="Clôture 15 min avant Q1"
-            icon={<Clock className="w-4 h-4" />}
-            countdown={countdown}
-            variant="main"
-          />
+        <div className="p-3 border-t border-blue-500/30 flex items-center gap-3">
+          {/* 3D urgency orb */}
+          <Suspense fallback={null}>
+            <RaceCountdownOrb
+              urgency={Math.max(0, Math.min(1, 1 - (countdown.days * 24 + countdown.hours) / 48))}
+              className="flex-shrink-0"
+            />
+          </Suspense>
+          <div className="flex-1">
+            <CountdownRow
+              label="Clôture 15 min avant Q1"
+              icon={<Clock className="w-4 h-4" />}
+              countdown={countdown}
+              variant="main"
+            />
+          </div>
         </div>
       ) : null}
 
@@ -201,6 +218,13 @@ export default function RaceSlider({
           <p className="font-body text-sm text-center text-orange-400">
             Les pronostics sont fermés pour cette course
           </p>
+        </div>
+      )}
+
+      {/* Social Proof */}
+      {!currentPrediction && currentRace.can_predict && (
+        <div className="px-4 pt-2">
+          <SocialProofBadge raceId={currentRace.id} />
         </div>
       )}
 
@@ -229,13 +253,21 @@ export default function RaceSlider({
             )}
           </div>
         ) : currentRace.can_predict ? (
-          <Button
-            onClick={() => navigate(`/predictions/${currentRace.id}`)}
-            className="btn-racing w-full h-14 text-lg animate-neon"
-            data-testid="make-predictions-btn"
-          >
-            <Target className="w-5 h-5 mr-2" /> FAIRE MES PRONOS
-          </Button>
+          <div className="relative">
+            <OnboardingTooltip
+              stepId="first-prediction"
+              message="Commence par pronostiquer le Top 10 de la prochaine course ! Tu gagnes des XP a chaque prono."
+              position="top"
+              emoji="🏎️"
+            />
+            <Button
+              onClick={() => navigate(`/predictions/${currentRace.id}`)}
+              className="btn-racing w-full h-14 text-lg animate-neon"
+              data-testid="make-predictions-btn"
+            >
+              <Target className="w-5 h-5 mr-2" /> FAIRE MES PRONOS
+            </Button>
+          </div>
         ) : (
           <div className="text-center py-2">
             <p className="font-body text-sm text-gray-500">Pronostics fermés</p>
@@ -255,18 +287,49 @@ interface CountdownRowProps {
 }
 
 function CountdownRow({ label, icon, subLabel, countdown, variant }: CountdownRowProps) {
-  const colorClass = variant === "sprint" ? "text-yellow-400" : "text-cyan-400";
-  const digitBg = variant === "sprint" ? "bg-yellow-500/10 border-yellow-500/30" : "";
-  const digitColor = variant === "sprint" ? "text-yellow-400" : "";
+  const totalMinutes =
+    countdown.days * 24 * 60 + countdown.hours * 60 + countdown.minutes;
+  const isUrgent = totalMinutes < 60 && totalMinutes > 0;
+  const isCritical = totalMinutes < 15 && totalMinutes > 0;
+
+  const colorClass = isCritical
+    ? "text-red-400"
+    : isUrgent
+      ? "text-orange-400"
+      : variant === "sprint"
+        ? "text-yellow-400"
+        : "text-cyan-400";
+
+  const digitBg = isCritical
+    ? "bg-red-500/15 border-red-500/40"
+    : isUrgent
+      ? "bg-orange-500/10 border-orange-500/30"
+      : variant === "sprint"
+        ? "bg-yellow-500/10 border-yellow-500/30"
+        : "";
+
+  const digitColor = isCritical
+    ? "text-red-400"
+    : isUrgent
+      ? "text-orange-400"
+      : variant === "sprint"
+        ? "text-yellow-400"
+        : "";
+
   const digitSubColor = variant === "sprint" ? "text-yellow-600" : "text-gray-400";
 
   return (
-    <div>
+    <div className={isCritical ? "animate-pulse-soft" : ""}>
       <p
         className={`font-body text-xs text-center ${colorClass} uppercase mb-2 tracking-wider flex items-center justify-center gap-2`}
       >
         {icon} {label}
         {subLabel && <span className="text-gray-500 text-[10px]">{subLabel}</span>}
+        {isUrgent && (
+          <span className="ml-1 text-[9px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded-full font-heading animate-pulse">
+            URGENT
+          </span>
+        )}
       </p>
       <div className="flex justify-center gap-2">
         {[
@@ -277,7 +340,7 @@ function CountdownRow({ label, icon, subLabel, countdown, variant }: CountdownRo
         ].map((item, i) => (
           <div
             key={i}
-            className={`countdown-digit w-12 h-12 flex flex-col items-center justify-center ${digitBg ? digitBg + " rounded-lg" : ""}`}
+            className={`countdown-digit w-12 h-12 flex flex-col items-center justify-center rounded-lg border ${digitBg || "border-transparent"}`}
           >
             <span className={`text-lg font-bold ${digitColor}`}>
               {String(item.value).padStart(2, "0")}

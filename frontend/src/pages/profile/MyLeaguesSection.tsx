@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Users, Plus, Copy, Share2, Check, Star } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "../../components/ui/button";
@@ -74,11 +75,18 @@ export function MyLeaguesSection({ leagues, currentLeagueId }: MyLeaguesSectionP
             Ajouter
           </Button>
         </div>
-        <div className="space-y-2">
+        <motion.div
+          className="space-y-2"
+          initial="hidden"
+          animate="visible"
+          variants={{ visible: { transition: { staggerChildren: 0.06 } }, hidden: {} }}
+        >
           {leagues.map((league) => (
-            <div
+            <motion.div
               key={league.id}
               className={`p-3 rounded-lg ${league.id === currentLeagueId ? "bg-blue-500/20 border border-blue-500/50" : "bg-white/5"}`}
+              variants={{ hidden: { opacity: 0, x: -12 }, visible: { opacity: 1, x: 0 } }}
+              whileHover={{ x: 4 }}
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1">
@@ -126,7 +134,7 @@ export function MyLeaguesSection({ leagues, currentLeagueId }: MyLeaguesSectionP
                   Sélectionner
                 </Button>
               )}
-            </div>
+            </motion.div>
           ))}
           {leagues.length === 0 && (
             <div className="text-center py-6">
@@ -137,7 +145,7 @@ export function MyLeaguesSection({ leagues, currentLeagueId }: MyLeaguesSectionP
               </Button>
             </div>
           )}
-        </div>
+        </motion.div>
       </div>
     </div>
   );

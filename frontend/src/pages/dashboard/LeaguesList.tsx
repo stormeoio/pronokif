@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   Trophy,
   ChevronRight,
@@ -49,7 +50,12 @@ export function LeaguesList({ userLeagues, user, unreadChatByLeague }: LeaguesLi
         </div>
       </div>
 
-      <div className="p-3 space-y-2">
+      <motion.div
+        className="p-3 space-y-2"
+        initial="hidden"
+        animate="visible"
+        variants={{ visible: { transition: { staggerChildren: 0.05 } }, hidden: {} }}
+      >
         {userLeagues.map((leagueItem) => {
           const unreadCount = unreadChatByLeague[leagueItem.id] || 0;
           const isActive = leagueItem.id === user?.current_league_id;
@@ -65,7 +71,7 @@ export function LeaguesList({ userLeagues, user, unreadChatByLeague }: LeaguesLi
           };
 
           return (
-            <div
+            <motion.div
               key={leagueItem.id}
               onClick={() => navigate(`/league/${leagueItem.id}/details`)}
               className={`flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer ${
@@ -74,6 +80,9 @@ export function LeaguesList({ userLeagues, user, unreadChatByLeague }: LeaguesLi
                   : "bg-white/5 hover:bg-white/10"
               }`}
               data-testid={`league-item-${leagueItem.id}`}
+              variants={{ hidden: { opacity: 0, x: -10 }, visible: { opacity: 1, x: 0 } }}
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.98 }}
             >
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-500 to-yellow-700 flex items-center justify-center shadow">
                 <Users className="w-5 h-5 text-white" />
@@ -113,10 +122,10 @@ export function LeaguesList({ userLeagues, user, unreadChatByLeague }: LeaguesLi
                   <Share2 className="w-4 h-4" />
                 </button>
               </div>
-            </div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
       <div className="h-2 bg-kerb-stripe" />
     </div>
   );

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
   Crown,
@@ -102,7 +103,12 @@ export default function LeagueSettings({
   return (
     <>
       {/* Action buttons */}
-      <div className="mt-8 pt-6 border-t border-gray-700/50 space-y-3">
+      <motion.div
+        className="mt-8 pt-6 border-t border-gray-700/50 space-y-3"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
         {isOwner && (
           <div className="space-y-2 mb-4">
             <p className="font-heading text-xs text-yellow-400 uppercase flex items-center gap-2">
@@ -143,12 +149,24 @@ export default function LeagueSettings({
             Quitter la ligue
           </Button>
         )}
-      </div>
+      </motion.div>
 
       {/* Transfer Ownership Modal */}
+      <AnimatePresence>
       {showTransferModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md card-arcade overflow-hidden max-h-[80vh] flex flex-col">
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div
+            className="w-full max-w-md card-arcade overflow-hidden max-h-[80vh] flex flex-col"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 350, damping: 25 }}
+          >
             <div className="bg-gradient-to-r from-cyan-600/20 to-transparent px-4 py-3 border-b border-cyan-500/30 flex items-center justify-between">
               <h3 className="font-heading text-sm uppercase text-cyan-400 flex items-center gap-2">
                 <UserCog className="w-4 h-4" />
@@ -245,14 +263,27 @@ export default function LeagueSettings({
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       {/* Delete League Confirmation Modal */}
+      <AnimatePresence>
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md card-arcade overflow-hidden">
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div
+            className="w-full max-w-md card-arcade overflow-hidden"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 350, damping: 25 }}
+          >
             <div className="bg-gradient-to-r from-red-600/20 to-transparent px-4 py-3 border-b border-red-500/30">
               <h3 className="font-heading text-sm uppercase text-red-400 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4" />
@@ -302,14 +333,27 @@ export default function LeagueSettings({
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       {/* Leave Confirmation Modal */}
+      <AnimatePresence>
       {showLeaveConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md card-arcade overflow-hidden">
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div
+            className="w-full max-w-md card-arcade overflow-hidden"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 350, damping: 25 }}
+          >
             <div className="bg-gradient-to-r from-red-600/20 to-transparent px-4 py-3 border-b border-red-500/30">
               <h3 className="font-heading text-sm uppercase text-red-400 flex items-center gap-2">
                 <LogOut className="w-4 h-4" />
@@ -348,9 +392,10 @@ export default function LeagueSettings({
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </>
   );
 }

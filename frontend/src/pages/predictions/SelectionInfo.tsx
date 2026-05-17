@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 
 export interface SelectionInfoProps {
@@ -24,7 +25,15 @@ export default function SelectionInfo({
   return (
     <Card className="game-card">
       <CardContent className="p-4">
-        <p className="font-body text-gray-300 text-sm">
+        <AnimatePresence mode="wait">
+        <motion.p
+          key={selectionMode}
+          className="font-body text-gray-300 text-sm"
+          initial={{ opacity: 0, x: -8 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 8 }}
+          transition={{ duration: 0.2 }}
+        >
           {activeTab === "sprint" ? (
             <>
               {selectionMode === "sprint_quali_pole" &&
@@ -58,7 +67,8 @@ export default function SelectionInfo({
                 `Sélectionne les abandons (${dnfDrivers.length}/5)`}
             </>
           )}
-        </p>
+        </motion.p>
+        </AnimatePresence>
       </CardContent>
     </Card>
   );

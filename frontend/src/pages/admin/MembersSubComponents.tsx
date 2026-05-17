@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import {
   Loader2,
   Users,
@@ -53,8 +54,17 @@ export function DeleteConfirmModal({
   onConfirm,
 }: DeleteConfirmModalProps) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="w-full max-w-md card-arcade overflow-hidden">
+    <motion.div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <motion.div
+        className="w-full max-w-md card-arcade overflow-hidden"
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 350, damping: 25 }}
+      >
         <div className="bg-gradient-to-r from-red-600/20 to-transparent px-4 py-3 border-b border-red-500/30">
           <h3 className="font-heading text-sm uppercase text-red-400 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" />
@@ -100,8 +110,8 @@ export function DeleteConfirmModal({
             </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -131,8 +141,17 @@ export function MemberDetailsModal({
   onDelete,
 }: MemberDetailsModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="w-full max-w-lg card-arcade overflow-hidden max-h-[85vh] flex flex-col">
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <motion.div
+        className="w-full max-w-lg card-arcade overflow-hidden max-h-[85vh] flex flex-col"
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 350, damping: 25 }}
+      >
         <div className="bg-gradient-to-r from-green-600/20 to-transparent px-4 py-3 border-b border-gray-700/50 flex items-center justify-between sticky top-0 bg-[#0c1525] z-10">
           <h3 className="font-heading text-sm uppercase text-green-400 flex items-center gap-2">
             <Users className="w-4 h-4" />
@@ -223,8 +242,8 @@ export function MemberDetailsModal({
             </div>
           )
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 

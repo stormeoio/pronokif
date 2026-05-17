@@ -1,4 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
+import { motion } from "framer-motion";
 import { ChevronLeft, Check, AlertCircle, Zap, Flag, Trash2 } from "lucide-react";
 import PredictionTimer from "./PredictionTimer";
 import PredictionForm from "./PredictionForm";
@@ -7,6 +8,10 @@ import { useDriverSelection } from "./useDriverSelection";
 import { usePredictionData } from "./usePredictionData";
 import { usePredictionForm } from "./usePredictionForm";
 import { Button } from "@/components/ui/button";
+import { lazy, Suspense } from "react";
+import RewardCelebration from "@/components/RewardCelebration";
+
+const VictoryExplosion = lazy(() => import("@/components/three/VictoryExplosion"));
 
 export default function PredictionsPage() {
   const { raceId } = useParams();
@@ -83,14 +88,27 @@ export default function PredictionsPage() {
     );
   }
 
-  const canPredictSprint = (race as Record<string, unknown>).can_predict_sprint;
-  const canPredictMain = (race as Record<string, unknown>).can_predict;
+  const canPredictSprint = race.can_predict_sprint;
+  const canPredictMain = race.can_predict;
 
   return (
     <div className="min-h-screen bg-app-main pb-32" data-testid="predictions-page">
+      {/* 3D Victory Explosion (replaces 2D confetti for main saves) */}
+      <Suspense fallback={null}>
+        <VictoryExplosion show={form.showCelebration} onDone={form.dismissCelebration} />
+      </Suspense>
+
+      {/* Legacy celebration with XP counter (layered on top) */}
+      <RewardCelebration
+        show={form.showCelebration}
+        onDone={form.dismissCelebration}
+        xpEarned={form.celebrationXp}
+        message={form.activeTab === "sprint" ? "Sprint enregistre !" : "Pronostics enregistres !"}
+      />
+
       {form.showDeleteConfirm && (
         <DeleteConfirmModal
-          raceName={(race as Record<string, unknown>).name as string}
+          raceName={race.name}
           deleting={form.deleting}
           onConfirm={form.handleDeletePredictions}
           onCancel={() => form.setShowDeleteConfirm(false)}
@@ -98,41 +116,54 @@ export default function PredictionsPage() {
       )}
 
       {/* Header */}
-      <div className="bg-gradient-to-b from-[#0a1628] to-transparent p-4">
+      <motion.div
+        className="bg-gradient-to-b from-[#0a1628] to-transparent p-4"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button
+            <motion.button
               onClick={() => navigate(-1)}
               className="p-2 text-cyan-400"
               data-testid="back-btn"
+              whileHover={{ x: -2 }}
+              whileTap={{ scale: 0.9 }}
             >
               <ChevronLeft className="w-6 h-6" />
-            </button>
+            </motion.button>
             <div>
               <p className="font-body text-xs text-cyan-400 uppercase tracking-widest">
                 Pronostics
               </p>
               <h1 className="font-heading text-xl text-white uppercase">
-                {((race as Record<string, unknown>).name as string).replace(" Grand Prix", "")}
+                {race.name.replace(" Grand Prix", "")}
               </h1>
             </div>
           </div>
           {form.existingPrediction && (canPredictMain || canPredictSprint) && (
-            <button
+            <motion.button
               onClick={() => form.setShowDeleteConfirm(true)}
               className="p-2 rounded-lg text-red-400 hover:bg-red-500/20 transition-colors"
               data-testid="delete-predictions-btn"
               title="Supprimer mes pronostics"
+              whileTap={{ scale: 0.9 }}
             >
               <Trash2 className="w-5 h-5" />
-            </button>
+            </motion.button>
           )}
         </div>
-      </div>
+      </motion.div>
 
-      <div className="max-w-2xl mx-auto px-4 space-y-4">
+      <motion.div
+        className="max-w-2xl mx-auto px-4 space-y-4"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15, duration: 0.3 }}
+      >
         {/* Sprint/Main tabs */}
-        {(race as Record<string, unknown>).is_sprint_weekend && (
+        {race.is_sprint_weekend && (
           <div className="grid grid-cols-2 gap-2 mb-4">
             <button
               onClick={() => form.setActiveTab("sprint")}
@@ -200,7 +231,7 @@ export default function PredictionsPage() {
           handleDriverSelect={handleDriverSelect}
           isDriverSelected={isDriverSelected}
         />
-      </div>
+      </motion.div>
 
       {/* Save Button */}
       <div className="fixed bottom-16 left-0 right-0 bg-gradient-to-t from-[#050a14] to-transparent pt-8 pb-4 px-4">

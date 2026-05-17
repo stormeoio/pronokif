@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, Shield, Loader2, Trophy, Bell, MessageSquare, Users } from "lucide-react";
 import ResultsTab from "./ResultsTab";
 import NotificationsTab from "./NotificationsTab";
@@ -8,6 +9,7 @@ import MembersTab from "./MembersTab";
 import { useAdminData } from "./useAdminData";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { haptic } from "@/lib/haptics";
 
 export default function AdminPage() {
   const navigate = useNavigate();
@@ -54,7 +56,7 @@ export default function AdminPage() {
   const tabs = [
     { key: "results", label: "Resultats", icon: Trophy, activeColor: "red" },
     { key: "notifications", label: "Notifs", icon: Bell, activeColor: "cyan" },
-    { key: "feedback", label: "Feedback", icon: MessageSquare, activeColor: "yellow" },
+    { key: "feedback", label: "Retours", icon: MessageSquare, activeColor: "yellow" },
     { key: "members", label: "Membres", icon: Users, activeColor: "green" },
   ];
 
@@ -85,32 +87,49 @@ export default function AdminPage() {
 
       <div className="max-w-2xl mx-auto p-4 pb-32">
         {/* Admin Tabs */}
-        <div className="grid grid-cols-4 gap-2 mb-6">
+        <motion.div
+          className="grid grid-cols-4 gap-2 mb-6"
+          initial="hidden"
+          animate="visible"
+          variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
+        >
           {tabs.map(({ key, label, icon: Icon, activeColor }) => {
             const isActive = adminTab === key;
             return (
-              <button
+              <motion.button
                 key={key}
-                onClick={() => setAdminTab(key)}
+                onClick={() => { haptic("selection"); setAdminTab(key); }}
                 className={`p-3 rounded-xl font-heading text-xs uppercase transition-all ${
                   isActive
                     ? `bg-${activeColor}-500/20 border-2 border-${activeColor}-500 text-${activeColor}-400`
                     : "bg-white/5 border-2 border-gray-700 text-gray-400 hover:bg-white/10"
                 }`}
+                variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
+                whileTap={{ scale: 0.9 }}
               >
                 <Icon className="w-5 h-5 mx-auto mb-1" />
                 {label}
-              </button>
+              </motion.button>
             );
           })}
-        </div>
+        </motion.div>
 
-        {adminTab === "results" && (
-          <ResultsTab races={races} setRaces={setRaces} drivers={drivers as any} />
-        )}
-        {adminTab === "notifications" && <NotificationsTab />}
-        {adminTab === "feedback" && <FeedbackTab />}
-        {adminTab === "members" && <MembersTab />}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={adminTab}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            {adminTab === "results" && (
+              <ResultsTab races={races} setRaces={setRaces} drivers={drivers} />
+            )}
+            {adminTab === "notifications" && <NotificationsTab />}
+            {adminTab === "feedback" && <FeedbackTab />}
+            {adminTab === "members" && <MembersTab />}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );

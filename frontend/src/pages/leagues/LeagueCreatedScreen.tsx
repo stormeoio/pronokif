@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Check, Copy, Share2, Flag } from "lucide-react";
 import { Button } from "../../components/ui/button";
 
@@ -31,17 +32,38 @@ export default function LeagueCreatedScreen({
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-app-main pb-24">
       <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-green-500/15 rounded-full blur-[100px]" />
 
-      <div className="w-full max-w-md text-center relative z-10">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl bg-gradient-to-br from-green-500 to-green-700 border-2 border-green-400/50 mb-6 shadow-xl glow-gold">
+      <motion.div
+        className="w-full max-w-md text-center relative z-10"
+        initial="hidden"
+        animate="visible"
+        variants={{ visible: { transition: { staggerChildren: 0.12 } }, hidden: {} }}
+      >
+        <motion.div
+          className="inline-flex items-center justify-center w-20 h-20 rounded-xl bg-gradient-to-br from-green-500 to-green-700 border-2 border-green-400/50 mb-6 shadow-xl glow-gold"
+          initial={{ scale: 0, rotate: -30 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 15 }}
+        >
           <Check className="w-10 h-10 text-white" strokeWidth={2} />
-        </div>
+        </motion.div>
 
-        <h1 className="font-heading text-3xl uppercase tracking-wider text-white mb-2">
+        <motion.h1
+          className="font-heading text-3xl uppercase tracking-wider text-white mb-2"
+          variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+        >
           Ligue creee !
-        </h1>
-        <p className="font-body text-gray-400 mb-8">Partage ce code avec tes amis</p>
+        </motion.h1>
+        <motion.p
+          className="font-body text-gray-400 mb-8"
+          variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
+        >
+          Partage ce code avec tes amis
+        </motion.p>
 
-        <div className="card-arcade mb-6 p-6">
+        <motion.div
+          className="card-arcade mb-6 p-6 glass-card"
+          variants={{ hidden: { opacity: 0, y: 20, scale: 0.95 }, visible: { opacity: 1, y: 0, scale: 1 } }}
+        >
           <p className="font-body text-gray-400 text-sm mb-2">{league.name}</p>
           <div className="flex items-center justify-center gap-3">
             <span
@@ -64,36 +86,50 @@ export default function LeagueCreatedScreen({
               )}
             </Button>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="flex gap-3 mb-8">
-          <Button
-            onClick={onShareCode}
-            className="flex-1 h-12 btn-neon font-heading uppercase tracking-wider text-sm"
-            data-testid="share-code-btn"
-          >
-            <Share2 className="w-4 h-4 mr-2" />
-            Partager
-          </Button>
-          <Button
-            onClick={onCopyCode}
-            className="flex-1 h-12 btn-chrome font-heading uppercase tracking-wider text-sm"
-            data-testid="copy-btn"
-          >
-            <Copy className="w-4 h-4 mr-2" />
-            Copier
-          </Button>
-        </div>
-
-        <Button
-          onClick={onDone}
-          className="w-full h-14 btn-racing font-heading uppercase tracking-wider"
-          data-testid="go-dashboard-btn"
+        <motion.div
+          className="flex gap-3 mb-8"
+          variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}
         >
-          <Flag className="w-5 h-5 mr-2" />
-          Commencer a pronostiquer
-        </Button>
-      </div>
+          <motion.div className="flex-1" whileTap={{ scale: 0.95 }}>
+            <Button
+              onClick={onShareCode}
+              className="w-full h-12 btn-neon font-heading uppercase tracking-wider text-sm"
+              data-testid="share-code-btn"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Partager
+            </Button>
+          </motion.div>
+          <motion.div className="flex-1" whileTap={{ scale: 0.95 }}>
+            <Button
+              onClick={onCopyCode}
+              className="w-full h-12 btn-chrome font-heading uppercase tracking-wider text-sm"
+              data-testid="copy-btn"
+            >
+              <Copy className="w-4 h-4 mr-2" />
+              Copier
+            </Button>
+          </motion.div>
+        </motion.div>
+
+        <motion.div
+          variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+          whileTap={{ scale: 0.96 }}
+          whileHover={{ scale: 1.02 }}
+        >
+          <Button
+            onClick={onDone}
+            className="w-full h-14 btn-racing font-heading uppercase tracking-wider relative overflow-hidden group"
+            data-testid="go-dashboard-btn"
+          >
+            <span className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12" />
+            <Flag className="w-5 h-5 mr-2" />
+            Commencer a pronostiquer
+          </Button>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

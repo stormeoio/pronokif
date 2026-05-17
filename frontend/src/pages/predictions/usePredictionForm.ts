@@ -8,12 +8,14 @@
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { haptic } from "@/lib/haptics";
+import type { RaceDetails, Prediction } from "@/types/api";
 
 interface UsePredictionFormParams {
   raceId: string | undefined;
-  race: Record<string, unknown> | null;
+  race: RaceDetails | null;
   loading: boolean;
-  fetchedPrediction: Record<string, unknown> | null;
+  fetchedPrediction: Prediction | null;
 }
 
 export function usePredictionForm({
@@ -23,9 +25,11 @@ export function usePredictionForm({
   fetchedPrediction,
 }: UsePredictionFormParams) {
   const [saving, setSaving] = useState(false);
-  const [existingPrediction, setExistingPrediction] = useState<Record<string, unknown> | null>(
+  const [existingPrediction, setExistingPrediction] = useState<Prediction | null>(
     null,
   );
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationXp, setCelebrationXp] = useState(0);
 
   // Tab for sprint weekends
   const [activeTab, setActiveTab] = useState("sprint");
@@ -67,11 +71,13 @@ export function usePredictionForm({
 
     if (fetchedPrediction) {
       setExistingPrediction(fetchedPrediction);
-      setQualiPole((fetchedPrediction.quali_pole as string) || null);
-      setQualiTop10((fetchedPrediction.quali_top10 as string[]) || []);
-      setRaceWinner((fetchedPrediction.race_winner as string) || null);
-      setRaceTop10((fetchedPrediction.race_top10 as string[]) || []);
-      const bonus = fetchedPrediction.bonus_bets as Record<string, unknown> | undefined;
+      // Cast to Record for field access — actual API response has extra fields not in Prediction type
+      const pred = fetchedPrediction as unknown as Record<string, unknown>;
+      setQualiPole((pred.quali_pole as string) || null);
+      setQualiTop10((pred.quali_top10 as string[]) || []);
+      setRaceWinner((pred.race_winner as string) || null);
+      setRaceTop10((pred.race_top10 as string[]) || []);
+      const bonus = pred.bonus_bets as Record<string, unknown> | undefined;
       if (bonus) {
         setSafetyCar((bonus.safety_car as boolean) ?? null);
         setDnfDrivers((bonus.dnf_drivers as string[]) || []);
@@ -79,11 +85,11 @@ export function usePredictionForm({
         setFastestLapDriver((bonus.fastest_lap_driver as string) || null);
         setFirstCornerLeader((bonus.first_corner_leader as string) || null);
       }
-      setSprintQualiPole((fetchedPrediction.sprint_quali_pole as string) || null);
-      setSprintQualiTop10((fetchedPrediction.sprint_quali_top10 as string[]) || []);
-      setSprintRaceWinner((fetchedPrediction.sprint_race_winner as string) || null);
-      setSprintRaceTop10((fetchedPrediction.sprint_race_top10 as string[]) || []);
-      const sprintBonus = fetchedPrediction.sprint_bonus_bets as
+      setSprintQualiPole((pred.sprint_quali_pole as string) || null);
+      setSprintQualiTop10((pred.sprint_quali_top10 as string[]) || []);
+      setSprintRaceWinner((pred.sprint_race_winner as string) || null);
+      setSprintRaceTop10((pred.sprint_race_top10 as string[]) || []);
+      const sprintBonus = pred.sprint_bonus_bets as
         | Record<string, unknown>
         | undefined;
       if (sprintBonus) {
@@ -95,7 +101,7 @@ export function usePredictionForm({
       }
     }
 
-    if ((race as Record<string, unknown>)?.is_sprint_weekend) {
+    if (race?.is_sprint_weekend) {
       setActiveTab("sprint");
       setSelectionMode("sprint_quali_pole");
     } else {
@@ -160,7 +166,7 @@ export function usePredictionForm({
       setSprintFastestLap(null);
       setSprintFirstCorner(null);
       setSelectionMode(
-        (race as Record<string, unknown>)?.is_sprint_weekend ? "sprint_quali_pole" : "quali_pole",
+        race?.is_sprint_weekend ? "sprint_quali_pole" : "quali_pole",
       );
       setShowDeleteConfirm(false);
     } catch (error: unknown) {
@@ -198,7 +204,9 @@ export function usePredictionForm({
             first_corner_leader: sprintFirstCorner,
           },
         });
-        toast.success("Pronostics Sprint enregistrés !");
+        setCelebrationXp(25);
+        setShowCelebration(true);
+        haptic("success");
       } else {
         await api.predictions.saveMain({
           race_id: raceId,
@@ -214,7 +222,9 @@ export function usePredictionForm({
             first_corner_leader: firstCornerLeader,
           },
         });
-        toast.success("Pronostics Course enregistrés !");
+        setCelebrationXp(50);
+        setShowCelebration(true);
+        haptic("success");
       }
     } catch (error: unknown) {
       const e = error as { response?: { data?: { detail?: string } } };
@@ -223,6 +233,8 @@ export function usePredictionForm({
       setSaving(false);
     }
   };
+
+  const dismissCelebration = () => setShowCelebration(false);
 
   return {
     // State
@@ -281,5 +293,9 @@ export function usePredictionForm({
     // Actions
     handleSave,
     handleDeletePredictions,
+    // Celebration
+    showCelebration,
+    celebrationXp,
+    dismissCelebration,
   };
 }

@@ -1,7 +1,33 @@
+import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, History, Trophy } from "lucide-react";
 
+interface RaceHistoryEntry {
+  race_id: string;
+  race_name: string;
+  is_sprint_weekend: boolean;
+  has_results: boolean;
+  total_points: number;
+  points_breakdown: {
+    quali_pole: { points: number };
+    quali_top10: { points: number };
+    race_winner: { points: number };
+    race_top10: { points: number };
+    bonus: { points: number };
+  };
+  sprint_breakdown?: {
+    sprint_quali_top10: { points: number };
+    sprint_race_top10: { points: number };
+  };
+  details?: string[];
+}
+
+interface PointsHistoryData {
+  summary?: { races_with_results: number };
+  history?: RaceHistoryEntry[];
+}
+
 interface PointsHistoryProps {
-  pointsHistory: Record<string, any>;
+  pointsHistory: PointsHistoryData;
   showHistory: boolean;
   setShowHistory: (show: boolean) => void;
 }
@@ -34,8 +60,15 @@ export default function PointsHistory({
         />
       </button>
 
+      <AnimatePresence>
       {showHistory && (
-        <div className="border-t border-gray-700/50">
+        <motion.div
+          className="border-t border-gray-700/50"
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.3 }}
+        >
           {pointsHistory.history?.length === 0 ? (
             <div className="p-6 text-center">
               <History className="w-10 h-10 text-gray-600 mx-auto mb-2" />
@@ -45,21 +78,30 @@ export default function PointsHistory({
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-700/30 max-h-96 overflow-y-auto">
-              {pointsHistory.history?.map((race: any) => (
+            <motion.div
+              className="divide-y divide-gray-700/30 max-h-96 overflow-y-auto"
+              initial="hidden"
+              animate="visible"
+              variants={{ visible: { transition: { staggerChildren: 0.05 } }, hidden: {} }}
+            >
+              {pointsHistory.history?.map((race) => (
                 <RaceHistoryItem key={race.race_id} race={race} />
               ))}
-            </div>
+            </motion.div>
           )}
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }
 
-function RaceHistoryItem({ race }: { race: Record<string, any> }) {
+function RaceHistoryItem({ race }: { race: RaceHistoryEntry }) {
   return (
-    <div className="p-4">
+    <motion.div
+      className="p-4"
+      variants={{ hidden: { opacity: 0, x: -10 }, visible: { opacity: 1, x: 0 } }}
+    >
       {/* Race Header */}
       <div className="flex items-center justify-between mb-3">
         <div>
@@ -136,7 +178,7 @@ function RaceHistoryItem({ race }: { race: Record<string, any> }) {
           {race.details && race.details.length > 0 && (
             <div className="mt-2 pt-2 border-t border-gray-700/30">
               <div className="flex flex-wrap gap-1">
-                {race.details.map((detail: any, i: any) => (
+                {race.details?.map((detail, i) => (
                   <span
                     key={i}
                     className="text-[10px] bg-green-500/10 text-green-400 px-2 py-0.5 rounded"
@@ -149,7 +191,7 @@ function RaceHistoryItem({ race }: { race: Record<string, any> }) {
           )}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 

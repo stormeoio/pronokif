@@ -1,10 +1,12 @@
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Check, Flag, Zap, Gamepad2, Trophy, Medal } from "lucide-react";
 import DriverPicker from "./DriverPicker";
 import type { Driver } from "./DriverPicker";
 import SelectionInfo from "./SelectionInfo";
 import BonusPanel from "./BonusPanel";
 import { Button } from "@/components/ui/button";
+import { haptic } from "@/lib/haptics";
 
 /**
  * Selection steps grid, selection info, bonus panel, and driver picker.
@@ -108,7 +110,7 @@ export default function PredictionForm({
     },
     {
       key: "sprint_race_winner",
-      label: "Winner",
+      label: "Vainqueur",
       sublabel: "Sprint",
       icon: Trophy,
       done: !!sprintRaceWinner,
@@ -167,7 +169,7 @@ export default function PredictionForm({
     },
     {
       key: "race_winner",
-      label: "Winner",
+      label: "Vainqueur",
       sublabel: "Course",
       icon: Trophy,
       done: !!raceWinner,
@@ -238,12 +240,20 @@ export default function PredictionForm({
   return (
     <>
       {/* Step Navigation Grid */}
-      <div className="grid grid-cols-3 gap-2" role="tablist" aria-label="Etapes de pronostic">
+      <motion.div
+        className="grid grid-cols-3 gap-2"
+        role="tablist"
+        aria-label="Etapes de pronostic"
+        initial="hidden"
+        animate="visible"
+        variants={{ visible: { transition: { staggerChildren: 0.06 } }, hidden: {} }}
+      >
         {steps.map((step) => {
           const Icon = step.icon;
           const isActive = selectionMode === step.key || (step.isBonus && showBonus);
 
           const handleStepClick = () => {
+            haptic("selection");
             if (step.isMinigames) {
               navigate("/minigames");
             } else if (step.isBonus) {
@@ -285,7 +295,7 @@ export default function PredictionForm({
           }
 
           return (
-            <button
+            <motion.button
               key={step.key}
               role="tab"
               aria-selected={isActive}
@@ -293,6 +303,9 @@ export default function PredictionForm({
               onClick={handleStepClick}
               className={`flex flex-col items-center p-2 rounded-xl transition-all border-2 ${bgClass} ${borderClass}`}
               data-testid={`step-${step.key}`}
+              variants={{ hidden: { opacity: 0, scale: 0.8 }, visible: { opacity: 1, scale: 1 } }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.92 }}
             >
               <Icon className={`w-5 h-5 mb-1 ${iconClass}`} />
               <span className={`font-heading text-[10px] ${labelClass}`}>{step.label}</span>
@@ -311,10 +324,10 @@ export default function PredictionForm({
                   {step.done ? "✓" : "→"}
                 </span>
               )}
-            </button>
+            </motion.button>
           );
         })}
-      </div>
+      </motion.div>
 
       {/* Selection Info */}
       <SelectionInfo

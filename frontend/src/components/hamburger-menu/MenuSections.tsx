@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Shield, FileText, Mail, BookOpen, ExternalLink } from "lucide-react";
 import { Button } from "../ui/button";
 import { SectionHeader } from "./MenuHelpers";
@@ -54,14 +55,23 @@ export function TutorialContent() {
         subtitle="Comment jouer à PRONOKIF"
         color="from-cyan-500 to-cyan-700"
       />
-      <div className="space-y-3">
+      <motion.div
+        className="space-y-3"
+        initial="hidden"
+        animate="visible"
+        variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
+      >
         {steps.map((step, index) => (
-          <div key={index} className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
+          <motion.div
+            key={index}
+            className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50"
+            variants={{ hidden: { opacity: 0, x: -10 }, visible: { opacity: 1, x: 0 } }}
+          >
             <h4 className="font-heading text-sm text-cyan-400 mb-1">{step.title}</h4>
             <p className="font-body text-xs text-gray-300 leading-relaxed">{step.description}</p>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 }

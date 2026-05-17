@@ -1,6 +1,8 @@
+import { motion } from "framer-motion";
 import { AlertTriangle, Timer, Flag, X, Zap } from "lucide-react";
 import type { Driver } from "./DriverPicker";
 import { Card, CardContent } from "@/components/ui/card";
+import { haptic } from "@/lib/haptics";
 
 export interface BonusPanelProps {
   activeTab: string;
@@ -30,7 +32,12 @@ export default function BonusPanel({
   setDnfDrivers,
 }: BonusPanelProps) {
   return (
-    <div className="space-y-4">
+    <motion.div
+      className="space-y-4"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
       <Card className="game-card">
         <CardContent className="p-4 space-y-4">
           <h3 className="font-heading text-lg text-white uppercase flex items-center gap-2">
@@ -39,14 +46,19 @@ export default function BonusPanel({
           </h3>
 
           {/* Safety Car */}
-          <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+          <motion.div
+            className="flex items-center justify-between p-3 bg-white/5 rounded-xl"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+          >
             <div className="flex items-center gap-3">
               <AlertTriangle className="w-5 h-5 text-orange-400" />
               <span className="font-body text-white">Safety Car</span>
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => setSafetyCar(true)}
+                onClick={() => { haptic("selection"); setSafetyCar(true); }}
                 className={`px-4 py-2 rounded-lg font-heading text-sm transition-all ${
                   safetyCar === true ? "bg-green-500 text-white" : "bg-white/10 text-gray-400"
                 }`}
@@ -54,7 +66,7 @@ export default function BonusPanel({
                 OUI
               </button>
               <button
-                onClick={() => setSafetyCar(false)}
+                onClick={() => { haptic("selection"); setSafetyCar(false); }}
                 className={`px-4 py-2 rounded-lg font-heading text-sm transition-all ${
                   safetyCar === false ? "bg-red-500 text-white" : "bg-white/10 text-gray-400"
                 }`}
@@ -62,14 +74,19 @@ export default function BonusPanel({
                 NON
               </button>
             </div>
-          </div>
+          </motion.div>
 
           {/* Fastest Lap */}
-          <button
+          <motion.button
             onClick={() =>
               setSelectionMode(activeTab === "sprint" ? "sprint_fastest_lap" : "fastest_lap")
             }
             className="w-full flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            whileHover={{ x: 4 }}
+            whileTap={{ scale: 0.98 }}
           >
             <div className="flex items-center gap-3">
               <Timer className="w-5 h-5 text-purple-400" />
@@ -80,14 +97,19 @@ export default function BonusPanel({
                 ? drivers.find((d) => d.id === fastestLap)?.name || "Sélectionné"
                 : "Sélectionner →"}
             </span>
-          </button>
+          </motion.button>
 
           {/* First Corner Leader */}
-          <button
+          <motion.button
             onClick={() =>
               setSelectionMode(activeTab === "sprint" ? "sprint_first_corner" : "first_corner")
             }
             className="w-full flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            whileHover={{ x: 4 }}
+            whileTap={{ scale: 0.98 }}
           >
             <div className="flex items-center gap-3">
               <Flag className="w-5 h-5 text-green-400" />
@@ -98,10 +120,15 @@ export default function BonusPanel({
                 ? drivers.find((d) => d.id === firstCorner)?.name || "Sélectionné"
                 : "Sélectionner →"}
             </span>
-          </button>
+          </motion.button>
 
           {/* DNF */}
-          <div className="p-3 bg-white/5 rounded-xl space-y-3">
+          <motion.div
+            className="p-3 bg-white/5 rounded-xl space-y-3"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 }}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <X className="w-5 h-5 text-red-400" />
@@ -112,6 +139,7 @@ export default function BonusPanel({
             <div className="flex gap-2">
               <button
                 onClick={() => {
+                  haptic("selection");
                   setNoDnf(true);
                   setDnfDrivers([]);
                 }}
@@ -123,6 +151,7 @@ export default function BonusPanel({
               </button>
               <button
                 onClick={() => {
+                  haptic("selection");
                   setNoDnf(false);
                   setSelectionMode(activeTab === "sprint" ? "sprint_dnf_select" : "dnf_select");
                 }}
@@ -135,9 +164,9 @@ export default function BonusPanel({
                 {dnfDrivers.length > 0 ? `${dnfDrivers.length} pilote(s)` : "Sélectionner →"}
               </button>
             </div>
-          </div>
+          </motion.div>
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 }

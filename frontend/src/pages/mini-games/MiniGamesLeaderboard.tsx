@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Medal, Users, Crown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { AvatarDisplay } from "../../components/AvatarDisplay";
@@ -108,11 +109,18 @@ function LeaderboardList({
   getAvatarById: (id: string | undefined) => any;
 }) {
   return (
-    <div className="space-y-2">
+    <motion.div
+      className="space-y-2"
+      initial="hidden"
+      animate="visible"
+      variants={{ visible: { transition: { staggerChildren: 0.04 } }, hidden: {} }}
+    >
       {entries.map((entry, i) => (
-        <div
+        <motion.div
           key={entry.user_id}
           className={`flex items-center gap-3 p-2 rounded-lg ${entry.user_id === userId ? highlightClass : ""}`}
+          variants={{ hidden: { opacity: 0, x: -10 }, visible: { opacity: 1, x: 0 } }}
+          whileHover={{ x: 3 }}
         >
           <div
             className={`w-8 h-8 rounded flex items-center justify-center ${
@@ -134,8 +142,8 @@ function LeaderboardList({
           <AvatarDisplay avatar={getAvatarById(entry.avatar_id)} size="sm" />
           <span className="font-body text-sm text-white flex-1 truncate">{entry.username}</span>
           <span className={`font-data text-sm ${scoreColor}`}>{formatScore(entry.best_score)}</span>
-        </div>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }

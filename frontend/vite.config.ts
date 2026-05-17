@@ -1,6 +1,7 @@
 /// <reference types="vitest" />
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
+import { VitePWA } from "vite-plugin-pwa";
 import path from "node:path";
 
 /**
@@ -24,7 +25,58 @@ export default defineConfig(({ mode }) => {
   loadEnv(mode, process.cwd(), "");
 
   return {
-    plugins: [react()],
+    plugins: [
+      react(),
+      VitePWA({
+        registerType: "autoUpdate",
+        includeAssets: ["icons/icon-192.png", "icons/icon-512.png"],
+        manifest: {
+          name: "Pronokif - Pronostics F1",
+          short_name: "Pronokif",
+          description: "Jeu de pronostics Formule 1 entre amis",
+          start_url: "/",
+          display: "standalone",
+          background_color: "#050a14",
+          theme_color: "#f97316",
+          orientation: "portrait",
+          icons: [
+            { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+            { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+          ],
+          categories: ["games", "sports"],
+        },
+        workbox: {
+          globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+          navigateFallback: "/index.html",
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/.*\/api\//,
+              handler: "NetworkFirst",
+              options: {
+                cacheName: "api-cache",
+                expiration: { maxEntries: 50, maxAgeSeconds: 300 },
+              },
+            },
+            {
+              urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com/,
+              handler: "CacheFirst",
+              options: {
+                cacheName: "google-fonts",
+                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              },
+            },
+            {
+              urlPattern: /^https:\/\/static\.prod-images\./,
+              handler: "CacheFirst",
+              options: {
+                cacheName: "static-images",
+                expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              },
+            },
+          ],
+        },
+      }),
+    ],
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "src"),
@@ -41,6 +93,20 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: "build",
       sourcemap: true,
+      chunkSizeWarningLimit: 600,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes("node_modules/three/")) return "three-core";
+            if (id.includes("@react-three/fiber")) return "three-fiber";
+            if (id.includes("@react-three/drei")) return "three-drei";
+            if (id.includes("framer-motion")) return "framer";
+            if (id.includes("lucide-react")) return "icons";
+            if (id.includes("@tanstack/react-query")) return "query";
+            if (id.includes("react-router-dom") || id.includes("@remix-run")) return "router";
+          },
+        },
+      },
     },
     test: {
       globals: true,

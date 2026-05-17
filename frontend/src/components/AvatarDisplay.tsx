@@ -98,7 +98,7 @@ export function AvatarDisplay({ avatar, size = "md", customUrl = null }: AvatarD
   if (customUrl) {
     return (
       <div className={`${sizeClasses[size]} rounded-lg overflow-hidden border-2 border-orange-500`}>
-        <img src={customUrl} alt="Avatar" className="w-full h-full object-cover" />
+        <img src={customUrl} alt="Avatar personnalisé" className="w-full h-full object-cover" />
       </div>
     );
   }
@@ -245,7 +245,7 @@ export function AvatarSelector({
                   {customUrl ? (
                     <img
                       src={customUrl}
-                      alt="Current"
+                      alt="Avatar actuel"
                       className="w-full h-full object-cover rounded-lg"
                     />
                   ) : (

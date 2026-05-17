@@ -7,6 +7,7 @@
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
+import type { Race, Prediction } from "@/types/api";
 
 // ── Individual queries ─────────────────────────────────────────────
 
@@ -14,8 +15,8 @@ function useUpcomingRaces() {
   return useQuery({
     queryKey: queryKeys.races.upcoming(),
     queryFn: async () => {
-      const data = (await api.races.upcoming()) as any[];
-      return (data || []).filter((r: any) => r.status !== "finished");
+      const data = await api.races.upcoming();
+      return (data || []).filter((r) => r.status !== "finished");
     },
   });
 }
@@ -51,7 +52,7 @@ function useUnreadMessages() {
 
 // ── Dependent queries: predictions per race ────────────────────────
 
-function useRacePredictions(races: any[]) {
+function useRacePredictions(races: Race[]) {
   return useQueries({
     queries: races.map((race) => ({
       queryKey: queryKeys.predictions.get(String(race.id)),
@@ -79,8 +80,8 @@ export function useDashboardData() {
   const predictionQueries = useRacePredictions(upcomingRaces);
 
   // Build predictions map: { raceId: predictionData }
-  const predictions: Record<string, any> = {};
-  upcomingRaces.forEach((race: any, i: number) => {
+  const predictions: Record<string, Prediction | null> = {};
+  upcomingRaces.forEach((race, i) => {
     predictions[race.id] = predictionQueries[i]?.data ?? null;
   });
 

@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Check, AlertTriangle, Timer, Target, Users, X, Zap } from "lucide-react";
 import { TEAM_COLORS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
@@ -181,18 +182,25 @@ export function DriverGrid({
   handleDriverSelect,
 }: DriverGridProps) {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <motion.div
+      className="grid grid-cols-2 gap-3"
+      initial="hidden"
+      animate="visible"
+      variants={{ visible: { transition: { staggerChildren: 0.02 } } }}
+    >
       {drivers.map((driver) => {
         const selected = isDriverSelected(driver.id);
         const position = getDriverPosition(driver.id);
         const teamColor = (TEAM_COLORS as Record<string, string>)[driver.team] || "#666";
 
         return (
-          <button
+          <motion.button
             key={driver.id}
             onClick={() => handleDriverSelect(driver.id)}
             className={`driver-card-gaming relative p-4 rounded-lg border-l-4 transition-all text-left ${selected ? "selected" : ""}`}
             style={{ borderLeftColor: teamColor }}
+            variants={{ hidden: { opacity: 0, scale: 0.9 }, visible: { opacity: 1, scale: 1 } }}
+            whileTap={{ scale: 0.93 }}
           >
             {position && (
               <div
@@ -237,9 +245,9 @@ export function DriverGrid({
                 <p className="font-body text-xs text-gray-500 truncate">{driver.team}</p>
               </div>
             </div>
-          </button>
+          </motion.button>
         );
       })}
-    </div>
+    </motion.div>
   );
 }

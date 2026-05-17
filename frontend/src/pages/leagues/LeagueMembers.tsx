@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Users, Crown, Star, Target, User } from "lucide-react";
 
 interface LeagueMembersProps {
@@ -19,7 +20,12 @@ export default function LeagueMembers({
   const navigate = useNavigate();
 
   return (
-    <div className="space-y-2">
+    <motion.div
+      className="space-y-2"
+      initial="hidden"
+      animate="visible"
+      variants={{ visible: { transition: { staggerChildren: 0.04 } }, hidden: {} }}
+    >
       {members.map((member) => {
         const isMe = member.id === userId;
         const isMemberOwner = ownerId === member.id;
@@ -27,16 +33,19 @@ export default function LeagueMembers({
         const leaderboardEntry = leaderboard.find((e) => e.user_id === member.id);
 
         return (
-          <button
+          <motion.button
             key={member.id}
             onClick={() => navigate(`/profile/${member.id}`)}
             className={`w-full p-3 rounded-lg border bg-gray-800/30 border-gray-700/50 hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all text-left ${isMe ? "ring-2 ring-cyan-500/30" : ""}`}
+            variants={{ hidden: { opacity: 0, x: -12 }, visible: { opacity: 1, x: 0 } }}
+            whileHover={{ x: 4 }}
+            whileTap={{ scale: 0.98 }}
           >
             <div className="flex items-center gap-3">
               {/* Avatar */}
               <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-700 flex-shrink-0 relative">
                 {avatar ? (
-                  <img src={avatar} alt="" className="w-full h-full object-cover" />
+                  <img src={avatar} alt={`Avatar de ${member.username || "membre"}`} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <User className="w-6 h-6 text-gray-500" />
@@ -88,9 +97,9 @@ export default function LeagueMembers({
                 <p className="font-body text-[10px] text-gray-500 uppercase">pts</p>
               </div>
             </div>
-          </button>
+          </motion.button>
         );
       })}
-    </div>
+    </motion.div>
   );
 }

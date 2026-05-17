@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   Bell,
@@ -122,86 +123,119 @@ export default function NotificationsPage() {
               </div>
             </div>
             {unreadCount > 0 && (
-              <Button
-                onClick={markAllAsRead}
-                variant="ghost"
-                size="sm"
-                className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
-              >
-                <CheckCheck className="w-4 h-4 mr-1" />
-                Tout marquer lu
-              </Button>
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring" }}>
+                <Button
+                  onClick={markAllAsRead}
+                  variant="ghost"
+                  size="sm"
+                  className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
+                >
+                  <CheckCheck className="w-4 h-4 mr-1" />
+                  Tout marquer lu
+                </Button>
+              </motion.div>
             )}
           </div>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
+      <motion.div
+        className="max-w-2xl mx-auto px-4 py-4 space-y-3"
+        initial="hidden"
+        animate="visible"
+        variants={{ visible: { transition: { staggerChildren: 0.06 } }, hidden: {} }}
+      >
         {notifications.length === 0 ? (
-          <div className="card-arcade p-8 text-center">
-            <Bell className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+          <motion.div
+            className="card-arcade p-8 text-center glass-card"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", stiffness: 200 }}
+          >
+            <motion.div
+              initial={{ y: -10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Bell className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+            </motion.div>
             <h3 className="font-heading text-lg text-gray-400 uppercase mb-1">
               Aucune notification
             </h3>
             <p className="font-body text-sm text-gray-500">
               Vous recevrez ici les actualités et mises à jour de PRONOKIF
             </p>
-          </div>
+          </motion.div>
         ) : (
-          notifications.map((notif: Notification) => {
-            const config = (TYPE_CONFIG[notif.type] || TYPE_CONFIG.info)!;
-            const Icon = config.icon;
+          <AnimatePresence>
+            {notifications.map((notif: Notification, index: number) => {
+              const config = (TYPE_CONFIG[notif.type] || TYPE_CONFIG.info)!;
+              const Icon = config.icon;
 
-            return (
-              <div
-                key={notif.id}
-                className={`card-arcade overflow-hidden transition-all ${
-                  !notif.is_read ? "ring-2 ring-cyan-500/30" : ""
-                }`}
-                data-testid={`notification-item-${notif.id}`}
-              >
-                <div
-                  className={`px-4 py-2 border-b border-gray-800 flex items-center justify-between ${config.bgColor}`}
+              return (
+                <motion.div
+                  key={notif.id}
+                  variants={{
+                    hidden: { opacity: 0, y: 20, scale: 0.97 },
+                    visible: {
+                      opacity: 1,
+                      y: 0,
+                      scale: 1,
+                      transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] },
+                    },
+                  }}
+                  exit={{ opacity: 0, x: -50, transition: { duration: 0.2 } }}
+                  whileHover={{ scale: 1.01, y: -1 }}
+                  className={`card-arcade overflow-hidden glass-card transition-all ${
+                    !notif.is_read ? "ring-2 ring-cyan-500/30" : ""
+                  }`}
+                  data-testid={`notification-item-${notif.id}`}
                 >
-                  <div className="flex items-center gap-2">
-                    <Icon className={`w-4 h-4 ${config.color}`} />
-                    <span className={`font-body text-xs uppercase tracking-wider ${config.color}`}>
-                      {config.label}
+                  <div
+                    className={`px-4 py-2 border-b border-gray-800 flex items-center justify-between ${config.bgColor}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon className={`w-4 h-4 ${config.color}`} />
+                      <span className={`font-body text-xs uppercase tracking-wider ${config.color}`}>
+                        {config.label}
+                      </span>
+                    </div>
+                    <span className="font-body text-[10px] text-gray-500">
+                      {formatDate(notif.created_at)}
                     </span>
                   </div>
-                  <span className="font-body text-[10px] text-gray-500">
-                    {formatDate(notif.created_at)}
-                  </span>
-                </div>
 
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <h3
-                        className={`font-heading text-lg ${!notif.is_read ? "text-white" : "text-gray-300"}`}
-                      >
-                        {notif.title}
-                      </h3>
-                      <p className="font-body text-sm text-gray-400 mt-2 whitespace-pre-wrap">
-                        {notif.message}
-                      </p>
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <h3
+                          className={`font-heading text-lg ${!notif.is_read ? "text-white" : "text-gray-300"}`}
+                        >
+                          {notif.title}
+                        </h3>
+                        <p className="font-body text-sm text-gray-400 mt-2 whitespace-pre-wrap">
+                          {notif.message}
+                        </p>
+                      </div>
+                      {!notif.is_read && (
+                        <motion.button
+                          onClick={() => markAsRead(notif.id)}
+                          className="p-2 text-gray-500 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors flex-shrink-0"
+                          title="Marquer comme lu"
+                          whileTap={{ scale: 0.85 }}
+                          whileHover={{ scale: 1.1 }}
+                        >
+                          <Check className="w-5 h-5" />
+                        </motion.button>
+                      )}
                     </div>
-                    {!notif.is_read && (
-                      <button
-                        onClick={() => markAsRead(notif.id)}
-                        className="p-2 text-gray-500 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors flex-shrink-0"
-                        title="Marquer comme lu"
-                      >
-                        <Check className="w-5 h-5" />
-                      </button>
-                    )}
                   </div>
-                </div>
-              </div>
-            );
-          })
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }

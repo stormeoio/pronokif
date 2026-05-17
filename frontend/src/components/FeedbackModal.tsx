@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
   X,
@@ -22,7 +23,7 @@ interface FeedbackModalProps {
 const CATEGORIES = [
   {
     id: "bug",
-    label: "Bug",
+    label: "Signaler un bug",
     icon: Bug,
     color: "text-red-400",
     bgColor: "bg-red-500/20",
@@ -38,7 +39,7 @@ const CATEGORIES = [
   },
   {
     id: "feedback",
-    label: "Feedback",
+    label: "Retour d'experience",
     icon: MessageSquare,
     color: "text-cyan-400",
     bgColor: "bg-cyan-500/20",
@@ -99,17 +100,22 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div
+    <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       data-testid="feedback-modal"
       onClick={(e: React.MouseEvent<HTMLDivElement>) => {
         // Close on backdrop click
         if (e.target === e.currentTarget) handleClose();
       }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
     >
-      <div
+      <motion.div
         className="w-full max-w-lg card-arcade overflow-hidden"
         onClick={(e) => e.stopPropagation()}
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 350, damping: 25 }}
       >
         {/* Header */}
         <div className="bg-gradient-to-r from-cyan-600/30 to-transparent p-4 border-b border-cyan-500/30">
@@ -241,7 +247,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         )}
 
         <div className="h-2 bg-kerb-stripe" />
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

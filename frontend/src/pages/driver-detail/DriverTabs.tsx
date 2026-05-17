@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import {
   Trophy,
   Flag,
@@ -28,9 +29,14 @@ export function ProfileTab({ driver, colors }: TabProps) {
   const contract = driver.contract || {};
 
   return (
-    <div className="space-y-4">
+    <motion.div
+      className="space-y-4"
+      initial="hidden"
+      animate="visible"
+      variants={{ visible: { transition: { staggerChildren: 0.08 } }, hidden: {} }}
+    >
       {/* Personal Info */}
-      <div className="card-arcade p-4">
+      <motion.div className="card-arcade p-4" variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}>
         <h3 className="font-heading text-sm text-gray-400 uppercase mb-3 flex items-center gap-2">
           <User className="w-4 h-4" style={{ color: colors.primary }} /> Informations personnelles
         </h3>
@@ -42,10 +48,10 @@ export function ProfileTab({ driver, colors }: TabProps) {
           <InfoRow label="Taille" value={driver.height_cm ? `${driver.height_cm} cm` : "-"} />
           <InfoRow label="Poids" value={driver.weight_kg ? `${driver.weight_kg} kg` : "-"} />
         </div>
-      </div>
+      </motion.div>
 
       {/* Contract Info */}
-      <div className="card-arcade p-4">
+      <motion.div className="card-arcade p-4" variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}>
         <h3 className="font-heading text-sm text-gray-400 uppercase mb-3 flex items-center gap-2">
           <FileText className="w-4 h-4" style={{ color: colors.primary }} /> Contrat actuel
         </h3>
@@ -62,11 +68,11 @@ export function ProfileTab({ driver, colors }: TabProps) {
             {contract.notes}
           </p>
         )}
-      </div>
+      </motion.div>
 
       {/* Social Media */}
       {driver.social && (
-        <div className="card-arcade p-4">
+        <motion.div className="card-arcade p-4" variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}>
           <h3 className="font-heading text-sm text-gray-400 uppercase mb-3 flex items-center gap-2">
             <Star className="w-4 h-4" style={{ color: colors.primary }} /> Reseaux sociaux
           </h3>
@@ -94,9 +100,9 @@ export function ProfileTab({ driver, colors }: TabProps) {
               </a>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -170,7 +176,7 @@ export function PalmaresTab({ driver, colors }: TabProps) {
             <History className="w-4 h-4 text-blue-500" /> Carriere junior
           </h3>
           <div className="space-y-2">
-            {juniorCareer.map((season: any, idx: any) => (
+            {juniorCareer.map((season: { year: number; series: string; team: string; position: number; wins?: number; note?: string }, idx: number) => (
               <div
                 key={idx}
                 className={`p-3 rounded-lg border ${
@@ -206,7 +212,7 @@ export function PalmaresTab({ driver, colors }: TabProps) {
                   </div>
                   <div className="text-right">
                     <p className="font-data text-lg text-white">{season.year}</p>
-                    {season.wins > 0 && (
+                    {(season.wins ?? 0) > 0 && (
                       <p className="font-body text-xs text-green-400">{season.wins} victoires</p>
                     )}
                   </div>
@@ -237,7 +243,7 @@ export function FactsTab({ driver, colors }: TabProps) {
         </p>
       </div>
 
-      {facts.map((fact: any, idx: any) => {
+      {facts.map((fact: { icon: string; title: string; text: string }, idx: number) => {
         const IconComponent = factIcons[fact.icon] || Info;
         return (
           <div

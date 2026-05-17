@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Loader2, RefreshCw, MessageSquare, Bug, Lightbulb } from "lucide-react";
 import { api } from "@/lib/api";
@@ -44,7 +45,7 @@ export default function FeedbackTab() {
             <MessageSquare className="w-4 h-4" />
             Messages des utilisateurs
           </h3>
-          <button onClick={() => fetchFeedback()} className="text-gray-400 hover:text-white">
+          <button onClick={() => fetchFeedback()} className="text-gray-400 hover:text-white" aria-label="Rafraîchir les feedbacks">
             <RefreshCw className={`w-4 h-4 ${loadingFeedback ? "animate-spin" : ""}`} />
           </button>
         </div>
@@ -59,7 +60,12 @@ export default function FeedbackTab() {
             <p className="font-body text-gray-500">Aucun feedback pour le moment</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-800">
+          <motion.div
+            className="divide-y divide-gray-800"
+            initial="hidden"
+            animate="visible"
+            variants={{ visible: { transition: { staggerChildren: 0.04 } } }}
+          >
             {feedbackList.map((feedback) => {
               const categoryConfig: Record<
                 string,
@@ -76,14 +82,18 @@ export default function FeedbackTab() {
                   icon: MessageSquare,
                   color: "text-cyan-400",
                   bg: "bg-cyan-500/20",
-                  label: "Feedback",
+                  label: "Retour",
                 },
               };
               const config = (categoryConfig[feedback.category] || categoryConfig.feedback)!;
               const Icon = config.icon;
 
               return (
-                <div key={feedback.id} className={`p-4 ${!feedback.read ? "bg-yellow-500/5" : ""}`}>
+                <motion.div
+                  key={feedback.id}
+                  className={`p-4 ${!feedback.read ? "bg-yellow-500/5" : ""}`}
+                  variants={{ hidden: { opacity: 0, x: -12 }, visible: { opacity: 1, x: 0 } }}
+                >
                   <div className="flex items-start gap-3">
                     <div
                       className={`w-8 h-8 rounded-lg ${config.bg} flex items-center justify-center flex-shrink-0`}
@@ -125,10 +135,10 @@ export default function FeedbackTab() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

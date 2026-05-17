@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Racing+Sans+One&family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+/* Fonts loaded via <link> in index.html for non-blocking render */
 
 @tailwind base;
 @tailwind components;
@@ -598,4 +598,46 @@
 .bg-gp-scenic > * {
   position: relative;
   z-index: 1;
+}
+
+/* ============================================
+   PERFORMANCE — Rendering hints
+   ============================================ */
+
+/* GPU-accelerated scrolling for long lists */
+.card-arcade {
+  contain: layout style;
+}
+
+/* Reduce paint cost for off-screen sections */
+@layer utilities {
+  .contain-paint {
+    contain: paint;
+  }
+  .gpu-accelerated {
+    will-change: transform;
+    transform: translateZ(0);
+  }
+}
+
+/* Focus-visible ring for keyboard navigation */
+@layer utilities {
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a1628];
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .skeleton-arcade {
+    animation: none;
+  }
 }

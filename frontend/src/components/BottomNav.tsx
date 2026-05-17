@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Home, Trophy, Target, User, Users, MessageCircle, Flag } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -67,7 +68,7 @@ export default function BottomNav() {
           const showChatBadge = item.path === "/league" && unreadChatCount > 0;
 
           return (
-            <button
+            <motion.button
               key={item.path}
               onClick={() => navigate(item.path)}
               aria-label={item.label}
@@ -75,9 +76,11 @@ export default function BottomNav() {
               className={`flex flex-col items-center justify-center w-[52px] h-[52px] rounded-xl transition-all relative ${
                 isActive
                   ? "nav-item-active shadow-lg"
-                  : "text-gray-700 hover:text-gray-900 hover:bg-white/40 active:scale-95"
+                  : "text-gray-700 hover:text-gray-900 hover:bg-white/40"
               }`}
               data-testid={`nav-${item.label.toLowerCase()}`}
+              whileTap={{ scale: 0.85 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
             >
               <div className="relative">
                 <Icon
@@ -99,7 +102,14 @@ export default function BottomNav() {
               >
                 {item.label}
               </span>
-            </button>
+              {isActive && (
+                <motion.div
+                  className="absolute -bottom-1 w-4 h-1 bg-cyan-400 rounded-full"
+                  layoutId="nav-indicator"
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                />
+              )}
+            </motion.button>
           );
         })}
       </div>

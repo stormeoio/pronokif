@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { motion } from "framer-motion";
 import { Trophy } from "lucide-react";
 import { SectionHeader } from "./MenuHelpers";
 
@@ -10,11 +11,14 @@ interface RuleSectionProps {
 
 function RuleSection({ title, text, children }: RuleSectionProps) {
   return (
-    <section className="bg-gray-800/50 rounded-lg p-3 border border-orange-500/20">
+    <motion.section
+      className="bg-gray-800/50 rounded-lg p-3 border border-orange-500/20"
+      variants={{ hidden: { opacity: 0, x: -10 }, visible: { opacity: 1, x: 0 } }}
+    >
       <h4 className="font-heading text-sm text-orange-400 mb-2">{title}</h4>
       {text && <p>{text}</p>}
       {children}
-    </section>
+    </motion.section>
   );
 }
 
@@ -27,7 +31,12 @@ export function RulesContent() {
         subtitle="Comment ça marche"
         color="from-orange-500 to-orange-700"
       />
-      <div className="space-y-4 font-body text-sm text-gray-300 leading-relaxed">
+      <motion.div
+        className="space-y-4 font-body text-sm text-gray-300 leading-relaxed"
+        initial="hidden"
+        animate="visible"
+        variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
+      >
         <RuleSection
           title="Principe général"
           text="PRONOKIF est un jeu de pronostics F1. Avant chaque Grand Prix, tu dois prédire les résultats des qualifications et de la course. Plus tes pronostics sont précis, plus tu gagnes de points !"
@@ -120,7 +129,7 @@ export function RulesContent() {
           title="Ligues"
           text="Crée ou rejoins une ligue pour défier tes amis ! Le classement de chaque ligue est indépendant. Tu peux appartenir à plusieurs ligues simultanément."
         />
-      </div>
+      </motion.div>
     </div>
   );
 }

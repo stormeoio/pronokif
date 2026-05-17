@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Clock, Send } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
@@ -65,6 +66,11 @@ export default function PredictionCard({ prediction, onAnswer, userId }: Predict
   };
 
   return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
     <Card className={`game-card ${isResolved ? "border-green-500/30" : ""}`}>
       <CardContent className="p-4">
         <p className="font-body text-white mb-3">{prediction.question}</p>
@@ -122,7 +128,7 @@ export default function PredictionCard({ prediction, onAnswer, userId }: Predict
             {prediction.answer_type === "choice" && prediction.choices && (
               <div className="space-y-2">
                 {prediction.choices.map((choice, i) => (
-                  <button
+                  <motion.button
                     key={i}
                     onClick={() => !hasAnswered && toggleChoice(choice.text)}
                     disabled={hasAnswered}
@@ -131,6 +137,8 @@ export default function PredictionCard({ prediction, onAnswer, userId }: Predict
                         ? "border-orange-500 bg-orange-500/20"
                         : "border-gray-700 bg-gray-800"
                     }`}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
                   >
                     <span
                       className={`font-body text-sm ${
@@ -139,7 +147,7 @@ export default function PredictionCard({ prediction, onAnswer, userId }: Predict
                     >
                       {choice.text}
                     </span>
-                  </button>
+                  </motion.button>
                 ))}
               </div>
             )}
@@ -166,5 +174,6 @@ export default function PredictionCard({ prediction, onAnswer, userId }: Predict
         )}
       </CardContent>
     </Card>
+    </motion.div>
   );
 }

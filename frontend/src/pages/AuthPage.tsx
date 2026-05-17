@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Mail, Lock, ChevronRight } from "lucide-react";
 import { Button } from "../components/ui/button";
@@ -8,6 +9,8 @@ import { Label } from "../components/ui/label";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { useAuth } from "@/lib/auth";
+
+const HeroScene = lazy(() => import("../components/three/HeroScene"));
 
 // Hero banner with F1 car (no text - we overlay via CSS)
 const HERO_BANNER =
@@ -51,22 +54,59 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-app-main relative overflow-hidden">
-      {/* Hero Banner - Top Section */}
+      {/* 3D Hero Scene - Top Section */}
       <div className="relative w-full h-64 flex-shrink-0">
-        <img
-          src={HERO_BANNER}
-          alt="PRONOKIF - Pronostics F1"
-          className="w-full h-full object-cover object-top"
-        />
+        <Suspense
+          fallback={
+            <img
+              src={HERO_BANNER}
+              alt="PRONOKIF - Pronostics F1"
+              className="w-full h-full object-cover object-top"
+            />
+          }
+        >
+          <HeroScene className="absolute inset-0" />
+        </Suspense>
+
+        {/* Title overlay */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
+          <motion.h1
+            className="font-heading text-5xl text-white uppercase tracking-widest text-glow-orange"
+            initial={{ opacity: 0, scale: 0.8, y: -20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+          >
+            PRONOKIF
+          </motion.h1>
+          <motion.p
+            className="font-body text-cyan-300/80 text-xs uppercase tracking-[0.2em] mt-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+          >
+            Fantasy F1 Predictions
+          </motion.p>
+        </div>
+
         {/* Gradient overlay at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#050a14] to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#050a14] to-transparent z-5" />
       </div>
 
-      {/* Kerb stripe separator */}
-      <div className="h-2 bg-kerb-stripe flex-shrink-0 -mt-1 relative z-10" />
+      {/* Animated kerb stripe separator */}
+      <motion.div
+        className="h-[3px] bg-gradient-to-r from-red-600 via-white to-red-600 flex-shrink-0 -mt-1 relative z-10"
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: 1 }}
+        transition={{ delay: 0.3, duration: 0.6, ease: "easeOut" }}
+      />
 
       {/* Content Section */}
-      <div className="flex-1 flex flex-col items-center justify-start px-4 pt-6 pb-8 relative z-10">
+      <motion.div
+        className="flex-1 flex flex-col items-center justify-start px-4 pt-6 pb-8 relative z-10"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.5 }}
+      >
         {/* Tagline */}
         <div className="text-center mb-6">
           <p className="font-body text-cyan-400 text-sm uppercase tracking-widest mb-1">
@@ -241,7 +281,7 @@ export default function AuthPage() {
         <p className="text-center text-gray-500 text-xs mt-6 font-body">
           En continuant, tu acceptes nos conditions d'utilisation
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }

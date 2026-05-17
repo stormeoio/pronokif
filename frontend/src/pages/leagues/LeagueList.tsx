@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Users, Copy, Share2, Check, MessageCircle, ChevronRight, Star } from "lucide-react";
 import { Button } from "../../components/ui/button";
 
@@ -62,16 +63,23 @@ export default function LeagueList({
   }
 
   return (
-    <div className="space-y-3 mb-6">
+    <motion.div
+      className="space-y-3 mb-6"
+      initial="hidden"
+      animate="visible"
+      variants={{ visible: { transition: { staggerChildren: 0.06 } }, hidden: {} }}
+    >
       {leagues.map((league) => {
         const isActive = currentLeagueId === league.id;
         const unreadCount = unreadByLeague[league.id] ?? 0;
         return (
-          <div
+          <motion.div
             key={league.id as string}
             className={`card-arcade p-4 transition-all ${
               isActive ? "border-2 border-yellow-500 bg-yellow-500/10" : "hover:border-cyan-500/50"
             }`}
+            variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}
+            whileHover={{ scale: 1.01 }}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -171,9 +179,9 @@ export default function LeagueList({
                 )}
               </div>
             </div>
-          </div>
+          </motion.div>
         );
       })}
-    </div>
+    </motion.div>
   );
 }

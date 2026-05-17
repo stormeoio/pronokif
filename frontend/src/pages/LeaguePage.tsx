@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Users, Plus, LogIn, Trophy } from "lucide-react";
 import { Button } from "../components/ui/button";
@@ -11,6 +12,7 @@ import LeagueCreatedScreen from "./leagues/LeagueCreatedScreen";
 import LeagueList from "./leagues/LeagueList";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { haptic } from "@/lib/haptics";
 
 export default function LeaguePage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -146,35 +148,57 @@ export default function LeaguePage() {
       <div className="absolute top-20 right-10 w-32 h-32 bg-cyan-500/15 rounded-full blur-[100px]" />
       <div className="absolute bottom-20 left-10 w-48 h-48 bg-yellow-500/10 rounded-full blur-[80px]" />
 
-      <div className="relative z-10 max-w-md mx-auto p-4">
+      <motion.div
+        className="relative z-10 max-w-md mx-auto p-4"
+        initial="hidden"
+        animate="visible"
+        variants={{ visible: { transition: { staggerChildren: 0.1 } }, hidden: {} }}
+      >
         {/* Header */}
-        <div className="text-center py-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-700 border-2 border-yellow-400/50 mb-4 shadow-xl animate-gold">
+        <motion.div
+          className="text-center py-6"
+          variants={{ hidden: { opacity: 0, y: -20 }, visible: { opacity: 1, y: 0 } }}
+        >
+          <motion.div
+            className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-700 border-2 border-yellow-400/50 mb-4 shadow-xl"
+            initial={{ scale: 0, rotate: -20 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.1 }}
+          >
             <Trophy className="w-8 h-8 text-white" strokeWidth={1.5} />
-          </div>
+          </motion.div>
           <h1 className="font-heading text-2xl uppercase tracking-wider text-white">Mes Ligues</h1>
-        </div>
+        </motion.div>
 
         {/* My Leagues List */}
-        <LeagueList
-          leagues={myLeagues}
-          loading={loadingLeagues}
-          userId={user!.id}
-          currentLeagueId={user!.current_league_id}
-          copied={copied || null}
-          unreadByLeague={unreadByLeague}
-          onCopyCode={copyCode}
-          onShareLeague={shareLeague}
-          onSelectLeague={(id) => selectLeague(String(id))}
-        />
+        <motion.div
+          variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}
+        >
+          <LeagueList
+            leagues={myLeagues}
+            loading={loadingLeagues}
+            userId={user!.id}
+            currentLeagueId={user!.current_league_id}
+            copied={copied || null}
+            unreadByLeague={unreadByLeague}
+            onCopyCode={copyCode}
+            onShareLeague={shareLeague}
+            onSelectLeague={(id) => selectLeague(String(id))}
+          />
+        </motion.div>
 
         {/* Create / Join Tabs */}
-        <div className="card-arcade overflow-hidden">
+        <motion.div
+          className="card-arcade overflow-hidden glass-card"
+          variants={{ hidden: { opacity: 0, y: 25, scale: 0.97 }, visible: { opacity: 1, y: 0, scale: 1 } }}
+          transition={{ type: "spring", stiffness: 200 }}
+        >
           <Tabs defaultValue="join" className="w-full">
             <div className="p-1 bg-gradient-to-r from-yellow-600/20 to-transparent">
               <TabsList className="grid w-full grid-cols-2 bg-transparent gap-1">
                 <TabsTrigger
                   value="join"
+                  onClick={() => haptic("light")}
                   className="font-heading uppercase tracking-wider text-sm text-gray-400
                             data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-yellow-700
                             data-[state=active]:text-white data-[state=active]:shadow-lg
@@ -186,6 +210,7 @@ export default function LeaguePage() {
                 </TabsTrigger>
                 <TabsTrigger
                   value="create"
+                  onClick={() => haptic("light")}
                   className="font-heading uppercase tracking-wider text-sm text-gray-400
                             data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-700
                             data-[state=active]:text-white data-[state=active]:shadow-lg
@@ -222,24 +247,27 @@ export default function LeaguePage() {
                     data-testid="join-code-input"
                   />
                 </div>
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full h-14 btn-racing font-heading uppercase tracking-wider"
-                  data-testid="join-btn"
-                >
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Connexion...
-                    </span>
-                  ) : (
-                    <>
-                      <LogIn className="w-5 h-5 mr-2" />
-                      Rejoindre la ligue
-                    </>
-                  )}
-                </Button>
+                <motion.div whileTap={{ scale: 0.96 }} whileHover={{ scale: 1.02 }}>
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-14 btn-racing font-heading uppercase tracking-wider relative overflow-hidden group"
+                    data-testid="join-btn"
+                  >
+                    <span className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12" />
+                    {isLoading ? (
+                      <span className="flex items-center gap-2">
+                        <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Connexion...
+                      </span>
+                    ) : (
+                      <>
+                        <LogIn className="w-5 h-5 mr-2" />
+                        Rejoindre la ligue
+                      </>
+                    )}
+                  </Button>
+                </motion.div>
               </form>
             </TabsContent>
 
@@ -267,29 +295,32 @@ export default function LeaguePage() {
                     data-testid="league-name-input"
                   />
                 </div>
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full h-14 btn-neon font-heading uppercase tracking-wider"
-                  data-testid="create-btn"
-                >
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Creation...
-                    </span>
-                  ) : (
-                    <>
-                      <Plus className="w-5 h-5 mr-2" />
-                      Creer ma ligue
-                    </>
-                  )}
-                </Button>
+                <motion.div whileTap={{ scale: 0.96 }} whileHover={{ scale: 1.02 }}>
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-14 btn-neon font-heading uppercase tracking-wider relative overflow-hidden group"
+                    data-testid="create-btn"
+                  >
+                    <span className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12" />
+                    {isLoading ? (
+                      <span className="flex items-center gap-2">
+                        <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Creation...
+                      </span>
+                    ) : (
+                      <>
+                        <Plus className="w-5 h-5 mr-2" />
+                        Creer ma ligue
+                      </>
+                    )}
+                  </Button>
+                </motion.div>
               </form>
             </TabsContent>
           </Tabs>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

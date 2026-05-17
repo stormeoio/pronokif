@@ -4,6 +4,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import type { AvatarsResponse } from "@/types/api";
 
 export function useMiniGamesData() {
   const queryClient = useQueryClient();
@@ -19,7 +20,7 @@ export function useMiniGamesData() {
     queryFn: () => api.races.next(),
   });
 
-  const { data: avatars = {} as { all?: any[] }, isLoading: loading } = useQuery({
+  const { data: avatars = {} as AvatarsResponse, isLoading: loading } = useQuery<AvatarsResponse>({
     queryKey: ["/avatars"],
     queryFn: () => api.avatars.list(),
     staleTime: 5 * 60_000,
@@ -123,7 +124,7 @@ export function useMiniGamesData() {
   };
 
   const getAvatarById = (avatarId: string | undefined) =>
-    avatars?.all?.find((a: any) => a.id === avatarId) || null;
+    avatars?.all?.find((a) => a.id === avatarId) || null;
 
   return {
     loading,

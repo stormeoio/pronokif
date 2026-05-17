@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Car, Trophy } from "lucide-react";
 import { getTeamColor, getRankStyle, getRankIcon } from "./championshipUtils";
 
@@ -27,16 +28,23 @@ export default function ConstructorStandings({ constructorsStandings }: Construc
   }
 
   return (
-    <div className="space-y-2">
+    <motion.div
+      className="space-y-2"
+      initial="hidden"
+      animate="visible"
+      variants={{ visible: { transition: { staggerChildren: 0.05 } }, hidden: {} }}
+    >
       {constructorsStandings.map((entry) => {
         const constructor = entry.Constructor;
         const teamColor = getTeamColor(constructor?.constructorId);
 
         return (
-          <div
+          <motion.div
             key={constructor.constructorId}
             className={`p-4 rounded-lg border transition-all ${getRankStyle(entry.position)}`}
             style={{ borderLeftWidth: "4px", borderLeftColor: teamColor }}
+            variants={{ hidden: { opacity: 0, x: -15 }, visible: { opacity: 1, x: 0 } }}
+            whileHover={{ x: 4, scale: 1.01 }}
           >
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 flex items-center justify-center">
@@ -69,9 +77,9 @@ export default function ConstructorStandings({ constructorsStandings }: Construc
                 </span>
               </div>
             )}
-          </div>
+          </motion.div>
         );
       })}
-    </div>
+    </motion.div>
   );
 }

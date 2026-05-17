@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import {
   LogOut,
@@ -18,11 +19,14 @@ import {
 import { toast } from "sonner";
 import { Button } from "../../components/ui/button";
 import { AvatarDisplay, AvatarSelector } from "../../components/AvatarDisplay";
+import BadgeCollection from "../../components/BadgeCollection";
+import StreakWidget from "../../components/StreakWidget";
 import PointsHistory from "./PointsHistory";
 import { MyLeaguesSection } from "./MyLeaguesSection";
 import { useProfileData } from "./useProfileData";
 import { apiClient, getApiError , api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { haptic } from "@/lib/haptics";
 
 export default function ProfilePage() {
   const { user, logout, updateUser } = useAuth();
@@ -38,6 +42,7 @@ export default function ProfilePage() {
   const [showHistory, setShowHistory] = useState(false);
 
   const handleLogout = () => {
+    haptic("heavy");
     logout();
     navigate("/auth");
   };
@@ -46,9 +51,11 @@ export default function ProfilePage() {
     try {
       await api.avatars.select(avatarId);
       if (updateUser) updateUser({ avatar_id: avatarId, custom_avatar_url: null });
+      haptic("success");
       toast.success("Avatar mis à jour !");
       setShowAvatarModal(false);
     } catch (e: unknown) {
+      haptic("error");
       toast.error("Erreur lors de la mise à jour");
     }
   };
@@ -89,9 +96,20 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-app-main p-4 pt-6 pb-24" data-testid="profile-page">
-      <div className="max-w-2xl mx-auto space-y-4">
+      <motion.div
+        className="max-w-2xl mx-auto space-y-4"
+        initial="hidden"
+        animate="visible"
+        variants={{ visible: { transition: { staggerChildren: 0.1 } }, hidden: {} }}
+      >
         {/* Profile Header */}
-        <div className="card-arcade p-5">
+        <motion.div
+          className="card-arcade p-5 glass-card"
+          variants={{
+            hidden: { opacity: 0, y: 20, scale: 0.97 },
+            visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5 } },
+          }}
+        >
           <div className="flex items-center gap-4">
             <div className="relative">
               <AvatarDisplay
@@ -143,21 +161,41 @@ export default function ProfilePage() {
               <LogOut className="w-5 h-5" />
             </Button>
           </div>
-        </div>
+        </motion.div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="card-gold p-4 text-center">
+        <motion.div
+          className="grid grid-cols-2 gap-3"
+          variants={{
+            hidden: { opacity: 0 },
+            visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
+          }}
+        >
+          <motion.div
+            className="card-gold p-4 text-center hover-3d"
+            variants={{ hidden: { opacity: 0, scale: 0.9 }, visible: { opacity: 1, scale: 1 } }}
+          >
             <Trophy className="w-8 h-8 text-yellow-700 mx-auto mb-2" />
             <p className="font-data text-2xl text-yellow-800">{stats.totalPoints}</p>
             <p className="font-body text-xs text-yellow-700 uppercase">Points totaux</p>
-          </div>
-          <div className="card-racing p-4 text-center">
+          </motion.div>
+          <motion.div
+            className="card-racing p-4 text-center hover-3d"
+            variants={{ hidden: { opacity: 0, scale: 0.9 }, visible: { opacity: 1, scale: 1 } }}
+          >
             <Target className="w-8 h-8 text-white mx-auto mb-2" />
             <p className="font-data text-2xl text-white">{stats.totalPredictions}</p>
             <p className="font-body text-xs text-white/80 uppercase">Pronostics</p>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
+
+        {/* Badge Collection */}
+        <BadgeCollection
+          totalPredictions={stats.totalPredictions}
+          totalPoints={stats.totalPoints}
+          level={user!.level || 1}
+          streak={0}
+        />
 
         <PointsHistory
           pointsHistory={pointsHistory}
@@ -243,7 +281,7 @@ export default function ProfilePage() {
         <p className="text-center text-gray-500 text-xs font-body">
           PRONOKIF v3.0 • Made with passion for F1
         </p>
-      </div>
+      </motion.div>
 
       {/* Avatar Selection Modal */}
       {showAvatarModal && (

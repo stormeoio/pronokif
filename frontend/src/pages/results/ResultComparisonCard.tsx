@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Check, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
@@ -32,7 +33,7 @@ export default function ResultComparisonCard({
   getDriverName,
 }: ResultComparisonCardProps) {
   return (
-    <Card className="bg-card border-white/10">
+    <Card className="bg-card border-white/10 glass-card">
       <CardHeader>
         <CardTitle className="font-heading text-lg uppercase tracking-tight flex items-center gap-2">
           {icon}
@@ -71,9 +72,18 @@ export default function ResultComparisonCard({
         {top3 && (
           <div className="p-3 rounded-sm bg-zinc-900/50 border border-zinc-800">
             <p className="font-body text-xs text-zinc-400 uppercase mb-2">Top 3</p>
-            <div className="space-y-2">
+            <motion.div
+              className="space-y-2"
+              initial="hidden"
+              animate="visible"
+              variants={{ visible: { transition: { staggerChildren: 0.08 } }, hidden: {} }}
+            >
               {top3.map((driverId, i) => (
-                <div key={i} className="flex items-center justify-between">
+                <motion.div
+                  key={i}
+                  className="flex items-center justify-between"
+                  variants={{ hidden: { opacity: 0, x: -8 }, visible: { opacity: 1, x: 0 } }}
+                >
                   <div className="flex items-center gap-3">
                     <span
                       className={`w-6 h-6 rounded-sm flex items-center justify-center font-heading text-xs ${
@@ -117,9 +127,9 @@ export default function ResultComparisonCard({
                       })()}
                     </div>
                   )}
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         )}
       </CardContent>

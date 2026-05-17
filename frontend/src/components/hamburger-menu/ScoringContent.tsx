@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Calculator } from "lucide-react";
 import { SectionHeader } from "./MenuHelpers";
 
@@ -41,9 +42,18 @@ export function ScoringContent() {
         subtitle="Comment sont calculés les points"
         color="from-purple-500 to-purple-700"
       />
-      <div className="space-y-4">
+      <motion.div
+        className="space-y-4"
+        initial="hidden"
+        animate="visible"
+        variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
+      >
         {mainScoring.map((section, idx) => (
-          <div key={idx} className="bg-gray-800/50 rounded-lg p-3 border border-purple-500/20">
+          <motion.div
+            key={idx}
+            className="bg-gray-800/50 rounded-lg p-3 border border-purple-500/20"
+            variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
+          >
             <h4 className="font-heading text-sm text-purple-400 mb-3">{section.category}</h4>
             <div className="space-y-2">
               {section.items.map((item, i) => (
@@ -55,9 +65,12 @@ export function ScoringContent() {
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
         ))}
-        <div className="bg-gray-800/50 rounded-lg p-3 border border-yellow-500/20">
+        <motion.div
+          className="bg-gray-800/50 rounded-lg p-3 border border-yellow-500/20"
+          variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
+        >
           <h4 className="font-heading text-sm text-yellow-400 mb-3">Paris Bonus</h4>
           <div className="space-y-2">
             {bonusScoring.map((item, i) => (
@@ -69,8 +82,11 @@ export function ScoringContent() {
               </div>
             ))}
           </div>
-        </div>
-        <div className="bg-gradient-to-br from-cyan-900/30 to-purple-900/30 rounded-lg p-3 border border-cyan-500/30">
+        </motion.div>
+        <motion.div
+          className="bg-gradient-to-br from-cyan-900/30 to-purple-900/30 rounded-lg p-3 border border-cyan-500/30"
+          variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
+        >
           <h4 className="font-heading text-sm text-cyan-400 mb-3">Bonus Spéciaux</h4>
           <div className="space-y-2">
             {specialScoring.map((item, i) => (
@@ -82,14 +98,20 @@ export function ScoringContent() {
               </div>
             ))}
           </div>
-        </div>
-        <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/30">
+        </motion.div>
+        <motion.div
+          className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/30"
+          variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
+        >
           <p className="font-body text-xs text-gray-400">
             <span className="text-orange-400 font-semibold">Weekend Sprint :</span> Le même barème
             s'applique pour les pronostics Sprint (Sprint Qualifs + Sprint Race + Bonus Sprint).
           </p>
-        </div>
-        <div className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 rounded-lg p-3 border border-yellow-500/30">
+        </motion.div>
+        <motion.div
+          className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 rounded-lg p-3 border border-yellow-500/30"
+          variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
+        >
           <h4 className="font-heading text-sm text-yellow-400 mb-2">
             Points maximum par GP (course classique)
           </h4>
@@ -107,8 +129,8 @@ export function ScoringContent() {
               ~110 pts
             </div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

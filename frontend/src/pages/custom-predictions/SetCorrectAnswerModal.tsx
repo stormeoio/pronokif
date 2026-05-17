@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { CheckCircle } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -54,13 +55,18 @@ export default function SetCorrectAnswerModal({
   };
 
   return (
-    <div
+    <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80"
       onClick={onClose}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
     >
-      <div
+      <motion.div
         className="bg-gray-900 rounded-lg border border-green-500/30 w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 350, damping: 25 }}
       >
         <div className="p-4 border-b border-gray-800">
           <h2 className="font-heading text-lg uppercase text-green-400">
@@ -140,7 +146,7 @@ export default function SetCorrectAnswerModal({
             </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

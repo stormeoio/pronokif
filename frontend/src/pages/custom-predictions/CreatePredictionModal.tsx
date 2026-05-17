@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Plus, X } from "lucide-react";
 import { Button } from "../../components/ui/button";
@@ -79,13 +80,18 @@ export function CreatePredictionModal({
   };
 
   return (
-    <div
+    <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80"
       onClick={onClose}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
     >
-      <div
+      <motion.div
         className="bg-gray-900 rounded-lg border border-orange-500/30 w-full max-w-lg max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 350, damping: 25 }}
       >
         <div className="sticky top-0 bg-gray-900 p-4 border-b border-gray-800">
           <div className="flex items-center justify-between">
@@ -169,7 +175,7 @@ export function CreatePredictionModal({
             {creating ? "Création..." : "Créer le pronostic"}
           </Button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

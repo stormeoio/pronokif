@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Loader2, Users, RefreshCw } from "lucide-react";
 import { DeleteConfirmModal, MemberDetailsModal } from "./MembersSubComponents";
@@ -151,7 +152,7 @@ export default function MembersTab() {
               {membersList.length}
             </span>
           </h3>
-          <button onClick={() => fetchMembers()} className="text-gray-400 hover:text-white">
+          <button onClick={() => fetchMembers()} className="text-gray-400 hover:text-white" aria-label="Rafraîchir la liste des membres">
             <RefreshCw className={`w-4 h-4 ${loadingMembers ? "animate-spin" : ""}`} />
           </button>
         </div>
@@ -166,15 +167,22 @@ export default function MembersTab() {
             <p className="font-body text-gray-500">Aucun membre inscrit</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-800 max-h-96 overflow-y-auto">
+          <motion.div
+            className="divide-y divide-gray-800 max-h-96 overflow-y-auto"
+            initial="hidden"
+            animate="visible"
+            variants={{ visible: { transition: { staggerChildren: 0.03 } } }}
+          >
             {membersList.map((member) => (
-              <button
+              <motion.button
                 key={member.id}
                 onClick={() => {
                   setSelectedMember(member.id);
                   fetchMemberDetails(member.id);
                 }}
                 className="w-full p-4 flex items-center gap-3 hover:bg-white/5 transition-colors text-left"
+                variants={{ hidden: { opacity: 0, x: -10 }, visible: { opacity: 1, x: 0 } }}
+                whileTap={{ scale: 0.98 }}
               >
                 <div className="w-10 h-10 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center text-white font-heading text-sm">
                   {member.username?.charAt(0)?.toUpperCase() || "?"}
@@ -191,9 +199,9 @@ export default function MembersTab() {
                     {member.predictions_count || 0} pronos
                   </p>
                 </div>
-              </button>
+              </motion.button>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

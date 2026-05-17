@@ -222,3 +222,88 @@ async def claim_mission(user_id: str, mission_id: str) -> dict:
         "new_level": new_level,
         "level_up": level_up,
     }
+
+
+# ----------------------------------------------------------------- streak ---
+
+
+async def get_streak(user_id: str) -> dict:
+    """Compute the user's current and longest prediction streak.
+
+    A streak day = any race where the user submitted a prediction.
+    We count consecutive race predictions (not calendar days).
+    """
+    # Get all predictions sorted by creation date (most recent first)
+    predictions = (
+        await db.predictions.find(
+            {"user_id": user_id},
+            {"race_id": 1, "created_at": 1},
+        )
+        .sort("created_at", -1)
+        .to_list(200)
+    )
+
+    if not predictions:
+        return {
+            "current_streak": 0,
+            "longest_streak": 0,
+            "last_prediction_date": None,
+            "is_active_today": False,
+        }
+
+    # Build set of race IDs user predicted on
+    predicted_race_ids = {p["race_id"] for p in predictions}
+
+    # Get ordered race list (past races only — those with dates before now)
+    now = datetime.now(UTC)
+
+    def parse_race_date(date_str: str) -> datetime:
+        """Parse race date string into timezone-aware datetime."""
+        dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=UTC)
+        return dt
+
+    past_races = [
+        r
+        for r in F1_RACES_2026
+        if parse_race_date(r["date"]) <= now
+    ]
+    # Most recent first
+    past_races.sort(key=lambda r: parse_race_date(r["date"]), reverse=True)
+
+    if not past_races:
+        return {
+            "current_streak": 0,
+            "longest_streak": 0,
+            "last_prediction_date": predictions[0].get("created_at"),
+            "is_active_today": False,
+        }
+
+    # Count current streak (consecutive races from the most recent)
+    current_streak = 0
+    for race in past_races:
+        if race["id"] in predicted_race_ids:
+            current_streak += 1
+        else:
+            break
+
+    # Longest streak (scan all)
+    longest_streak = 0
+    streak = 0
+    for race in reversed(past_races):
+        if race["id"] in predicted_race_ids:
+            streak += 1
+            longest_streak = max(longest_streak, streak)
+        else:
+            streak = 0
+
+    # Is active today: check if the most recent race has a prediction
+    is_active_today = past_races[0]["id"] in predicted_race_ids if past_races else False
+
+    return {
+        "current_streak": current_streak,
+        "longest_streak": max(longest_streak, current_streak),
+        "last_prediction_date": predictions[0].get("created_at"),
+        "is_active_today": is_active_today,
+    }

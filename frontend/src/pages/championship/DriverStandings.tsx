@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Trophy, ChevronRight } from "lucide-react";
 import { getTeamColor, getRankStyle, getRankIcon, DRIVER_ID_MAP } from "./championshipUtils";
 
@@ -35,7 +36,12 @@ export default function DriverStandings({ driversStandings }: DriverStandingsPro
   }
 
   return (
-    <div className="space-y-2">
+    <motion.div
+      className="space-y-2"
+      initial="hidden"
+      animate="visible"
+      variants={{ visible: { transition: { staggerChildren: 0.04 } }, hidden: {} }}
+    >
       {driversStandings.map((entry) => {
         const driver = entry.Driver;
         const constructor = entry.Constructors?.[0];
@@ -43,12 +49,15 @@ export default function DriverStandings({ driversStandings }: DriverStandingsPro
         const mappedDriverId = DRIVER_ID_MAP[driver.driverId] || driver.familyName?.toLowerCase();
 
         return (
-          <div
+          <motion.div
             key={driver.driverId}
             onClick={() => navigate(`/driver/${mappedDriverId}`)}
-            className={`p-3 rounded-lg border transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${getRankStyle(entry.position)}`}
+            className={`p-3 rounded-lg border transition-all cursor-pointer ${getRankStyle(entry.position)}`}
             style={{ borderLeftWidth: "4px", borderLeftColor: teamColor }}
             data-testid={`driver-row-${driver.driverId}`}
+            variants={{ hidden: { opacity: 0, x: -15 }, visible: { opacity: 1, x: 0 } }}
+            whileHover={{ x: 4, scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
           >
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 flex items-center justify-center">
@@ -66,7 +75,7 @@ export default function DriverStandings({ driversStandings }: DriverStandingsPro
                   <span className="text-cyan-400">{driver.familyName?.toUpperCase()}</span>
                 </p>
                 <p className="font-body text-xs text-gray-500 truncate">
-                  {constructor?.name || "Unknown Team"}
+                  {constructor?.name || "Ecurie inconnue"}
                 </p>
               </div>
               <div className="text-right flex items-center gap-2">
@@ -89,9 +98,9 @@ export default function DriverStandings({ driversStandings }: DriverStandingsPro
                 </span>
               </div>
             )}
-          </div>
+          </motion.div>
         );
       })}
-    </div>
+    </motion.div>
   );
 }

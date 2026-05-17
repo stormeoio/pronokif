@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Bell, Send, Loader2, Zap, AlertTriangle, Info } from "lucide-react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { haptic } from "@/lib/haptics";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -26,10 +28,12 @@ export default function NotificationsTab() {
         message: notifMessage.trim(),
         type: notifType,
       });
+      haptic("success");
       toast.success("Notification envoyee a tous les membres !");
       setNotifTitle("");
       setNotifMessage("");
     } catch (error: unknown) {
+      haptic("error");
       const err = error as { response?: { data?: { detail?: string } } };
       toast.error(err.response?.data?.detail || "Erreur lors de l'envoi");
     } finally {
@@ -50,7 +54,12 @@ export default function NotificationsTab() {
           {/* Notification Type */}
           <div>
             <Label className="font-body text-sm text-gray-400 mb-2 block">Type</Label>
-            <div className="grid grid-cols-3 gap-2">
+            <motion.div
+              className="grid grid-cols-3 gap-2"
+              initial="hidden"
+              animate="visible"
+              variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
+            >
               {[
                 { id: "info", label: "Info", icon: Info, color: "blue" },
                 { id: "update", label: "Mise a jour", icon: Zap, color: "green" },
@@ -59,9 +68,11 @@ export default function NotificationsTab() {
                 const Icon = type.icon;
                 const isSelected = notifType === type.id;
                 return (
-                  <button
+                  <motion.button
                     key={type.id}
                     onClick={() => setNotifType(type.id)}
+                    variants={{ hidden: { opacity: 0, scale: 0.85 }, visible: { opacity: 1, scale: 1 } }}
+                    whileTap={{ scale: 0.9 }}
                     className={`p-3 rounded-xl border-2 transition-all ${
                       isSelected
                         ? `bg-${type.color}-500/20 border-${type.color}-500 text-${type.color}-400`
@@ -99,16 +110,17 @@ export default function NotificationsTab() {
                       }}
                     />
                     <p className="font-body text-xs">{type.label}</p>
-                  </button>
+                  </motion.button>
                 );
               })}
-            </div>
+            </motion.div>
           </div>
 
           {/* Title */}
           <div>
-            <Label className="font-body text-sm text-gray-400 mb-2 block">Titre</Label>
+            <Label htmlFor="notif-title" className="font-body text-sm text-gray-400 mb-2 block">Titre</Label>
             <Input
+              id="notif-title"
               value={notifTitle}
               onChange={(e) => setNotifTitle(e.target.value)}
               placeholder="Ex: Nouvelle fonctionnalite disponible !"
@@ -119,11 +131,12 @@ export default function NotificationsTab() {
 
           {/* Message */}
           <div>
-            <Label className="font-body text-sm text-gray-400 mb-2 block">
+            <Label htmlFor="notif-message" className="font-body text-sm text-gray-400 mb-2 block">
               Message
               <span className="text-gray-600 ml-2">({notifMessage.length}/5000)</span>
             </Label>
             <Textarea
+              id="notif-message"
               value={notifMessage}
               onChange={(e) => setNotifMessage(e.target.value)}
               placeholder="Detaillez votre message..."

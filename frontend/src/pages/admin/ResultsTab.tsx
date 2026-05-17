@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Check, Flag, Trophy, Calendar, Save, Loader2, Zap, RefreshCw, Medal } from "lucide-react";
 import { BonusPanel, DnfPanel, DriverGrid } from "./ResultsSubComponents";
 import { useResultsState, type SelectionMode } from "./hooks/useResultsState";
@@ -82,7 +83,7 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
         },
         {
           key: "sprint_race_winner",
-          label: "Win SR",
+          label: "Vainq. SR",
           icon: Trophy,
           done: !!sprintRaceWinner,
           count: sprintRaceWinner ? 1 : 0,
@@ -119,7 +120,7 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
       },
       {
         key: "race_winner",
-        label: "Winner",
+        label: "Vainqueur",
         icon: Trophy,
         done: !!raceWinner,
         count: raceWinner ? 1 : 0,
@@ -221,12 +222,17 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
           </Card>
 
           {/* Selection Steps */}
-          <div className="flex gap-1 mb-6 overflow-x-auto no-scrollbar">
+          <motion.div
+            className="flex gap-1 mb-6 overflow-x-auto no-scrollbar"
+            initial="hidden"
+            animate="visible"
+            variants={{ visible: { transition: { staggerChildren: 0.04 } } }}
+          >
             {selectionSteps.map((step) => {
               const Icon = step.icon;
               const isActive = selectionMode === step.key || (step.key === "bonus" && showBonus);
               return (
-                <button
+                <motion.button
                   key={step.key}
                   onClick={() => setSelectionMode(step.key as SelectionMode)}
                   className={`flex-1 min-w-[55px] p-2 rounded-lg border-2 transition-all ${
@@ -240,6 +246,8 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
                         ? "border-green-500/50 bg-green-500/10"
                         : "border-gray-700 bg-gray-900/50"
                   }`}
+                  variants={{ hidden: { opacity: 0, scale: 0.8 }, visible: { opacity: 1, scale: 1 } }}
+                  whileTap={{ scale: 0.85 }}
                 >
                   <Icon
                     className={`w-4 h-4 mx-auto mb-1 ${
@@ -264,10 +272,10 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
                       {step.count}/{step.max}
                     </p>
                   )}
-                </button>
+                </motion.button>
               );
             })}
-          </div>
+          </motion.div>
 
           {(selectionMode as string) === "bonus" && (
             <BonusPanel

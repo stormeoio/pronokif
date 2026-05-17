@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { ChevronLeft, Crown, Trophy, Users, Globe, Zap } from "lucide-react";
 import { Button } from "../components/ui/button";
@@ -90,10 +91,22 @@ export default function GlobalLeaderboardPage() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto p-4 space-y-6">
+      <motion.div
+        className="max-w-2xl mx-auto p-4 space-y-6"
+        initial="hidden"
+        animate="visible"
+        variants={{ visible: { transition: { staggerChildren: 0.1 } }, hidden: {} }}
+      >
         {/* My Position Card */}
         {myPosition && (
-          <div className="card-arcade border-cyan-500/50 p-4 flex items-center justify-between">
+          <motion.div
+            className="card-arcade border-cyan-500/50 p-4 flex items-center justify-between glass-card"
+            variants={{
+              hidden: { opacity: 0, y: 20, scale: 0.97 },
+              visible: { opacity: 1, y: 0, scale: 1 },
+            }}
+            whileHover={{ scale: 1.01 }}
+          >
             <div className="flex items-center gap-3">
               <AvatarDisplay
                 avatar={getAvatarById(user?.avatar_id)}
@@ -106,17 +119,33 @@ export default function GlobalLeaderboardPage() {
               </div>
             </div>
             <div className="text-right">
-              <p className="font-data text-3xl text-cyan-neon">#{myPosition}</p>
+              <motion.p
+                className="font-data text-3xl text-cyan-neon"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 300, delay: 0.3 }}
+              >
+                #{myPosition}
+              </motion.p>
               <p className="font-body text-xs text-gray-500">sur {totalPlayers}</p>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Podium */}
         {podium.length >= 3 && (
-          <div className="flex items-end justify-center gap-2 py-4">
+          <motion.div
+            className="flex items-end justify-center gap-2 py-4"
+            variants={{
+              hidden: { opacity: 0 },
+              visible: { opacity: 1, transition: { staggerChildren: 0.15 } },
+            }}
+          >
             {/* 2nd Place */}
-            <div className="flex flex-col items-center">
+            <motion.div
+              className="flex flex-col items-center"
+              variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }}
+            >
               <AvatarDisplay avatar={getAvatarById(podium[1]?.avatar_id)} size="lg" />
               <p className="font-heading text-sm text-white mt-2 truncate max-w-[80px]">
                 {podium[1]?.username}
@@ -125,11 +154,19 @@ export default function GlobalLeaderboardPage() {
               <div className="w-20 h-16 position-2 rounded-t-lg mt-2 flex items-center justify-center">
                 <span className="font-heading text-2xl">2</span>
               </div>
-            </div>
+            </motion.div>
 
             {/* 1st Place */}
-            <div className="flex flex-col items-center -mt-4">
-              <Crown className="w-8 h-8 text-yellow-500 mb-1 animate-gold" />
+            <motion.div
+              className="flex flex-col items-center -mt-4"
+              variants={{ hidden: { opacity: 0, y: 40, scale: 0.8 }, visible: { opacity: 1, y: 0, scale: 1 } }}
+            >
+              <motion.div
+                animate={{ rotateZ: [-5, 5, -5] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Crown className="w-8 h-8 text-yellow-500 mb-1" />
+              </motion.div>
               <AvatarDisplay avatar={getAvatarById(podium[0]?.avatar_id)} size="xl" />
               <p className="font-heading text-sm text-white mt-2 truncate max-w-[90px]">
                 {podium[0]?.username}
@@ -138,10 +175,13 @@ export default function GlobalLeaderboardPage() {
               <div className="w-24 h-24 position-1 rounded-t-lg mt-2 flex items-center justify-center">
                 <span className="font-heading text-3xl">1</span>
               </div>
-            </div>
+            </motion.div>
 
             {/* 3rd Place */}
-            <div className="flex flex-col items-center">
+            <motion.div
+              className="flex flex-col items-center"
+              variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }}
+            >
               <AvatarDisplay avatar={getAvatarById(podium[2]?.avatar_id)} size="lg" />
               <p className="font-heading text-sm text-white mt-2 truncate max-w-[80px]">
                 {podium[2]?.username}
@@ -150,12 +190,18 @@ export default function GlobalLeaderboardPage() {
               <div className="w-20 h-12 position-3 rounded-t-lg mt-2 flex items-center justify-center">
                 <span className="font-heading text-2xl">3</span>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
 
         {/* Rest of leaderboard */}
-        <div className="card-arcade overflow-hidden">
+        <motion.div
+          className="card-arcade overflow-hidden glass-card"
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 },
+          }}
+        >
           <div className="bg-gradient-to-r from-cyan-600/20 to-transparent px-4 py-3 border-b border-gray-700/50">
             <h3 className="font-heading text-sm uppercase text-gray-300 flex items-center gap-2">
               <Users className="w-4 h-4" />
@@ -168,15 +214,25 @@ export default function GlobalLeaderboardPage() {
                 Pas assez de joueurs pour afficher le classement
               </p>
             ) : (
-              <div className="divide-y divide-gray-800/50">
+              <motion.div
+                className="divide-y divide-gray-800/50"
+                initial="hidden"
+                animate="visible"
+                variants={{ visible: { transition: { staggerChildren: 0.03 } }, hidden: {} }}
+              >
                 {rest.map((entry) => {
                   const isMe = entry.user_id === user?.id;
                   return (
-                    <div
+                    <motion.div
                       key={entry.user_id}
-                      className={`flex items-center gap-3 p-3 ${
+                      className={`flex items-center gap-3 p-3 transition-colors ${
                         isMe ? "bg-cyan-500/10" : "hover:bg-white/5"
                       }`}
+                      variants={{
+                        hidden: { opacity: 0, x: -10 },
+                        visible: { opacity: 1, x: 0 },
+                      }}
+                      whileHover={{ x: 4 }}
                     >
                       <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-gray-800">
                         <span className="font-heading text-sm text-gray-400">{entry.position}</span>
@@ -199,15 +255,15 @@ export default function GlobalLeaderboardPage() {
                         <p className="font-data text-sm text-yellow-500">{entry.total_points}</p>
                         <p className="font-body text-[10px] text-gray-500 uppercase">points</p>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
-              </div>
+              </motion.div>
             )}
           </div>
           <div className="h-2 bg-kerb-stripe" />
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

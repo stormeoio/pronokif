@@ -5,11 +5,12 @@ PRONOKIF - Race & Driver Routes
 
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from config import db
 from data.f1_data import F1_CIRCUITS, F1_DRIVERS_2026, F1_RACES_2026
 from models.schemas import DriverResponse, RaceResponse
+from services.auth import get_current_user
 
 router = APIRouter(tags=["Races & Drivers"])
 
@@ -315,3 +316,10 @@ async def get_race_details(race_id: str) -> dict:
             return result
 
     raise HTTPException(status_code=404, detail="Race not found")
+
+
+@router.get("/races/{race_id}/prediction-count")
+async def get_race_prediction_count(race_id: str, _user: dict = Depends(get_current_user)) -> dict:
+    """Return how many users have submitted predictions for a race (social proof)."""
+    count = await db.predictions.count_documents({"race_id": race_id})
+    return {"count": count}

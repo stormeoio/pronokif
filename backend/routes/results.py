@@ -35,6 +35,12 @@ class RaceResultsInput(BaseModel):
     first_corner_leader: str | None = None
 
 
+@router.get("/results/latest-unseen")
+async def get_latest_unseen_result(user: dict = Depends(get_current_user)) -> dict | None:
+    """Return latest race with results that the user hasn't viewed yet."""
+    return await results_service.get_latest_unseen(user["id"])
+
+
 @router.get("/results/{race_id}")
 async def get_race_results(race_id: str, user: dict = Depends(get_current_user)) -> dict:
     """Official results for a race + the caller's own prediction + points."""

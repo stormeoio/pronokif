@@ -1,13 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { ArrowLeft, Send, Users, MessageCircle, RefreshCw, Crown, Clock } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { AvatarDisplay } from "../components/AvatarDisplay";
 import { api, getApiError } from "@/lib/api";
+import type { AvatarsResponse } from "@/types/api";
 import { useAuth } from "@/lib/auth";
+import { haptic } from "@/lib/haptics";
 
 export default function LeagueChatPage() {
   const { leagueId } = useParams();
@@ -46,7 +49,7 @@ export default function LeagueChatPage() {
     enabled: !!leagueId,
   });
 
-  const { data: avatars = {} as { all?: any[] } } = useQuery({
+  const { data: avatars = {} as AvatarsResponse } = useQuery<AvatarsResponse>({
     queryKey: ["/avatars"],
     queryFn: () => api.avatars.list(),
     staleTime: 5 * 60_000,
@@ -104,7 +107,7 @@ export default function LeagueChatPage() {
     });
   };
 
-  const navigateToProfile = (userId: any) => {
+  const navigateToProfile = (userId: string) => {
     navigate(`/profile/${userId}`);
   };
 
@@ -140,17 +143,24 @@ export default function LeagueChatPage() {
   return (
     <div className="min-h-screen bg-app-main flex flex-col" data-testid="league-chat-page">
       {/* Header */}
-      <div className="bg-gradient-to-b from-[#0a1628] to-transparent p-4 border-b border-blue-500/20">
+      <motion.div
+        className="bg-gradient-to-b from-[#0a1628] to-transparent p-4 border-b border-blue-500/20"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <button
+              <motion.button
                 onClick={() => navigate(-1)}
                 className="p-2 rounded-lg text-cyan-400 hover:bg-cyan-500/10 transition-colors"
                 data-testid="back-btn"
+                whileHover={{ x: -2 }}
+                whileTap={{ scale: 0.9 }}
               >
                 <ArrowLeft className="w-5 h-5" />
-              </button>
+              </motion.button>
               <div>
                 <h1 className="font-heading text-lg text-white uppercase tracking-tight flex items-center gap-2">
                   <MessageCircle className="w-5 h-5 text-cyan-400" />
@@ -159,27 +169,38 @@ export default function LeagueChatPage() {
                 <p className="font-body text-xs text-gray-400">{members.length} membres</p>
               </div>
             </div>
-            <button
+            <motion.button
               onClick={refreshMessages}
               className="p-2 rounded-lg text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors"
               data-testid="refresh-btn"
+              whileTap={{ rotate: 180, scale: 0.9 }}
+              transition={{ duration: 0.3 }}
             >
               <RefreshCw className="w-5 h-5" />
-            </button>
+            </motion.button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Members bar */}
-      <div className="bg-[#0a1220] border-b border-gray-800 px-4 py-2">
+      <motion.div
+        className="bg-[#0a1220] border-b border-gray-800 px-4 py-2"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.15 }}
+      >
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {members.map((member: any) => (
-              <button
+            {members.map((member, i) => (
+              <motion.button
                 key={member.id}
                 onClick={() => navigateToProfile(member.id)}
                 className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-colors min-w-[60px]"
                 data-testid={`member-${member.id}`}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 + i * 0.04 }}
+                whileTap={{ scale: 0.9 }}
               >
                 <div className="relative">
                   <AvatarDisplay
@@ -198,11 +219,11 @@ export default function LeagueChatPage() {
                 >
                   {member.id === user?.id ? "Toi" : member.username}
                 </span>
-              </button>
+              </motion.button>
             ))}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Chat Messages */}
       <div
@@ -212,21 +233,29 @@ export default function LeagueChatPage() {
       >
         <div className="max-w-2xl mx-auto space-y-3">
           {messages.length === 0 ? (
-            <div className="text-center py-12">
+            <motion.div
+              className="text-center py-12"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: "spring" }}
+            >
               <MessageCircle className="w-12 h-12 text-gray-600 mx-auto mb-3" />
               <p className="font-heading text-lg text-gray-400 uppercase">Aucun message</p>
               <p className="font-body text-sm text-gray-500">Sois le premier à écrire !</p>
-            </div>
+            </motion.div>
           ) : (
-            messages.map((msg: any, index: any) => {
+            messages.map((msg, index) => {
               const isMe = msg.user_id === user?.id;
               const showAvatar = index === 0 || messages[index - 1]?.user_id !== msg.user_id;
 
               return (
-                <div
+                <motion.div
                   key={msg.id}
                   className={`flex gap-2 ${isMe ? "flex-row-reverse" : ""}`}
                   data-testid={`message-${msg.id}`}
+                  initial={{ opacity: 0, y: 10, x: isMe ? 15 : -15 }}
+                  animate={{ opacity: 1, y: 0, x: 0 }}
+                  transition={{ duration: 0.2 }}
                 >
                   {showAvatar ? (
                     <button
@@ -272,7 +301,7 @@ export default function LeagueChatPage() {
                       {formatTime(msg.created_at)}
                     </p>
                   </div>
-                </div>
+                </motion.div>
               );
             })
           )}
@@ -281,29 +310,36 @@ export default function LeagueChatPage() {
       </div>
 
       {/* Message Input */}
-      <div className="fixed bottom-16 left-0 right-0 bg-gradient-to-t from-[#050a14] via-[#050a14] to-transparent pt-4 pb-4 px-4">
-        <form onSubmit={handleSendMessage} className="max-w-2xl mx-auto">
+      <motion.div
+        className="fixed bottom-16 left-0 right-0 bg-gradient-to-t from-[#050a14] via-[#050a14] to-transparent pt-4 pb-4 px-4"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
+        <form onSubmit={(e) => { haptic("light"); handleSendMessage(e); }} className="max-w-2xl mx-auto">
           <div className="flex gap-2">
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Écris un message..."
               maxLength={500}
-              className="flex-1 bg-gray-900 border-gray-700 text-white placeholder:text-gray-500 
+              className="flex-1 bg-gray-900 border-gray-700 text-white placeholder:text-gray-500
                         focus:border-cyan-500 focus:ring-cyan-500/30 rounded-xl h-12"
               data-testid="message-input"
             />
-            <Button
-              type="submit"
-              disabled={!newMessage.trim() || sending}
-              className="btn-racing h-12 px-4"
-              data-testid="send-btn"
-            >
-              <Send className="w-5 h-5" />
-            </Button>
+            <motion.div whileTap={{ scale: 0.9 }}>
+              <Button
+                type="submit"
+                disabled={!newMessage.trim() || sending}
+                className="btn-racing h-12 px-4"
+                data-testid="send-btn"
+              >
+                <Send className="w-5 h-5" />
+              </Button>
+            </motion.div>
           </div>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 }

@@ -9,8 +9,8 @@ import { api, apiClient } from "@/lib/api";
 
 export function useCustomPredictionsData(
   leagueId: string | undefined,
-  selectedLeague: any,
-  selectedRace: any,
+  selectedLeague: { id: string } | null,
+  selectedRace: { id: string } | null,
 ) {
   const leaguesQuery = useQuery({
     queryKey: ["/leagues/my"],
@@ -21,7 +21,7 @@ export function useCustomPredictionsData(
     queryKey: ["/races"],
     queryFn: async () => {
       const data = await api.races.list();
-      return (data || []).filter((r: any) => r.status !== "finished");
+      return (data || []).filter((r) => r.status !== "finished");
     },
   });
 
@@ -29,7 +29,7 @@ export function useCustomPredictionsData(
     queryKey: ["/custom-predictions/to-answer", selectedLeague?.id, selectedRace?.id],
     queryFn: async () => {
       const res = await apiClient.get(
-        `/custom-predictions/to-answer/${selectedLeague.id}/${selectedRace.id}`,
+        `/custom-predictions/to-answer/${selectedLeague!.id}/${selectedRace!.id}`,
       );
       return res.data;
     },
@@ -40,7 +40,7 @@ export function useCustomPredictionsData(
 
   // Derive the current league from fetched leagues
   const leagues = leaguesQuery.data ?? [];
-  const defaultLeague = leagues.find((l: any) => l.id === leagueId) || leagues[0] || null;
+  const defaultLeague = leagues.find((l) => l.id === leagueId) || leagues[0] || null;
 
   return {
     loading,

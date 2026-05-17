@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import { TEAM_COLORS } from "@/lib/constants";
 
@@ -33,10 +34,16 @@ export function DriverCard({ driver }: DriverCardProps) {
   const f1Stats = driver.palmares?.f1 || {};
 
   return (
-    <div
-      className="card-arcade p-3 cursor-pointer hover:scale-[1.02] transition-transform"
+    <motion.div
+      className="card-arcade p-3 cursor-pointer transition-transform"
       onClick={() => navigate(`/driver/${driver.id}`)}
+      onKeyDown={(e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") navigate(`/driver/${driver.id}`); }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Voir la fiche de ${driver.full_name}`}
       style={{ borderColor: `${teamColor}50` }}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
     >
       <div className="flex flex-col items-center">
         <div
@@ -65,7 +72,7 @@ export function DriverCard({ driver }: DriverCardProps) {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -166,15 +173,15 @@ export function EfficiencyCard({
 
 // Generate verdict based on comparison
 export function getVerdict(
-  comparison: Record<string, any>,
-  d1: Record<string, any>,
-  d2: Record<string, any>,
+  comparison: { stats_comparison: Record<string, { driver1: number; driver2: number; winner: string }> },
+  d1: { first_name: string; last_name: string },
+  d2: { first_name: string; last_name: string },
 ): string {
   const stats = comparison.stats_comparison;
   let d1Wins = 0;
   let d2Wins = 0;
 
-  Object.values(stats).forEach((stat: any) => {
+  Object.values(stats).forEach((stat) => {
     if (stat.winner === "driver1") d1Wins++;
     else if (stat.winner === "driver2") d2Wins++;
   });

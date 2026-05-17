@@ -133,6 +133,7 @@ export const api = {
     get: (id: string) => get<RaceDetails>(`/races/${id}`),
     details: (id: string) => get<RaceDetails>(`/races/${id}/details`),
     results: (raceId: string) => get<ResultsResponse>(`/races/${raceId}/results`),
+    predictionCount: (raceId: string) => get<{ count: number }>(`/races/${raceId}/prediction-count`),
   },
 
   // ── Drivers ──────────────────────────────────────────────────
@@ -251,6 +252,7 @@ export const api = {
   // ── User Stats ───────────────────────────────────────────────
   user: {
     stats: () => get<PredictionStats>("/user/stats"),
+    streak: () => get<unknown>("/user/streak"),
   },
 
   // ── Admin ────────────────────────────────────────────────────
@@ -282,5 +284,6 @@ export const api = {
   // ── Results ─────────────────────────────────────────────────
   results: {
     get: (raceId: string) => get<ResultsResponse>(`/results/${raceId}`),
+    latestUnseen: () => get<unknown>("/results/latest-unseen"),
   },
 } as const;

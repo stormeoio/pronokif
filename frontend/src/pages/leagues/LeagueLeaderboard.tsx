@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { motion } from "framer-motion";
 import { Trophy, Crown, Medal, Award, User } from "lucide-react";
 
 function getRankIcon(rank: number): ReactNode {
@@ -42,7 +43,12 @@ export default function LeagueLeaderboard({
   }
 
   return (
-    <div className="space-y-2">
+    <motion.div
+      className="space-y-2"
+      initial="hidden"
+      animate="visible"
+      variants={{ visible: { transition: { staggerChildren: 0.04 } }, hidden: {} }}
+    >
       {leaderboard.map((entry, index) => {
         const rank = index + 1;
         const isMe = entry.user_id === userId;
@@ -50,9 +56,11 @@ export default function LeagueLeaderboard({
         const avatar = member ? getAvatar(member) : null;
 
         return (
-          <div
+          <motion.div
             key={entry.user_id}
             className={`p-3 rounded-lg border transition-all ${getRankStyle(rank)} ${isMe ? "ring-2 ring-cyan-500/50" : ""}`}
+            variants={{ hidden: { opacity: 0, x: -12 }, visible: { opacity: 1, x: 0 } }}
+            whileHover={{ x: 4, scale: 1.01 }}
           >
             <div className="flex items-center gap-3">
               {/* Rank */}
@@ -61,7 +69,7 @@ export default function LeagueLeaderboard({
               {/* Avatar */}
               <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-700 flex-shrink-0">
                 {avatar ? (
-                  <img src={avatar} alt="" className="w-full h-full object-cover" />
+                  <img src={avatar} alt={`Avatar de ${entry.username || "membre"}`} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <User className="w-5 h-5 text-gray-500" />
@@ -88,9 +96,9 @@ export default function LeagueLeaderboard({
                 <p className="font-body text-[10px] text-gray-500 uppercase">points</p>
               </div>
             </div>
-          </div>
+          </motion.div>
         );
       })}
-    </div>
+    </motion.div>
   );
 }

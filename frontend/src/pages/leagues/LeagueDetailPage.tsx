@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
   ChevronLeft,
@@ -22,6 +23,7 @@ import LeagueSettings from "./LeagueSettings";
 import { useLeagueDetailData } from "./useLeagueDetailData";
 import { api, getApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { haptic } from "@/lib/haptics";
 
 export default function LeagueDetailPage() {
   const { leagueId } = useParams();
@@ -275,42 +277,80 @@ export default function LeagueDetailPage() {
         ) : null}
 
         {/* Tab Toggle */}
-        <div className="flex gap-2 p-1 bg-gray-800/50 rounded-lg">
-          <button
-            onClick={() => setActiveTab("leaderboard")}
-            className={`flex-1 py-2 px-4 rounded-lg font-heading text-sm uppercase transition-all flex items-center justify-center gap-2 ${activeTab === "leaderboard" ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-lg" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+        <div className="flex gap-2 p-1 bg-gray-800/50 rounded-xl backdrop-blur-sm">
+          <motion.button
+            onClick={() => { haptic("light"); setActiveTab("leaderboard"); }}
+            className={`flex-1 py-2 px-4 rounded-lg font-heading text-sm uppercase transition-all flex items-center justify-center gap-2 relative ${activeTab === "leaderboard" ? "text-white shadow-lg" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+            whileTap={{ scale: 0.95 }}
           >
-            <Trophy className="w-4 h-4" />
-            Classement
-          </button>
-          <button
-            onClick={() => setActiveTab("members")}
-            className={`flex-1 py-2 px-4 rounded-lg font-heading text-sm uppercase transition-all flex items-center justify-center gap-2 ${activeTab === "members" ? "bg-gradient-to-r from-cyan-500 to-cyan-600 text-white shadow-lg" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+            {activeTab === "leaderboard" && (
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg"
+                layoutId="leagueTab"
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+              <Trophy className="w-4 h-4" />
+              Classement
+            </span>
+          </motion.button>
+          <motion.button
+            onClick={() => { haptic("light"); setActiveTab("members"); }}
+            className={`flex-1 py-2 px-4 rounded-lg font-heading text-sm uppercase transition-all flex items-center justify-center gap-2 relative ${activeTab === "members" ? "text-white shadow-lg" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+            whileTap={{ scale: 0.95 }}
           >
-            <Users className="w-4 h-4" />
-            Membres
-          </button>
+            {activeTab === "members" && (
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-lg"
+                layoutId="leagueTab"
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Membres
+            </span>
+          </motion.button>
         </div>
       </div>
 
       {/* Content */}
       <div className="max-w-2xl mx-auto p-4">
-        {activeTab === "leaderboard" ? (
-          <LeagueLeaderboard
-            leaderboard={leaderboard}
-            members={members}
-            userId={user?.id ?? ""}
-            getAvatar={getAvatar}
-          />
-        ) : (
-          <LeagueMembers
-            members={members}
-            leaderboard={leaderboard}
-            userId={user?.id ?? ""}
-            ownerId={league.owner_id ?? ""}
-            getAvatar={getAvatar}
-          />
-        )}
+        <AnimatePresence mode="wait">
+          {activeTab === "leaderboard" ? (
+            <motion.div
+              key="leaderboard"
+              initial={{ opacity: 0, x: -15 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 15 }}
+              transition={{ duration: 0.2 }}
+            >
+              <LeagueLeaderboard
+                leaderboard={leaderboard}
+                members={members}
+                userId={user?.id ?? ""}
+                getAvatar={getAvatar}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="members"
+              initial={{ opacity: 0, x: 15 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -15 }}
+              transition={{ duration: 0.2 }}
+            >
+              <LeagueMembers
+                members={members}
+                leaderboard={leaderboard}
+                userId={user?.id ?? ""}
+                ownerId={league.owner_id ?? ""}
+                getAvatar={getAvatar}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <LeagueSettings
           league={league}

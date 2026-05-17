@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import {
   Trophy,
   TrendingUp,
@@ -16,15 +17,18 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
+import AnimatedNumber from "../components/AnimatedNumber";
+import { staggerItem } from "../components/PageTransition";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+
+const FloatingTrophy = lazy(() => import("../components/three/FloatingTrophy"));
 
 interface League {
   id: string;
@@ -57,7 +61,7 @@ export default function LeaderboardPage() {
 
   const activeLeagueId = selectedLeagueId || user?.current_league_id;
   const currentLeague = useMemo(
-    () => leagues.find((l: any) => l.id === activeLeagueId) || null,
+    () => leagues.find((l) => l.id === activeLeagueId) || null,
     [leagues, activeLeagueId],
   );
 
@@ -73,7 +77,7 @@ export default function LeaderboardPage() {
     try {
       await api.leagues.select(leagueId);
       setSelectedLeagueId(leagueId);
-      const league = leagues.find((l: any) => l.id === leagueId);
+      const league = leagues.find((l) => l.id === leagueId);
       toast.success(`Ligue "${league?.name}" sélectionnée`);
     } catch (e) {
       toast.error("Erreur lors du changement de ligue");
@@ -123,12 +127,22 @@ export default function LeaderboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-app-main p-4 pt-6 pb-24" data-testid="leaderboard-page">
+    <div className="min-h-screen bg-app-main p-4 pt-2 pb-24" data-testid="leaderboard-page" aria-labelledby="leaderboard-title">
       <div className="max-w-2xl mx-auto space-y-6">
+        {/* 3D Trophy Hero */}
+        <Suspense fallback={null}>
+          <FloatingTrophy className="mx-auto -mb-4" />
+        </Suspense>
+
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="font-heading text-2xl uppercase tracking-tight text-yellow-500 flex items-center gap-2">
-            <Trophy className="w-7 h-7" />
+        <motion.div
+          className="flex items-center justify-between"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <h1 id="leaderboard-title" className="font-heading text-2xl uppercase tracking-tight text-yellow-500 flex items-center gap-2 text-glow-gold">
+            <Trophy className="w-7 h-7" aria-hidden="true" />
             Classement
           </h1>
 
@@ -145,7 +159,7 @@ export default function LeaderboardPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-gray-900 border-gray-700">
-                {leagues.map((league: any) => (
+                {leagues.map((league) => (
                   <DropdownMenuItem
                     key={league.id}
                     onClick={() => switchLeague(league.id)}
@@ -157,7 +171,7 @@ export default function LeaderboardPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-        </div>
+        </motion.div>
 
         {/* League Info */}
         {currentLeague && (
@@ -179,8 +193,9 @@ export default function LeaderboardPage() {
                   onClick={() => navigate(`/league/${currentLeague.id}/chat`)}
                   className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
                   data-testid="chat-btn"
+                  aria-label="Ouvrir le chat de la ligue"
                 >
-                  <MessageCircle className="w-5 h-5" />
+                  <MessageCircle className="w-5 h-5" aria-hidden="true" />
                 </Button>
                 <Button
                   variant="ghost"
@@ -188,8 +203,9 @@ export default function LeaderboardPage() {
                   onClick={() => navigate("/league")}
                   className="text-green-400 hover:text-green-300 hover:bg-green-500/10"
                   data-testid="add-league-btn"
+                  aria-label="Rejoindre ou creer une ligue"
                 >
-                  <Plus className="w-5 h-5" />
+                  <Plus className="w-5 h-5" aria-hidden="true" />
                 </Button>
                 <Button
                   variant="ghost"
@@ -197,11 +213,12 @@ export default function LeaderboardPage() {
                   onClick={copyCode}
                   className="text-gray-400 hover:text-white hover:bg-white/10"
                   data-testid="copy-code-btn"
+                  aria-label={copied ? "Code copie" : "Copier le code d'invitation"}
                 >
                   {copied ? (
-                    <Check className="w-5 h-5 text-green-500" />
+                    <Check className="w-5 h-5 text-green-500" aria-hidden="true" />
                   ) : (
-                    <Copy className="w-5 h-5" />
+                    <Copy className="w-5 h-5" aria-hidden="true" />
                   )}
                 </Button>
                 <Button
@@ -210,8 +227,9 @@ export default function LeaderboardPage() {
                   onClick={shareLeague}
                   className="text-gray-400 hover:text-white hover:bg-white/10"
                   data-testid="share-league-btn"
+                  aria-label="Partager la ligue"
                 >
-                  <Share2 className="w-5 h-5" />
+                  <Share2 className="w-5 h-5" aria-hidden="true" />
                 </Button>
               </div>
             </div>
@@ -219,33 +237,42 @@ export default function LeaderboardPage() {
         )}
 
         {/* Leaderboard */}
-        <div className="card-arcade overflow-hidden">
-          <div className="bg-gradient-to-r from-yellow-600/20 to-transparent px-4 py-3 border-b border-gray-700/50">
+        <div className="card-arcade overflow-hidden" role="table" aria-label="Classement de la ligue">
+          <div className="bg-gradient-to-r from-yellow-600/20 to-transparent px-4 py-3 border-b border-gray-700/50" role="row">
             <div className="grid grid-cols-12 gap-2 text-gray-400 font-body text-xs uppercase tracking-wider">
-              <div className="col-span-2 text-center">#</div>
-              <div className="col-span-5">Joueur</div>
-              <div className="col-span-3 text-right">Points</div>
-              <div className="col-span-2 text-right">Évol.</div>
+              <div className="col-span-2 text-center" role="columnheader">#</div>
+              <div className="col-span-5" role="columnheader">Joueur</div>
+              <div className="col-span-3 text-right" role="columnheader">Points</div>
+              <div className="col-span-2 text-right" role="columnheader">Evol.</div>
             </div>
           </div>
           <div>
-            {leaderboard.map((entry: any, index: any) => {
+            {leaderboard.map((entry, index) => {
               const isMe = entry.user_id === user?.id;
 
               return (
-                <div
+                <motion.div
                   key={entry.user_id}
                   onClick={() => navigate(`/profile/${entry.user_id}`)}
-                  className={`grid grid-cols-12 gap-2 items-center p-4 border-b border-gray-800 transition-colors hover:bg-white/5 cursor-pointer ${
-                    isMe ? "bg-orange-500/10" : ""
+                  role="row"
+                  tabIndex={0}
+                  aria-label={`${entry.position}${entry.position === 1 ? "er" : "e"} - ${entry.username}${isMe ? " (toi)" : ""}, ${entry.total_points} points`}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate(`/profile/${entry.user_id}`); }}
+                  className={`grid grid-cols-12 gap-2 items-center p-4 border-b border-gray-800 transition-colors hover:bg-white/5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-500/50 ${
+                    isMe ? "bg-orange-500/10 ring-1 ring-orange-500/30" : ""
                   }`}
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, margin: "-20px" }}
+                  transition={{ duration: 0.35, delay: Math.min(index * 0.05, 0.4) }}
+                  whileTap={{ scale: 0.98 }}
                   data-testid={`leaderboard-row-${index}`}
                 >
                   <div className="col-span-2 flex justify-center">
                     <span
                       className={`inline-flex items-center justify-center w-10 h-10 rounded-lg font-heading text-lg ${
                         index === 0
-                          ? "position-1"
+                          ? "position-1 animate-gold"
                           : index === 1
                             ? "position-2"
                             : index === 2
@@ -253,7 +280,7 @@ export default function LeaderboardPage() {
                               : "bg-gray-800 text-gray-300 border border-gray-700"
                       }`}
                     >
-                      {entry.position}
+                      {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : entry.position}
                     </span>
                   </div>
 
@@ -266,13 +293,17 @@ export default function LeaderboardPage() {
                     </p>
                     {entry.last_race_points > 0 && (
                       <p className="font-data text-xs text-green-400">
-                        +{entry.last_race_points} dernière course
+                        +{entry.last_race_points} derniere course
                       </p>
                     )}
                   </div>
 
                   <div className="col-span-3 text-right">
-                    <span className="font-data text-lg text-white">{entry.total_points}</span>
+                    <AnimatedNumber
+                      value={entry.total_points}
+                      delay={index * 60 + 200}
+                      className="font-data text-lg text-white"
+                    />
                     <span className="font-body text-xs text-gray-500 ml-1">pts</span>
                   </div>
 
@@ -294,7 +325,7 @@ export default function LeaderboardPage() {
                       </span>
                     )}
                   </div>
-                </div>
+                </motion.div>
               );
             })}
 

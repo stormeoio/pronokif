@@ -186,3 +186,59 @@ def build_results_payload(data: Any) -> dict:
             "first_corner_leader": data.first_corner_leader,
         },
     }
+
+
+# ---------- Latest unseen result ------------------------------------------
+
+
+async def get_latest_unseen(user_id: str) -> dict | None:
+    """Find the most recent race with results that the user predicted but hasn't 'viewed'.
+
+    We track views with a simple collection `result_views`.
+    If no unseen results, returns None.
+    """
+    # Get all races with results
+    results = await db.race_results.find(
+        {}, {"race_id": 1, "_id": 0}
+    ).sort("entered_at", -1).to_list(50)
+
+    if not results:
+        return None
+
+    result_race_ids = [r["race_id"] for r in results]
+
+    # Get races the user has already viewed
+    viewed = await db.result_views.find(
+        {"user_id": user_id, "race_id": {"$in": result_race_ids}},
+        {"race_id": 1, "_id": 0},
+    ).to_list(100)
+    viewed_ids = {v["race_id"] for v in viewed}
+
+    # Find first unseen race (most recent first)
+    for race_id in result_race_ids:
+        if race_id in viewed_ids:
+            continue
+
+        # Check if user predicted this race
+        pred = await db.predictions.find_one(
+            {"user_id": user_id, "race_id": race_id},
+            {"_id": 0, "race_id": 1},
+        )
+        if not pred:
+            continue
+
+        # Get race name
+        race_info = next((r for r in F1_RACES_2026 if r["id"] == race_id), None)
+        race_name = race_info["name"] if race_info else race_id
+
+        # Get user's score for this race from leaderboard or compute
+        # Simple approach: count from user's last_race_points in leaderboard
+        return {
+            "race_id": race_id,
+            "race_name": race_name,
+            "user_score": None,  # Will be filled when results page loads
+            "position_in_league": None,
+            "total_players": None,
+        }
+
+    return None
