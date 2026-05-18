@@ -36,8 +36,8 @@ services:
       MONGO_URL: mongodb://mongo:27017
       DB_NAME: pronokif
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me-in-production-32chars!}
-      CORS_ORIGINS: http://localhost:3000
-      FRONTEND_URL: http://localhost:3000
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
     depends_on:
       mongo:
         condition: service_healthy
