@@ -134,9 +134,19 @@ async def delete_my_prediction(race_id: str, user: dict = Depends(get_current_us
 
 
 @router.get("/history")
-async def get_prediction_history(user: dict = Depends(get_current_user)) -> list[dict]:
-    """Get all predictions history for the user"""
-    predictions = await db.predictions.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
+async def get_prediction_history(
+    skip: int = 0,
+    limit: int = 50,
+    user: dict = Depends(get_current_user),
+) -> list[dict]:
+    """Get predictions history for the user (paginated)."""
+    predictions = (
+        await db.predictions.find({"user_id": user["id"]}, {"_id": 0})
+        .sort("created_at", -1)
+        .skip(skip)
+        .limit(min(limit, 100))
+        .to_list(min(limit, 100))
+    )
     return predictions
 
 

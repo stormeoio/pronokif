@@ -55,6 +55,7 @@ from routes.predictions import router as predictions_router
 from routes.profile import router as profile_router
 from routes.races import router as races_router
 from routes.results import router as results_router
+from services.indexes import ensure_indexes
 from services.sync import auto_sync_loop
 
 app = FastAPI(title="PRONOKIF API", description="F1 Predictions Game API")
@@ -99,6 +100,7 @@ auto_sync_task: asyncio.Task | None = None
 @app.on_event("startup")
 async def startup_event() -> None:
     global auto_sync_task
+    await ensure_indexes()
     auto_sync_task = asyncio.create_task(auto_sync_loop())
     logger.info("[Auto-Sync] Background synchronization task started")
 
