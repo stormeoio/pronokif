@@ -524,11 +524,27 @@ Sprint S10 complete. Score estime : **9/10**.
 
 Sprint S11 complete. Score estime : **9.5/10**.
 
-Ce qui reste pour le 10/10 :
+### Sprint S12 - Hardening & DX — ✅ COMPLETE
+
+| Priorite | Tache | Effort | Impact | Statut |
+|----------|-------|--------|--------|--------|
+| **P2** | Pydantic models pour 2 routes `dict` non typees | 30m | Validation input | ✅ CustomPredictionAnswer + SetCorrectAnswer |
+| **P3** | Audit complet `type: ignore` / `noqa` | 15m | Hygiene code | ✅ 2 usages legitimes confirmes |
+| **P3** | Scan untyped params restants dans routes | 15m | Validation exhaustive | ✅ 0 request body non type restant |
+
+**Details des changements :**
+
+- **predictions.py** : les 2 dernieres routes avec `answer: dict` et `data: dict` (lignes 385 et 407) remplacees par des modeles Pydantic (`CustomPredictionAnswer`, `SetCorrectAnswer`). FastAPI valide maintenant les champs `answer` et `correct_answer` a l'entree. 100% des routes POST/PUT/PATCH ont un modele Pydantic.
+- **Audit `type: ignore`** : 2 usages dans le code projet (hors .venv), tous deux legitimes : `limiter = None` (fallback slowapi) et `session.base_url` (httpx test setup). Aucun hack a nettoyer.
+- **Scan routes** : tous les `dict` restants dans les signatures sont des types de retour (`-> list[dict]`) ou des params internes (`user: dict = Depends(get_current_user)`), pas des corps de requete non valides.
+
+Sprint S12 complete. Score technique code : **9.5/10**.
+
+Ce qui reste pour le 10/10 (ops, pas code) :
 - Configurer un service de monitoring externe (UptimeRobot/BetterUptime sur /api/readyz)
 - Brancher un vrai email provider (SendGrid/SES) pour verification + reset password
 - Ajouter le cron backup-mongo.sh en production
 
 ---
 
-*Audit genere le 18 mai 2026 — mis a jour apres Sprint S10 (code quality polish)*
+*Audit genere le 18 mai 2026 — mis a jour apres Sprint S12 (hardening & DX)*

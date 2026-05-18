@@ -171,6 +171,14 @@ class CustomPredictionCreate(BaseModel):
     choices: list[CustomPredictionChoice] | None = None
 
 
+class CustomPredictionAnswer(BaseModel):
+    answer: Any  # str, list[str], bool depending on answer_type
+
+
+class SetCorrectAnswer(BaseModel):
+    correct_answer: Any  # str, list[str], bool depending on answer_type
+
+
 class CustomPredictionResponse(BaseModel):
     id: str
     race_id: str

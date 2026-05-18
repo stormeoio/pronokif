@@ -10,7 +10,14 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from config import db
 from data.f1_data import F1_RACES_2026
-from models.schemas import CustomPredictionCreate, MainPredictionCreate, PredictionCreate, SprintPredictionCreate
+from models.schemas import (
+    CustomPredictionAnswer,
+    CustomPredictionCreate,
+    MainPredictionCreate,
+    PredictionCreate,
+    SetCorrectAnswer,
+    SprintPredictionCreate,
+)
 from services.auth import get_current_user
 from services.predictions import count_individual_predictions  # re-export for backward compat
 from services.scoring import calculate_points
@@ -382,7 +389,9 @@ async def get_league_custom_predictions(
 
 
 @router.post("/custom/{prediction_id}/answer")
-async def answer_custom_prediction(prediction_id: str, answer: dict, user: dict = Depends(get_current_user)) -> dict:
+async def answer_custom_prediction(
+    prediction_id: str, body: CustomPredictionAnswer, user: dict = Depends(get_current_user)
+) -> dict:
     """Submit an answer to a custom prediction"""
     custom_pred = await db.custom_predictions.find_one({"id": prediction_id}, {"_id": 0})
     if not custom_pred:
@@ -394,7 +403,7 @@ async def answer_custom_prediction(prediction_id: str, answer: dict, user: dict 
             "$set": {
                 "prediction_id": prediction_id,
                 "user_id": user["id"],
-                "answer": answer.get("answer"),
+                "answer": body.answer,
                 "answered_at": datetime.now(UTC).isoformat(),
             }
         },
@@ -404,7 +413,9 @@ async def answer_custom_prediction(prediction_id: str, answer: dict, user: dict 
 
 
 @router.post("/custom/{prediction_id}/set-correct")
-async def set_correct_answer(prediction_id: str, data: dict, user: dict = Depends(get_current_user)) -> dict:
+async def set_correct_answer(
+    prediction_id: str, body: SetCorrectAnswer, user: dict = Depends(get_current_user)
+) -> dict:
     """Set the correct answer for a custom prediction (creator only)"""
     custom_pred = await db.custom_predictions.find_one({"id": prediction_id}, {"_id": 0})
     if not custom_pred:
@@ -413,11 +424,11 @@ async def set_correct_answer(prediction_id: str, data: dict, user: dict = Depend
         raise HTTPException(status_code=403, detail="Only creator can set correct answer")
 
     await db.custom_predictions.update_one(
-        {"id": prediction_id}, {"$set": {"correct_answer": data.get("correct_answer")}}
+        {"id": prediction_id}, {"$set": {"correct_answer": body.correct_answer}}
     )
 
     answers = await db.custom_prediction_answers.find({"prediction_id": prediction_id}, {"_id": 0}).to_list(1000)
-    correct = data.get("correct_answer")
+    correct = body.correct_answer
 
     for ans in answers:
         user_answer = ans.get("answer")
