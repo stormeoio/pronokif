@@ -2,13 +2,13 @@
  * Admin Back-Office Authentication Page.
  * Magic link login + 2FA verification.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Shield, Mail, Loader2, KeyRound, CheckCircle, AlertCircle } from "lucide-react";
+import { adminApi } from "./adminApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { apiClient } from "@/lib/api";
 
 export default function AdminAuthPage() {
   const navigate = useNavigate();
@@ -22,18 +22,35 @@ export default function AdminAuthPage() {
   const [partialToken, setPartialToken] = useState("");
   const [error, setError] = useState("");
 
-  // Check if already authenticated
+  // Check if already authenticated (cookie-based)
   useEffect(() => {
-    const token = localStorage.getItem("admin_token");
-    if (token) {
-      apiClient
-        .get("/admin-bo/auth/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .then(() => navigate("/admin-bo"))
-        .catch(() => localStorage.removeItem("admin_token"));
-    }
+    adminApi
+      .me()
+      .then(() => navigate("/admin-bo"))
+      .catch(() => {});
   }, [navigate]);
+
+  const verifyMagicLink = useCallback(
+    async (token: string) => {
+      setVerifying(true);
+      setError("");
+      try {
+        const res = await adminApi.verifyMagicLink(token);
+        if (res.data.requires_2fa) {
+          setRequires2fa(true);
+          setPartialToken(res.data.partial_token);
+        } else {
+          navigate("/admin-bo");
+        }
+      } catch (err: unknown) {
+        const e = err as { response?: { data?: { detail?: string } } };
+        setError(e.response?.data?.detail || "Lien invalide ou expiré");
+      } finally {
+        setVerifying(false);
+      }
+    },
+    [navigate],
+  );
 
   // Handle magic link token from URL
   useEffect(() => {
@@ -41,34 +58,14 @@ export default function AdminAuthPage() {
     if (token) {
       verifyMagicLink(token);
     }
-  }, [searchParams]);
-
-  const verifyMagicLink = async (token: string) => {
-    setVerifying(true);
-    setError("");
-    try {
-      const res = await apiClient.post("/admin-bo/auth/verify", { token });
-      if (res.data.requires_2fa) {
-        setRequires2fa(true);
-        setPartialToken(res.data.partial_token);
-      } else {
-        localStorage.setItem("admin_token", res.data.access_token);
-        navigate("/admin-bo");
-      }
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { detail?: string } } };
-      setError(e.response?.data?.detail || "Lien invalide ou expiré");
-    } finally {
-      setVerifying(false);
-    }
-  };
+  }, [searchParams, verifyMagicLink]);
 
   const handleSendMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
     setSending(true);
     setError("");
     try {
-      await apiClient.post("/admin-bo/auth/magic-link", { email });
+      await adminApi.sendMagicLink(email);
       setSent(true);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
@@ -83,12 +80,7 @@ export default function AdminAuthPage() {
     setVerifying(true);
     setError("");
     try {
-      const res = await apiClient.post(
-        "/admin-bo/auth/2fa/validate",
-        { code: totpCode },
-        { headers: { Authorization: `Bearer ${partialToken}` } },
-      );
-      localStorage.setItem("admin_token", res.data.access_token);
+      await adminApi.validate2fa(totpCode, partialToken);
       navigate("/admin-bo");
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };

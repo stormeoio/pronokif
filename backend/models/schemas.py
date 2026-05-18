@@ -20,6 +20,10 @@ class UserLogin(BaseModel):
     password: str
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
 class UserSetUsername(BaseModel):
     username: str
 

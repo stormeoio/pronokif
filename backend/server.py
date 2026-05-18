@@ -36,6 +36,9 @@ if _sentry_dsn:
 from middleware.security import install as install_security
 
 # Route modules — one router per business domain.
+from routes.admin_auth import router as admin_auth_router
+from routes.admin_content import router as admin_content_router
+from routes.admin_data import router as admin_data_router
 from routes.admin_members import router as admin_members_router
 from routes.admin_sync import router as admin_sync_router
 from routes.auth import router as auth_router
@@ -51,7 +54,6 @@ from routes.notifications import router as notifications_router
 from routes.predictions import router as predictions_router
 from routes.profile import router as profile_router
 from routes.races import router as races_router
-from routes.admin_backoffice import router as admin_backoffice_router
 from routes.results import router as results_router
 from services.sync import auto_sync_loop
 
@@ -60,7 +62,9 @@ app = FastAPI(title="PRONOKIF API", description="F1 Predictions Game API")
 # Mount every domain router under /api. Keep this list alphabetical so
 # diffs stay clean as new domains arrive.
 for _router in (
-    admin_backoffice_router,
+    admin_auth_router,
+    admin_content_router,
+    admin_data_router,
     admin_members_router,
     admin_sync_router,
     auth_router,

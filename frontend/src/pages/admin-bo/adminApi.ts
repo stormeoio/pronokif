@@ -1,127 +1,108 @@
 /**
  * Admin Back-Office API helpers.
- * Uses separate admin token (not user token).
+ * Auth via httpOnly cookie (set by backend on login).
  */
 import axios from "axios";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-const BASE = `${BACKEND_URL}/api/admin-bo`;
 
-function getToken(): string {
-  return localStorage.getItem("admin_token") || "";
-}
-
-function headers() {
-  return { Authorization: `Bearer ${getToken()}` };
-}
+const api = axios.create({
+  baseURL: `${BACKEND_URL}/api/admin-bo`,
+  withCredentials: true,
+});
 
 export const adminApi = {
   // Auth
-  sendMagicLink: (email: string) => axios.post(`${BASE}/auth/magic-link`, { email }),
-  verifyMagicLink: (token: string) => axios.post(`${BASE}/auth/verify`, { token }),
+  sendMagicLink: (email: string) => api.post("/auth/magic-link", { email }),
+  verifyMagicLink: (token: string) => api.post("/auth/verify", { token }),
   validate2fa: (code: string, partialToken: string) =>
-    axios.post(
-      `${BASE}/auth/2fa/validate`,
+    api.post(
+      "/auth/2fa/validate",
       { code },
       { headers: { Authorization: `Bearer ${partialToken}` } },
     ),
-  setup2fa: () => axios.post(`${BASE}/auth/2fa/setup`, {}, { headers: headers() }),
-  verify2faSetup: (code: string) =>
-    axios.post(`${BASE}/auth/2fa/verify`, { code }, { headers: headers() }),
-  me: () => axios.get(`${BASE}/auth/me`, { headers: headers() }),
+  setup2fa: () => api.post("/auth/2fa/setup", {}),
+  verify2faSetup: (code: string) => api.post("/auth/2fa/verify", { code }),
+  me: () => api.get("/auth/me"),
+  logout: () => api.post("/auth/logout"),
 
   // Stats
-  stats: () => axios.get(`${BASE}/stats`, { headers: headers() }).then((r) => r.data),
+  stats: () => api.get("/stats").then((r) => r.data),
 
   // Users
   users: {
     list: (params?: { skip?: number; limit?: number; search?: string }) =>
-      axios.get(`${BASE}/users`, { headers: headers(), params }).then((r) => r.data),
-    get: (id: string) =>
-      axios.get(`${BASE}/users/${id}`, { headers: headers() }).then((r) => r.data),
+      api.get("/users", { params }).then((r) => r.data),
+    get: (id: string) => api.get(`/users/${id}`).then((r) => r.data),
     update: (id: string, data: Record<string, unknown>) =>
-      axios.put(`${BASE}/users/${id}`, data, { headers: headers() }).then((r) => r.data),
-    delete: (id: string) =>
-      axios.delete(`${BASE}/users/${id}`, { headers: headers() }).then((r) => r.data),
+      api.put(`/users/${id}`, data).then((r) => r.data),
+    delete: (id: string) => api.delete(`/users/${id}`).then((r) => r.data),
   },
 
   // Championships
   championships: {
-    list: () => axios.get(`${BASE}/championships`, { headers: headers() }).then((r) => r.data),
-    create: (data: Record<string, unknown>) =>
-      axios.post(`${BASE}/championships`, data, { headers: headers() }).then((r) => r.data),
+    list: () => api.get("/championships").then((r) => r.data),
+    create: (data: Record<string, unknown>) => api.post("/championships", data).then((r) => r.data),
     update: (id: string, data: Record<string, unknown>) =>
-      axios.put(`${BASE}/championships/${id}`, data, { headers: headers() }).then((r) => r.data),
-    delete: (id: string) =>
-      axios.delete(`${BASE}/championships/${id}`, { headers: headers() }).then((r) => r.data),
+      api.put(`/championships/${id}`, data).then((r) => r.data),
+    delete: (id: string) => api.delete(`/championships/${id}`).then((r) => r.data),
   },
 
   // Races
   races: {
     list: (season?: number) =>
-      axios
-        .get(`${BASE}/races`, { headers: headers(), params: season ? { season } : {} })
-        .then((r) => r.data),
-    create: (data: Record<string, unknown>) =>
-      axios.post(`${BASE}/races`, data, { headers: headers() }).then((r) => r.data),
+      api.get("/races", { params: season ? { season } : {} }).then((r) => r.data),
+    create: (data: Record<string, unknown>) => api.post("/races", data).then((r) => r.data),
     update: (id: string, data: Record<string, unknown>) =>
-      axios.put(`${BASE}/races/${id}`, data, { headers: headers() }).then((r) => r.data),
-    delete: (id: string) =>
-      axios.delete(`${BASE}/races/${id}`, { headers: headers() }).then((r) => r.data),
+      api.put(`/races/${id}`, data).then((r) => r.data),
+    delete: (id: string) => api.delete(`/races/${id}`).then((r) => r.data),
   },
 
   // Predictions
   predictions: {
     list: (params?: { user_id?: string; race_id?: string; skip?: number; limit?: number }) =>
-      axios.get(`${BASE}/predictions`, { headers: headers(), params }).then((r) => r.data),
+      api.get("/predictions", { params }).then((r) => r.data),
   },
 
   // Feedbacks
   feedbacks: {
     list: (params?: { skip?: number; limit?: number; unread_only?: boolean }) =>
-      axios.get(`${BASE}/feedbacks`, { headers: headers(), params }).then((r) => r.data),
-    markRead: (id: string) =>
-      axios.put(`${BASE}/feedbacks/${id}/read`, {}, { headers: headers() }).then((r) => r.data),
-    delete: (id: string) =>
-      axios.delete(`${BASE}/feedbacks/${id}`, { headers: headers() }).then((r) => r.data),
+      api.get("/feedbacks", { params }).then((r) => r.data),
+    markRead: (id: string) => api.put(`/feedbacks/${id}/read`, {}).then((r) => r.data),
+    delete: (id: string) => api.delete(`/feedbacks/${id}`).then((r) => r.data),
   },
 
   // Invitations
   invitations: {
-    list: () => axios.get(`${BASE}/invitations`, { headers: headers() }).then((r) => r.data),
+    list: () => api.get("/invitations").then((r) => r.data),
     send: (data: { email: string; message?: string }) =>
-      axios.post(`${BASE}/invitations`, data, { headers: headers() }).then((r) => r.data),
+      api.post("/invitations", data).then((r) => r.data),
   },
 
   // Media
   media: {
     list: (entityType?: string) =>
-      axios
-        .get(`${BASE}/media`, {
-          headers: headers(),
-          params: entityType ? { entity_type: entityType } : {},
-        })
+      api
+        .get("/media", { params: entityType ? { entity_type: entityType } : {} })
         .then((r) => r.data),
     upload: (file: File, entityType?: string, entityId?: string) => {
       const formData = new FormData();
       formData.append("file", file);
       if (entityType) formData.append("entity_type", entityType);
       if (entityId) formData.append("entity_id", entityId);
-      return axios
-        .post(`${BASE}/media/upload`, formData, {
-          headers: { ...headers(), "Content-Type": "multipart/form-data" },
+      return api
+        .post("/media/upload", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
         })
         .then((r) => r.data);
     },
-    delete: (id: string) =>
-      axios.delete(`${BASE}/media/${id}`, { headers: headers() }).then((r) => r.data),
-    fileUrl: (id: string) => `${BASE}/media/${id}/file`,
+    delete: (id: string) => api.delete(`/media/${id}`).then((r) => r.data),
+    fileUrl: (id: string) => `${BACKEND_URL}/api/admin-bo/media/${id}/file`,
   },
 
   // Settings
   settings: {
-    get: () => axios.get(`${BASE}/settings`, { headers: headers() }).then((r) => r.data),
-    update: (data: Record<string, unknown>) =>
-      axios.put(`${BASE}/settings`, data, { headers: headers() }).then((r) => r.data),
+    get: () => api.get("/settings").then((r) => r.data),
+    update: (data: Record<string, unknown>) => api.put("/settings", data).then((r) => r.data),
   },
 };

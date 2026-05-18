@@ -11,9 +11,10 @@ Security fixes implemented:
 """
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 from config import (
     COOKIE_DOMAIN,
@@ -31,14 +32,17 @@ from middleware.security import limiter
 # 5 req/min on login+register to block brute force (no-op if slowapi missing)
 _rate_5_per_min = limiter.limit("5/minute") if limiter else lambda f: f
 from features import get_default_user_stats
-from models.schemas import TokenResponse, UserCreate, UserLogin, UserResponse, UserSetUsername
+from models.schemas import ForgotPasswordRequest, TokenResponse, UserCreate, UserLogin, UserResponse, UserSetUsername
 from services.auth import (
+    RESET_TOKEN_EXPIRE_MINUTES,
     create_access_token,
     create_refresh_token,
+    generate_reset_token,
     generate_verification_token,
     get_current_user,
     get_user_from_refresh_token,
     hash_password,
+    send_reset_email,
     send_verification_email,
     validate_password,
     verify_password,
@@ -313,3 +317,73 @@ async def resend_verification(user=Depends(get_current_user)):
     )
     await send_verification_email(user["email"], new_token)
     return {"message": "Email de verification renvoye"}
+
+
+# ── Password reset (P1-4) ──────────────────────────────────────────────────
+
+
+@router.post("/forgot-password")
+@_rate_5_per_min
+async def forgot_password(request: Request, data: ForgotPasswordRequest):
+    """
+    Request a password reset link.
+    Always returns success to prevent email enumeration.
+    """
+    email = data.email.lower()
+    user = await db.users.find_one({"email": email})
+
+    if user:
+        token = generate_reset_token()
+        await db.users.update_one(
+            {"id": user["id"]},
+            {
+                "$set": {
+                    "reset_password_token": token,
+                    "reset_password_expires": (
+                        datetime.now(UTC) + timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES)
+                    ).isoformat(),
+                }
+            },
+        )
+        await send_reset_email(email, token)
+
+    # Always return same message (no email enumeration)
+    return {"message": "Si un compte existe avec cet email, un lien de reinitialisation a ete envoye."}
+
+
+class ResetPasswordData(BaseModel):
+    token: str
+    new_password: str
+
+
+@router.post("/reset-password")
+@_rate_5_per_min
+async def reset_password(request: Request, data: ResetPasswordData):
+    """Reset password using the token from the email link."""
+    # Validate new password
+    password_error = validate_password(data.new_password)
+    if password_error:
+        raise HTTPException(status_code=422, detail=password_error)
+
+    user = await db.users.find_one(
+        {"reset_password_token": data.token},
+        {"_id": 0},
+    )
+    if not user:
+        raise HTTPException(status_code=400, detail="Lien invalide ou expire")
+
+    # Check expiration
+    expires = user.get("reset_password_expires", "")
+    if expires and datetime.fromisoformat(expires) < datetime.now(UTC):
+        raise HTTPException(status_code=400, detail="Lien expire, veuillez en demander un nouveau")
+
+    # Update password and clear token
+    await db.users.update_one(
+        {"id": user["id"]},
+        {
+            "$set": {"password_hash": hash_password(data.new_password)},
+            "$unset": {"reset_password_token": "", "reset_password_expires": ""},
+        },
+    )
+
+    return {"message": "Mot de passe reinitialise avec succes"}

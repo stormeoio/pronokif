@@ -33,7 +33,7 @@ import MediaTab from "./tabs/MediaTab";
 import SettingsTab from "./tabs/SettingsTab";
 import RoadmapTab from "./tabs/RoadmapTab";
 import PreviewPanel from "./PreviewPanel";
-import { apiClient } from "@/lib/api";
+import { adminApi } from "./adminApi";
 import { Button } from "@/components/ui/button";
 
 const NAV_ITEMS = [
@@ -56,22 +56,18 @@ export default function AdminLayout() {
   const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("admin_token");
-    if (!token) {
-      navigate("/admin-bo/auth");
-      return;
-    }
-    apiClient
-      .get("/admin-bo/auth/me", { headers: { Authorization: `Bearer ${token}` } })
+    adminApi
+      .me()
       .then((res) => setAdminEmail(res.data.email))
-      .catch(() => {
-        localStorage.removeItem("admin_token");
-        navigate("/admin-bo/auth");
-      });
+      .catch(() => navigate("/admin-bo/auth"));
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("admin_token");
+  const handleLogout = async () => {
+    try {
+      await adminApi.logout();
+    } catch {
+      /* ignore */
+    }
     navigate("/admin-bo/auth");
   };
 

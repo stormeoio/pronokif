@@ -58,7 +58,7 @@ jobs:
           MONGO_URL: mongodb://localhost:27017
           DB_NAME: pronokif_test
           JWT_SECRET: test-secret-minimum-32-characters-long!
-        run: pytest tests/ -v --tb=short
+        run: pytest tests/ -v --tb=short --cov=. --cov-report=term-missing --cov-fail-under=30
 
   # ─────────────────────────── Frontend ──────────────────────────
   frontend:
@@ -86,8 +86,8 @@ jobs:
       - name: Type check (tsc)
         run: npm run typecheck
 
-      - name: Tests (Vitest)
-        run: npm test
+      - name: Tests (Vitest + coverage)
+        run: npx vitest run --coverage --coverage.reporter=text --coverage.thresholds.statements=20
 
       - name: Build
         env:

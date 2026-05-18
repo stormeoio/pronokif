@@ -1,5 +1,5 @@
 import { useState, lazy, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Mail, Lock, ChevronRight } from "lucide-react";
@@ -205,6 +205,14 @@ export default function AuthPage() {
                       {isLoading ? "Connexion..." : "Se connecter"}
                       <ChevronRight className="ml-2 w-5 h-5" />
                     </Button>
+                    <div className="text-center pt-2">
+                      <Link
+                        to="/forgot-password"
+                        className="text-xs text-gray-500 hover:text-blue-400 font-body transition-colors"
+                      >
+                        Mot de passe oublie ?
+                      </Link>
+                    </div>
                   </CardContent>
                 </form>
               </TabsContent>

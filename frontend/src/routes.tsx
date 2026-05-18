@@ -32,6 +32,8 @@ const JoinLeaguePage = lazy(() => import("@/pages/JoinLeaguePage"));
 const ChampionshipPage = lazy(() => import("@/pages/championship/ChampionshipPage"));
 const DriverDetailPage = lazy(() => import("@/pages/driver-detail/DriverDetailPage"));
 const DriverComparisonPage = lazy(() => import("@/pages/driver-comparison/DriverComparisonPage"));
+const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
 const VerifyEmailPage = lazy(() => import("@/pages/VerifyEmailPage"));
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
 const AdminAuthPage = lazy(() => import("@/pages/admin-bo/AdminAuthPage"));
@@ -141,7 +143,9 @@ export function AppRouter() {
         <Route key={path} path={path} element={<ProtectedRoute>{element}</ProtectedRoute>} />
       ))}
 
-      {/* Email verification (public, token in query param) */}
+      {/* Public auth-related pages */}
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
 
       {/* Admin Back-Office (separate auth) */}

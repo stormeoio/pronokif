@@ -161,12 +161,39 @@ async def send_verification_email(email: str, token: str) -> None:
     Send email verification link. Currently logs to console.
     Replace with actual email service (SendGrid, SES, etc.) for production.
     """
-    # TODO: wire real email provider
-    verify_url = f"https://pronokif.stormeo.io/verify-email?token={token}"
+    import os
+    frontend_url = os.environ.get("FRONTEND_URL", "https://pronokif.stormeo.io")
+    verify_url = f"{frontend_url}/verify-email?token={token}"
     logger.info(
         f"[Email Verification] To: {email} | "
         f"Token: {token} | "
         f"URL: {verify_url}"
+    )
+
+
+# ── Password reset (P1-4 fix) ─────────────────────────────────────────────
+
+
+RESET_TOKEN_EXPIRE_MINUTES = 30
+
+
+def generate_reset_token() -> str:
+    """Generate a URL-safe password reset token."""
+    return secrets.token_urlsafe(32)
+
+
+async def send_reset_email(email: str, token: str) -> None:
+    """
+    Send password reset link. Currently logs to console.
+    Replace with actual email service for production.
+    """
+    import os
+    frontend_url = os.environ.get("FRONTEND_URL", "https://pronokif.stormeo.io")
+    reset_url = f"{frontend_url}/reset-password?token={token}"
+    logger.info(
+        f"[Password Reset] To: {email} | "
+        f"Token: {token} | "
+        f"URL: {reset_url}"
     )
 
 
