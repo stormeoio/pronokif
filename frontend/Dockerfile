@@ -17,7 +17,7 @@ RUN npm ci --legacy-peer-deps
 COPY . .
 
 # Build-time env vars (override at `docker build --build-arg`)
-ARG VITE_BACKEND_URL=http://localhost:8000
+ARG VITE_BACKEND_URL=
 ARG VITE_SENTRY_DSN=
 ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN
