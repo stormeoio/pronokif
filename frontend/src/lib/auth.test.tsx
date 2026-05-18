@@ -1,9 +1,9 @@
 /**
  * Auth module tests — AuthProvider, useAuth, ProtectedRoute.
+ * Updated for httpOnly cookie auth (no more localStorage tokens).
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, act } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth, ProtectedRoute } from "./auth";
 
@@ -45,7 +45,9 @@ function renderInProvider(ui: React.ReactElement) {
 }
 
 describe("AuthProvider", () => {
-  it("shows loading false and no user when localStorage is empty", async () => {
+  it("shows no user when /auth/me fails (no valid cookie session)", async () => {
+    mockedApi.get.mockRejectedValue(new Error("401"));
+
     renderInProvider(<AuthConsumer />);
 
     await waitFor(() => {
@@ -53,26 +55,41 @@ describe("AuthProvider", () => {
     });
   });
 
-  it("restores user from localStorage and validates via /auth/me", async () => {
-    const savedUser = { id: "1", email: "test@test.com", username: "tester" };
-    localStorage.setItem("token", "jwt-token");
-    localStorage.setItem("user", JSON.stringify(savedUser));
-
-    mockedApi.get.mockResolvedValue({ data: savedUser });
+  it("validates session via /auth/me on mount (cookie-based)", async () => {
+    const freshUser = { id: "1", email: "test@test.com", username: "tester" };
+    mockedApi.get.mockResolvedValue({ data: freshUser });
 
     renderInProvider(<AuthConsumer />);
 
-    // Initially shows from localStorage
     await waitFor(() => {
       expect(screen.getByText("Hello tester")).toBeInTheDocument();
     });
 
-    // Should have called /auth/me to validate
+    // Should have called /auth/me to validate cookie session
     expect(mockedApi.get).toHaveBeenCalledWith("/auth/me");
   });
 
-  it("clears user when /auth/me fails", async () => {
-    localStorage.setItem("token", "expired-token");
+  it("uses cached user for instant hydration, then validates with backend", async () => {
+    const cachedUser = { id: "1", email: "test@test.com", username: "cached" };
+    const freshUser = { id: "1", email: "test@test.com", username: "fresh" };
+    localStorage.setItem("user", JSON.stringify(cachedUser));
+
+    mockedApi.get.mockResolvedValue({ data: freshUser });
+
+    renderInProvider(<AuthConsumer />);
+
+    // Initially shows cached user
+    await waitFor(() => {
+      expect(screen.getByText(/cached|fresh/)).toBeInTheDocument();
+    });
+
+    // After validation, shows fresh user from backend
+    await waitFor(() => {
+      expect(screen.getByText("Hello fresh")).toBeInTheDocument();
+    });
+  });
+
+  it("clears cached user when /auth/me fails", async () => {
     localStorage.setItem("user", JSON.stringify({ id: "1", email: "x@x.com" }));
 
     mockedApi.get.mockRejectedValue(new Error("401"));
@@ -83,13 +100,37 @@ describe("AuthProvider", () => {
       expect(screen.getByText("No user")).toBeInTheDocument();
     });
 
-    expect(localStorage.getItem("token")).toBeNull();
+    // Cached user should be cleared (no token to clear — cookies are httpOnly)
     expect(localStorage.getItem("user")).toBeNull();
+  });
+
+  it("does not store any token in localStorage", async () => {
+    const loginResponse = {
+      data: {
+        access_token: "should-not-be-stored",
+        user: { id: "1", email: "test@test.com", username: "tester" },
+      },
+    };
+    mockedApi.post.mockResolvedValue(loginResponse);
+    mockedApi.get.mockRejectedValue(new Error("401")); // initial /auth/me fails
+
+    renderInProvider(<AuthConsumer />);
+
+    await waitFor(() => {
+      expect(screen.getByText("No user")).toBeInTheDocument();
+    });
+
+    // Verify no token is ever stored in localStorage
+    expect(localStorage.getItem("token")).toBeNull();
+    expect(localStorage.getItem("access_token")).toBeNull();
+    expect(localStorage.getItem("refresh_token")).toBeNull();
   });
 });
 
 describe("ProtectedRoute", () => {
   it("redirects to /auth when no user", async () => {
+    mockedApi.get.mockRejectedValue(new Error("401"));
+
     render(
       <MemoryRouter initialEntries={["/protected"]}>
         <AuthProvider>
@@ -113,11 +154,10 @@ describe("ProtectedRoute", () => {
     });
   });
 
-  it("renders children when user is present", async () => {
-    const savedUser = { id: "1", email: "test@test.com", username: "tester" };
-    localStorage.setItem("token", "valid");
-    localStorage.setItem("user", JSON.stringify(savedUser));
-    mockedApi.get.mockResolvedValue({ data: savedUser });
+  it("renders children when user session is valid", async () => {
+    const validUser = { id: "1", email: "test@test.com", username: "tester" };
+    localStorage.setItem("user", JSON.stringify(validUser));
+    mockedApi.get.mockResolvedValue({ data: validUser });
 
     render(
       <MemoryRouter initialEntries={["/protected"]}>

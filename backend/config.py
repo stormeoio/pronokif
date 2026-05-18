@@ -42,7 +42,15 @@ if len(JWT_SECRET) < 32:
         "`python -c 'import secrets; print(secrets.token_urlsafe(48))'`."
     )
 JWT_ALGORITHM = "HS256"
-JWT_EXPIRATION_HOURS = 24 * 7
+# Access token: short-lived (1 hour). Refresh token: long-lived (7 days).
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
+REFRESH_TOKEN_EXPIRE_DAYS = 7
+
+# Cookie settings — httpOnly cookies replace localStorage tokens (P0-2 fix)
+ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
+COOKIE_SECURE = ENVIRONMENT not in ("development", "dev", "local")
+COOKIE_SAMESITE: str = "lax"
+COOKIE_DOMAIN: str | None = os.environ.get("COOKIE_DOMAIN")  # e.g. ".stormeo.io"
 
 # External APIs
 OPENF1_API = "https://api.openf1.org/v1"

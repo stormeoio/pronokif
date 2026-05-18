@@ -122,22 +122,35 @@ def install_security_headers(app: FastAPI) -> None:
 # --------------------------------------------------------------------------- #
 
 
+# Shared limiter instance — importable from route modules for per-endpoint limits.
+# Usage: from middleware.security import limiter
+#        @limiter.limit("5/minute")
+try:
+    from slowapi import Limiter
+    from slowapi.util import get_remote_address
+
+    limiter = Limiter(key_func=get_remote_address)
+except ImportError:
+    limiter = None  # type: ignore[assignment]
+
+
 def install_rate_limit(app: FastAPI) -> None:
     """
     Attach slowapi if available. Rate per minute is read from
     RATE_LIMIT_PER_MINUTE (default 60). Routes opt-in via the @limiter.limit
     decorator imported from app.state.limiter.
     """
+    if limiter is None:
+        return
+
     try:
-        from slowapi import Limiter, _rate_limit_exceeded_handler
+        from slowapi import _rate_limit_exceeded_handler
         from slowapi.errors import RateLimitExceeded
-        from slowapi.util import get_remote_address
     except ImportError:
-        # slowapi not installed yet — see requirements-dev.txt (S0-8).
         return
 
     rpm = int(os.environ.get("RATE_LIMIT_PER_MINUTE", "60"))
-    limiter = Limiter(key_func=get_remote_address, default_limits=[f"{rpm}/minute"])
+    limiter._default_limits = [f"{rpm}/minute"]
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 

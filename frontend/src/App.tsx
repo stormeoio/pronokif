@@ -16,6 +16,7 @@ import AnimatedBottomNav from "@/components/AnimatedBottomNav";
 import NetworkStatus from "@/components/NetworkStatus";
 import ScrollToTop from "@/components/ScrollToTop";
 import PageTransition from "@/components/PageTransition";
+import EmailVerificationBanner from "@/components/EmailVerificationBanner";
 import "@/App.css";
 
 // Lazy-load heavy 3D components for performance
@@ -42,6 +43,9 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       <Suspense fallback={null}>
         <ParticleBackground />
       </Suspense>
+
+      {/* Email verification banner (shown for unverified users) */}
+      {!hideNav && <EmailVerificationBanner />}
 
       {/* Main content with page transitions */}
       <main id="main-content" className={`relative z-10 ${hideNav ? "" : "pb-safe"}`} role="main">

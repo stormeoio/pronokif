@@ -1,8 +1,9 @@
 /**
  * Auth context, provider, and hooks.
  *
- * Extracted from App.jsx during Sprint 3 so pages can import `useAuth`
- * without depending on the root App module.
+ * Security: authentication is handled via httpOnly cookies set by the backend.
+ * No tokens are stored in localStorage (P0-2 fix). Only the user object
+ * is cached in localStorage for instant hydration on reload.
  */
 import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
@@ -20,6 +21,7 @@ export interface User {
   custom_avatar_url?: string | null;
   custom_avatar?: string;
   is_admin?: boolean;
+  email_verified?: boolean;
   level: number;
   xp: number;
   [key: string]: unknown; // allow extra fields from backend
@@ -30,9 +32,10 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
   register: (email: string, password: string) => Promise<User>;
-  logout: () => void;
+  logout: () => Promise<void>;
   setUsername: (username: string) => Promise<User>;
   updateUser: (updates: Partial<User>) => void;
+  resendVerification: () => Promise<void>;
 }
 
 // --------------------------------------------------------------- context ---
@@ -53,43 +56,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // On mount: validate session via /auth/me (cookie sent automatically)
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    // Instant hydration from cached user object (not a token!)
     const savedUser = localStorage.getItem("user");
-
-    if (token && savedUser) {
-      setUser(JSON.parse(savedUser));
-      apiClient
-        .get("/auth/me")
-        .then((res) => {
-          setUser(res.data);
-          localStorage.setItem("user", JSON.stringify(res.data));
-        })
-        .catch(() => {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          setUser(null);
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch {
+        localStorage.removeItem("user");
+      }
     }
+
+    // Validate session with backend (cookie-based)
+    apiClient
+      .get("/auth/me")
+      .then((res) => {
+        setUser(res.data);
+        localStorage.setItem("user", JSON.stringify(res.data));
+      })
+      .catch(() => {
+        // No valid session — clear cached user
+        localStorage.removeItem("user");
+        setUser(null);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const login = async (email: string, password: string): Promise<User> => {
     const res = await apiClient.post("/auth/login", { email, password });
-    localStorage.setItem("token", res.data.access_token);
-    localStorage.setItem("user", JSON.stringify(res.data.user));
-    setUser(res.data.user);
-    return res.data.user;
+    // Backend sets httpOnly cookies — we only cache the user object
+    const u = res.data.user;
+    setUser(u);
+    localStorage.setItem("user", JSON.stringify(u));
+    return u;
   };
 
   const register = async (email: string, password: string): Promise<User> => {
     const res = await apiClient.post("/auth/register", { email, password });
-    localStorage.setItem("token", res.data.access_token);
-    localStorage.setItem("user", JSON.stringify(res.data.user));
-    setUser(res.data.user);
-    return res.data.user;
+    const u = res.data.user;
+    setUser(u);
+    localStorage.setItem("user", JSON.stringify(u));
+    return u;
   };
 
   const setUsername = async (username: string): Promise<User> => {
@@ -99,10 +107,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return res.data;
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
+  const logout = async () => {
+    try {
+      await apiClient.post("/auth/logout");
+    } catch {
+      // Ignore errors — we clear state regardless
+    }
     localStorage.removeItem("user");
     setUser(null);
+  };
+
+  const resendVerification = async () => {
+    await apiClient.post("/auth/resend-verification");
   };
 
   const updateUser = (updates: Partial<User>) => {
@@ -113,7 +129,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, register, logout, setUsername, updateUser }}
+      value={{
+        user,
+        loading,
+        login,
+        register,
+        logout,
+        setUsername,
+        updateUser,
+        resendVerification,
+      }}
     >
       {children}
     </AuthContext.Provider>

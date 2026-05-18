@@ -34,6 +34,7 @@ class UserResponse(BaseModel):
     level: int = 1
     avatar_id: str | None = None
     custom_avatar_url: str | None = None
+    email_verified: bool = False
 
 
 class TokenResponse(BaseModel):

@@ -189,7 +189,7 @@ export default function AuthPage() {
                           type="password"
                           placeholder="••••••••"
                           required
-                          minLength={6}
+                          minLength={1}
                           className="pl-10 bg-[#0a1628] border-gray-700 h-12 font-body text-white placeholder:text-gray-500
                                     focus:border-blue-500 focus:ring-blue-500/30 rounded-lg"
                           data-testid="login-password"
@@ -252,14 +252,17 @@ export default function AuthPage() {
                           id="register-password"
                           name="password"
                           type="password"
-                          placeholder="6 caractères minimum"
+                          placeholder="8 caractères minimum"
                           required
-                          minLength={6}
+                          minLength={8}
                           className="pl-10 bg-[#0a1628] border-gray-700 h-12 font-body text-white placeholder:text-gray-500
                                     focus:border-blue-500 focus:ring-blue-500/30 rounded-lg"
                           data-testid="register-password"
                         />
                       </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Min. 8 caractères, 1 majuscule, 1 minuscule, 1 chiffre
+                      </p>
                     </div>
                     <Button
                       type="submit"

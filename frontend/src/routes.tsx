@@ -32,6 +32,7 @@ const JoinLeaguePage = lazy(() => import("@/pages/JoinLeaguePage"));
 const ChampionshipPage = lazy(() => import("@/pages/championship/ChampionshipPage"));
 const DriverDetailPage = lazy(() => import("@/pages/driver-detail/DriverDetailPage"));
 const DriverComparisonPage = lazy(() => import("@/pages/driver-comparison/DriverComparisonPage"));
+const VerifyEmailPage = lazy(() => import("@/pages/VerifyEmailPage"));
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
 const AdminAuthPage = lazy(() => import("@/pages/admin-bo/AdminAuthPage"));
 const AdminLayout = lazy(() => import("@/pages/admin-bo/AdminLayout"));
@@ -139,6 +140,9 @@ export function AppRouter() {
       {PROTECTED_ROUTES.map(({ path, element }) => (
         <Route key={path} path={path} element={<ProtectedRoute>{element}</ProtectedRoute>} />
       ))}
+
+      {/* Email verification (public, token in query param) */}
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
 
       {/* Admin Back-Office (separate auth) */}
       <Route path="/admin-bo/auth" element={<AdminAuthPage />} />

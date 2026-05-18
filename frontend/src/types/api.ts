@@ -18,6 +18,7 @@ export interface User {
   avatar_id: string | null;
   custom_avatar_url: string | null;
   is_admin?: boolean;
+  email_verified?: boolean;
 }
 
 export interface TokenResponse {

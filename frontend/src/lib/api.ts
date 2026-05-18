@@ -46,27 +46,67 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 /** Absolute base for REST calls, e.g. "http://localhost:8000/api". */
 export const API = `${BACKEND_URL}/api`;
 
-/** Pre-configured axios instance — attaches JWT and handles 401. */
+/**
+ * Pre-configured axios instance.
+ * Auth via httpOnly cookies (withCredentials) — no localStorage tokens.
+ * Auto-refresh on 401 via /auth/refresh before redirecting to login.
+ */
 export const apiClient = axios.create({
   baseURL: API,
+  withCredentials: true, // send httpOnly cookies on every request
 });
 
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+// Track refresh state to avoid concurrent refresh calls
+let isRefreshing = false;
+let refreshSubscribers: ((ok: boolean) => void)[] = [];
+
+function onRefreshDone(ok: boolean) {
+  refreshSubscribers.forEach((cb) => cb(ok));
+  refreshSubscribers = [];
+}
 
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.location.href = "/auth";
+  async (error) => {
+    const originalRequest = error.config;
+
+    // If 401 and not already retrying and not the refresh endpoint itself
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes("/auth/refresh")
+    ) {
+      if (isRefreshing) {
+        // Wait for the ongoing refresh to finish, then retry
+        return new Promise((resolve, reject) => {
+          refreshSubscribers.push((ok: boolean) => {
+            if (ok) {
+              resolve(apiClient(originalRequest));
+            } else {
+              reject(error);
+            }
+          });
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        await apiClient.post("/auth/refresh");
+        isRefreshing = false;
+        onRefreshDone(true);
+        // Retry the original request (cookie is now fresh)
+        return apiClient(originalRequest);
+      } catch {
+        isRefreshing = false;
+        onRefreshDone(false);
+        localStorage.removeItem("user");
+        window.location.href = "/auth";
+        return Promise.reject(error);
+      }
     }
+
     return Promise.reject(error);
   },
 );
@@ -133,7 +173,8 @@ export const api = {
     get: (id: string) => get<RaceDetails>(`/races/${id}`),
     details: (id: string) => get<RaceDetails>(`/races/${id}/details`),
     results: (raceId: string) => get<ResultsResponse>(`/races/${raceId}/results`),
-    predictionCount: (raceId: string) => get<{ count: number }>(`/races/${raceId}/prediction-count`),
+    predictionCount: (raceId: string) =>
+      get<{ count: number }>(`/races/${raceId}/prediction-count`),
   },
 
   // ── Drivers ──────────────────────────────────────────────────
