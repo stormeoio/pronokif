@@ -506,11 +506,28 @@ Sprint S9 complete. Score estime : **8.5-9/10**.
 
 Sprint S10 complete. Score estime : **9/10**.
 
+### Sprint S11 - Testing & resilience — ✅ COMPLETE
+
+| Priorite | Tache | Effort | Impact | Statut |
+|----------|-------|--------|--------|--------|
+| **P1** | Tests unitaires scoring engine (0 → 25 tests) | 2h | Fiabilite coeur metier | ✅ 25 tests, 6 classes |
+| **P1** | Bug fix scoring : None==None false positive | 30m | Correctitude points | ✅ guard `is not None` |
+| **P2** | Tests unitaires sync helpers (14 tests) | 1h | Couverture refacto S10 | ✅ 14 tests, 4 classes |
+| **P2** | Script k6 load test | 1h | Performance validation | ✅ scripts/load-test.js |
+
+**Details des changements :**
+
+- **Scoring bug fix** : `calculate_points` attribuait des points bonus quand prediction ET resultats avaient `None` pour fastest_lap, first_corner_leader ou safety_car (`None == None` = True). Ajout de guards `is not None` sur les 3 comparaisons bonus. Decouvert par les tests unitaires.
+- **test_scoring.py** (25 tests) : perfect prediction, zero match, partial match, bonus bets (safety car, DNF, fastest lap, first corner), sprint weekend, edge cases (empty, None, partial).
+- **test_sync_helpers.py** (14 tests) : `_find_race`, `_number_to_id_map`, `_extract_driver_ids`, `_build_success_items`.
+- **load-test.js** : k6 script avec ramp-up/sustained/ramp-down, 6 scenarios (health, readyz, races, drivers, auth robustness, leaderboard unauth), seuils p95<500ms + erreurs<1%.
+
+Sprint S11 complete. Score estime : **9.5/10**.
+
 Ce qui reste pour le 10/10 :
 - Configurer un service de monitoring externe (UptimeRobot/BetterUptime sur /api/readyz)
 - Brancher un vrai email provider (SendGrid/SES) pour verification + reset password
 - Ajouter le cron backup-mongo.sh en production
-- Tests de charge (k6 ou locust)
 
 ---
 

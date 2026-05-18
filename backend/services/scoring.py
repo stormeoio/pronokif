@@ -74,8 +74,10 @@ def calculate_points(prediction: dict, results: dict) -> dict:
     pred_bonus = prediction.get("bonus_bets", {}) or {}
     results_bonus = results.get("bonus", {}) or {}
 
-    # Safety Car
-    if pred_bonus.get("safety_car") == results_bonus.get("safety_car"):
+    # Safety Car (only award when both sides have an explicit value)
+    pred_sc = pred_bonus.get("safety_car")
+    actual_sc = results_bonus.get("safety_car")
+    if pred_sc is not None and actual_sc is not None and pred_sc == actual_sc:
         points["bonus"] += SCORING_RULES["safety_car_correct"]
         points["xp_earned"] += XP_REWARDS_SCORING["bonus_correct"]
         points["details"].append("Safety Car correct: +3 pts")
@@ -89,13 +91,17 @@ def calculate_points(prediction: dict, results: dict) -> dict:
             points["details"].append(f"DNF {driver} correct: +2 pts")
 
     # Fastest Lap
-    if pred_bonus.get("fastest_lap_driver") == results_bonus.get("fastest_lap"):
+    pred_fl = pred_bonus.get("fastest_lap_driver")
+    actual_fl = results_bonus.get("fastest_lap")
+    if pred_fl is not None and actual_fl is not None and pred_fl == actual_fl:
         points["bonus"] += SCORING_RULES["fastest_lap_correct"]
         points["xp_earned"] += XP_REWARDS_SCORING["bonus_correct"]
         points["details"].append("Meilleur tour exact: +5 pts")
 
     # First Corner Leader
-    if pred_bonus.get("first_corner_leader") == results_bonus.get("first_corner_leader"):
+    pred_fcl = pred_bonus.get("first_corner_leader")
+    actual_fcl = results_bonus.get("first_corner_leader")
+    if pred_fcl is not None and actual_fcl is not None and pred_fcl == actual_fcl:
         points["bonus"] += SCORING_RULES["first_corner_leader"]
         points["xp_earned"] += XP_REWARDS_SCORING["bonus_correct"]
         points["details"].append("Leader 1er virage exact: +3 pts")
