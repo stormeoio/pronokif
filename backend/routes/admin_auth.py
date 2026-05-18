@@ -26,8 +26,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 import jwt
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, EmailStr, Field
 
 from config import JWT_ALGORITHM, JWT_SECRET, db, logger
@@ -72,17 +71,52 @@ def _create_magic_token(email: str) -> str:
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
+# ── Cookie helpers ──────────────────────────────────────────────────────────
+
+ADMIN_COOKIE_NAME = "admin_access_token"
+ADMIN_COOKIE_MAX_AGE = 7 * 24 * 60 * 60  # 7 days, matches JWT expiry
+
+
+def _set_admin_cookie(response: Response, token: str) -> None:
+    is_secure = os.environ.get("FRONTEND_URL", "").startswith("https")
+    response.set_cookie(
+        key=ADMIN_COOKIE_NAME,
+        value=token,
+        httponly=True,
+        secure=is_secure,
+        samesite="lax",
+        max_age=ADMIN_COOKIE_MAX_AGE,
+        path="/api/admin-bo",
+    )
+
+
+def _clear_admin_cookie(response: Response) -> None:
+    is_secure = os.environ.get("FRONTEND_URL", "").startswith("https")
+    response.set_cookie(
+        key=ADMIN_COOKIE_NAME,
+        value="",
+        httponly=True,
+        secure=is_secure,
+        samesite="lax",
+        max_age=0,
+        path="/api/admin-bo",
+    )
+
+
 # ── Auth dependency (exported) ───────────────────────────────────────────────
 
-_admin_security = HTTPBearer()
 
-
-async def get_current_admin(
-    credentials: HTTPAuthorizationCredentials = Depends(_admin_security),
-) -> dict:
-    """FastAPI dependency - validates admin JWT and returns admin info."""
+async def get_current_admin(request: Request) -> dict:
+    """FastAPI dependency - validates admin JWT from cookie or Authorization header."""
+    token = request.cookies.get(ADMIN_COOKIE_NAME)
+    if not token:
+        auth = request.headers.get("authorization", "")
+        if auth.startswith("Bearer "):
+            token = auth[7:]
+    if not token:
+        raise HTTPException(status_code=401, detail="Non authentifie")
     try:
-        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         if payload.get("type") != "admin_session":
             raise HTTPException(status_code=401, detail="Token invalide")
         if payload.get("require_2fa"):
@@ -256,7 +290,7 @@ async def send_magic_link(data: MagicLinkRequest) -> dict:
 
 
 @router.post("/auth/verify")
-async def verify_magic_link(data: MagicLinkVerify) -> dict:
+async def verify_magic_link(data: MagicLinkVerify, response: Response) -> dict:
     """Verify magic link token and create admin session."""
     try:
         payload = jwt.decode(data.token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
@@ -288,7 +322,8 @@ async def verify_magic_link(data: MagicLinkVerify) -> dict:
             upsert=True,
         )
 
-        return {"access_token": session_token, "requires_2fa": False, "email": email}
+        _set_admin_cookie(response, session_token)
+        return {"requires_2fa": False, "email": email}
 
     except jwt.ExpiredSignatureError as exc:
         raise HTTPException(status_code=400, detail="Lien expire") from exc
@@ -331,13 +366,13 @@ async def verify_2fa_setup(data: TotpVerifyRequest, admin: dict = Depends(get_cu
 
 
 @router.post("/auth/2fa/validate")
-async def validate_2fa_login(
-    data: TotpVerifyRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(_admin_security),
-) -> dict:
+async def validate_2fa_login(data: TotpVerifyRequest, request: Request, response: Response) -> dict:
     """Validate TOTP code during login (after magic link verify returned requires_2fa)."""
+    auth = request.headers.get("authorization", "")
+    if not auth.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token partiel requis")
     try:
-        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(auth[7:], JWT_SECRET, algorithms=[JWT_ALGORITHM])
         if payload.get("type") != "admin_session" or not payload.get("require_2fa"):
             raise HTTPException(status_code=400, detail="Token invalide pour cette etape")
 
@@ -354,12 +389,20 @@ async def validate_2fa_login(
             {"email": email}, {"$set": {"last_login": datetime.now(UTC).isoformat()}}
         )
 
-        return {"access_token": session_token, "email": email}
+        _set_admin_cookie(response, session_token)
+        return {"email": email}
 
     except jwt.ExpiredSignatureError as exc:
         raise HTTPException(status_code=401, detail="Session expiree") from exc
     except jwt.InvalidTokenError as exc:
         raise HTTPException(status_code=401, detail="Token invalide") from exc
+
+
+@router.post("/auth/logout")
+async def admin_logout(response: Response) -> dict:
+    """Clear admin session cookie."""
+    _clear_admin_cookie(response)
+    return {"message": "Deconnecte"}
 
 
 @router.get("/auth/me")
