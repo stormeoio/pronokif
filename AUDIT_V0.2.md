@@ -278,20 +278,20 @@ Ce finding etait P0 dans l'audit v0.1 et reste le point le plus critique :
 | ID | Finding | v0.1 | v0.2 | Statut |
 |----|---------|------|------|--------|
 | P0-1 | JWT_SECRET en dur / faible | 5/10 | ✅ | **RESOLU** — `_required_env()` + min 32 chars |
-| P0-2 | Token en localStorage | 5/10 | 5/10 | **OUVERT** — toujours localStorage, pas httpOnly cookie |
+| P0-2 | Token en localStorage | 5/10 | ✅ | **RESOLU** — httpOnly cookies (SameSite=Lax, Secure en prod) |
 | P0-3 | server.py monolithe inauditable | 4/10 | ✅ | **RESOLU** — 2,210 → 109 lignes |
 
 ### Findings P1 (Important)
 
 | ID | Finding | v0.1 | v0.2 | Statut |
 |----|---------|------|------|--------|
-| P1-1 | JWT expiration 7 jours | 6/10 | 6/10 | **OUVERT** — toujours 168h, pas de refresh token |
-| P1-2 | Pas de validation mot de passe | 5/10 | 5/10 | **OUVERT** — aucun check complexite |
-| P1-3 | Pas de verification email | 4/10 | 4/10 | **OUVERT** — inscription sans confirmation |
-| P1-4 | Pas de reset password | 4/10 | 4/10 | **OUVERT** — aucun flux de recuperation |
+| P1-1 | JWT expiration 7 jours | 6/10 | ✅ | **RESOLU** — access 1h + refresh 7d avec rotation |
+| P1-2 | Pas de validation mot de passe | 5/10 | ✅ | **RESOLU** — min 8 chars, 1 maj, 1 min, 1 chiffre |
+| P1-3 | Pas de verification email | 4/10 | ✅ | **RESOLU** — token + banner + page verification |
+| P1-4 | Pas de reset password | 4/10 | ✅ | **RESOLU** — forgot + reset endpoints, token 30min, rate limited |
 | P1-5 | CORS trop permissif | 5/10 | ✅ | **RESOLU** — origines restreintes dans middleware |
 | P1-6 | Pas de security headers | 3/10 | ✅ | **RESOLU** — HSTS, X-Frame-Options, etc. |
-| P1-7 | Pas de rate limiting | 4/10 | 7/10 | **AMELIORE** — slowapi present mais pas cible sur /auth |
+| P1-7 | Pas de rate limiting | 4/10 | ✅ | **RESOLU** — 5 req/min sur login, register, forgot-password, reset-password |
 
 ### Findings P2 (Moyen)
 
@@ -312,10 +312,10 @@ Ce finding etait P0 dans l'audit v0.1 et reste le point le plus critique :
 
 ### Resume securite
 
-- **Resolus :** 9/16 findings (56%)
-- **Ameliores :** 3/16 findings (19%)
-- **Encore ouverts :** 4/16 findings (25%) — tous P0-P1
-- **Finding critique restant :** localStorage tokens (P0-2)
+- **Resolus :** 14/16 findings (88%)
+- **Ameliores :** 2/16 findings (12%)
+- **Encore ouverts :** 0/16 findings (0%)
+- **Tous les findings P0-P1 sont resolus** (Sprint S7 + S8)
 
 ---
 
@@ -441,24 +441,24 @@ Ce finding etait P0 dans l'audit v0.1 et reste le point le plus critique :
 
 ## RECOMMANDATIONS PRIORITAIRES
 
-### Sprint suivant (S7) - Securite critique — 1 semaine
+### Sprint S7 - Securite critique — ✅ COMPLETE
 
-| Priorite | Tache | Effort | Impact |
-|----------|-------|--------|--------|
-| **P0** | Migrer tokens localStorage → httpOnly cookies | 4h | Elimine le finding critique #1 |
-| **P1** | Ajouter validation mot de passe (min 8 chars, 1 maj, 1 chiffre) | 1h | Bloque les mots de passe triviaux |
-| **P1** | Reduire JWT expiration a 1h + implementer refresh token | 3h | Limite la fenetre d'attaque |
-| **P1** | Rate limiting cible sur /auth/login (5 req/min/IP) | 1h | Bloque le brute force |
+| Priorite | Tache | Effort | Impact | Statut |
+|----------|-------|--------|--------|--------|
+| **P0** | Migrer tokens localStorage → httpOnly cookies | 4h | Elimine le finding critique #1 | ✅ |
+| **P1** | Ajouter validation mot de passe (min 8 chars, 1 maj, 1 chiffre) | 1h | Bloque les mots de passe triviaux | ✅ |
+| **P1** | Reduire JWT expiration a 1h + implementer refresh token | 3h | Limite la fenetre d'attaque | ✅ |
+| **P1** | Rate limiting cible sur /auth/login (5 req/min/IP) | 1h | Bloque le brute force | ✅ |
 
-### Sprint S8 - Fiabilite — 1 semaine
+### Sprint S8 - Fiabilite — ✅ COMPLETE
 
-| Priorite | Tache | Effort | Impact |
-|----------|-------|--------|--------|
-| **P1** | Verification email a l'inscription | 4h | Empeche les comptes fantomes |
-| **P1** | Flux reset password | 3h | Fonctionnalite manquante critique |
-| **P2** | Decomposer admin_backoffice.py (882L → 3 fichiers) | 2h | Maintenabilite |
-| **P2** | Supprimer `_v0 bapt/` du repo + .gitignore | 15min | Reduit taille repo de 3.8MB |
-| **P2** | Couverture de test dans CI (--coverage dans ci.yml) | 30min | Visibilite regressions |
+| Priorite | Tache | Effort | Impact | Statut |
+|----------|-------|--------|--------|--------|
+| **P1** | Verification email a l'inscription | 4h | Empeche les comptes fantomes | ✅ |
+| **P1** | Flux reset password | 3h | Fonctionnalite manquante critique | ✅ |
+| **P2** | Decomposer admin_backoffice.py (882L → 3 fichiers) | 2h | Maintenabilite | ✅ |
+| **P2** | Supprimer `_v0 bapt/` du repo + .gitignore | 15min | Deja en .gitignore, non tracke | ✅ |
+| **P2** | Couverture de test dans CI (--coverage dans ci.yml) | 30min | Visibilite regressions | ✅ |
 
 ### Sprint S9 - Scalabilite — 1 semaine
 
@@ -483,15 +483,17 @@ Les trois chantiers les plus impactants :
 2. **DevOps +5.0pts** : passer de zero infrastructure a Docker + CI/CD + deploiement automatise est le bond le plus important en valeur absolue
 3. **Tests +3.5pts** : de ~5 fichiers a 27 avec couverture backend + frontend + E2E
 
-### Ce qui reste pour atteindre 8/10
+### Mise a jour post-Sprint S7+S8
 
-Le plafond actuel est la securite (6.5/10). Quatre findings ouverts bloquent la note :
-- **localStorage tokens** (P0-2) : seul finding critique restant
-- **Pas de validation mot de passe** (P1-2) : trivial a corriger
-- **JWT 7 jours** (P1-1) : excessif, implementer refresh token
-- **Pas de verification email** (P1-3) : indispensable pour un service public
+Tous les findings P0-P1 sont resolus. Le score securite passe de 6.5/10 a **8.5/10**.
+Le score global estime passe de 6.5/10 a **7.5-8/10** — pret pour une beta publique ouverte.
 
-Une fois ces 4 points resolus, le score securite monterait a 8/10 et le score global a **7.5-8/10** — pret pour une beta publique ouverte.
+Ce qui reste pour atteindre 9/10 (Sprint S9) :
+- Pagination sur endpoints de liste
+- Index MongoDB sur les champs de recherche
+- Health checks Docker
+- Backup MongoDB automatise
+- Dashboard monitoring
 
 ---
 
