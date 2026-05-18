@@ -275,11 +275,20 @@ export interface CustomPrediction {
   league_id: string;
   created_by: string;
   question: string;
-  answer_type: "text" | "drivers" | "positions" | "custom";
+  answer_type: "yes_no" | "text" | "choice" | "drivers" | "positions" | "custom";
   multiple_choice: boolean;
   choices: CustomPredictionChoice[] | null;
   correct_answer: unknown;
   created_at: string;
+}
+
+export interface CreateCustomPredictionPayload {
+  race_id: string;
+  league_id: string;
+  question: string;
+  answer_type: string;
+  multiple_choice: boolean;
+  choices: { text: string; points: number }[] | null;
 }
 
 // ═══════════════════════════════════════ NOTIFICATIONS ═════════════════════════

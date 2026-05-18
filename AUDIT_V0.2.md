@@ -490,6 +490,22 @@ Le score global estime passe de 6.5/10 a **7.5-8/10** — pret pour une beta pub
 
 Sprint S9 complete. Score estime : **8.5-9/10**.
 
+### Sprint S10 - Code quality polish — ✅ COMPLETE
+
+| Priorite | Tache | Effort | Impact | Statut |
+|----------|-------|--------|--------|--------|
+| **P2** | Decomposition sync.py (550L, duplication massive) | 2h | Maintenabilite | ✅ 6 helpers extraits |
+| **P2** | Elimination `as any` production code | 1h | Type safety | ✅ CreateCustomPredictionPayload |
+| **P2** | RoadmapTab.tsx > 1000 lignes (regle R-001) | 1h | Qualite code | ✅ 1120L → 774L + 113L data |
+
+**Details des changements :**
+
+- **sync.py** : `sync_one_race` et `auto_sync_and_save` partageaient 5 blocs copy-paste (qualifying, race results, sprint, OpenF1, success summary). Extraction de 6 helpers (`_extract_driver_ids`, `_fetch_qualifying`, `_fetch_race_results`, `_fetch_sprint`, `_fetch_openf1_data`, `_build_success_items`). Les deux fonctions publiques restent des orchestrateurs lisibles.
+- **CreatePredictionModal.tsx** : `as any` supprime grace au nouveau type `CreateCustomPredictionPayload` (types/api.ts) et `answer_type` etendu avec les valeurs reellement utilisees (`yes_no`, `choice`).
+- **RoadmapTab.tsx** : types + constantes + seed data extraits vers `roadmap-data.ts` (113L). Fichier principal passe de 1120L a 774L.
+
+Sprint S10 complete. Score estime : **9/10**.
+
 Ce qui reste pour le 10/10 :
 - Configurer un service de monitoring externe (UptimeRobot/BetterUptime sur /api/readyz)
 - Brancher un vrai email provider (SendGrid/SES) pour verification + reset password
@@ -498,4 +514,4 @@ Ce qui reste pour le 10/10 :
 
 ---
 
-*Audit genere le 18 mai 2026 — prochain audit recommande apres Sprint S9 (mi-juin 2026)*
+*Audit genere le 18 mai 2026 — mis a jour apres Sprint S10 (code quality polish)*

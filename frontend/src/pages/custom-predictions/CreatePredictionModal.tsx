@@ -54,8 +54,7 @@ export function CreatePredictionModal({
         multiple_choice: multipleChoice,
         choices: answerType === "choice" ? choices.filter((c) => c.text.trim()) : null,
       };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await api.customPredictions.create(payload as any);
+      await api.customPredictions.create(payload);
       toast.success("Pronostic créé !");
       onCreated();
       onClose();

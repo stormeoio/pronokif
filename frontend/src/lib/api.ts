@@ -12,6 +12,7 @@ import axios from "axios";
 import type {
   AvatarsResponse,
   ChatMessageResponse,
+  CreateCustomPredictionPayload,
   CustomPrediction,
   Driver,
   DriverComparison,
@@ -231,7 +232,7 @@ export const api = {
   customPredictions: {
     list: (leagueId: string, raceId: string) =>
       get<CustomPrediction[]>(`/predictions/custom/league/${leagueId}/race/${raceId}`),
-    create: (body: Partial<CustomPrediction>) =>
+    create: (body: CreateCustomPredictionPayload) =>
       post<CustomPrediction>("/predictions/custom", body),
     answer: (predictionId: string, answer: unknown) =>
       post<void>(`/custom-predictions/${predictionId}/answer`, { answer }),

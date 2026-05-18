@@ -1,5 +1,5 @@
 /**
- * Roadmap Tab — audit results as checklist + Gantt chart + phase management.
+ * Roadmap Tab -- audit results as checklist + Gantt chart + phase management.
  * Tracks refactoring and development improvements over time.
  *
  * Data is persisted in localStorage for now (can be moved to backend later).
@@ -7,373 +7,36 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
-  CheckCircle2,
-  Circle,
-  Clock,
   ChevronDown,
   ChevronRight,
-  Plus,
-  Trash2,
   Edit2,
   GanttChart,
-  ListChecks,
   Layers,
-  AlertTriangle,
-  Sparkles,
-  Bug,
-  Zap,
-  X,
+  ListChecks,
+  Plus,
   Save,
+  Trash2,
+  X,
 } from "lucide-react";
+import {
+  CATEGORY_CONFIG,
+  DEFAULT_PHASES,
+  DEFAULT_TASKS,
+  PRIORITY_CONFIG,
+  STATUS_CONFIG,
+  STORAGE_KEY,
+  type Phase,
+  type RoadmapTask,
+  type TaskCategory,
+  type TaskPriority,
+  type TaskStatus,
+  type ViewMode,
+} from "./roadmap-data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-// ── Types ────────────────────────────────────────────────────────────────────
-
-type TaskStatus = "todo" | "in_progress" | "done" | "blocked";
-type TaskPriority = "critical" | "high" | "medium" | "low";
-type TaskCategory = "bug" | "perf" | "ux" | "a11y" | "refactor" | "feature" | "security";
-type ViewMode = "checklist" | "gantt" | "phases";
-
-interface RoadmapTask {
-  id: string;
-  title: string;
-  description?: string;
-  status: TaskStatus;
-  priority: TaskPriority;
-  category: TaskCategory;
-  phase: string;
-  estimatedDays?: number;
-  startDate?: string;
-  endDate?: string;
-  createdAt: string;
-  completedAt?: string;
-}
-
-interface Phase {
-  id: string;
-  name: string;
-  color: string;
-  order: number;
-  startDate?: string;
-  endDate?: string;
-}
-
-// ── Constants ────────────────────────────────────────────────────────────────
-
-const STORAGE_KEY = "pronokif_admin_roadmap";
-
-const DEFAULT_PHASES: Phase[] = [
-  {
-    id: "audit",
-    name: "Audit & Diagnostic",
-    color: "#f97316",
-    order: 0,
-    startDate: "2025-05-01",
-    endDate: "2025-05-15",
-  },
-  {
-    id: "refactor",
-    name: "Refactorisation",
-    color: "#8b5cf6",
-    order: 1,
-    startDate: "2025-05-15",
-    endDate: "2025-06-15",
-  },
-  {
-    id: "ux-polish",
-    name: "UX Polish",
-    color: "#06b6d4",
-    order: 2,
-    startDate: "2025-06-01",
-    endDate: "2025-06-30",
-  },
-  {
-    id: "perf",
-    name: "Performance",
-    color: "#22c55e",
-    order: 3,
-    startDate: "2025-06-15",
-    endDate: "2025-07-15",
-  },
-  {
-    id: "features",
-    name: "Nouvelles fonctionnalités",
-    color: "#eab308",
-    order: 4,
-    startDate: "2025-07-01",
-    endDate: "2025-08-31",
-  },
-  {
-    id: "beta",
-    name: "Beta publique",
-    color: "#ec4899",
-    order: 5,
-    startDate: "2025-09-01",
-    endDate: "2025-10-01",
-  },
-];
-
-const DEFAULT_TASKS: RoadmapTask[] = [
-  // Audit phase
-  {
-    id: "a1",
-    title: "Traduction complète FR",
-    description: "Toutes les notices en français",
-    status: "done",
-    priority: "high",
-    category: "ux",
-    phase: "audit",
-    createdAt: "2025-05-01",
-    completedAt: "2025-05-17",
-  },
-  {
-    id: "a2",
-    title: "Accessibilité ARIA",
-    description: "Roles, labels, focus management",
-    status: "done",
-    priority: "high",
-    category: "a11y",
-    phase: "audit",
-    createdAt: "2025-05-01",
-    completedAt: "2025-05-17",
-  },
-  {
-    id: "a3",
-    title: "Haptic feedback complet",
-    description: "Retour haptique sur toutes les interactions",
-    status: "done",
-    priority: "medium",
-    category: "ux",
-    phase: "audit",
-    createdAt: "2025-05-01",
-    completedAt: "2025-05-17",
-  },
-  {
-    id: "a4",
-    title: "Page 404 thématisée",
-    description: "NotFoundPage arcade-style",
-    status: "done",
-    priority: "low",
-    category: "ux",
-    phase: "audit",
-    createdAt: "2025-05-01",
-    completedAt: "2025-05-17",
-  },
-  {
-    id: "a5",
-    title: "Indicateur réseau hors-ligne",
-    description: "NetworkStatus banner PWA",
-    status: "done",
-    priority: "medium",
-    category: "ux",
-    phase: "audit",
-    createdAt: "2025-05-01",
-    completedAt: "2025-05-17",
-  },
-  {
-    id: "a6",
-    title: "Back-office administration",
-    description: "Magic link auth + CRUD complet",
-    status: "done",
-    priority: "critical",
-    category: "feature",
-    phase: "audit",
-    createdAt: "2025-05-17",
-    completedAt: "2025-05-17",
-  },
-  // Refactor phase
-  {
-    id: "r1",
-    title: "Découpage AdminPage monolithique",
-    description: "Extraire les sous-composants > 400L",
-    status: "todo",
-    priority: "high",
-    category: "refactor",
-    phase: "refactor",
-    createdAt: "2025-05-17",
-  },
-  {
-    id: "r2",
-    title: "Type safety API responses",
-    description: "Typer toutes les réponses API avec Zod",
-    status: "todo",
-    priority: "high",
-    category: "refactor",
-    phase: "refactor",
-    createdAt: "2025-05-17",
-  },
-  {
-    id: "r3",
-    title: "Error boundaries par route",
-    description: "Catch + fallback UI par section",
-    status: "todo",
-    priority: "medium",
-    category: "refactor",
-    phase: "refactor",
-    createdAt: "2025-05-17",
-  },
-  {
-    id: "r4",
-    title: "Lazy loading images",
-    description: "Intersection Observer + placeholders",
-    status: "todo",
-    priority: "medium",
-    category: "perf",
-    phase: "refactor",
-    createdAt: "2025-05-17",
-  },
-  {
-    id: "r5",
-    title: "Query key factory pattern",
-    description: "Centraliser les queryKeys TanStack",
-    status: "todo",
-    priority: "low",
-    category: "refactor",
-    phase: "refactor",
-    createdAt: "2025-05-17",
-  },
-  // UX Polish
-  {
-    id: "u1",
-    title: "Animations transitions pages",
-    description: "Shared layout animations framer",
-    status: "todo",
-    priority: "medium",
-    category: "ux",
-    phase: "ux-polish",
-    createdAt: "2025-05-17",
-  },
-  {
-    id: "u2",
-    title: "Skeleton loaders partout",
-    description: "Remplacer les spinners par des skeletons",
-    status: "todo",
-    priority: "medium",
-    category: "ux",
-    phase: "ux-polish",
-    createdAt: "2025-05-17",
-  },
-  {
-    id: "u3",
-    title: "Pull-to-refresh natif",
-    description: "Améliorer le geste de rafraîchissement",
-    status: "in_progress",
-    priority: "high",
-    category: "ux",
-    phase: "ux-polish",
-    createdAt: "2025-05-17",
-  },
-  {
-    id: "u4",
-    title: "Onboarding wizard",
-    description: "Tutorial interactif premier lancement",
-    status: "todo",
-    priority: "high",
-    category: "feature",
-    phase: "ux-polish",
-    createdAt: "2025-05-17",
-  },
-  // Performance
-  {
-    id: "p1",
-    title: "Bundle splitting Three.js",
-    description: "Lazy import scènes 3D uniquement si visibles",
-    status: "todo",
-    priority: "critical",
-    category: "perf",
-    phase: "perf",
-    createdAt: "2025-05-17",
-  },
-  {
-    id: "p2",
-    title: "Service Worker cache stratégie",
-    description: "Stale-while-revalidate pour API",
-    status: "todo",
-    priority: "high",
-    category: "perf",
-    phase: "perf",
-    createdAt: "2025-05-17",
-  },
-  {
-    id: "p3",
-    title: "Optimiser re-renders predictions",
-    description: "Memo + useMemo driver grid",
-    status: "todo",
-    priority: "medium",
-    category: "perf",
-    phase: "perf",
-    createdAt: "2025-05-17",
-  },
-  // Features
-  {
-    id: "f1",
-    title: "Notifications push web",
-    description: "Web Push API + backend notifications",
-    status: "todo",
-    priority: "high",
-    category: "feature",
-    phase: "features",
-    createdAt: "2025-05-17",
-  },
-  {
-    id: "f2",
-    title: "Mode sombre/clair",
-    description: "Theme toggle avec persistence",
-    status: "todo",
-    priority: "low",
-    category: "feature",
-    phase: "features",
-    createdAt: "2025-05-17",
-  },
-  {
-    id: "f3",
-    title: "Export PDF classement",
-    description: "Générer un PDF du leaderboard",
-    status: "todo",
-    priority: "low",
-    category: "feature",
-    phase: "features",
-    createdAt: "2025-05-17",
-  },
-  {
-    id: "f4",
-    title: "Statistiques avancées",
-    description: "Graphiques de progression, historique",
-    status: "todo",
-    priority: "medium",
-    category: "feature",
-    phase: "features",
-    createdAt: "2025-05-17",
-  },
-];
-
-const STATUS_CONFIG: Record<TaskStatus, { label: string; color: string; icon: typeof Circle }> = {
-  todo: { label: "À faire", color: "text-gray-400", icon: Circle },
-  in_progress: { label: "En cours", color: "text-blue-400", icon: Clock },
-  done: { label: "Terminé", color: "text-green-400", icon: CheckCircle2 },
-  blocked: { label: "Bloqué", color: "text-red-400", icon: AlertTriangle },
-};
-
-const PRIORITY_CONFIG: Record<TaskPriority, { label: string; color: string }> = {
-  critical: { label: "Critique", color: "bg-red-500/20 text-red-400 border-red-500/30" },
-  high: { label: "Haute", color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
-  medium: { label: "Moyenne", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
-  low: { label: "Basse", color: "bg-gray-500/20 text-gray-400 border-gray-500/30" },
-};
-
-const CATEGORY_CONFIG: Record<TaskCategory, { label: string; icon: typeof Bug; color: string }> = {
-  bug: { label: "Bug", icon: Bug, color: "text-red-400" },
-  perf: { label: "Perf", icon: Zap, color: "text-green-400" },
-  ux: { label: "UX", icon: Sparkles, color: "text-cyan-400" },
-  a11y: { label: "A11y", icon: Circle, color: "text-purple-400" },
-  refactor: { label: "Refacto", icon: Layers, color: "text-orange-400" },
-  feature: { label: "Feature", icon: Sparkles, color: "text-yellow-400" },
-  security: { label: "Sécurité", icon: AlertTriangle, color: "text-red-400" },
-};
-
-// ── Component ────────────────────────────────────────────────────────────────
+// ── Main component ──────────────────────────────────────────────────────────
 
 export default function RoadmapTab() {
   const [viewMode, setViewMode] = useState<ViewMode>("checklist");
@@ -406,7 +69,6 @@ export default function RoadmapTab() {
     }
   }, [tasks, phases]);
 
-  // Stats
   const stats = useMemo(() => {
     const total = tasks.length;
     const done = tasks.filter((t) => t.status === "done").length;
@@ -501,9 +163,9 @@ export default function RoadmapTab() {
           />
         </div>
         <div className="flex items-center gap-4 mt-3 text-xs font-body">
-          <span className="text-green-400">{stats.done} terminées</span>
+          <span className="text-green-400">{stats.done} terminees</span>
           <span className="text-blue-400">{stats.inProgress} en cours</span>
-          <span className="text-red-400">{stats.blocked} bloquées</span>
+          <span className="text-red-400">{stats.blocked} bloquees</span>
           <span className="text-gray-500">
             {stats.total - stats.done - stats.inProgress - stats.blocked} restantes
           </span>
@@ -689,7 +351,6 @@ function ChecklistView({
 // ── Gantt View ───────────────────────────────────────────────────────────────
 
 function GanttView({ tasks, phases }: { tasks: RoadmapTask[]; phases: Phase[] }) {
-  // Calculate timeline bounds
   const allDates = phases.flatMap((p) => [p.startDate, p.endDate]).filter(Boolean) as string[];
   const minDate =
     allDates.length > 0
@@ -728,7 +389,6 @@ function GanttView({ tasks, phases }: { tasks: RoadmapTask[]; phases: Phase[] })
     cursor.setMonth(cursor.getMonth() + 1);
   }
 
-  // Today marker
   const todayPos = getPosition(new Date().toISOString().split("T")[0]);
 
   return (
@@ -747,7 +407,6 @@ function GanttView({ tasks, phases }: { tasks: RoadmapTask[]; phases: Phase[] })
                 <div className="absolute top-0 left-0 w-px h-screen bg-gray-800/50" />
               </div>
             ))}
-            {/* Today line */}
             <div
               className="absolute top-0 h-screen w-px bg-orange-500/50 z-10"
               style={{ left: `${(todayPos / totalDays) * 100}%` }}
@@ -767,7 +426,6 @@ function GanttView({ tasks, phases }: { tasks: RoadmapTask[]; phases: Phase[] })
 
                 return (
                   <div key={phase.id} className="relative h-10 mb-1 flex items-center">
-                    {/* Label */}
                     <div className="absolute left-0 w-[140px] flex items-center gap-2 pl-2 z-10">
                       <div
                         className="w-2.5 h-2.5 rounded-full flex-shrink-0"
@@ -775,7 +433,6 @@ function GanttView({ tasks, phases }: { tasks: RoadmapTask[]; phases: Phase[] })
                       />
                       <span className="font-body text-xs text-gray-300 truncate">{phase.name}</span>
                     </div>
-                    {/* Bar */}
                     <div
                       className="absolute h-6 rounded-md overflow-hidden opacity-80"
                       style={{
@@ -804,7 +461,7 @@ function GanttView({ tasks, phases }: { tasks: RoadmapTask[]; phases: Phase[] })
           <span className="font-body text-[10px] text-gray-500">Aujourd'hui</span>
         </div>
         <span className="font-body text-[10px] text-gray-600">
-          {minDate.toLocaleDateString("fr-FR", { month: "short", year: "numeric" })} —{" "}
+          {minDate.toLocaleDateString("fr-FR", { month: "short", year: "numeric" })} ---{" "}
           {maxDate.toLocaleDateString("fr-FR", { month: "short", year: "numeric" })}
         </span>
       </div>
@@ -848,13 +505,12 @@ function PhasesView({
   };
 
   const handleDeletePhase = (id: string) => {
-    if (!confirm("Supprimer cette phase ? Les taches associées ne seront pas supprimées.")) return;
+    if (!confirm("Supprimer cette phase ? Les taches associees ne seront pas supprimees.")) return;
     setPhases(phases.filter((p) => p.id !== id));
   };
 
   return (
     <div className="space-y-3">
-      {/* Add / Edit form */}
       {(newPhase || editingPhase) && (
         <div className="card-arcade p-4 border border-purple-500/30 space-y-3">
           <h3 className="font-heading text-xs text-purple-400 uppercase">
@@ -885,7 +541,7 @@ function PhasesView({
               value={form.startDate}
               onChange={(e) => setForm({ ...form, startDate: e.target.value })}
               className="bg-gray-900 border-gray-700 text-white"
-              placeholder="Début"
+              placeholder="Debut"
             />
             <Input
               type="date"
@@ -929,7 +585,6 @@ function PhasesView({
         </Button>
       </div>
 
-      {/* Phase cards */}
       {phases
         .sort((a, b) => a.order - b.order)
         .map((phase) => {
@@ -952,7 +607,7 @@ function PhasesView({
                             day: "numeric",
                             month: "short",
                           })}
-                        {phase.startDate && phase.endDate && " — "}
+                        {phase.startDate && phase.endDate && " --- "}
                         {phase.endDate &&
                           new Date(phase.endDate).toLocaleDateString("fr-FR", {
                             day: "numeric",
@@ -986,7 +641,6 @@ function PhasesView({
                   </button>
                 </div>
               </div>
-              {/* Progress bar */}
               <div className="h-2 bg-gray-800 rounded-full overflow-hidden mb-2">
                 <div
                   className="h-full rounded-full"
@@ -994,7 +648,7 @@ function PhasesView({
                 />
               </div>
               <p className="font-body text-xs text-gray-500">
-                {doneCount}/{phaseTasks.length} taches terminées
+                {doneCount}/{phaseTasks.length} taches terminees
               </p>
             </div>
           );
@@ -1109,7 +763,7 @@ function TaskEditor({
           disabled={!form.title}
           className="btn-racing text-xs"
         >
-          <Save className="w-3.5 h-3.5 mr-1" /> {task ? "Mettre à jour" : "Créer"}
+          <Save className="w-3.5 h-3.5 mr-1" /> {task ? "Mettre a jour" : "Creer"}
         </Button>
         <Button size="sm" variant="ghost" onClick={onCancel} className="text-gray-400 text-xs">
           Annuler
