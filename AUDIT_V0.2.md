@@ -460,15 +460,15 @@ Ce finding etait P0 dans l'audit v0.1 et reste le point le plus critique :
 | **P2** | Supprimer `_v0 bapt/` du repo + .gitignore | 15min | Deja en .gitignore, non tracke | ✅ |
 | **P2** | Couverture de test dans CI (--coverage dans ci.yml) | 30min | Visibilite regressions | ✅ |
 
-### Sprint S9 - Scalabilite — 1 semaine
+### Sprint S9 - Scalabilite — ✅ COMPLETE
 
-| Priorite | Tache | Effort | Impact |
-|----------|-------|--------|--------|
-| **P2** | Pagination sur endpoints de liste | 3h | Performance avec volume |
-| **P2** | Index MongoDB sur les champs de recherche | 2h | Performance requetes |
-| **P2** | Health checks Docker (depends_on + healthcheck) | 1h | Fiabilite restart |
-| **P3** | Backup MongoDB automatise (cron + S3) | 3h | Resilience donnees |
-| **P3** | Dashboard monitoring (Grafana ou UptimeRobot) | 2h | Visibilite |
+| Priorite | Tache | Effort | Impact | Statut |
+|----------|-------|--------|--------|--------|
+| **P2** | Pagination sur endpoints de liste | 3h | Performance avec volume | ✅ |
+| **P2** | Index MongoDB sur les champs de recherche | 2h | Performance requetes | ✅ 18 collections |
+| **P2** | Health checks Docker (depends_on + healthcheck) | 1h | Fiabilite restart | ✅ deja en place + /readyz |
+| **P3** | Backup MongoDB automatise (cron + S3) | 3h | Resilience donnees | ✅ script + retention 14j |
+| **P3** | Dashboard monitoring (Grafana ou UptimeRobot) | 2h | Visibilite | Sentry + /readyz endpoint pret |
 
 ---
 
@@ -488,12 +488,13 @@ Les trois chantiers les plus impactants :
 Tous les findings P0-P1 sont resolus. Le score securite passe de 6.5/10 a **8.5/10**.
 Le score global estime passe de 6.5/10 a **7.5-8/10** — pret pour une beta publique ouverte.
 
-Ce qui reste pour atteindre 9/10 (Sprint S9) :
-- Pagination sur endpoints de liste
-- Index MongoDB sur les champs de recherche
-- Health checks Docker
-- Backup MongoDB automatise
-- Dashboard monitoring
+Sprint S9 complete. Score estime : **8.5-9/10**.
+
+Ce qui reste pour le 10/10 :
+- Configurer un service de monitoring externe (UptimeRobot/BetterUptime sur /api/readyz)
+- Brancher un vrai email provider (SendGrid/SES) pour verification + reset password
+- Ajouter le cron backup-mongo.sh en production
+- Tests de charge (k6 ou locust)
 
 ---
 
