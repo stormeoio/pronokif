@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
 import { AlertTriangle, Timer, Flag, X, Zap } from "lucide-react";
 import type { Driver } from "./DriverPicker";
-import { Card, CardContent } from "@/components/ui/card";
 import { haptic } from "@/lib/haptics";
+import { fadeUp, easing, duration } from "@/lib/motion";
+
+// ----------------------------------------------------------- types ---
 
 export interface BonusPanelProps {
   activeTab: string;
@@ -17,6 +19,8 @@ export interface BonusPanelProps {
   dnfDrivers: string[];
   setDnfDrivers: (v: string[]) => void;
 }
+
+// ----------------------------------------------------------- component ---
 
 export default function BonusPanel({
   activeTab,
@@ -33,140 +37,141 @@ export default function BonusPanel({
 }: BonusPanelProps) {
   return (
     <motion.div
-      className="space-y-4"
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      className="space-y-4 pt-4 border-t border-white/[0.08]"
+      variants={fadeUp}
+      initial="hidden"
+      animate="visible"
     >
-      <Card className="game-card">
-        <CardContent className="p-4 space-y-4">
-          <h3 className="font-heading text-lg text-white uppercase flex items-center gap-2">
-            <Zap className={activeTab === "sprint" ? "text-yellow-400" : "text-cyan-400"} />
-            Paris Bonus {activeTab === "sprint" ? "Sprint" : ""}
-          </h3>
+      {/* Section title */}
+      <div className="flex items-center gap-2">
+        <Zap size={16} strokeWidth={1.5} className="text-pk-amber" />
+        <h3 className="font-display text-[0.875rem] uppercase">
+          Questions Bonus{activeTab === "sprint" ? " Sprint" : ""}
+        </h3>
+        <span className="font-mono text-[0.5625rem] text-pk-titane">+50 pts</span>
+      </div>
 
-          {/* Safety Car */}
-          <motion.div
-            className="flex items-center justify-between p-3 bg-white/5 rounded-xl"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
+      {/* Safety Car */}
+      <div className="flex items-center justify-between p-3 bg-white/[0.03] border border-white/[0.06] rounded-md">
+        <div className="flex items-center gap-2">
+          <AlertTriangle size={16} strokeWidth={1.5} className="text-pk-amber" />
+          <span className="text-[0.8125rem]">Safety Car</span>
+        </div>
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => {
+              haptic("selection");
+              setSafetyCar(true);
+            }}
+            className={`px-3.5 py-1.5 rounded-full font-mono text-[0.6875rem] uppercase
+              transition-all duration-pk-short
+              ${
+                safetyCar === true
+                  ? "bg-pk-emerald/20 border border-pk-emerald/30 text-pk-emerald"
+                  : "bg-white/[0.03] border border-white/[0.08] text-pk-titane hover:text-pk-piste"
+              }`}
           >
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="w-5 h-5 text-orange-400" />
-              <span className="font-body text-white">Safety Car</span>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => { haptic("selection"); setSafetyCar(true); }}
-                className={`px-4 py-2 rounded-lg font-heading text-sm transition-all ${
-                  safetyCar === true ? "bg-green-500 text-white" : "bg-white/10 text-gray-400"
-                }`}
-              >
-                OUI
-              </button>
-              <button
-                onClick={() => { haptic("selection"); setSafetyCar(false); }}
-                className={`px-4 py-2 rounded-lg font-heading text-sm transition-all ${
-                  safetyCar === false ? "bg-red-500 text-white" : "bg-white/10 text-gray-400"
-                }`}
-              >
-                NON
-              </button>
-            </div>
-          </motion.div>
-
-          {/* Fastest Lap */}
-          <motion.button
-            onClick={() =>
-              setSelectionMode(activeTab === "sprint" ? "sprint_fastest_lap" : "fastest_lap")
-            }
-            className="w-full flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            whileHover={{ x: 4 }}
-            whileTap={{ scale: 0.98 }}
+            Oui
+          </button>
+          <button
+            onClick={() => {
+              haptic("selection");
+              setSafetyCar(false);
+            }}
+            className={`px-3.5 py-1.5 rounded-full font-mono text-[0.6875rem] uppercase
+              transition-all duration-pk-short
+              ${
+                safetyCar === false
+                  ? "bg-pk-red-subtle border border-[rgba(225,6,0,0.2)] text-pk-red"
+                  : "bg-white/[0.03] border border-white/[0.08] text-pk-titane hover:text-pk-piste"
+              }`}
           >
-            <div className="flex items-center gap-3">
-              <Timer className="w-5 h-5 text-purple-400" />
-              <span className="font-body text-white">Meilleur tour</span>
-            </div>
-            <span className="font-body text-sm text-cyan-400">
-              {fastestLap
-                ? drivers.find((d) => d.id === fastestLap)?.name || "Sélectionné"
-                : "Sélectionner →"}
-            </span>
-          </motion.button>
+            Non
+          </button>
+        </div>
+      </div>
 
-          {/* First Corner Leader */}
-          <motion.button
-            onClick={() =>
-              setSelectionMode(activeTab === "sprint" ? "sprint_first_corner" : "first_corner")
-            }
-            className="w-full flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            whileHover={{ x: 4 }}
-            whileTap={{ scale: 0.98 }}
+      {/* Fastest Lap */}
+      <button
+        onClick={() =>
+          setSelectionMode(activeTab === "sprint" ? "sprint_fastest_lap" : "fastest_lap")
+        }
+        className="w-full flex items-center justify-between p-3
+          bg-white/[0.03] border border-white/[0.06] rounded-md
+          hover:border-white/[0.12] transition-all duration-pk-short"
+      >
+        <div className="flex items-center gap-2">
+          <Timer size={16} strokeWidth={1.5} className="text-pk-amber" />
+          <span className="text-[0.8125rem]">Meilleur tour</span>
+        </div>
+        <span className="font-mono text-[0.75rem] text-pk-red">
+          {fastestLap
+            ? drivers.find((d) => d.id === fastestLap)?.name || "Selectionne"
+            : "Selectionner →"}
+        </span>
+      </button>
+
+      {/* First Corner Leader */}
+      <button
+        onClick={() =>
+          setSelectionMode(activeTab === "sprint" ? "sprint_first_corner" : "first_corner")
+        }
+        className="w-full flex items-center justify-between p-3
+          bg-white/[0.03] border border-white/[0.06] rounded-md
+          hover:border-white/[0.12] transition-all duration-pk-short"
+      >
+        <div className="flex items-center gap-2">
+          <Flag size={16} strokeWidth={1.5} className="text-pk-emerald" />
+          <span className="text-[0.8125rem]">Leader T1</span>
+        </div>
+        <span className="font-mono text-[0.75rem] text-pk-red">
+          {firstCorner
+            ? drivers.find((d) => d.id === firstCorner)?.name || "Selectionne"
+            : "Selectionner →"}
+        </span>
+      </button>
+
+      {/* DNF */}
+      <div className="p-3 bg-white/[0.03] border border-white/[0.06] rounded-md space-y-2.5">
+        <div className="flex items-center gap-2">
+          <X size={16} strokeWidth={1.5} className="text-pk-red" />
+          <span className="text-[0.8125rem]">Abandons (DNF)</span>
+        </div>
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => {
+              haptic("selection");
+              setNoDnf(true);
+              setDnfDrivers([]);
+            }}
+            className={`flex-1 py-2 rounded-full font-mono text-[0.6875rem] uppercase
+              transition-all duration-pk-short
+              ${
+                noDnf
+                  ? "bg-pk-emerald/20 border border-pk-emerald/30 text-pk-emerald"
+                  : "bg-white/[0.03] border border-white/[0.08] text-pk-titane hover:text-pk-piste"
+              }`}
           >
-            <div className="flex items-center gap-3">
-              <Flag className="w-5 h-5 text-green-400" />
-              <span className="font-body text-white">Leader T1</span>
-            </div>
-            <span className="font-body text-sm text-cyan-400">
-              {firstCorner
-                ? drivers.find((d) => d.id === firstCorner)?.name || "Sélectionné"
-                : "Sélectionner →"}
-            </span>
-          </motion.button>
-
-          {/* DNF */}
-          <motion.div
-            className="p-3 bg-white/5 rounded-xl space-y-3"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
+            Pas de DNF
+          </button>
+          <button
+            onClick={() => {
+              haptic("selection");
+              setNoDnf(false);
+              setSelectionMode(activeTab === "sprint" ? "sprint_dnf_select" : "dnf_select");
+            }}
+            className={`flex-1 py-2 rounded-full font-mono text-[0.6875rem] uppercase
+              transition-all duration-pk-short
+              ${
+                !noDnf && dnfDrivers.length > 0
+                  ? "bg-pk-red-subtle border border-[rgba(225,6,0,0.2)] text-pk-red"
+                  : "bg-white/[0.03] border border-white/[0.08] text-pk-titane hover:text-pk-piste"
+              }`}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <X className="w-5 h-5 text-red-400" />
-                <span className="font-body text-white">Abandons (DNF)</span>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  haptic("selection");
-                  setNoDnf(true);
-                  setDnfDrivers([]);
-                }}
-                className={`flex-1 px-3 py-2 rounded-lg font-heading text-sm transition-all ${
-                  noDnf ? "bg-green-500 text-white" : "bg-white/10 text-gray-400 hover:bg-white/20"
-                }`}
-              >
-                Pas de DNF
-              </button>
-              <button
-                onClick={() => {
-                  haptic("selection");
-                  setNoDnf(false);
-                  setSelectionMode(activeTab === "sprint" ? "sprint_dnf_select" : "dnf_select");
-                }}
-                className={`flex-1 px-3 py-2 rounded-lg font-heading text-sm transition-all ${
-                  !noDnf && dnfDrivers.length > 0
-                    ? "bg-red-500 text-white"
-                    : "bg-white/10 text-gray-400 hover:bg-white/20"
-                }`}
-              >
-                {dnfDrivers.length > 0 ? `${dnfDrivers.length} pilote(s)` : "Sélectionner →"}
-              </button>
-            </div>
-          </motion.div>
-        </CardContent>
-      </Card>
+            {dnfDrivers.length > 0 ? `${dnfDrivers.length} pilote(s)` : "Selectionner →"}
+          </button>
+        </div>
+      </div>
     </motion.div>
   );
 }

@@ -94,7 +94,7 @@ describe("DashboardPage", () => {
   it("shows loading skeleton initially", () => {
     mockApiClient.get.mockReturnValue(new Promise(() => {})); // never resolves
     const { container } = renderWithProviders(<DashboardPage />, { user: mockUser });
-    expect(container.querySelector(".skeleton-arcade")).toBeInTheDocument();
+    expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
   });
 
   it("renders user username after load", async () => {
@@ -111,7 +111,7 @@ describe("DashboardPage", () => {
     renderWithProviders(<DashboardPage />, { user: mockUser });
 
     await waitFor(() => {
-      expect(screen.getByText(/Monaco/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/Monaco/i).length).toBeGreaterThan(0);
     });
   });
 

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsTestUser, mockDashboardAPIs } from "./helpers";
+import { mockDashboardAPIs } from "./helpers";
 
 const ADMIN_USER = {
   id: "e2e-user-1",
@@ -17,8 +17,22 @@ const TEST_MEMBERS = [
 ];
 
 const TEST_FEEDBACK = [
-  { id: 1, username: "SpeedKing", category: "bug", message: "Le classement ne se met pas a jour", read: false, created_at: "2026-05-10T14:00:00Z" },
-  { id: 2, username: "RaceQueen", category: "suggestion", message: "Ajouter un mode sombre", read: true, created_at: "2026-05-09T10:30:00Z" },
+  {
+    id: 1,
+    username: "SpeedKing",
+    category: "bug",
+    message: "Le classement ne se met pas a jour",
+    read: false,
+    created_at: "2026-05-10T14:00:00Z",
+  },
+  {
+    id: 2,
+    username: "RaceQueen",
+    category: "suggestion",
+    message: "Ajouter un mode sombre",
+    read: true,
+    created_at: "2026-05-09T10:30:00Z",
+  },
 ];
 
 test.describe("Admin panel", () => {
@@ -99,7 +113,9 @@ test.describe("Admin panel", () => {
       await feedbackTab.click();
     }
 
-    await expect(page.getByText("Le classement ne se met pas a jour")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Le classement ne se met pas a jour")).toBeVisible({
+      timeout: 10000,
+    });
     await expect(page.getByText("Bug")).toBeVisible();
     await expect(page.getByText("Suggestion")).toBeVisible();
   });

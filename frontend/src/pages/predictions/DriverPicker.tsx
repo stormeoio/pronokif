@@ -2,6 +2,9 @@ import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { TEAM_COLORS } from "@/lib/constants";
 import { haptic } from "@/lib/haptics";
+import { staggerContainer, STAGGER_DELAY, easing, duration } from "@/lib/motion";
+
+// ----------------------------------------------------------- types ---
 
 export interface Driver {
   id: string;
@@ -17,9 +20,24 @@ interface DriverPickerProps {
   getPosition?: (driverId: string) => number | null;
 }
 
+// ----------------------------------------------------------- variants ---
+
+const cardVariants = {
+  hidden: { opacity: 0, scale: 0.95, y: 8 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] as const },
+  },
+};
+
+// ----------------------------------------------------------- component ---
+
 /**
- * Reusable driver picker grid with team-colored left borders,
+ * Reusable driver picker grid with team-colored left bar,
  * haptic feedback on selection, and scale micro-animations.
+ * Broadcast Premium theme.
  */
 export default function DriverPicker({
   drivers,
@@ -37,7 +55,10 @@ export default function DriverPicker({
       className="grid grid-cols-2 gap-2"
       initial="hidden"
       animate="visible"
-      variants={{ visible: { transition: { staggerChildren: 0.03 } }, hidden: {} }}
+      variants={{
+        hidden: {},
+        visible: { transition: { staggerChildren: 0.03 } },
+      }}
     >
       {drivers.map((driver) => {
         const selected = isDriverSelected(driver.id);
@@ -48,45 +69,80 @@ export default function DriverPicker({
           <motion.button
             key={driver.id}
             onClick={() => handleSelect(driver.id)}
-            variants={{
-              hidden: { opacity: 0, scale: 0.9, y: 10 },
-              visible: { opacity: 1, scale: 1, y: 0 },
-            }}
+            variants={cardVariants}
             whileTap={{ scale: 0.92 }}
-            whileHover={{ scale: 1.03, y: -2 }}
-            className={`relative p-3 rounded-xl border-2 transition-colors ${
-              selected
-                ? "border-cyan-400 bg-cyan-500/20 shadow-lg shadow-cyan-500/10"
-                : "border-gray-700 bg-white/5 hover:bg-white/10"
-            }`}
-            style={{ borderLeftColor: teamColor, borderLeftWidth: "4px" }}
+            className={`
+              relative flex items-center gap-2.5
+              p-3 rounded-md
+              border transition-all duration-pk-short ease-pk-enter
+              ${
+                selected
+                  ? "border-pk-red bg-pk-red-subtle shadow-[0_0_15px_rgba(225,6,0,0.15)]"
+                  : "border-white/[0.08] bg-pk-surface hover:border-white/[0.15]"
+              }
+            `}
             data-testid={`driver-${driver.id}`}
           >
-            {position && (
-              <div className="absolute -top-2 -right-2 w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-md animate-scale-in">
-                {position}
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              <span className={`font-data text-lg ${selected ? "text-cyan-400" : "text-gray-500"}`}>
-                {driver.number}
-              </span>
-              <div className="text-left">
-                <p className={`font-body text-sm ${selected ? "text-cyan-300" : "text-white"}`}>
-                  {driver.name}
-                </p>
-                <p className="font-body text-xs text-gray-500">{driver.team}</p>
-              </div>
-            </div>
-            {selected && (
-              <motion.div
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: "spring", stiffness: 500, damping: 15 }}
-                className="absolute top-2 right-2"
+            {/* Team color bar */}
+            <div
+              className="absolute top-0 left-0 bottom-0 w-[3px] rounded-l-md"
+              style={{ background: teamColor }}
+            />
+
+            {/* Number */}
+            <span
+              className={`font-mono text-[1.125rem] font-bold w-8 text-center ml-1
+                ${selected ? "text-pk-red" : "text-pk-titane"}
+                transition-colors duration-pk-short`}
+            >
+              {driver.number}
+            </span>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0 text-left">
+              <p
+                className={`font-semibold text-[0.8125rem] truncate
+                  ${selected ? "text-pk-piste" : "text-pk-piste"}`}
               >
-                <Check className="w-4 h-4 text-cyan-400" />
-              </motion.div>
+                {driver.name}
+              </p>
+              <p className="font-mono text-[0.5625rem] text-pk-titane truncate">{driver.team}</p>
+            </div>
+
+            {/* Position badge (when assigned) */}
+            {position && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                className="absolute -top-1.5 -right-1.5
+                  w-5 h-5 rounded-full
+                  bg-pk-red text-white
+                  flex items-center justify-center
+                  font-mono text-[0.625rem] font-bold
+                  shadow-[0_0_8px_rgba(225,6,0,0.5)]"
+              >
+                {position}
+              </motion.span>
+            )}
+
+            {/* Position label (inside card) */}
+            <span
+              className={`font-display text-[1.25rem] min-w-6 text-center
+                ${selected ? "text-pk-red" : "text-pk-titane"}
+                transition-colors duration-pk-short`}
+            >
+              {position ? `P${position}` : "—"}
+            </span>
+
+            {/* Selection indicator line */}
+            {selected && (
+              <motion.span
+                initial={{ width: 0 }}
+                animate={{ width: 12 }}
+                className="absolute bottom-1.5 left-1/2 -translate-x-1/2
+                  h-[2px] bg-pk-red rounded-sm"
+              />
             )}
           </motion.button>
         );

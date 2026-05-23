@@ -33,6 +33,7 @@ vi.mock("@/pages/admin/AdminPage", () => ({ default: () => <div>AdminPage</div> 
 vi.mock("@/pages/NotificationsPage", () => ({ default: () => <div>NotificationsPage</div> }));
 vi.mock("@/pages/MiniGamesPage", () => ({ default: () => <div>MiniGamesPage</div> }));
 vi.mock("@/pages/MissionsPage", () => ({ default: () => <div>MissionsPage</div> }));
+vi.mock("@/pages/NotFoundPage", () => ({ default: () => <div>NotFoundPage</div> }));
 vi.mock("@/pages/GlobalLeaderboardPage", () => ({
   default: () => <div>GlobalLeaderboardPage</div>,
 }));
@@ -130,9 +131,9 @@ describe("AppRouter", () => {
     expect(await screen.findByText("MiniGamesPage")).toBeInTheDocument();
   });
 
-  it("redirects unknown routes to /", async () => {
+  it("renders NotFoundPage for unknown routes", async () => {
     renderRoute("/unknown-page-xyz");
-    expect(await screen.findByText("DashboardPage")).toBeInTheDocument();
+    expect(await screen.findByText("NotFoundPage")).toBeInTheDocument();
   });
 
   it("shows PageLoader when auth is loading", () => {

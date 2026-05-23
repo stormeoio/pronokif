@@ -18,6 +18,11 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+  checks: read
+  actions: read
+
 concurrency:
   group: cd-${{ github.ref }}
   cancel-in-progress: true

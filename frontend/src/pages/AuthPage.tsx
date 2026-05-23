@@ -1,23 +1,18 @@
-import { useState, lazy, Suspense } from "react";
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Mail, Lock, ChevronRight } from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
-import { CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { ArrowRight, Plus } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { iconProps } from "@/lib/icons";
+import { fadeUp, easing, duration } from "@/lib/motion";
+import { BorderGlowButton } from "@/components/ui/border-glow-button";
 
-const HeroScene = lazy(() => import("../components/three/HeroScene"));
-
-// Hero banner with F1 car (no text - we overlay via CSS)
-const HERO_BANNER =
-  "https://static.prod-images.emergentagent.com/jobs/2d0863ea-c0b4-4b63-a110-0f53de2a7c40/images/d9b6f1a65194f54bbc34bb7e15e4af8069ab64dab312c6c3be1db79b2ca45259.png";
+// ----------------------------------------------------------- component ---
 
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const { login, register } = useAuth();
   const navigate = useNavigate();
 
@@ -53,246 +48,292 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-app-main relative overflow-hidden">
-      {/* 3D Hero Scene - Top Section */}
-      <div className="relative w-full h-64 flex-shrink-0">
-        <Suspense
-          fallback={
-            <img
-              src={HERO_BANNER}
-              alt="PRONOKIF - Pronostics F1"
-              className="w-full h-full object-cover object-top"
-            />
-          }
+    <>
+      {/* ---- AUTH PAGE ---- */}
+      <div className="relative w-full min-h-dvh flex flex-col items-center justify-center px-5 py-8 overflow-hidden">
+        {/* Background layers */}
+        <div
+          className="absolute inset-0 z-0"
+          style={{
+            background: `
+              radial-gradient(ellipse 120% 80% at 50% 100%, rgba(225,6,0,0.06) 0%, transparent 50%),
+              radial-gradient(ellipse 80% 60% at 20% 20%, rgba(225,6,0,0.03) 0%, transparent 50%),
+              linear-gradient(180deg, #0a0c10 0%, #0B0D12 40%, #110a0a 100%)
+            `,
+          }}
+        />
+        <div
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.008) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.008) 1px,transparent 1px)",
+            backgroundSize: "80px 80px",
+            maskImage: "radial-gradient(ellipse 50% 50% at 50% 50%,black 20%,transparent 80%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 50% 50% at 50% 50%,black 20%,transparent 80%)",
+          }}
+        />
+        {/* Grain */}
+        <div className="grain" />
+
+        {/* Red glow behind card */}
+        <motion.div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] z-[1] pointer-events-none"
+          style={{
+            background: "radial-gradient(circle,rgba(225,6,0,0.05) 0%,transparent 60%)",
+          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.2, ease: easing.enter }}
+        />
+
+        {/* ---- GLASS AUTH CARD ---- */}
+        <motion.div
+          className="relative z-10 w-full max-w-[400px]
+            bg-pk-anthracite/80 backdrop-blur-[40px] saturate-[1.3]
+            border border-white/[0.08] rounded-xl
+            px-7 pt-9 pb-7
+            shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.15),0_24px_48px_rgba(0,0,0,0.25)]"
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          data-testid="auth-card"
         >
-          <HeroScene className="absolute inset-0" />
-        </Suspense>
-
-        {/* Title overlay */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
-          <motion.h1
-            className="font-heading text-5xl text-white uppercase tracking-widest text-glow-orange"
-            initial={{ opacity: 0, scale: 0.8, y: -20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
-          >
-            PRONOKIF
-          </motion.h1>
-          <motion.p
-            className="font-body text-cyan-300/80 text-xs uppercase tracking-[0.2em] mt-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-          >
-            Fantasy F1 Predictions
-          </motion.p>
-        </div>
-
-        {/* Gradient overlay at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#050a14] to-transparent z-5" />
-      </div>
-
-      {/* Animated kerb stripe separator */}
-      <motion.div
-        className="h-[3px] bg-gradient-to-r from-red-600 via-white to-red-600 flex-shrink-0 -mt-1 relative z-10"
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: 1 }}
-        transition={{ delay: 0.3, duration: 0.6, ease: "easeOut" }}
-      />
-
-      {/* Content Section */}
-      <motion.div
-        className="flex-1 flex flex-col items-center justify-start px-4 pt-6 pb-8 relative z-10"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.5 }}
-      >
-        {/* Tagline */}
-        <div className="text-center mb-6">
-          <p className="font-body text-cyan-400 text-sm uppercase tracking-widest mb-1">
-            Pronostics F1 entre amis
+          {/* Logo */}
+          <div className="text-center mb-1">
+            <h1 className="font-display text-[1.75rem]">
+              <span className="text-pk-red">Prono</span>Kif
+            </h1>
+          </div>
+          <p className="text-center text-pk-titane text-[0.75rem] mb-7 leading-relaxed">
+            Pronostiquez, défiez vos amis,
+            <br />
+            vivez la F1 comme jamais.
           </p>
-          <p className="font-body text-gray-400 text-sm">
-            Défie tes amis et prouve que tu connais la F1 !
-          </p>
-        </div>
 
-        {/* Auth Card - Arcade Style */}
-        <div className="w-full max-w-md">
-          <div className="card-arcade overflow-hidden">
-            <Tabs defaultValue="login" className="w-full">
-              {/* Tab Headers */}
-              <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 p-1">
-                <TabsList className="grid w-full grid-cols-2 bg-transparent gap-1">
-                  <TabsTrigger
-                    value="login"
-                    className="font-heading uppercase tracking-wider text-sm text-gray-400 
-                              data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-700
-                              data-[state=active]:text-white data-[state=active]:shadow-lg
-                              rounded-lg py-3 transition-all"
-                    data-testid="tab-login"
-                  >
-                    Connexion
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="register"
-                    className="font-heading uppercase tracking-wider text-sm text-gray-400 
-                              data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-700
-                              data-[state=active]:text-white data-[state=active]:shadow-lg
-                              rounded-lg py-3 transition-all"
-                    data-testid="tab-register"
-                  >
-                    Inscription
-                  </TabsTrigger>
-                </TabsList>
+          {/* Tabs */}
+          <div className="flex rounded-md bg-white/[0.03] border border-white/[0.08] mb-6 overflow-hidden">
+            <button
+              onClick={() => setActiveTab("login")}
+              className={`flex-1 py-2.5 text-center text-[0.75rem] font-medium relative
+                transition-all duration-pk-short ease-pk-enter
+                ${activeTab === "login" ? "text-pk-piste bg-pk-red-subtle" : "text-pk-titane hover:text-pk-piste"}`}
+              data-testid="tab-login"
+            >
+              Connexion
+              {activeTab === "login" && (
+                <span className="absolute bottom-0 left-[20%] right-[20%] h-0.5 bg-pk-red rounded-sm" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("register")}
+              className={`flex-1 py-2.5 text-center text-[0.75rem] font-medium relative
+                transition-all duration-pk-short ease-pk-enter
+                ${activeTab === "register" ? "text-pk-piste bg-pk-red-subtle" : "text-pk-titane hover:text-pk-piste"}`}
+              data-testid="tab-register"
+            >
+              Inscription
+              {activeTab === "register" && (
+                <span className="absolute bottom-0 left-[20%] right-[20%] h-0.5 bg-pk-red rounded-sm" />
+              )}
+            </button>
+          </div>
+
+          {/* ---- LOGIN FORM ---- */}
+          {activeTab === "login" && (
+            <form onSubmit={(e) => handleSubmit(e, "login")} data-testid="login-form">
+              <div className="mb-3.5">
+                <label className="block font-mono text-[0.625rem] uppercase tracking-[0.12em] text-pk-titane mb-1">
+                  Email
+                </label>
+                <input
+                  name="email"
+                  type="email"
+                  placeholder="votre@email.com"
+                  required
+                  autoComplete="email"
+                  className="input-pk w-full"
+                  data-testid="login-email"
+                />
+              </div>
+              <div className="mb-3.5">
+                <label className="block font-mono text-[0.625rem] uppercase tracking-[0.12em] text-pk-titane mb-1">
+                  Mot de passe
+                </label>
+                <input
+                  name="password"
+                  type="password"
+                  placeholder="••••••••"
+                  required
+                  minLength={1}
+                  autoComplete="current-password"
+                  className="input-pk w-full"
+                  data-testid="login-password"
+                />
               </div>
 
-              {/* Login Form */}
-              <TabsContent value="login" className="mt-0">
-                <form onSubmit={(e) => handleSubmit(e, "login")} data-testid="login-form">
-                  <CardHeader className="pb-4 pt-6">
-                    <CardTitle className="font-heading text-xl uppercase tracking-tight text-white">
-                      Bon retour pilote !
-                    </CardTitle>
-                    <CardDescription className="font-body text-gray-400">
-                      Connecte-toi pour voir tes pronostics
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4 pb-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="login-email" className="font-body text-gray-300 text-sm">
-                        Email
-                      </Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                        <Input
-                          id="login-email"
-                          name="email"
-                          type="email"
-                          placeholder="ton@email.com"
-                          required
-                          className="pl-10 bg-[#0a1628] border-gray-700 h-12 font-body text-white placeholder:text-gray-500
-                                    focus:border-blue-500 focus:ring-blue-500/30 rounded-lg"
-                          data-testid="login-email"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="login-password" className="font-body text-gray-300 text-sm">
-                        Mot de passe
-                      </Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                        <Input
-                          id="login-password"
-                          name="password"
-                          type="password"
-                          placeholder="••••••••"
-                          required
-                          minLength={1}
-                          className="pl-10 bg-[#0a1628] border-gray-700 h-12 font-body text-white placeholder:text-gray-500
-                                    focus:border-blue-500 focus:ring-blue-500/30 rounded-lg"
-                          data-testid="login-password"
-                        />
-                      </div>
-                    </div>
-                    <Button
-                      type="submit"
-                      disabled={isLoading}
-                      className="w-full h-14 btn-racing font-heading uppercase tracking-wider text-base mt-2"
-                      data-testid="login-submit"
-                    >
-                      {isLoading ? "Connexion..." : "Se connecter"}
-                      <ChevronRight className="ml-2 w-5 h-5" />
-                    </Button>
-                    <div className="text-center pt-2">
-                      <Link
-                        to="/forgot-password"
-                        className="text-xs text-gray-500 hover:text-blue-400 font-body transition-colors"
-                      >
-                        Mot de passe oublie ?
-                      </Link>
-                    </div>
-                  </CardContent>
-                </form>
-              </TabsContent>
+              <div className="flex justify-between items-center mb-5">
+                <label className="flex items-center gap-1.5 text-[0.6875rem] text-pk-titane cursor-pointer">
+                  <input
+                    type="checkbox"
+                    defaultChecked
+                    className="w-3.5 h-3.5 accent-pk-red cursor-pointer"
+                  />
+                  Se souvenir
+                </label>
+                <Link
+                  to="/forgot-password"
+                  className="text-[0.6875rem] text-pk-red no-underline hover:underline"
+                >
+                  Oublié ?
+                </Link>
+              </div>
 
-              {/* Register Form */}
-              <TabsContent value="register" className="mt-0">
-                <form onSubmit={(e) => handleSubmit(e, "register")} data-testid="register-form">
-                  <CardHeader className="pb-4 pt-6">
-                    <CardTitle className="font-heading text-xl uppercase tracking-tight text-white">
-                      Rejoins la course !
-                    </CardTitle>
-                    <CardDescription className="font-body text-gray-400">
-                      Crée ton compte en 30 secondes
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4 pb-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="register-email" className="font-body text-gray-300 text-sm">
-                        Email
-                      </Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                        <Input
-                          id="register-email"
-                          name="email"
-                          type="email"
-                          placeholder="ton@email.com"
-                          required
-                          className="pl-10 bg-[#0a1628] border-gray-700 h-12 font-body text-white placeholder:text-gray-500
-                                    focus:border-blue-500 focus:ring-blue-500/30 rounded-lg"
-                          data-testid="register-email"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="register-password"
-                        className="font-body text-gray-300 text-sm"
-                      >
-                        Mot de passe
-                      </Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                        <Input
-                          id="register-password"
-                          name="password"
-                          type="password"
-                          placeholder="8 caractères minimum"
-                          required
-                          minLength={8}
-                          className="pl-10 bg-[#0a1628] border-gray-700 h-12 font-body text-white placeholder:text-gray-500
-                                    focus:border-blue-500 focus:ring-blue-500/30 rounded-lg"
-                          data-testid="register-password"
-                        />
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Min. 8 caractères, 1 majuscule, 1 minuscule, 1 chiffre
-                      </p>
-                    </div>
-                    <Button
-                      type="submit"
-                      disabled={isLoading}
-                      className="w-full h-14 btn-racing font-heading uppercase tracking-wider text-base mt-2"
-                      data-testid="register-submit"
-                    >
-                      {isLoading ? "Création..." : "Créer mon compte"}
-                      <ChevronRight className="ml-2 w-5 h-5" />
-                    </Button>
-                  </CardContent>
-                </form>
-              </TabsContent>
-            </Tabs>
+              <BorderGlowButton
+                type="submit"
+                disabled={isLoading}
+                className="w-full text-[0.875rem]"
+                data-testid="login-submit"
+              >
+                <ArrowRight {...iconProps} size={14} strokeWidth={2} />
+                {isLoading ? "Connexion..." : "Se connecter"}
+              </BorderGlowButton>
+            </form>
+          )}
+
+          {/* ---- REGISTER FORM ---- */}
+          {activeTab === "register" && (
+            <form onSubmit={(e) => handleSubmit(e, "register")} data-testid="register-form">
+              <div className="mb-3.5">
+                <label className="block font-mono text-[0.625rem] uppercase tracking-[0.12em] text-pk-titane mb-1">
+                  Pseudo pilote
+                </label>
+                <input
+                  name="username"
+                  type="text"
+                  placeholder="VerstappenFan, LeclercSZN..."
+                  className="input-pk w-full"
+                />
+              </div>
+              <div className="mb-3.5">
+                <label className="block font-mono text-[0.625rem] uppercase tracking-[0.12em] text-pk-titane mb-1">
+                  Email
+                </label>
+                <input
+                  name="email"
+                  type="email"
+                  placeholder="votre@email.com"
+                  required
+                  autoComplete="email"
+                  className="input-pk w-full"
+                  data-testid="register-email"
+                />
+              </div>
+              <div className="mb-5">
+                <label className="block font-mono text-[0.625rem] uppercase tracking-[0.12em] text-pk-titane mb-1">
+                  Mot de passe
+                </label>
+                <input
+                  name="password"
+                  type="password"
+                  placeholder="8 caractères minimum"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  className="input-pk w-full"
+                  data-testid="register-password"
+                />
+              </div>
+
+              <BorderGlowButton
+                type="submit"
+                disabled={isLoading}
+                className="w-full text-[0.875rem]"
+                data-testid="register-submit"
+              >
+                <Plus {...iconProps} size={14} strokeWidth={2} />
+                {isLoading ? "Création..." : "Créer mon compte"}
+              </BorderGlowButton>
+            </form>
+          )}
+
+          {/* Divider */}
+          <div className="flex items-center gap-2.5 my-4">
+            <span className="flex-1 h-px bg-white/[0.08]" />
+            <span className="font-mono text-[0.625rem] text-pk-titane uppercase tracking-[0.1em]">
+              ou continuer avec
+            </span>
+            <span className="flex-1 h-px bg-white/[0.08]" />
           </div>
-        </div>
 
-        {/* Footer */}
-        <p className="text-center text-gray-500 text-xs mt-6 font-body">
-          En continuant, tu acceptes nos conditions d'utilisation
-        </p>
-      </motion.div>
-    </div>
+          {/* Social buttons */}
+          <div className="flex gap-2">
+            <button className="btn-pk-outline flex-1 text-[0.75rem]" type="button">
+              <svg viewBox="0 0 24 24" className="w-4 h-4">
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                />
+              </svg>
+              Google
+            </button>
+            <button className="btn-pk-outline flex-1 text-[0.75rem]" type="button">
+              <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4">
+                <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+              </svg>
+              Apple
+            </button>
+          </div>
+
+          {/* Footer */}
+          <p className="text-center mt-4 text-[0.6875rem] text-pk-titane">
+            {activeTab === "login" ? (
+              <>
+                Nouveau ?{" "}
+                <button
+                  onClick={() => setActiveTab("register")}
+                  className="text-pk-red font-medium hover:underline"
+                >
+                  Rejoindre la course
+                </button>
+              </>
+            ) : (
+              <>
+                Déjà inscrit ?{" "}
+                <button
+                  onClick={() => setActiveTab("login")}
+                  className="text-pk-red font-medium hover:underline"
+                >
+                  Se connecter
+                </button>
+              </>
+            )}
+          </p>
+        </motion.div>
+
+        {/* Bottom tagline */}
+        <motion.p
+          className="fixed bottom-5 left-0 right-0 text-center z-10
+            font-display text-[0.625rem] tracking-[0.15em] text-pk-titane/40"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 0.4, y: 0 }}
+          transition={{ duration: duration.long, ease: easing.enter, delay: 0.3 }}
+        >
+          Prédisez. Défiez. <em className="not-italic text-pk-red">Vivez.</em>
+        </motion.p>
+      </div>
+    </>
   );
 }

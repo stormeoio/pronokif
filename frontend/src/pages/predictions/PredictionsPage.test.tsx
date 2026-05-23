@@ -110,8 +110,7 @@ describe("PredictionsPage", () => {
     mockedApi.get.mockReturnValue(new Promise(() => {}));
     renderPredictions();
 
-    // PredictionsPage uses skeleton-arcade placeholders while loading
-    expect(document.querySelector(".skeleton-arcade")).toBeInTheDocument();
+    expect(document.querySelector(".animate-pulse")).toBeInTheDocument();
   });
 
   it("fetches race data with correct raceId", async () => {

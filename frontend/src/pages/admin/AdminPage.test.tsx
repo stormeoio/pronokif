@@ -94,7 +94,7 @@ describe("AdminPage", () => {
     // All 4 tabs visible
     expect(screen.getByText("Resultats")).toBeInTheDocument();
     expect(screen.getByText("Notifs")).toBeInTheDocument();
-    expect(screen.getByText("Feedback")).toBeInTheDocument();
+    expect(screen.getByText("Retours")).toBeInTheDocument();
     expect(screen.getByText("Membres")).toBeInTheDocument();
   });
 

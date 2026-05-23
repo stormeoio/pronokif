@@ -1,0 +1,195 @@
+import { motion } from "framer-motion";
+import { ArrowRight, Clock } from "lucide-react";
+import { iconSmall } from "@/lib/icons";
+import { easing, duration } from "@/lib/motion";
+
+// ----------------------------------------------------------- types ---
+
+interface CountdownValues {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+}
+
+interface RaceHeroCardProps {
+  race:
+    | {
+        id: string | number;
+        name: string;
+        circuit: string;
+        date: string;
+        can_predict?: boolean;
+        is_sprint_weekend?: boolean;
+      }
+    | undefined;
+  countdown: CountdownValues;
+  hasPrediction: boolean;
+  onPredict: () => void;
+  onViewDetails: () => void;
+}
+
+// ----------------------------------------------------------- helpers ---
+
+/** Country flag emoji from race name (simplified mapping) */
+function getRaceFlag(name: string): string {
+  const n = name.toLowerCase();
+  if (n.includes("monaco")) return "\u{1F1F2}\u{1F1E8}";
+  if (n.includes("espagne") || n.includes("spain") || n.includes("barcelona"))
+    return "\u{1F1EA}\u{1F1F8}";
+  if (n.includes("france") || n.includes("paul ricard")) return "\u{1F1EB}\u{1F1F7}";
+  if (n.includes("itali") || n.includes("monza") || n.includes("imola") || n.includes("emili"))
+    return "\u{1F1EE}\u{1F1F9}";
+  if (n.includes("grande-bretagne") || n.includes("britain") || n.includes("silverstone"))
+    return "\u{1F1EC}\u{1F1E7}";
+  if (n.includes("miami") || n.includes("las vegas") || n.includes("austin") || n.includes("usa"))
+    return "\u{1F1FA}\u{1F1F8}";
+  if (n.includes("canada") || n.includes("montreal")) return "\u{1F1E8}\u{1F1E6}";
+  if (n.includes("australi") || n.includes("melbourne")) return "\u{1F1E6}\u{1F1FA}";
+  if (n.includes("japon") || n.includes("japan") || n.includes("suzuka"))
+    return "\u{1F1EF}\u{1F1F5}";
+  if (n.includes("bahre") || n.includes("bahrain") || n.includes("sakhir"))
+    return "\u{1F1E7}\u{1F1ED}";
+  if (n.includes("saudi") || n.includes("arabie") || n.includes("jeddah"))
+    return "\u{1F1F8}\u{1F1E6}";
+  if (n.includes("chine") || n.includes("china") || n.includes("shanghai"))
+    return "\u{1F1E8}\u{1F1F3}";
+  if (n.includes("pays-bas") || n.includes("netherland") || n.includes("zandvoort"))
+    return "\u{1F1F3}\u{1F1F1}";
+  if (n.includes("belgi") || n.includes("spa")) return "\u{1F1E7}\u{1F1EA}";
+  if (n.includes("hongrie") || n.includes("hungar") || n.includes("budapest"))
+    return "\u{1F1ED}\u{1F1FA}";
+  if (n.includes("singap")) return "\u{1F1F8}\u{1F1EC}";
+  if (n.includes("mexiq") || n.includes("mexico")) return "\u{1F1F2}\u{1F1FD}";
+  if (n.includes("bresil") || n.includes("brazil") || n.includes("interlagos"))
+    return "\u{1F1E7}\u{1F1F7}";
+  if (n.includes("qatar")) return "\u{1F1F6}\u{1F1E6}";
+  if (n.includes("abu dhabi") || n.includes("yas")) return "\u{1F1E6}\u{1F1EA}";
+  if (n.includes("autriche") || n.includes("austria") || n.includes("spielberg"))
+    return "\u{1F1E6}\u{1F1F9}";
+  if (n.includes("azerba") || n.includes("baku")) return "\u{1F1E6}\u{1F1FF}";
+  return "\u{1F3C1}";
+}
+
+// ----------------------------------------------------------- component ---
+
+export default function RaceHeroCard({
+  race,
+  countdown,
+  hasPrediction,
+  onPredict,
+  onViewDetails,
+}: RaceHeroCardProps) {
+  if (!race) return null;
+
+  const flag = getRaceFlag(race.name);
+  const raceName = race.name
+    .replace("Grand Prix de ", "")
+    .replace("Grand Prix du ", "")
+    .replace("Grand Prix d'", "")
+    .replace(" Grand Prix", "");
+
+  const cdUnits = [
+    { val: countdown.days, label: "Jours" },
+    { val: countdown.hours, label: "Heures" },
+    { val: countdown.minutes, label: "Min" },
+    { val: countdown.seconds, label: "Sec" },
+  ];
+
+  return (
+    <div
+      className="relative rounded-lg overflow-hidden
+        bg-gradient-to-br from-[#1a0000] via-pk-surface to-pk-anthracite
+        border border-white/[0.08]"
+      data-testid="race-hero-card"
+    >
+      {/* Red glow corner */}
+      <div
+        className="absolute top-0 right-0 w-[200px] h-[200px] pointer-events-none"
+        style={{
+          background: "radial-gradient(circle, rgba(225,6,0,0.1) 0%, transparent 70%)",
+        }}
+      />
+
+      <div className="relative z-[1] p-5">
+        {/* Badge */}
+        <div className="flex items-center gap-1.5 mb-3">
+          <span className="w-1.5 h-1.5 rounded-full bg-pk-red animate-[pulse-dot_2s_ease-in-out_infinite]" />
+          <span className="font-mono text-[0.625rem] uppercase tracking-[0.15em] text-pk-red">
+            Prochain Grand Prix
+          </span>
+        </div>
+
+        {/* Title */}
+        <h2 className="font-display text-[1.375rem] uppercase leading-[1.15] mb-0.5">
+          Grand Prix {race.name.includes("Grand Prix") ? "" : "de "}
+          {raceName}
+        </h2>
+        <p className="text-[0.8125rem] text-pk-titane mb-4">
+          <span className="text-[1.125rem] mr-1">{flag}</span>
+          {race.circuit}
+        </p>
+
+        {/* Sprint badge */}
+        {race.is_sprint_weekend && (
+          <div
+            className="inline-flex items-center gap-1 mb-3
+              px-2 py-0.5 rounded-sm
+              bg-pk-amber/10 border border-pk-amber/20
+              font-mono text-[0.5625rem] uppercase tracking-[0.1em] text-pk-amber"
+          >
+            Sprint Weekend
+          </div>
+        )}
+
+        {/* Countdown */}
+        <div className="flex gap-2 mb-5">
+          {cdUnits.map((u) => (
+            <div
+              key={u.label}
+              className="flex flex-col items-center
+                bg-white/[0.03] border border-white/[0.08]
+                rounded-sm py-2 px-2.5 min-w-[52px]"
+            >
+              <span className="font-mono text-[1.375rem] font-bold text-pk-piste">
+                {String(u.val).padStart(2, "0")}
+              </span>
+              <span className="font-mono text-[0.5625rem] uppercase tracking-[0.15em] text-pk-titane mt-0.5">
+                {u.label}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA */}
+        {race.can_predict !== false && (
+          <div className="flex items-center gap-2">
+            {hasPrediction ? (
+              <button onClick={onPredict} className="btn-pk-outline text-[0.8125rem] px-4">
+                <Clock {...iconSmall} size={14} strokeWidth={2} />
+                Modifier mes pronos
+              </button>
+            ) : (
+              <button
+                onClick={onPredict}
+                className="btn-pk text-[0.8125rem]"
+                data-testid="make-predictions-btn"
+              >
+                <ArrowRight {...iconSmall} size={14} strokeWidth={2} />
+                Pronostiquer
+              </button>
+            )}
+            <button onClick={onViewDetails} className="btn-pk-outline text-[0.75rem] px-3">
+              Infos
+            </button>
+          </div>
+        )}
+        {race.can_predict === false && (
+          <p className="font-mono text-[0.6875rem] text-pk-titane text-center">
+            Les pronostics sont fermes pour cette course
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

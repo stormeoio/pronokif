@@ -4,7 +4,7 @@
  * Route definitions live in routes.tsx (extracted Sprint 4).
  * This file is pure orchestration: providers + layout + suspense + 3D background.
  */
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useCallback, useState } from "react";
 import { BrowserRouter, useLocation } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
@@ -17,11 +17,29 @@ import NetworkStatus from "@/components/NetworkStatus";
 import ScrollToTop from "@/components/ScrollToTop";
 import PageTransition from "@/components/PageTransition";
 import EmailVerificationBanner from "@/components/EmailVerificationBanner";
+import PronoKifSplashScreen from "@/components/splash/PronoKifSplashScreen";
 import "@/App.css";
 
 // Lazy-load heavy 3D components for performance
 const ParticleBackground = lazy(() => import("@/components/three/ParticleBackground"));
 const LoadingScene = lazy(() => import("@/components/three/LoadingScene"));
+const SPLASH_SEEN_KEY = "pronokif:splash-seen";
+
+const hasSeenSplash = () => {
+  try {
+    return window.sessionStorage.getItem(SPLASH_SEEN_KEY) === "true";
+  } catch {
+    return false;
+  }
+};
+
+const markSplashSeen = () => {
+  try {
+    window.sessionStorage.setItem(SPLASH_SEEN_KEY, "true");
+  } catch {
+    // Non-critical: blocked storage should not trap users on the splash screen.
+  }
+};
 
 // ------------------------------------------------------------------ layout ---
 
@@ -86,6 +104,25 @@ function FallbackLoader() {
 // --------------------------------------------------------------------- app ---
 
 export default function App() {
+  const [hasStarted, setHasStarted] = useState(hasSeenSplash);
+
+  const handleSplashStart = useCallback(() => {
+    markSplashSeen();
+    setHasStarted(true);
+  }, []);
+
+  if (!hasStarted) {
+    return (
+      <PronoKifSplashScreen
+        iconSrc="/icons/pronokif-app-icon.svg"
+        videoSrc="/video/_Topaz_86430.mp4"
+        introDelayMs={7000}
+        buttonDelayMs={11000}
+        onStart={handleSplashStart}
+      />
+    );
+  }
+
   return (
     <ErrorBoundary>
       <BrowserRouter>

@@ -1,27 +1,25 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Home, Trophy, Target, User, Users, MessageCircle, Flag } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
-import { api } from "@/lib/api";
+import { navIcons, iconProps } from "@/lib/icons";
+import { quickEnter } from "@/lib/motion";
 
-// ------------------------------------------------------------------ types ---
+// ----------------------------------------------------------- types ---
 
-interface NavItem {
+interface NavItemDef {
   path: string;
-  icon: LucideIcon;
+  icon: keyof typeof navIcons;
   label: string;
 }
 
-// ----------------------------------------------------------- nav items ---
+// ----------------------------------------------------------- config ---
 
-const navItems: NavItem[] = [
-  { path: "/", icon: Home, label: "Accueil" },
-  { path: "/predictions", icon: Target, label: "Pronos" },
-  { path: "/championship", icon: Flag, label: "Championnat" },
-  { path: "/league", icon: Users, label: "Ligues" },
-  { path: "/profile", icon: User, label: "Profil" },
+const NAV_ITEMS: NavItemDef[] = [
+  { path: "/", icon: "accueil", label: "Accueil" },
+  { path: "/predictions", icon: "pronostics", label: "Pronos" },
+  { path: "/live", icon: "direct", label: "Direct" },
+  { path: "/leaderboard", icon: "classements", label: "Classements" },
+  { path: "/profile", icon: "profil", label: "Profil" },
 ];
 
 // ----------------------------------------------------------- component ---
@@ -30,42 +28,26 @@ export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [unreadChatCount, setUnreadChatCount] = useState<number>(0);
 
-  useEffect(() => {
-    const fetchUnread = async (): Promise<void> => {
-      try {
-        const data = await api.leagues.unreadMessages();
-        setUnreadChatCount(data.total_unread);
-      } catch {
-        // Ignore
-      }
-    };
-
-    if (user) {
-      void fetchUnread();
-      const interval = setInterval(() => void fetchUnread(), 30000);
-      return () => clearInterval(interval);
-    }
-  }, [user]);
+  if (!user) return null;
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50"
+      className="fixed bottom-0 left-0 right-0 z-50 max-w-[430px] mx-auto"
       aria-label="Navigation principale"
       data-testid="bottom-nav"
     >
-      {/* Kerb stripe decoration top */}
-      <div className="h-2 bg-kerb-stripe" />
-
-      {/* Chrome metallic navigation bar */}
-      <div className="nav-chrome h-[68px] flex justify-around items-center px-1 pb-1">
-        {navItems.map((item) => {
+      <div
+        className="flex items-center justify-around
+          h-16 pb-[env(safe-area-inset-bottom,0px)]
+          bg-pk-carbon/[0.94] backdrop-blur-[24px] saturate-[1.4]
+          border-t border-white/[0.08]"
+      >
+        {NAV_ITEMS.map((item) => {
           const isActive =
             location.pathname === item.path ||
             (item.path !== "/" && location.pathname.startsWith(item.path));
-          const Icon = item.icon;
-          const showChatBadge = item.path === "/league" && unreadChatCount > 0;
+          const Icon = navIcons[item.icon];
 
           return (
             <motion.button
@@ -73,42 +55,35 @@ export default function BottomNav() {
               onClick={() => navigate(item.path)}
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
-              className={`flex flex-col items-center justify-center w-[52px] h-[52px] rounded-xl transition-all relative ${
-                isActive
-                  ? "nav-item-active shadow-lg"
-                  : "text-gray-700 hover:text-gray-900 hover:bg-white/40"
-              }`}
+              className={`
+                relative flex flex-col items-center justify-center gap-0.5
+                w-[52px] h-[52px]
+                transition-colors duration-pk-short ease-pk-enter
+                ${isActive ? "text-pk-red" : "text-pk-titane hover:text-pk-piste/70"}
+              `}
               data-testid={`nav-${item.label.toLowerCase()}`}
-              whileTap={{ scale: 0.85 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              whileTap={{ scale: 0.88 }}
+              transition={quickEnter}
             >
-              <div className="relative">
-                <Icon
-                  size={20}
-                  strokeWidth={isActive ? 2.5 : 2}
-                  className={isActive ? "text-white drop-shadow-lg" : ""}
-                />
-                {/* Chat Badge on Leagues */}
-                {showChatBadge && (
-                  <div className="absolute -top-2 -right-2 w-4 h-4 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg animate-pulse">
-                    <MessageCircle size={8} className="text-white" />
-                  </div>
-                )}
-              </div>
-              <span
-                className={`text-[8px] mt-0.5 font-body font-semibold uppercase tracking-wider ${
-                  isActive ? "text-white" : "text-gray-600"
-                }`}
-              >
-                {item.label}
-              </span>
+              {/* Active indicator dot */}
               {isActive && (
-                <motion.div
-                  className="absolute -bottom-1 w-4 h-1 bg-cyan-400 rounded-full"
-                  layoutId="nav-indicator"
+                <motion.span
+                  className="absolute top-1.5 w-1 h-1 rounded-full bg-pk-red
+                    shadow-[0_0_6px_rgba(225,6,0,0.5)]"
+                  layoutId="nav-dot"
                   transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 />
               )}
+
+              <Icon
+                {...iconProps}
+                strokeWidth={isActive ? 2 : 1.5}
+                className={isActive ? "drop-shadow-[0_0_4px_rgba(225,6,0,0.4)]" : ""}
+              />
+
+              <span className="font-mono text-[9px] uppercase tracking-[0.06em] leading-none">
+                {item.label}
+              </span>
             </motion.button>
           );
         })}

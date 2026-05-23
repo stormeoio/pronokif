@@ -17,6 +17,22 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
 
+  // Node/CommonJS tool configuration files
+  {
+    files: ["*.config.cjs"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "commonjs",
+      globals: {
+        ...globals.node,
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+      "no-undef": "off",
+    },
+  },
+
   // All source files
   {
     files: ["src/**/*.{ts,tsx,js,jsx}"],

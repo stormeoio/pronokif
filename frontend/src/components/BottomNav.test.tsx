@@ -1,5 +1,5 @@
 /**
- * BottomNav tests — rendering, active state, navigation, badge.
+ * BottomNav tests — rendering, active state, navigation.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -16,20 +16,10 @@ vi.mock("@/lib/auth", () => ({
   useAuth: () => ({ user: { id: "u1", username: "testpilot" } }),
 }));
 
-vi.mock("@/lib/api", () => ({
-  api: {
-    leagues: { unreadMessages: vi.fn().mockResolvedValue({ total_unread: 0 }) },
-  },
-}));
-
 import BottomNav from "./BottomNav";
-import { api } from "@/lib/api";
-
-const mockApi = api as any;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockApi.leagues.unreadMessages.mockResolvedValue({ total_unread: 0 });
 });
 
 function renderNav(path = "/") {
@@ -46,8 +36,8 @@ describe("BottomNav", () => {
     expect(screen.getByTestId("bottom-nav")).toBeInTheDocument();
     expect(screen.getByTestId("nav-accueil")).toBeInTheDocument();
     expect(screen.getByTestId("nav-pronos")).toBeInTheDocument();
-    expect(screen.getByTestId("nav-championnat")).toBeInTheDocument();
-    expect(screen.getByTestId("nav-ligues")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-direct")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-classements")).toBeInTheDocument();
     expect(screen.getByTestId("nav-profil")).toBeInTheDocument();
   });
 
@@ -64,12 +54,10 @@ describe("BottomNav", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/predictions");
   });
 
-  it("shows unread chat badge when count > 0", async () => {
-    mockApi.leagues.unreadMessages.mockResolvedValue({ total_unread: 3 });
+  it("navigates to leaderboard on click", async () => {
     renderNav("/");
-    // Wait for useEffect to fire
-    await vi.waitFor(() => {
-      expect(mockApi.leagues.unreadMessages).toHaveBeenCalled();
-    });
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("nav-classements"));
+    expect(mockNavigate).toHaveBeenCalledWith("/leaderboard");
   });
 });

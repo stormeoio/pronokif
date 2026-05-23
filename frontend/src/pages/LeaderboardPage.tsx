@@ -1,6 +1,6 @@
-import { useState, useMemo, lazy, Suspense } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   Trophy,
@@ -12,23 +12,24 @@ import {
   Copy,
   Check,
   ChevronDown,
+  ChevronLeft,
   MessageCircle,
   Plus,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "../components/ui/button";
+import { iconSmall } from "@/lib/icons";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "../components/ui/dropdown-menu";
-import AnimatedNumber from "../components/AnimatedNumber";
-import { staggerItem } from "../components/PageTransition";
+  fadeUp,
+  slideInLeft,
+  staggerContainer,
+  STAGGER_DELAY,
+  easing,
+  duration,
+} from "@/lib/motion";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
-const FloatingTrophy = lazy(() => import("../components/three/FloatingTrophy"));
+// ----------------------------------------------------------- types ---
 
 interface League {
   id: string;
@@ -46,13 +47,15 @@ interface LeaderboardEntry {
   position_change: number;
 }
 
+// ----------------------------------------------------------- component ---
+
 export default function LeaderboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
 
   const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showLeagueMenu, setShowLeagueMenu] = useState(false);
 
   const { data: leagues = [], isLoading: leaguesLoading } = useQuery({
     queryKey: ["/leagues/my"],
@@ -61,7 +64,7 @@ export default function LeaderboardPage() {
 
   const activeLeagueId = selectedLeagueId || user?.current_league_id;
   const currentLeague = useMemo(
-    () => leagues.find((l) => l.id === activeLeagueId) || null,
+    () => leagues.find((l: League) => l.id === activeLeagueId) || null,
     [leagues, activeLeagueId],
   );
 
@@ -77,9 +80,10 @@ export default function LeaderboardPage() {
     try {
       await api.leagues.select(leagueId);
       setSelectedLeagueId(leagueId);
-      const league = leagues.find((l) => l.id === leagueId);
-      toast.success(`Ligue "${league?.name}" sélectionnée`);
-    } catch (e) {
+      setShowLeagueMenu(false);
+      const league = leagues.find((l: League) => l.id === leagueId);
+      toast.success(`Ligue "${league?.name}" selectionnee`);
+    } catch {
       toast.error("Erreur lors du changement de ligue");
     }
   };
@@ -89,7 +93,7 @@ export default function LeaderboardPage() {
     try {
       await navigator.clipboard.writeText(currentLeague.code);
       setCopied(true);
-      toast.success("Code copié !");
+      toast.success("Code copie !");
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("Impossible de copier");
@@ -98,28 +102,33 @@ export default function LeaderboardPage() {
 
   const shareLeague = async () => {
     if (!currentLeague) return;
-
-    const shareText = `Rejoins ma ligue F1 "${currentLeague.name}" sur PRONOKIF ! Code: ${currentLeague.code}`;
-
+    const text = `Rejoins ma ligue F1 "${currentLeague.name}" sur PronoKif ! Code: ${currentLeague.code}`;
     if (navigator.share) {
       try {
-        await navigator.share({ title: "PRONOKIF", text: shareText });
+        await navigator.share({ title: "PronoKif", text });
       } catch (e: unknown) {
         if ((e as DOMException).name !== "AbortError") copyCode();
       }
     } else {
-      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-      window.open(whatsappUrl, "_blank");
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
     }
   };
 
+  // ---- Podium data (top 3) ----
+  const podium = leaderboard.slice(0, 3);
+  const rest = leaderboard.slice(3);
+
+  // ---- Loading ----
   if (loading) {
     return (
-      <div className="min-h-screen bg-app-main p-4 pt-6">
-        <div className="max-w-2xl mx-auto space-y-4">
-          <div className="h-8 w-48 skeleton-arcade rounded" />
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="h-16 skeleton-arcade rounded-md" />
+      <div className="min-h-dvh bg-pk-carbon p-4 pt-16 max-w-[430px] mx-auto">
+        <div className="space-y-3">
+          <div className="h-8 w-48 rounded-md bg-pk-surface border border-white/[0.06] animate-pulse" />
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="h-14 rounded-md bg-pk-surface border border-white/[0.06] animate-pulse"
+            />
           ))}
         </div>
       </div>
@@ -127,244 +136,330 @@ export default function LeaderboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-app-main p-4 pt-2 pb-24" data-testid="leaderboard-page" aria-labelledby="leaderboard-title">
-      <div className="max-w-2xl mx-auto space-y-6">
-        {/* 3D Trophy Hero */}
-        <Suspense fallback={null}>
-          <FloatingTrophy className="mx-auto -mb-4" />
-        </Suspense>
-
-        {/* Header */}
-        <motion.div
-          className="flex items-center justify-between"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
+    <div
+      className="min-h-dvh bg-pk-carbon pb-24 max-w-[430px] mx-auto"
+      data-testid="leaderboard-page"
+      aria-labelledby="leaderboard-title"
+    >
+      {/* ---- HEADER ---- */}
+      <header
+        className="sticky top-0 z-50
+          flex items-center gap-3
+          px-4 py-3
+          bg-pk-carbon/92 backdrop-blur-[20px] saturate-[1.3]
+          border-b border-white/[0.08]"
+      >
+        <button
+          onClick={() => navigate(-1)}
+          className="w-8 h-8 rounded-full
+            flex items-center justify-center
+            bg-white/[0.04] border border-white/[0.08]
+            text-pk-piste hover:border-white/[0.15]
+            transition-colors duration-pk-short"
         >
-          <h1 id="leaderboard-title" className="font-heading text-2xl uppercase tracking-tight text-yellow-500 flex items-center gap-2 text-glow-gold">
-            <Trophy className="w-7 h-7" aria-hidden="true" />
-            Classement
+          <ChevronLeft size={16} strokeWidth={2} />
+        </button>
+        <div className="flex-1">
+          <h1 id="leaderboard-title" className="font-display text-[1rem] uppercase">
+            {currentLeague?.name || "Classement"}
           </h1>
+          <p className="font-mono text-[0.5625rem] text-pk-titane uppercase tracking-[0.1em]">
+            Classement Ligue
+          </p>
+        </div>
+        <button
+          onClick={shareLeague}
+          className="w-8 h-8 rounded-full flex items-center justify-center
+            text-pk-titane hover:text-pk-piste
+            transition-colors duration-pk-short"
+          aria-label="Partager la ligue"
+        >
+          <Share2 size={18} strokeWidth={1.5} />
+        </button>
+      </header>
 
-          {leagues.length > 1 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="border-gray-700 bg-gray-900/50 font-body"
+      {/* ---- LEAGUE HERO ---- */}
+      {currentLeague && (
+        <div
+          className="px-4 py-5 border-b border-white/[0.08]"
+          style={{
+            background: "linear-gradient(135deg, rgba(225,6,0,0.03) 0%, transparent 60%)",
+          }}
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-[2.5rem]">{"\u{1F3C6}"}</span>
+            <div className="flex-1">
+              <h2 className="font-display text-[1.25rem] uppercase">{currentLeague.name}</h2>
+              <p className="text-[0.75rem] text-pk-titane mt-0.5">
+                {currentLeague.members.length} membres • Code:{" "}
+                <span className="font-mono text-pk-amber">{currentLeague.code}</span>
+              </p>
+            </div>
+          </div>
+          {/* Quick actions */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate(`/league/${currentLeague.id}/chat`)}
+              className="btn-pk-outline text-[0.6875rem] px-3"
+              aria-label="Chat de la ligue"
+            >
+              <MessageCircle size={13} strokeWidth={1.5} />
+              Chat
+            </button>
+            <button
+              onClick={copyCode}
+              className="btn-pk-outline text-[0.6875rem] px-3"
+              aria-label={copied ? "Code copie" : "Copier le code"}
+            >
+              {copied ? <Check size={13} strokeWidth={2} /> : <Copy size={13} strokeWidth={1.5} />}
+              {copied ? "Copie" : "Code"}
+            </button>
+            <button
+              onClick={() => navigate("/league")}
+              className="btn-pk-outline text-[0.6875rem] px-3"
+              aria-label="Rejoindre une ligue"
+            >
+              <Plus size={13} strokeWidth={2} />
+              Ligue
+            </button>
+            {leagues.length > 1 && (
+              <div className="relative ml-auto">
+                <button
+                  onClick={() => setShowLeagueMenu(!showLeagueMenu)}
+                  className="btn-pk-outline text-[0.6875rem] px-3"
                   data-testid="league-selector"
                 >
-                  {currentLeague?.name || "Sélectionner"}
-                  <ChevronDown className="w-4 h-4 ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-gray-900 border-gray-700">
-                {leagues.map((league) => (
-                  <DropdownMenuItem
-                    key={league.id}
-                    onClick={() => switchLeague(league.id)}
-                    className={`font-body ${league.id === currentLeague?.id ? "text-orange-500" : ""}`}
+                  Changer
+                  <ChevronDown size={12} strokeWidth={2} />
+                </button>
+                {showLeagueMenu && (
+                  <div
+                    className="absolute top-full right-0 mt-1 w-48 z-20
+                      bg-pk-anthracite border border-white/[0.08] rounded-md
+                      shadow-[0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden"
                   >
-                    {league.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </motion.div>
-
-        {/* League Info */}
-        {currentLeague && (
-          <div className="card-arcade p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-heading text-lg uppercase tracking-tight text-cyan-400">
-                  {currentLeague.name}
-                </p>
-                <p className="font-body text-sm text-gray-400">
-                  {currentLeague.members.length} membres • Code:{" "}
-                  <span className="font-data text-yellow-500">{currentLeague.code}</span>
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(`/league/${currentLeague.id}/chat`)}
-                  className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
-                  data-testid="chat-btn"
-                  aria-label="Ouvrir le chat de la ligue"
-                >
-                  <MessageCircle className="w-5 h-5" aria-hidden="true" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate("/league")}
-                  className="text-green-400 hover:text-green-300 hover:bg-green-500/10"
-                  data-testid="add-league-btn"
-                  aria-label="Rejoindre ou creer une ligue"
-                >
-                  <Plus className="w-5 h-5" aria-hidden="true" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={copyCode}
-                  className="text-gray-400 hover:text-white hover:bg-white/10"
-                  data-testid="copy-code-btn"
-                  aria-label={copied ? "Code copie" : "Copier le code d'invitation"}
-                >
-                  {copied ? (
-                    <Check className="w-5 h-5 text-green-500" aria-hidden="true" />
-                  ) : (
-                    <Copy className="w-5 h-5" aria-hidden="true" />
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={shareLeague}
-                  className="text-gray-400 hover:text-white hover:bg-white/10"
-                  data-testid="share-league-btn"
-                  aria-label="Partager la ligue"
-                >
-                  <Share2 className="w-5 h-5" aria-hidden="true" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Leaderboard */}
-        <div className="card-arcade overflow-hidden" role="table" aria-label="Classement de la ligue">
-          <div className="bg-gradient-to-r from-yellow-600/20 to-transparent px-4 py-3 border-b border-gray-700/50" role="row">
-            <div className="grid grid-cols-12 gap-2 text-gray-400 font-body text-xs uppercase tracking-wider">
-              <div className="col-span-2 text-center" role="columnheader">#</div>
-              <div className="col-span-5" role="columnheader">Joueur</div>
-              <div className="col-span-3 text-right" role="columnheader">Points</div>
-              <div className="col-span-2 text-right" role="columnheader">Evol.</div>
-            </div>
-          </div>
-          <div>
-            {leaderboard.map((entry, index) => {
-              const isMe = entry.user_id === user?.id;
-
-              return (
-                <motion.div
-                  key={entry.user_id}
-                  onClick={() => navigate(`/profile/${entry.user_id}`)}
-                  role="row"
-                  tabIndex={0}
-                  aria-label={`${entry.position}${entry.position === 1 ? "er" : "e"} - ${entry.username}${isMe ? " (toi)" : ""}, ${entry.total_points} points`}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate(`/profile/${entry.user_id}`); }}
-                  className={`grid grid-cols-12 gap-2 items-center p-4 border-b border-gray-800 transition-colors hover:bg-white/5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-500/50 ${
-                    isMe ? "bg-orange-500/10 ring-1 ring-orange-500/30" : ""
-                  }`}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, margin: "-20px" }}
-                  transition={{ duration: 0.35, delay: Math.min(index * 0.05, 0.4) }}
-                  whileTap={{ scale: 0.98 }}
-                  data-testid={`leaderboard-row-${index}`}
-                >
-                  <div className="col-span-2 flex justify-center">
-                    <span
-                      className={`inline-flex items-center justify-center w-10 h-10 rounded-lg font-heading text-lg ${
-                        index === 0
-                          ? "position-1 animate-gold"
-                          : index === 1
-                            ? "position-2"
-                            : index === 2
-                              ? "position-3"
-                              : "bg-gray-800 text-gray-300 border border-gray-700"
-                      }`}
-                    >
-                      {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : entry.position}
-                    </span>
+                    {leagues.map((league: League) => (
+                      <button
+                        key={league.id}
+                        onClick={() => switchLeague(league.id)}
+                        className={`w-full text-left px-3 py-2.5 text-[0.8125rem]
+                          hover:bg-white/[0.04] transition-colors duration-pk-short
+                          ${league.id === currentLeague?.id ? "text-pk-red" : "text-pk-piste"}`}
+                      >
+                        {league.name}
+                      </button>
+                    ))}
                   </div>
-
-                  <div className="col-span-5">
-                    <p
-                      className={`font-body truncate ${isMe ? "text-cyan-400 font-semibold" : "text-white"}`}
-                    >
-                      {entry.username}
-                      {isMe && " (toi)"}
-                    </p>
-                    {entry.last_race_points > 0 && (
-                      <p className="font-data text-xs text-green-400">
-                        +{entry.last_race_points} derniere course
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="col-span-3 text-right">
-                    <AnimatedNumber
-                      value={entry.total_points}
-                      delay={index * 60 + 200}
-                      className="font-data text-lg text-white"
-                    />
-                    <span className="font-body text-xs text-gray-500 ml-1">pts</span>
-                  </div>
-
-                  <div className="col-span-2 flex justify-end">
-                    {entry.position_change > 0 && (
-                      <span className="flex items-center text-green-400 font-data text-sm bg-green-500/20 px-2 py-1 rounded">
-                        <TrendingUp className="w-3 h-3 mr-1" />+{entry.position_change}
-                      </span>
-                    )}
-                    {entry.position_change < 0 && (
-                      <span className="flex items-center text-red-400 font-data text-sm bg-red-500/20 px-2 py-1 rounded">
-                        <TrendingDown className="w-3 h-3 mr-1" />
-                        {entry.position_change}
-                      </span>
-                    )}
-                    {entry.position_change === 0 && (
-                      <span className="flex items-center text-gray-500 font-data text-sm">
-                        <Minus className="w-4 h-4" />
-                      </span>
-                    )}
-                  </div>
-                </motion.div>
-              );
-            })}
-
-            {leaderboard.length === 0 && (
-              <div className="p-8 text-center">
-                <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                <p className="font-heading text-lg uppercase text-gray-400 mb-2">
-                  Aucun classement
-                </p>
-                <p className="font-body text-sm text-gray-500 mb-4">
-                  Invite tes amis pour commencer !
-                </p>
-                {currentLeague && (
-                  <Button
-                    onClick={shareLeague}
-                    className="btn-racing"
-                    data-testid="invite-friends-btn"
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Inviter des amis
-                  </Button>
                 )}
               </div>
             )}
           </div>
-          <div className="h-2 bg-kerb-stripe" />
         </div>
+      )}
 
-        {leagues.length === 0 && (
-          <div className="card-arcade p-6 text-center">
-            <Trophy className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-            <p className="font-heading text-lg uppercase text-white mb-2">Aucune ligue</p>
-            <p className="font-body text-sm text-gray-400 mb-4">Crée ou rejoins une ligue</p>
-            <Button onClick={() => navigate("/league")} className="btn-racing">
-              Créer / Rejoindre
-            </Button>
+      {/* ---- PODIUM ---- */}
+      {podium.length >= 3 && (
+        <>
+          <div className="flex items-end justify-center gap-2 px-4 pt-6 pb-4">
+            {/* P2 — Silver */}
+            <PodiumSlot entry={podium[1]} medal={"\u{1F948}"} tier="silver" navigate={navigate} />
+            {/* P1 — Gold */}
+            <PodiumSlot entry={podium[0]} medal={"\u{1F947}"} tier="gold" navigate={navigate} />
+            {/* P3 — Bronze */}
+            <PodiumSlot entry={podium[2]} medal={"\u{1F949}"} tier="bronze" navigate={navigate} />
+          </div>
+          {/* Gradient bar */}
+          <div
+            className="h-[3px] mx-4 rounded-full opacity-30"
+            style={{
+              background:
+                "linear-gradient(90deg, var(--pk-gold), var(--pk-silver), var(--pk-bronze))",
+            }}
+          />
+        </>
+      )}
+
+      {/* ---- RANKING TABLE ---- */}
+      <motion.div className="pt-2" variants={staggerContainer} initial="hidden" animate="visible">
+        {rest.map((entry: LeaderboardEntry, i: number) => {
+          const isMe = entry.user_id === user?.id;
+          return (
+            <motion.div
+              key={entry.user_id}
+              variants={slideInLeft}
+              onClick={() => navigate(`/profile/${entry.user_id}`)}
+              className={`
+                flex items-center gap-2 px-4 py-2.5
+                border-b border-white/[0.03]
+                cursor-pointer hover:bg-white/[0.02]
+                transition-colors duration-pk-short
+                ${isMe ? "bg-pk-red-subtle border-l-[3px] border-l-pk-red" : ""}
+              `}
+              role="row"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") navigate(`/profile/${entry.user_id}`);
+              }}
+              aria-label={`${entry.position}e - ${entry.username}${isMe ? " (toi)" : ""}`}
+              data-testid={`leaderboard-row-${i + 3}`}
+            >
+              {/* Position */}
+              <span className="font-mono text-[0.875rem] font-bold text-pk-titane w-7 text-center flex-shrink-0">
+                {entry.position}
+              </span>
+              {/* Avatar */}
+              <div
+                className={`w-8 h-8 rounded-full flex-shrink-0
+                  bg-pk-anthracite flex items-center justify-center
+                  font-display text-[0.625rem]
+                  border-[1.5px] ${isMe ? "border-pk-red" : "border-white/[0.08]"}`}
+              >
+                {entry.username.slice(0, 2).toUpperCase()}
+              </div>
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <p className="text-[0.8125rem] font-medium truncate">
+                  {entry.username}
+                  {isMe && <span className="text-pk-red ml-1 text-[0.6875rem]">(toi)</span>}
+                </p>
+                {entry.last_race_points > 0 && (
+                  <p className="font-mono text-[0.5625rem] text-pk-emerald">
+                    +{entry.last_race_points} dernier GP
+                  </p>
+                )}
+              </div>
+              {/* Points */}
+              <span className="font-mono text-[0.9375rem] font-bold w-[52px] text-right flex-shrink-0">
+                {entry.total_points}
+              </span>
+              {/* Trend */}
+              <TrendBadge change={entry.position_change} />
+            </motion.div>
+          );
+        })}
+
+        {/* Also show podium entries in the list for "me" row if in top 3 */}
+        {leaderboard.length === 0 && (
+          <div className="p-8 text-center">
+            <Users size={32} strokeWidth={1.5} className="text-pk-titane mx-auto mb-3" />
+            <h3 className="font-display text-[1rem] uppercase mb-1 text-pk-titane">
+              Aucun classement
+            </h3>
+            <p className="text-[0.8125rem] text-pk-titane mb-4">Invite tes amis pour commencer !</p>
+            {currentLeague && (
+              <button onClick={shareLeague} className="btn-pk text-[0.8125rem]">
+                <Share2 size={14} strokeWidth={2} />
+                Inviter des amis
+              </button>
+            )}
           </div>
         )}
-      </div>
+      </motion.div>
+
+      {/* No league fallback */}
+      {leagues.length === 0 && (
+        <div className="mx-4 mt-6 bg-pk-surface border border-white/[0.08] rounded-md p-6 text-center">
+          <Trophy size={32} strokeWidth={1.5} className="text-pk-titane mx-auto mb-3" />
+          <h3 className="font-display text-[1.125rem] uppercase mb-1">Aucune ligue</h3>
+          <p className="text-[0.8125rem] text-pk-titane mb-4">Cree ou rejoins une ligue</p>
+          <button onClick={() => navigate("/league")} className="btn-pk">
+            <Plus size={14} strokeWidth={2} />
+            Creer / Rejoindre
+          </button>
+        </div>
+      )}
     </div>
+  );
+}
+
+// ----------------------------------------------------------- sub-components ---
+
+function PodiumSlot({
+  entry,
+  medal,
+  tier,
+  navigate,
+}: {
+  entry: LeaderboardEntry;
+  medal: string;
+  tier: "gold" | "silver" | "bronze";
+  navigate: (path: string) => void;
+}) {
+  const colors = {
+    gold: {
+      bg: "from-[rgba(255,215,0,0.08)] to-[rgba(255,215,0,0.02)]",
+      border: "rgba(255,215,0,0.15)",
+      avatar: "border-pk-gold",
+      pts: "text-pk-gold",
+      size: "w-[110px] min-h-[140px]",
+      avatarSize: "w-12 h-12 text-[0.875rem]",
+    },
+    silver: {
+      bg: "from-[rgba(192,192,192,0.06)] to-[rgba(192,192,192,0.01)]",
+      border: "rgba(192,192,192,0.1)",
+      avatar: "border-pk-silver",
+      pts: "text-pk-silver",
+      size: "w-24 min-h-[110px]",
+      avatarSize: "w-10 h-10 text-[0.75rem]",
+    },
+    bronze: {
+      bg: "from-[rgba(205,127,50,0.06)] to-[rgba(205,127,50,0.01)]",
+      border: "rgba(205,127,50,0.1)",
+      avatar: "border-pk-bronze",
+      pts: "text-pk-bronze",
+      size: "w-24 min-h-[90px]",
+      avatarSize: "w-10 h-10 text-[0.75rem]",
+    },
+  };
+
+  const c = colors[tier];
+
+  return (
+    <motion.div
+      variants={fadeUp}
+      initial="hidden"
+      animate="visible"
+      onClick={() => navigate(`/profile/${entry.user_id}`)}
+      className={`${c.size} flex flex-col items-center
+        rounded-t-md py-3 px-2 cursor-pointer
+        bg-gradient-to-b ${c.bg}`}
+      style={{ borderWidth: 1, borderStyle: "solid", borderColor: c.border, borderBottomWidth: 0 }}
+      role="button"
+      tabIndex={0}
+    >
+      <div
+        className={`${c.avatarSize} rounded-full
+          bg-pk-anthracite flex items-center justify-center
+          font-display border-2 ${c.avatar} mb-1`}
+      >
+        {entry.username.slice(0, 2).toUpperCase()}
+      </div>
+      <span className="text-[1.125rem] mb-0.5">{medal}</span>
+      <p className="font-medium text-[0.6875rem] text-center leading-tight">{entry.username}</p>
+      <p className={`font-mono text-[0.75rem] font-bold mt-0.5 ${c.pts}`}>{entry.total_points}</p>
+      <p className="font-mono text-[0.4375rem] text-pk-titane uppercase">pts</p>
+    </motion.div>
+  );
+}
+
+function TrendBadge({ change }: { change: number }) {
+  if (change > 0) {
+    return (
+      <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 bg-[rgba(16,185,129,0.1)] text-pk-emerald">
+        <TrendingUp size={12} strokeWidth={2} />
+      </span>
+    );
+  }
+  if (change < 0) {
+    return (
+      <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 bg-[rgba(225,6,0,0.1)] text-pk-red">
+        <TrendingDown size={12} strokeWidth={2} />
+      </span>
+    );
+  }
+  return (
+    <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 bg-white/[0.03] text-pk-titane">
+      <Minus size={12} strokeWidth={2} />
+    </span>
   );
 }
