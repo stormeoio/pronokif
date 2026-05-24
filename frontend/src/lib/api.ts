@@ -57,6 +57,12 @@ export const apiClient = axios.create({
   withCredentials: true, // send httpOnly cookies on every request
 });
 
+const REFRESH_EXCLUDED_PATHS = ["/auth/me", "/auth/login", "/auth/register", "/auth/refresh"];
+
+function shouldAttemptRefresh(url?: string): boolean {
+  return !!url && !REFRESH_EXCLUDED_PATHS.some((path) => url.includes(path));
+}
+
 // Track refresh state to avoid concurrent refresh calls
 let isRefreshing = false;
 let refreshSubscribers: ((ok: boolean) => void)[] = [];
@@ -75,7 +81,7 @@ apiClient.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url?.includes("/auth/refresh")
+      shouldAttemptRefresh(originalRequest.url)
     ) {
       if (isRefreshing) {
         // Wait for the ongoing refresh to finish, then retry
@@ -103,7 +109,9 @@ apiClient.interceptors.response.use(
         isRefreshing = false;
         onRefreshDone(false);
         localStorage.removeItem("user");
-        window.location.href = "/auth";
+        if (window.location.pathname !== "/auth") {
+          window.location.href = "/auth";
+        }
         return Promise.reject(error);
       }
     }
