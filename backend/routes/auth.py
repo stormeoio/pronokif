@@ -13,35 +13,35 @@ Security fixes implemented:
 import uuid
 from datetime import UTC, datetime, timedelta
 
+import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 from config import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
     COOKIE_DOMAIN,
     COOKIE_SAMESITE,
     COOKIE_SECURE,
-    ACCESS_TOKEN_EXPIRE_MINUTES,
+    JWT_ALGORITHM,
+    JWT_SECRET,
     REFRESH_TOKEN_EXPIRE_DAYS,
     db,
-    logger,
 )
-
-# Rate limiter (shared instance from middleware, None if slowapi not installed)
-from middleware.security import limiter
-
-# 5 req/min on login+register to block brute force (no-op if slowapi missing)
-_rate_5_per_min = limiter.limit("5/minute") if limiter else lambda f: f
 from features import get_default_user_stats
+from middleware.security import limiter
 from models.schemas import ForgotPasswordRequest, TokenResponse, UserCreate, UserLogin, UserResponse, UserSetUsername
 from services.auth import (
+    MAGIC_LINK_EXPIRE_MINUTES,
     RESET_TOKEN_EXPIRE_MINUTES,
     create_access_token,
+    create_magic_login_token,
     create_refresh_token,
     generate_reset_token,
     generate_verification_token,
     get_current_user,
     get_user_from_refresh_token,
     hash_password,
+    send_magic_login_email,
     send_reset_email,
     send_verification_email,
     validate_password,
@@ -49,6 +49,9 @@ from services.auth import (
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+# 5 req/min on login+register to block brute force (no-op if slowapi missing)
+_rate_5_per_min = limiter.limit("5/minute") if limiter else lambda f: f
 
 # ── Cookie helpers ───────────────────────────────────────────────────────────
 
@@ -81,6 +84,29 @@ def _clear_auth_cookies(response: Response) -> None:
     """Remove auth cookies."""
     response.delete_cookie("access_token", path="/", domain=COOKIE_DOMAIN)
     response.delete_cookie("refresh_token", path="/api/auth", domain=COOKIE_DOMAIN)
+
+
+async def _record_login(user: dict, request: Request) -> None:
+    """Record a login session and update the user's last login timestamp."""
+    client_ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
+    if client_ip and "," in client_ip:
+        client_ip = client_ip.split(",")[0].strip()
+    user_agent = request.headers.get("user-agent", "unknown")
+
+    await db.user_sessions.insert_one(
+        {
+            "id": str(uuid.uuid4()),
+            "user_id": user["id"],
+            "login_at": datetime.now(UTC).isoformat(),
+            "logout_at": None,
+            "user_agent": user_agent,
+            "ip_address": client_ip,
+        }
+    )
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"last_login_at": datetime.now(UTC).isoformat()}},
+    )
 
 
 # ── Register ─────────────────────────────────────────────────────────────────
@@ -158,25 +184,7 @@ async def login(data: UserLogin, request: Request, response: Response):
     if not user or not verify_password(data.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    # Extract IP and user agent from request
-    client_ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
-    if client_ip and "," in client_ip:
-        client_ip = client_ip.split(",")[0].strip()
-    user_agent = request.headers.get("user-agent", "unknown")
-
-    # Record login session
-    session = {
-        "id": str(uuid.uuid4()),
-        "user_id": user["id"],
-        "login_at": datetime.now(UTC).isoformat(),
-        "logout_at": None,
-        "user_agent": user_agent,
-        "ip_address": client_ip,
-    }
-    await db.user_sessions.insert_one(session)
-
-    # Update last login
-    await db.users.update_one({"id": user["id"]}, {"$set": {"last_login_at": datetime.now(UTC).isoformat()}})
+    await _record_login(user, request)
 
     # P0-2 + P1-1: set httpOnly cookies
     access_token = create_access_token(user["id"])
@@ -198,6 +206,106 @@ async def login(data: UserLogin, request: Request, response: Response):
             email_verified=user.get("email_verified", False),
         ),
     )
+
+
+# ── Magic link login ─────────────────────────────────────────────────────────
+
+
+class MagicLinkRequest(BaseModel):
+    email: EmailStr
+
+
+class MagicLinkVerifyRequest(BaseModel):
+    token: str
+
+
+@router.post("/magic-link")
+@_rate_5_per_min
+async def send_magic_link(request: Request, data: MagicLinkRequest) -> dict:
+    """
+    Send a one-time login link.
+    Always returns success to prevent email enumeration.
+    """
+    email = data.email.lower()
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+
+    if user:
+        token, token_id = create_magic_login_token(user["id"])
+        await db.user_magic_links.insert_one(
+            {
+                "token_id": token_id,
+                "user_id": user["id"],
+                "email": email,
+                "used": False,
+                "created_at": datetime.now(UTC),
+                "expires_at": datetime.now(UTC) + timedelta(minutes=MAGIC_LINK_EXPIRE_MINUTES),
+            }
+        )
+        await send_magic_login_email(email, token)
+
+    return {"message": "Si un compte existe avec cet email, un lien magique a ete envoye."}
+
+
+@router.post("/magic-link/verify", response_model=TokenResponse)
+@_rate_5_per_min
+async def verify_magic_link(request: Request, data: MagicLinkVerifyRequest, response: Response):
+    """Verify a one-time magic link and create the user session."""
+    try:
+        payload = jwt.decode(data.token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        if payload.get("type") != "user_magic_link":
+            raise HTTPException(status_code=400, detail="Lien invalide")
+
+        user_id = payload.get("sub")
+        token_id = payload.get("jti")
+        if not user_id or not token_id:
+            raise HTTPException(status_code=400, detail="Lien invalide")
+
+        link_doc = await db.user_magic_links.find_one(
+            {"token_id": token_id, "user_id": user_id, "used": False}
+        )
+        if not link_doc:
+            raise HTTPException(status_code=400, detail="Lien deja utilise ou expire")
+
+        user = await db.users.find_one({"id": user_id}, {"_id": 0})
+        if not user:
+            await db.user_magic_links.update_one({"token_id": token_id}, {"$set": {"used": True}})
+            raise HTTPException(status_code=400, detail="Lien invalide")
+
+        await db.user_magic_links.update_one({"token_id": token_id}, {"$set": {"used": True}})
+        await _record_login(user, request)
+        await db.users.update_one(
+            {"id": user["id"]},
+            {
+                "$set": {"email_verified": True},
+                "$unset": {"email_verification_token": ""},
+            },
+        )
+
+        access_token = create_access_token(user["id"])
+        refresh_token = create_refresh_token(user["id"])
+        _set_auth_cookies(response, access_token, refresh_token)
+
+        user["email_verified"] = True
+        return TokenResponse(
+            access_token=access_token,
+            user=UserResponse(
+                id=user["id"],
+                email=user["email"],
+                username=user.get("username"),
+                created_at=user["created_at"],
+                current_league_id=user.get("current_league_id"),
+                xp=user.get("xp", 0),
+                level=user.get("level", 1),
+                avatar_id=user.get("avatar_id"),
+                custom_avatar_url=user.get("custom_avatar_url"),
+                email_verified=True,
+            ),
+        )
+
+    except jwt.ExpiredSignatureError as exc:
+        raise HTTPException(status_code=400, detail="Lien expire") from exc
+    except jwt.InvalidTokenError as exc:
+        raise HTTPException(status_code=400, detail="Lien invalide") from exc
 
 
 # ── Refresh ──────────────────────────────────────────────────────────────────

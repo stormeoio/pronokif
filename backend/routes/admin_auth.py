@@ -18,6 +18,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
+import html
 import os
 import secrets
 import struct
@@ -30,6 +31,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, EmailStr, Field
 
 from config import JWT_ALGORITHM, JWT_SECRET, db, logger
+from services.email import send_email
 
 router = APIRouter(prefix="/admin-bo", tags=["admin-backoffice-auth"])
 
@@ -176,85 +178,98 @@ class TotpVerifyRequest(BaseModel):
 # ── Email helpers ────────────────────────────────────────────────────────────
 
 
-async def _send_magic_link_email(email: str, magic_url: str) -> None:
-    """Send magic link via SMTP."""
-    import smtplib
-    from email.mime.multipart import MIMEMultipart
-    from email.mime.text import MIMEText
+async def _send_magic_link_email(email: str, magic_url: str) -> bool:
+    """Send admin magic link via SMTP."""
+    safe_magic_url = html.escape(magic_url, quote=True)
+    text_body = f"""Connexion admin PronoKif
 
-    smtp_host = os.environ.get("SMTP_HOST", "")
-    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
-    smtp_user = os.environ.get("SMTP_USER", "")
-    smtp_pass = os.environ.get("SMTP_PASS", "")
-    from_email = os.environ.get("SMTP_FROM", "noreply@pronokif.com")
+Ouvre ce lien pour te connecter au back-office :
+{magic_url}
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = "Pronokif Admin - Connexion"
-    msg["From"] = from_email
-    msg["To"] = email
-
-    html = f"""
+Ce lien expire dans {MAGIC_LINK_EXPIRY_MINUTES} minutes.
+Si tu n'as pas demande ce lien, ignore ce message.
+"""
+    html_body = f"""
     <html>
-    <body style="font-family: sans-serif; background: #0a0f1a; color: #fff; padding: 40px;">
-      <div style="max-width: 500px; margin: 0 auto; background: #1a1f2e; border-radius: 16px; padding: 32px; border: 1px solid #333;">
-        <h1 style="color: #f97316; font-size: 24px; margin-bottom: 16px;">Pronokif Admin</h1>
-        <p style="color: #ccc; margin-bottom: 24px;">Cliquez sur le bouton ci-dessous pour vous connecter au panneau d'administration.</p>
-        <a href="{magic_url}" style="display: inline-block; background: #f97316; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold;">
-          Se connecter
-        </a>
-        <p style="color: #888; font-size: 12px; margin-top: 24px;">Ce lien expire dans {MAGIC_LINK_EXPIRY_MINUTES} minutes. Si vous n'avez pas demande ce lien, ignorez ce message.</p>
-      </div>
-    </body>
+      <body style="margin:0;background:#080d12;color:#f4f4f4;font-family:Arial,sans-serif;">
+        <div style="max-width:560px;margin:0 auto;padding:40px 20px;">
+          <div style="background:#0f1720;border:1px solid #2a3442;border-radius:18px;padding:32px;">
+            <p style="margin:0 0 8px;color:#e10600;font-weight:700;letter-spacing:.08em;">PRONOKIF ADMIN</p>
+            <h1 style="margin:0 0 16px;font-size:26px;color:#ffffff;">Connexion back-office</h1>
+            <p style="margin:0 0 24px;color:#c5ccd6;line-height:1.55;">
+              Clique sur le bouton pour ouvrir ta session administrateur.
+            </p>
+            <a href="{safe_magic_url}" style="display:inline-block;background:#e10600;color:#ffffff;
+              padding:14px 24px;border-radius:10px;text-decoration:none;font-weight:700;">
+              Se connecter
+            </a>
+            <p style="margin:24px 0 0;color:#7f8a99;font-size:12px;line-height:1.5;">
+              Ce lien expire dans {MAGIC_LINK_EXPIRY_MINUTES} minutes.
+              Si tu n'as pas demande ce lien, ignore ce message.
+            </p>
+          </div>
+        </div>
+      </body>
     </html>
     """
-    msg.attach(MIMEText(html, "html"))
+    return await send_email(
+        email,
+        "PronoKif Admin - Connexion",
+        text_body,
+        html_body,
+        raise_on_error=True,
+    )
 
-    with smtplib.SMTP(smtp_host, smtp_port) as server:
-        server.starttls()
-        server.login(smtp_user, smtp_pass)
-        server.send_message(msg)
 
-
-async def _send_invitation_email(email: str, invite_url: str, message: str | None = None) -> None:
+async def _send_invitation_email(email: str, invite_url: str, message: str | None = None) -> bool:
     """Send invitation email via SMTP."""
-    import smtplib
-    from email.mime.multipart import MIMEMultipart
-    from email.mime.text import MIMEText
+    safe_invite_url = html.escape(invite_url, quote=True)
+    safe_message = html.escape(message) if message else ""
+    personal_text = f"\nMessage de l'equipe : {message}\n" if message else ""
+    personal_html = (
+        f'<p style="color:#c5ccd6;margin:0 0 18px;font-style:italic;">"{safe_message}"</p>'
+        if message
+        else ""
+    )
+    text_body = f"""Invitation PronoKif
 
-    smtp_host = os.environ.get("SMTP_HOST", "")
-    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
-    smtp_user = os.environ.get("SMTP_USER", "")
-    smtp_pass = os.environ.get("SMTP_PASS", "")
-    from_email = os.environ.get("SMTP_FROM", "noreply@pronokif.com")
+Tu es invite a rejoindre PronoKif, le jeu de pronostics F1 entre amis.
+{personal_text}
+Creer ton compte :
+{invite_url}
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = "Invitation a rejoindre Pronokif"
-    msg["From"] = from_email
-    msg["To"] = email
-
-    personal_msg = f'<p style="color: #ccc; margin-bottom: 16px; font-style: italic;">"{message}"</p>' if message else ""
-
-    html = f"""
+Cette invitation expire dans 7 jours.
+"""
+    html_body = f"""
     <html>
-    <body style="font-family: sans-serif; background: #0a0f1a; color: #fff; padding: 40px;">
-      <div style="max-width: 500px; margin: 0 auto; background: #1a1f2e; border-radius: 16px; padding: 32px; border: 1px solid #333;">
-        <h1 style="color: #f97316; font-size: 24px; margin-bottom: 16px;">Bienvenue sur Pronokif !</h1>
-        <p style="color: #ccc; margin-bottom: 16px;">Vous etes invite(e) a rejoindre Pronokif, le jeu de pronostics F1 entre amis.</p>
-        {personal_msg}
-        <a href="{invite_url}" style="display: inline-block; background: #f97316; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold;">
-          Creer mon compte
-        </a>
-        <p style="color: #888; font-size: 12px; margin-top: 24px;">Cette invitation expire dans 7 jours.</p>
-      </div>
-    </body>
+      <body style="margin:0;background:#080d12;color:#f4f4f4;font-family:Arial,sans-serif;">
+        <div style="max-width:560px;margin:0 auto;padding:40px 20px;">
+          <div style="background:#0f1720;border:1px solid #2a3442;border-radius:18px;padding:32px;">
+            <p style="margin:0 0 8px;color:#e10600;font-weight:700;letter-spacing:.08em;">PRONOKIF</p>
+            <h1 style="margin:0 0 16px;font-size:26px;color:#ffffff;">Invitation paddock</h1>
+            <p style="margin:0 0 18px;color:#c5ccd6;line-height:1.55;">
+              Tu es invite a rejoindre PronoKif, le jeu de pronostics F1 entre amis.
+            </p>
+            {personal_html}
+            <a href="{safe_invite_url}" style="display:inline-block;background:#e10600;color:#ffffff;
+              padding:14px 24px;border-radius:10px;text-decoration:none;font-weight:700;">
+              Creer mon compte
+            </a>
+            <p style="margin:24px 0 0;color:#7f8a99;font-size:12px;line-height:1.5;">
+              Cette invitation expire dans 7 jours.
+            </p>
+          </div>
+        </div>
+      </body>
     </html>
     """
-    msg.attach(MIMEText(html, "html"))
-
-    with smtplib.SMTP(smtp_host, smtp_port) as server:
-        server.starttls()
-        server.login(smtp_user, smtp_pass)
-        server.send_message(msg)
+    return await send_email(
+        email,
+        "Invitation a rejoindre PronoKif",
+        text_body,
+        html_body,
+        raise_on_error=True,
+    )
 
 
 # ═══════════════════════════════════════ AUTH ENDPOINTS ═══════════════════════
@@ -280,10 +295,7 @@ async def send_magic_link(data: MagicLinkRequest) -> dict:
     frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
     magic_url = f"{frontend_url}/admin/auth?token={token}"
 
-    smtp_host = os.environ.get("SMTP_HOST")
-    if smtp_host:
-        await _send_magic_link_email(email, magic_url)
-    else:
+    if not await _send_magic_link_email(email, magic_url):
         logger.info(f"[Admin Auth] Magic link for {email}: {magic_url}")
 
     return {"message": "Si cette adresse est autorisee, un lien de connexion a ete envoye."}

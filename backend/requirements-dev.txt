@@ -14,7 +14,7 @@ httpx==0.28.1             # match runtime pin used by FastAPI tests
 respx==0.21.1             # mock HTTPX calls (OpenF1, Jolpica)
 
 # -- Linting & formatting --
-ruff==0.7.4               # fast linter, replaces flake8
+ruff==0.15.13             # fast linter, replaces flake8
 
 # -- Type checking --
 types-requests==2.32.0.20241016

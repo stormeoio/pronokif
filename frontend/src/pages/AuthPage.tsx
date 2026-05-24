@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { ArrowRight, Plus } from "lucide-react";
+import { ArrowRight, Loader2, Mail, Plus } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import type { User } from "@/lib/auth";
 import { iconProps } from "@/lib/icons";
 import { fadeUp, easing, duration } from "@/lib/motion";
 import { BorderGlowButton } from "@/components/ui/border-glow-button";
@@ -12,9 +13,46 @@ import { BorderGlowButton } from "@/components/ui/border-glow-button";
 
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [magicSent, setMagicSent] = useState(false);
+  const [verifyingMagic, setVerifyingMagic] = useState(false);
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
-  const { login, register } = useAuth();
+  const consumedMagicTokenRef = useRef<string | null>(null);
+  const { login, loginWithMagicLink, register, requestMagicLink } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const navigateAfterAuth = (user: User) => {
+    if (!user.username) {
+      navigate("/set-username");
+    } else if (!user.current_league_id) {
+      navigate("/league");
+    } else {
+      navigate("/");
+    }
+  };
+
+  useEffect(() => {
+    const token = searchParams.get("magic_token");
+    if (!token || consumedMagicTokenRef.current === token) {
+      return;
+    }
+
+    consumedMagicTokenRef.current = token;
+    setVerifyingMagic(true);
+    loginWithMagicLink(token)
+      .then((user) => {
+        toast.success("Connexion magique validée !");
+        navigateAfterAuth(user);
+      })
+      .catch((error: unknown) => {
+        const message =
+          (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
+          "Lien magique invalide ou expiré";
+        toast.error(message);
+      })
+      .finally(() => setVerifyingMagic(false));
+  }, [loginWithMagicLink, navigate, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>, type: "login" | "register") => {
     e.preventDefault();
@@ -30,17 +68,33 @@ export default function AuthPage() {
 
       toast.success(type === "login" ? "Connexion réussie !" : "Compte créé !");
 
-      if (!user.username) {
-        navigate("/set-username");
-      } else if (!user.current_league_id) {
-        navigate("/league");
-      } else {
-        navigate("/");
-      }
+      navigateAfterAuth(user);
     } catch (error: unknown) {
       const message =
         (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
         "Une erreur est survenue";
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSendMagicLink = async () => {
+    const email = loginEmail.trim();
+    if (!email) {
+      toast.error("Entre ton email pour recevoir le lien magique");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await requestMagicLink(email);
+      setMagicSent(true);
+      toast.success("Lien magique envoyé !");
+    } catch (error: unknown) {
+      const message =
+        (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
+        "Erreur lors de l'envoi du lien magique";
       toast.error(message);
     } finally {
       setIsLoading(false);
@@ -111,6 +165,16 @@ export default function AuthPage() {
             vivez la F1 comme jamais.
           </p>
 
+          {verifyingMagic && (
+            <div
+              className="mb-5 flex items-center justify-center gap-2 rounded-md border
+                border-pk-red/30 bg-pk-red-subtle px-3 py-2 text-[0.75rem] text-pk-piste"
+            >
+              <Loader2 {...iconProps} size={14} className="animate-spin" />
+              Vérification du lien magique...
+            </div>
+          )}
+
           {/* Tabs */}
           <div className="flex rounded-md bg-white/[0.03] border border-white/[0.08] mb-6 overflow-hidden">
             <button
@@ -152,6 +216,11 @@ export default function AuthPage() {
                   placeholder="votre@email.com"
                   required
                   autoComplete="email"
+                  value={loginEmail}
+                  onChange={(e) => {
+                    setLoginEmail(e.target.value);
+                    setMagicSent(false);
+                  }}
                   className="input-pk w-full"
                   data-testid="login-email"
                 />
@@ -198,6 +267,17 @@ export default function AuthPage() {
                 <ArrowRight {...iconProps} size={14} strokeWidth={2} />
                 {isLoading ? "Connexion..." : "Se connecter"}
               </BorderGlowButton>
+
+              <button
+                type="button"
+                disabled={isLoading}
+                onClick={handleSendMagicLink}
+                className="btn-pk-outline mt-2.5 w-full text-[0.75rem]"
+                data-testid="magic-link-submit"
+              >
+                <Mail {...iconProps} size={14} strokeWidth={2} />
+                {magicSent ? "Lien magique envoyé" : "Recevoir un lien magique"}
+              </button>
             </form>
           )}
 

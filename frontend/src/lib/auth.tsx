@@ -31,6 +31,8 @@ interface AuthContextValue {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
+  requestMagicLink: (email: string) => Promise<void>;
+  loginWithMagicLink: (token: string) => Promise<User>;
   register: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   setUsername: (username: string) => Promise<User>;
@@ -92,6 +94,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return u;
   };
 
+  const requestMagicLink = async (email: string): Promise<void> => {
+    await apiClient.post("/auth/magic-link", { email });
+  };
+
+  const loginWithMagicLink = async (token: string): Promise<User> => {
+    const res = await apiClient.post("/auth/magic-link/verify", { token });
+    const u = res.data.user;
+    setUser(u);
+    localStorage.setItem("user", JSON.stringify(u));
+    return u;
+  };
+
   const register = async (email: string, password: string): Promise<User> => {
     const res = await apiClient.post("/auth/register", { email, password });
     const u = res.data.user;
@@ -133,6 +147,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         loading,
         login,
+        requestMagicLink,
+        loginWithMagicLink,
         register,
         logout,
         setUsername,

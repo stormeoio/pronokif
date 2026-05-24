@@ -10,10 +10,8 @@ Tests calculate_points with various prediction/result combinations:
 - Edge cases (empty predictions, missing fields)
 """
 
-import pytest
 
 from services.scoring import calculate_points
-
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────
 

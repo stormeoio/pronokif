@@ -60,6 +60,13 @@ async def ensure_indexes() -> None:
     await db.user_sessions.create_index("user_id")
     await db.user_sessions.create_index([("user_id", 1), ("login_at", -1)])
 
+    # ── user magic links ───────────────────────────────────────────
+    await db.user_magic_links.create_index("token_id", unique=True)
+    await db.user_magic_links.create_index("user_id")
+    await db.user_magic_links.create_index(
+        "expires_at", expireAfterSeconds=0,  # TTL index: auto-delete expired links
+    )
+
     # ── user_stats ─────────────────────────────────────────────────
     await db.user_stats.create_index("user_id", unique=True)
 
@@ -94,4 +101,4 @@ async def ensure_indexes() -> None:
     # ── user_missions ──────────────────────────────────────────────
     await db.user_missions.create_index([("user_id", 1), ("completed", 1)])
 
-    logger.info("[MongoDB] All indexes ensured (%d collections)", 18)
+    logger.info("[MongoDB] All indexes ensured (%d collections)", 19)

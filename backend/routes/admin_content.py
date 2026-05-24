@@ -25,14 +25,13 @@ import os
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
-from typing import Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, EmailStr
 
 from config import db, logger
-from routes.admin_auth import get_current_admin, _send_invitation_email
+from routes.admin_auth import _send_invitation_email, get_current_admin
 
 router = APIRouter(prefix="/admin-bo", tags=["admin-backoffice-content"])
 
@@ -42,7 +41,7 @@ router = APIRouter(prefix="/admin-bo", tags=["admin-backoffice-content"])
 
 class InvitationSend(BaseModel):
     email: EmailStr
-    message: Optional[str] = None
+    message: str | None = None
 
 
 @router.post("/invitations")
@@ -70,10 +69,7 @@ async def send_invitation(
     frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
     invite_url = f"{frontend_url}/auth?invite={invite_token}"
 
-    smtp_host = os.environ.get("SMTP_HOST")
-    if smtp_host:
-        await _send_invitation_email(data.email, invite_url, data.message)
-    else:
+    if not await _send_invitation_email(data.email, invite_url, data.message):
         logger.info(f"[Invitation] Link for {data.email}: {invite_url}")
 
     return {"message": "Invitation envoyee", "id": invitation["id"]}
@@ -132,7 +128,7 @@ async def upload_media(
 
 @router.get("/media")
 async def list_media(
-    entity_type: Optional[str] = None,
+    entity_type: str | None = None,
     admin: dict = Depends(get_current_admin),
 ) -> list[dict]:
     """List all uploaded media."""
@@ -170,16 +166,16 @@ async def delete_media(
 
 
 class AppSettings(BaseModel):
-    app_name: Optional[str] = None
-    app_description: Optional[str] = None
-    primary_color: Optional[str] = None
-    accent_color: Optional[str] = None
-    logo_url: Optional[str] = None
-    favicon_url: Optional[str] = None
-    maintenance_mode: Optional[bool] = None
-    registration_open: Optional[bool] = None
-    max_leagues_per_user: Optional[int] = None
-    current_season: Optional[int] = None
+    app_name: str | None = None
+    app_description: str | None = None
+    primary_color: str | None = None
+    accent_color: str | None = None
+    logo_url: str | None = None
+    favicon_url: str | None = None
+    maintenance_mode: bool | None = None
+    registration_open: bool | None = None
+    max_leagues_per_user: int | None = None
+    current_season: int | None = None
 
 
 @router.get("/settings")

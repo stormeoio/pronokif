@@ -57,7 +57,13 @@ export const apiClient = axios.create({
   withCredentials: true, // send httpOnly cookies on every request
 });
 
-const REFRESH_EXCLUDED_PATHS = ["/auth/me", "/auth/login", "/auth/register", "/auth/refresh"];
+const REFRESH_EXCLUDED_PATHS = [
+  "/auth/me",
+  "/auth/login",
+  "/auth/register",
+  "/auth/refresh",
+  "/auth/magic-link",
+];
 
 function shouldAttemptRefresh(url?: string): boolean {
   return !!url && !REFRESH_EXCLUDED_PATHS.some((path) => url.includes(path));

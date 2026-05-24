@@ -4,8 +4,10 @@ Password hashing/validation, JWT token management (access + refresh),
 cookie-based auth, and email verification.
 """
 
-import re
+import html
+import os
 import random
+import re
 import secrets
 import string
 import uuid
@@ -17,12 +19,13 @@ from fastapi import HTTPException, Request
 
 from config import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
-    REFRESH_TOKEN_EXPIRE_DAYS,
     JWT_ALGORITHM,
     JWT_SECRET,
+    REFRESH_TOKEN_EXPIRE_DAYS,
     db,
     logger,
 )
+from services.email import is_smtp_enabled, send_email
 
 # ── Password validation (P1-2 fix) ──────────────────────────────────────────
 
@@ -157,24 +160,55 @@ def generate_verification_token() -> str:
 
 
 async def send_verification_email(email: str, token: str) -> None:
-    """
-    Send email verification link. Currently logs to console.
-    Replace with actual email service (SendGrid, SES, etc.) for production.
-    """
-    import os
-    frontend_url = os.environ.get("FRONTEND_URL", "https://pronokif.stormeo.io")
+    """Send email verification link via SMTP, with a dev log fallback."""
+    frontend_url = os.environ.get("FRONTEND_URL", "https://pronokif.stormeo.io").rstrip("/")
     verify_url = f"{frontend_url}/verify-email?token={token}"
-    logger.info(
-        f"[Email Verification] To: {email} | "
-        f"Token: {token} | "
-        f"URL: {verify_url}"
+
+    text_body = f"""Bienvenue sur PronoKif !
+
+Confirme ton adresse email pour activer ton compte :
+{verify_url}
+
+Si tu n'as pas cree de compte PronoKif, ignore ce message.
+"""
+    html_body = f"""
+    <html>
+      <body style="margin:0;background:#080d12;color:#f4f4f4;font-family:Arial,sans-serif;">
+        <div style="max-width:560px;margin:0 auto;padding:40px 20px;">
+          <div style="background:#0f1720;border:1px solid #2a3442;border-radius:18px;padding:32px;">
+            <p style="margin:0 0 8px;color:#e10600;font-weight:700;letter-spacing:.08em;">PRONOKIF</p>
+            <h1 style="margin:0 0 16px;font-size:26px;color:#ffffff;">Confirme ton email</h1>
+            <p style="margin:0 0 24px;color:#c5ccd6;line-height:1.55;">
+              Active ton compte pour rejoindre tes ligues et valider tes pronostics.
+            </p>
+            <a href="{verify_url}" style="display:inline-block;background:#e10600;color:#ffffff;
+              padding:14px 24px;border-radius:10px;text-decoration:none;font-weight:700;">
+              Confirmer mon email
+            </a>
+            <p style="margin:24px 0 0;color:#7f8a99;font-size:12px;line-height:1.5;">
+              Si tu n'as pas cree de compte PronoKif, ignore ce message.
+            </p>
+          </div>
+        </div>
+      </body>
+    </html>
+    """
+
+    sent = await send_email(
+        email,
+        "PronoKif - Confirme ton email",
+        text_body,
+        html_body,
     )
+    if not sent and not is_smtp_enabled():
+        logger.info(f"[Email Verification] To: {email} | URL: {verify_url}")
 
 
 # ── Password reset (P1-4 fix) ─────────────────────────────────────────────
 
 
 RESET_TOKEN_EXPIRE_MINUTES = 30
+MAGIC_LINK_EXPIRE_MINUTES = 15
 
 
 def generate_reset_token() -> str:
@@ -182,19 +216,112 @@ def generate_reset_token() -> str:
     return secrets.token_urlsafe(32)
 
 
+def create_magic_login_token(user_id: str) -> tuple[str, str]:
+    """Create a short-lived, one-time magic login JWT and return (token, jti)."""
+    jti = str(uuid.uuid4())
+    payload = {
+        "sub": user_id,
+        "type": "user_magic_link",
+        "jti": jti,
+        "exp": datetime.now(UTC) + timedelta(minutes=MAGIC_LINK_EXPIRE_MINUTES),
+        "iat": datetime.now(UTC),
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM), jti
+
+
 async def send_reset_email(email: str, token: str) -> None:
-    """
-    Send password reset link. Currently logs to console.
-    Replace with actual email service for production.
-    """
-    import os
-    frontend_url = os.environ.get("FRONTEND_URL", "https://pronokif.stormeo.io")
+    """Send password reset link via SMTP, with a dev log fallback."""
+    frontend_url = os.environ.get("FRONTEND_URL", "https://pronokif.stormeo.io").rstrip("/")
     reset_url = f"{frontend_url}/reset-password?token={token}"
-    logger.info(
-        f"[Password Reset] To: {email} | "
-        f"Token: {token} | "
-        f"URL: {reset_url}"
+
+    text_body = f"""Reinitialisation du mot de passe PronoKif
+
+Utilise ce lien pour definir un nouveau mot de passe :
+{reset_url}
+
+Ce lien expire dans {RESET_TOKEN_EXPIRE_MINUTES} minutes.
+Si tu n'as rien demande, ignore ce message.
+"""
+    html_body = f"""
+    <html>
+      <body style="margin:0;background:#080d12;color:#f4f4f4;font-family:Arial,sans-serif;">
+        <div style="max-width:560px;margin:0 auto;padding:40px 20px;">
+          <div style="background:#0f1720;border:1px solid #2a3442;border-radius:18px;padding:32px;">
+            <p style="margin:0 0 8px;color:#e10600;font-weight:700;letter-spacing:.08em;">PRONOKIF</p>
+            <h1 style="margin:0 0 16px;font-size:26px;color:#ffffff;">Nouveau mot de passe</h1>
+            <p style="margin:0 0 24px;color:#c5ccd6;line-height:1.55;">
+              Clique sur le bouton pour definir un nouveau mot de passe.
+            </p>
+            <a href="{reset_url}" style="display:inline-block;background:#e10600;color:#ffffff;
+              padding:14px 24px;border-radius:10px;text-decoration:none;font-weight:700;">
+              Reinitialiser mon mot de passe
+            </a>
+            <p style="margin:24px 0 0;color:#7f8a99;font-size:12px;line-height:1.5;">
+              Ce lien expire dans {RESET_TOKEN_EXPIRE_MINUTES} minutes.
+              Si tu n'as rien demande, ignore ce message.
+            </p>
+          </div>
+        </div>
+      </body>
+    </html>
+    """
+
+    sent = await send_email(
+        email,
+        "PronoKif - Reinitialisation du mot de passe",
+        text_body,
+        html_body,
     )
+    if not sent and not is_smtp_enabled():
+        logger.info(f"[Password Reset] To: {email} | URL: {reset_url}")
+
+
+async def send_magic_login_email(email: str, token: str) -> None:
+    """Send user magic login link via SMTP, with a dev log fallback."""
+    frontend_url = os.environ.get("FRONTEND_URL", "https://pronokif.stormeo.io").rstrip("/")
+    magic_url = f"{frontend_url}/auth?magic_token={token}"
+    safe_magic_url = html.escape(magic_url, quote=True)
+
+    text_body = f"""Connexion PronoKif
+
+Ouvre ce lien pour te connecter sans mot de passe :
+{magic_url}
+
+Ce lien expire dans {MAGIC_LINK_EXPIRE_MINUTES} minutes et ne peut etre utilise qu'une fois.
+Si tu n'as pas demande ce lien, ignore ce message.
+"""
+    html_body = f"""
+    <html>
+      <body style="margin:0;background:#080d12;color:#f4f4f4;font-family:Arial,sans-serif;">
+        <div style="max-width:560px;margin:0 auto;padding:40px 20px;">
+          <div style="background:#0f1720;border:1px solid #2a3442;border-radius:18px;padding:32px;">
+            <p style="margin:0 0 8px;color:#e10600;font-weight:700;letter-spacing:.08em;">PRONOKIF</p>
+            <h1 style="margin:0 0 16px;font-size:26px;color:#ffffff;">Connexion magique</h1>
+            <p style="margin:0 0 24px;color:#c5ccd6;line-height:1.55;">
+              Clique sur le bouton pour ouvrir ta session sans mot de passe.
+            </p>
+            <a href="{safe_magic_url}" style="display:inline-block;background:#e10600;color:#ffffff;
+              padding:14px 24px;border-radius:10px;text-decoration:none;font-weight:700;">
+              Me connecter
+            </a>
+            <p style="margin:24px 0 0;color:#7f8a99;font-size:12px;line-height:1.5;">
+              Ce lien expire dans {MAGIC_LINK_EXPIRE_MINUTES} minutes et ne peut etre utilise qu'une fois.
+              Si tu n'as pas demande ce lien, ignore ce message.
+            </p>
+          </div>
+        </div>
+      </body>
+    </html>
+    """
+
+    sent = await send_email(
+        email,
+        "PronoKif - Ton lien magique",
+        text_body,
+        html_body,
+    )
+    if not sent and not is_smtp_enabled():
+        logger.info(f"[Magic Login] To: {email} | URL: {magic_url}")
 
 
 # ── Utility helpers ──────────────────────────────────────────────────────────

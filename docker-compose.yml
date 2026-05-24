@@ -38,6 +38,15 @@ services:
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me-in-production-32chars!}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@pronokif.stormeo.io}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-PronoKif}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      SMTP_USE_SSL: ${SMTP_USE_SSL:-false}
+      SMTP_TIMEOUT_SECONDS: ${SMTP_TIMEOUT_SECONDS:-15}
     depends_on:
       mongo:
         condition: service_healthy
