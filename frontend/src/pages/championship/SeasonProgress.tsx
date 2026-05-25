@@ -14,6 +14,7 @@ import {
   type PracticeData,
   type RaceResultsData,
 } from "./RaceResultPanels";
+import { getRaceThumbnail } from "@/lib/raceThumbnails";
 
 interface Race {
   round: string;
@@ -156,7 +157,13 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
       }
 
       const raceResultsList = raceData?.MRData?.RaceTable?.Races?.[0]?.Results || [];
-      const fastestLapResult = raceResultsList.find((r: { FastestLap?: { rank?: string; Time?: { time?: string } }; Driver?: unknown; Constructor?: unknown }) => r.FastestLap?.rank === "1");
+      const fastestLapResult = raceResultsList.find(
+        (r: {
+          FastestLap?: { rank?: string; Time?: { time?: string } };
+          Driver?: unknown;
+          Constructor?: unknown;
+        }) => r.FastestLap?.rank === "1",
+      );
       if (fastestLapResult) {
         fastestLap = {
           driver: fastestLapResult.Driver,
@@ -210,6 +217,7 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
           {raceSchedule.map((race) => {
             const completed = isRaceCompleted(race);
             const isSelected = selectedRace?.round === race.round;
+            const raceThumbnail = getRaceThumbnail(race);
 
             return (
               <motion.button
@@ -228,7 +236,22 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
                 whileTap={completed ? { scale: 0.98 } : undefined}
               >
                 <div className="flex items-center gap-3">
-                  <span className="font-data text-lg text-gray-500 w-8">{race.round}</span>
+                  {raceThumbnail ? (
+                    <div className="relative h-12 w-[76px] flex-shrink-0 overflow-hidden rounded-md border border-white/10 bg-black/30">
+                      <img
+                        src={raceThumbnail}
+                        alt={`Vignette ${race.raceName}`}
+                        className={`h-full w-full object-cover ${completed ? "" : "opacity-45 saturate-[0.7]"}`}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      <span className="absolute left-1 top-1 rounded-sm bg-black/70 px-1.5 py-0.5 font-data text-[0.625rem] text-white">
+                        {race.round}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="font-data text-lg text-gray-500 w-8">{race.round}</span>
+                  )}
                   <div>
                     <p className="font-heading text-sm text-white">{race.raceName}</p>
                     <p className="font-body text-xs text-gray-500">

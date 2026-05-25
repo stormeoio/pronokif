@@ -5,7 +5,7 @@
 - **Who it's for:** Fans F1 competitifs EU/UK (500K-1M potentiel), 18-35 ans, mobile-first
 - **Space/industry:** Fantasy sports / F1, concurrents : F1 Fantasy officiel, GridRival, Sorare
 - **Project type:** Web app gamifiee (dashboard + social + jeu) — React 19 + Vite + Tailwind + shadcn/ui + Framer Motion
-- **Tagline:** Predisez. Defiez. Vivez.
+- **Tagline:** Pronostiquez. Defiez. Vivez.
 - **Memorable thing:** "Plus fun que l'officiel" — chaque interaction doit donner envie de revenir le weekend de course suivant
 
 ## Aesthetic Direction
@@ -69,32 +69,55 @@
 
 ## Logo & Brand Identity
 
+### Sources du kit logo
+| Asset | Dimensions | Usage canonique |
+|-------|------------|-----------------|
+| `_0-WORK/BRANDING/pronokif-logo11.png` | 1916x821 | Lockup horizontal officiel `PK | PronoKif F1`, marketing, splash, supports externes |
+| `_0-WORK/BRANDING/pronokif-logo1.png` | 1672x941 | Brandboard de reference : variantes, palette, typographie, zone de protection, usages |
+| `_0-WORK/BRANDING/pronokif-logo3.png` | 1254x1254 | Icône app source : favicon, PWA, notifications, avatar compact |
+
+### Logo principal
+- **Construction:** monogramme metallique `PK` + wordmark `PronoKif`, avec `K` rouge et relief argent. Le rendu logo est un asset de marque : ne pas le recreer avec une font web ou du CSS.
+- **Extension F1:** le lockup `PK | PronoKif F1` est la version officielle pour les supports marketing, la presentation du championnat, les splash/badges et les contexts ou la categorie F1 doit etre explicite.
+- **App UI:** dans les surfaces applicatives repetitives, preferer `PronoKif` ou le symbole `PK` seul pour eviter de surcharger l'interface avec `F1` partout.
+- **Fond minimum:** utiliser le logo sur Noir Carbone `#0B0D12`, Anthracite `#1A1D24`, ou sur fond clair uniquement avec la variante dediee. Sur photo/video, ajouter un overlay sombre avant d'afficher le logo.
+
 ### Symbole PK
-- **Forme:** Monogramme stylise "PK" — lettres imbriquees, angles dynamiques evoquant la vitesse
-- **Zone de protection:** Espace minimum autour du logo = hauteur du "P" sur chaque cote. Aucun element graphique ou texte ne doit empieter sur cette zone.
-- **Fond minimum:** Le logo doit toujours apparaitre sur un fond uni (Noir Carbone ou Rouge Vitesse)
+- **Forme:** monogramme stylise "PK" — lettres imbriquees, angles dynamiques evoquant la vitesse, relief metal et accent Rouge Vitesse sur le `K`.
+- **Usage:** icônes compactes, avatar reseaux sociaux, app icon, favicon, boutons d'identite, splash compact.
+- **Lisibilite:** a 16px/32px, utiliser le symbole seul. Le wordmark complet n'est pas assez lisible en favicon ou micro UI.
+- **Zone de protection:** espace minimum autour du logo = hauteur du `X` mesure dans le symbole PK. Aucun texte, badge, bordure ou autre element graphique ne doit empieter sur cette zone.
 
 ### Variantes du logo
 | Variante | Usage | Fond |
 |----------|-------|------|
-| **Dark (principal)** | Interface app, headers, splash | Noir Carbone `#0B0D12` |
-| **Light** | Supports imprimes clairs, partenariats | Blanc Piste `#F4F4F4` |
-| **Monochrome blanc** | Overlays video, filigrane, favicon | Transparent |
-| **App icon** | PWA, store icons, notifications | Rouge Vitesse `#E10600` fond, PK blanc |
+| **Sur fond sombre** | Interface app, headers, splash, videos avec overlay | Noir Carbone `#0B0D12` / Anthracite `#1A1D24` |
+| **Sur fond clair** | Partenariats, documents, supports print clairs | Blanc Piste `#F4F4F4` |
+| **Monochrome blanc** | Filigrane, overlays video, UI compacte sur fond sombre | Transparent ou fond sombre |
+| **Monochrome noir** | Documents clairs, exports admin, print monochrome | Fond clair uniquement |
+| **Icône app** | PWA, favicon, notifications, app install, homescreen | Tuile noire glossy arrondie + halo Rouge Vitesse |
 
-### Tailles
+### Tailles et lisibilite
 | Contexte | Taille | Notes |
 |----------|--------|-------|
-| Hero / Splash | 128px | Avec animation d'entree |
-| Header desktop | 40-48px | Sidebar ou top bar |
-| Header mobile | 32px | Bottom nav ou top bar |
-| Favicon / PWA | 16-32px | Variante simplifiee si necessaire |
-| App icon | 512px source | Export 192/512px pour PWA manifest |
+| Hero / Splash | 128-220px | Lockup principal ou badge selon surface, avec animation d'entree |
+| Header desktop | 40-48px hauteur | Symbole + wordmark si l'espace le permet |
+| Header mobile | 32px hauteur | Symbole seul ou wordmark court |
+| Avatar reseaux sociaux | 512px source | Symbole PK en crop circulaire avec bord rouge |
+| Favicon navigateur | 16px / 32px | Symbole PK seul depuis l'icône app |
+| PWA / App install | 180px / 192px / 512px | Exports depuis `_0-WORK/BRANDING/pronokif-logo3.png` |
 
 ### Signature
-- Format : `[Logo PK] PronoKif` — logo a gauche, nom en Racing Sans One a droite
-- Espacement entre logo et texte : 12px (desktop), 8px (mobile)
+- Format principal : `[PK] | PronoKif F1` pour les supports officiels.
+- Signature verbale : `PRONOSTIQUEZ. DEFIEZ. VIVEZ.` avec `VIVEZ.` en Rouge Vitesse.
+- Espacement entre symbole et wordmark : 12px desktop, 8px mobile. Le separateur vertical Rouge Vitesse fait partie du lockup officiel et ne doit pas etre improvise ailleurs.
 - Le nom "PronoKif" s'ecrit toujours avec P et K majuscules
+
+### Interdits
+- Ne pas etirer, incliner davantage, recadrer dans la zone de protection ou recoloriser le logo.
+- Ne pas poser le logo metallique sur une image chargee sans overlay sombre.
+- Ne pas reconstruire le wordmark avec Racing Sans One : utiliser l'asset officiel pour toute presence de marque.
+- Ne pas utiliser l'icône app comme simple carte decorative dans l'UI : elle est reservee a l'identite produit, PWA, notifications et splash.
 
 ## Spacing
 - **Base unit:** 4px
@@ -137,6 +160,9 @@
 ### Inventaire des assets de marque
 | Asset | Format | Usage |
 |-------|--------|-------|
+| **Kit logo brandboard** | PNG, 1672x941 | Reference visuelle officielle pour variantes, palette, zone de protection, usages |
+| **Logo principal / extension F1** | PNG, 1916x821 | Lockup `PK | PronoKif F1`, splash, marketing, supports externes |
+| **Icône app PK** | PNG, 1254x1254 | Source favicon, PWA, notifications, homescreen |
 | **Cinematic trailer** | MP4, 9:16 | Splash screen, onboarding, landing page hero |
 | **Jingle intro** | M4A | Splash screen audio, notifications sonores, branding audio |
 | **Modeles 3D** | glTF/GLB | Transitions, celebrations podium, animations hero |
@@ -223,3 +249,4 @@
 | 2026-05-22 | Splash screen video integre | Video cinematique 12.1s en splash avec fondu audio, transition dynamique sweep rouge, skip button |
 | 2026-05-22 | Effets lumineux bordure boutons | Conic-gradient rotatif CSS Houdini sur .btn-pk (primary) et .btn-pk-outline (hover), sweep lumineux interne |
 | 2026-05-23 | Theme v2 CTA Border Glow ajoute | Adapte ReactBits Border Glow aux CTA critiques avec palette PronoKif, halo directionnel pointer-aware et fallback motion reduite |
+| 2026-05-24 | Kit logo officiel integre | Les assets `pronokif-logo11.png`, `pronokif-logo1.png` et `pronokif-logo3.png` deviennent les references pour lockup, brandboard, favicon et PWA |

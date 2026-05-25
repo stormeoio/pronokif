@@ -77,8 +77,10 @@ frontend/blob-report/
 /UI_UX_AUDIT.md
 /SECURITY_AUDIT.md
 /test_result.md
+/RAPPORT_MISSION.html
 
 # ═══════════════════════════════════════ LOCAL BACKUPS ══════════════════════════
+_0-WORK/
 _v0/
 _v0\ bapt/
 bapt/
@@ -90,3 +92,4 @@ backups/
 .chainlit
 .ipynb_checkpoints/
 .vercel
+.gstack/

@@ -16,6 +16,7 @@ import { Button } from "../../components/ui/button";
 import SocialProofBadge from "../../components/SocialProofBadge";
 import OnboardingTooltip from "../../components/OnboardingTooltip";
 import AnimatedCard3D from "../../components/three/AnimatedCard3D";
+import { getRaceThumbnail } from "@/lib/raceThumbnails";
 
 const RaceCountdownOrb = lazy(() => import("../../components/three/RaceCountdownOrb"));
 
@@ -50,6 +51,7 @@ interface Race {
   is_sprint_weekend?: boolean;
   can_predict?: boolean;
   can_predict_sprint?: boolean;
+  thumbnail_url?: string | null;
 }
 
 interface Prediction {
@@ -86,6 +88,7 @@ export default function RaceSlider({
   };
 
   if (!upcomingRaces.length || !currentRace) return null;
+  const raceThumbnail = getRaceThumbnail(currentRace);
 
   return (
     <div className="card-arcade overflow-hidden" data-testid="race-slider">
@@ -124,55 +127,55 @@ export default function RaceSlider({
 
       {/* GP Scenic Background with 3D tilt */}
       <AnimatedCard3D className="rounded-none" glowColor="rgba(251, 191, 36, 0.2)" intensity={0.5}>
-      <div
-        className="relative h-40 bg-cover bg-center cursor-pointer group"
-        style={{ backgroundImage: `url(${getGPBackground(currentRace.name)})` }}
-        onClick={() => navigate(`/race/${currentRace.id}`)}
-        data-testid="race-card-clickable"
-      >
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-[#0c1525] group-hover:from-black/30 transition-all" />
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/race/${currentRace.id}`);
-          }}
-          className="absolute top-3 right-3 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1 text-white text-xs font-body hover:bg-white/20 transition-all z-10"
-          data-testid="view-details-btn"
+        <div
+          className="relative h-40 bg-cover bg-center cursor-pointer group"
+          style={{ backgroundImage: `url(${raceThumbnail || getGPBackground(currentRace.name)})` }}
+          onClick={() => navigate(`/race/${currentRace.id}`)}
+          data-testid="race-card-clickable"
         >
-          <Info className="w-3 h-3" /> Infos / Horaires
-        </button>
-        {currentRace.is_sprint_weekend && (
-          <div className="absolute top-12 right-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-yellow-900 font-heading text-xs px-3 py-1 rounded-full shadow-lg animate-gold">
-            SPRINT
-          </div>
-        )}
-        <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-sm text-white font-heading text-xs px-2 py-1 rounded-full">
-          {currentRaceIndex + 1}/{upcomingRaces.length}
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 p-4">
-          <p className="font-body text-xs text-cyan-300 uppercase tracking-widest mb-1 drop-shadow-lg">
-            {currentRaceIndex === 0 ? "Prochain Grand Prix" : "À venir"}
-          </p>
-          <h2
-            className="font-heading text-2xl text-white uppercase tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
-            style={{ textShadow: "0 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(251,191,36,0.4)" }}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-[#0c1525] group-hover:from-black/30 transition-all" />
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/race/${currentRace.id}`);
+            }}
+            className="absolute top-3 right-3 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1 text-white text-xs font-body hover:bg-white/20 transition-all z-10"
+            data-testid="view-details-btn"
           >
-            {currentRace.name.replace(" Grand Prix", "")}
-          </h2>
-          <div className="flex items-center gap-4 mt-1">
-            <span className="font-body text-xs text-white flex items-center gap-1 drop-shadow-lg">
-              <MapPin className="w-3 h-3 text-red-400" /> {currentRace.circuit}
-            </span>
-            <span className="font-body text-xs text-white flex items-center gap-1 drop-shadow-lg">
-              <Calendar className="w-3 h-3 text-blue-400" />{" "}
-              {new Date(currentRace.date).toLocaleDateString("fr-FR", {
-                day: "numeric",
-                month: "short",
-              })}
-            </span>
+            <Info className="w-3 h-3" /> Infos / Horaires
+          </button>
+          {currentRace.is_sprint_weekend && (
+            <div className="absolute top-12 right-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-yellow-900 font-heading text-xs px-3 py-1 rounded-full shadow-lg animate-gold">
+              SPRINT
+            </div>
+          )}
+          <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-sm text-white font-heading text-xs px-2 py-1 rounded-full">
+            {currentRaceIndex + 1}/{upcomingRaces.length}
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-4">
+            <p className="font-body text-xs text-cyan-300 uppercase tracking-widest mb-1 drop-shadow-lg">
+              {currentRaceIndex === 0 ? "Prochain Grand Prix" : "À venir"}
+            </p>
+            <h2
+              className="font-heading text-2xl text-white uppercase tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
+              style={{ textShadow: "0 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(251,191,36,0.4)" }}
+            >
+              {currentRace.name.replace(" Grand Prix", "")}
+            </h2>
+            <div className="flex items-center gap-4 mt-1">
+              <span className="font-body text-xs text-white flex items-center gap-1 drop-shadow-lg">
+                <MapPin className="w-3 h-3 text-red-400" /> {currentRace.circuit}
+              </span>
+              <span className="font-body text-xs text-white flex items-center gap-1 drop-shadow-lg">
+                <Calendar className="w-3 h-3 text-blue-400" />{" "}
+                {new Date(currentRace.date).toLocaleDateString("fr-FR", {
+                  day: "numeric",
+                  month: "short",
+                })}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
       </AnimatedCard3D>
 
       {/* Countdown Section */}
@@ -287,8 +290,7 @@ interface CountdownRowProps {
 }
 
 function CountdownRow({ label, icon, subLabel, countdown, variant }: CountdownRowProps) {
-  const totalMinutes =
-    countdown.days * 24 * 60 + countdown.hours * 60 + countdown.minutes;
+  const totalMinutes = countdown.days * 24 * 60 + countdown.hours * 60 + countdown.minutes;
   const isUrgent = totalMinutes < 60 && totalMinutes > 0;
   const isCritical = totalMinutes < 15 && totalMinutes > 0;
 

@@ -114,7 +114,7 @@ export default function App() {
   if (!hasStarted) {
     return (
       <PronoKifSplashScreen
-        iconSrc="/icons/pronokif-app-icon.svg"
+        iconSrc="/icons/icon-512.png"
         videoSrc="/video/_Topaz_86430.mp4"
         introDelayMs={7000}
         buttonDelayMs={11000}

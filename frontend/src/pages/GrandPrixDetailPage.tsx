@@ -17,6 +17,7 @@ import {
 import { Button } from "../components/ui/button";
 import { api } from "@/lib/api";
 import { haptic } from "@/lib/haptics";
+import { getRaceThumbnail } from "@/lib/raceThumbnails";
 
 // Circuit layout images (SVG-style track maps from Wikipedia/F1 sources)
 const CIRCUIT_IMAGES = {
@@ -178,8 +179,46 @@ export default function GrandPrixDetailPage() {
     );
   }
 
-  const circuitImage = (CIRCUIT_IMAGES as Record<string, string>)[raceDetails.circuit.name];
+  const circuitName =
+    typeof raceDetails.circuit === "string"
+      ? raceDetails.circuit
+      : raceDetails.circuit?.name || raceDetails.circuit;
+  const circuitFullName =
+    raceDetails.circuit?.full_name || raceDetails.circuit_full_name || circuitName;
+  const circuitLengthKm = raceDetails.circuit?.length_km ?? raceDetails.circuit_length_km;
+  const circuitTurns = raceDetails.circuit?.turns ?? raceDetails.circuit_turns;
+  const circuitLaps = raceDetails.circuit?.laps ?? raceDetails.circuit_laps;
+  const raceSessions = Array.isArray(raceDetails.sessions)
+    ? raceDetails.sessions
+    : Object.entries(raceDetails.sessions ?? {})
+        .filter(([, session]) => Boolean(session))
+        .map(([key, session]) => {
+          const typedSession = session as { date?: string; time?: string; datetime?: string };
+          const labels: Record<string, { name: string; short_name: string }> = {
+            fp1: { name: "Essais Libres 1", short_name: "FP1" },
+            fp2: { name: "Essais Libres 2", short_name: "FP2" },
+            fp3: { name: "Essais Libres 3", short_name: "FP3" },
+            sprint_qualifying: { name: "Qualifications Sprint", short_name: "SQ" },
+            sprint_race: { name: "Sprint", short_name: "SPRINT" },
+            qualifying: { name: "Qualifications", short_name: "QUALI" },
+            race: { name: "Course", short_name: "COURSE" },
+          };
+          const label = labels[key] ?? { name: key, short_name: key.toUpperCase() };
+
+          return {
+            ...label,
+            date: typedSession.date,
+            time: typedSession.time,
+            datetime: typedSession.datetime || `${typedSession.date}T${typedSession.time}:00+00:00`,
+          };
+        });
+  const circuitImage = (CIRCUIT_IMAGES as Record<string, string>)[circuitName];
   const countryFlag = (COUNTRY_FLAGS as Record<string, string>)[raceDetails.country] || "🏁";
+  const raceThumbnail = getRaceThumbnail({
+    id: raceDetails.id || raceId,
+    name: raceDetails.name,
+    circuit: circuitName,
+  });
 
   return (
     <div className="min-h-screen bg-app-main pb-24" data-testid="grandprix-detail-page">
@@ -208,9 +247,25 @@ export default function GrandPrixDetailPage() {
         {/* Race Header Card */}
         <motion.div
           className="card-arcade overflow-hidden glass-card"
-          variants={{ hidden: { opacity: 0, y: 25, scale: 0.97 }, visible: { opacity: 1, y: 0, scale: 1 } }}
+          variants={{
+            hidden: { opacity: 0, y: 25, scale: 0.97 },
+            visible: { opacity: 1, y: 0, scale: 1 },
+          }}
           transition={{ type: "spring", stiffness: 200, damping: 20 }}
         >
+          {raceThumbnail && (
+            <div className="relative aspect-[16/9] overflow-hidden border-b border-white/[0.08]">
+              <img
+                src={raceThumbnail}
+                alt={`Vignette ${raceDetails.name}`}
+                className="h-full w-full object-cover"
+                loading="eager"
+                decoding="async"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0a1220]/85 via-transparent to-transparent" />
+            </div>
+          )}
+
           {/* Title Section */}
           <div className="p-4 border-b border-blue-500/30 bg-gradient-to-r from-blue-900/30 to-transparent">
             <div className="flex items-start justify-between">
@@ -256,7 +311,7 @@ export default function GrandPrixDetailPage() {
               {circuitImage ? (
                 <img
                   src={circuitImage}
-                  alt={`Circuit ${raceDetails.circuit.full_name}`}
+                  alt={`Circuit ${circuitFullName}`}
                   className="w-full h-48 object-contain p-4 filter invert opacity-90"
                   data-testid="circuit-image"
                   onError={(e) => {
@@ -273,7 +328,7 @@ export default function GrandPrixDetailPage() {
                 style={{ display: circuitImage ? "none" : "flex" }}
               >
                 <Route className="w-16 h-16 text-cyan-500/50 mb-2" />
-                <p className="text-gray-400 text-sm font-body">{raceDetails.circuit.name}</p>
+                <p className="text-gray-400 text-sm font-body">{circuitName}</p>
               </div>
               {/* Circuit Name Overlay */}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#0c1525] to-transparent p-3">
@@ -281,7 +336,7 @@ export default function GrandPrixDetailPage() {
                   className="font-heading text-lg text-white text-center"
                   data-testid="circuit-name"
                 >
-                  {raceDetails.circuit.full_name}
+                  {circuitFullName}
                 </p>
               </div>
             </motion.div>
@@ -301,7 +356,7 @@ export default function GrandPrixDetailPage() {
             >
               <Route className="w-5 h-5 text-cyan-400 mx-auto mb-1" />
               <p className="font-data text-lg text-white" data-testid="circuit-length">
-                {raceDetails.circuit.length_km?.toFixed(3) || "N/A"}
+                {circuitLengthKm?.toFixed(3) || "N/A"}
               </p>
               <p className="font-body text-[10px] text-gray-500 uppercase tracking-wider">km</p>
             </motion.div>
@@ -312,7 +367,7 @@ export default function GrandPrixDetailPage() {
             >
               <CornerDownRight className="w-5 h-5 text-yellow-400 mx-auto mb-1" />
               <p className="font-data text-lg text-white" data-testid="circuit-turns">
-                {raceDetails.circuit.turns || "N/A"}
+                {circuitTurns || "N/A"}
               </p>
               <p className="font-body text-[10px] text-gray-500 uppercase tracking-wider">
                 virages
@@ -325,7 +380,7 @@ export default function GrandPrixDetailPage() {
             >
               <Flag className="w-5 h-5 text-red-400 mx-auto mb-1" />
               <p className="font-data text-lg text-white" data-testid="circuit-laps">
-                {raceDetails.circuit.laps || "N/A"}
+                {circuitLaps || "N/A"}
               </p>
               <p className="font-body text-[10px] text-gray-500 uppercase tracking-wider">tours</p>
             </motion.div>
@@ -353,49 +408,62 @@ export default function GrandPrixDetailPage() {
             animate="visible"
             variants={{ visible: { transition: { staggerChildren: 0.06 } }, hidden: {} }}
           >
-            {raceDetails.sessions.map((session: { name: string; short_name: string; date: string; time: string; datetime: string }, index: number) => {
-              const isPast = isPastSession(session.datetime);
-              return (
-                <motion.div
-                  key={index}
-                  className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
-                    isPast ? "bg-white/5 opacity-60" : "bg-white/10 border border-white/10"
-                  }`}
-                  data-testid={`session-${session.short_name.toLowerCase()}`}
-                  variants={{ hidden: { opacity: 0, x: -15 }, visible: { opacity: 1, x: 0 } }}
-                  whileHover={!isPast ? { x: 4, backgroundColor: "rgba(255,255,255,0.08)" } : undefined}
-                >
-                  {/* Session Badge */}
-                  <div
-                    className={`w-16 h-12 rounded-lg bg-gradient-to-br ${getSessionColor(session.short_name)} flex items-center justify-center shadow-lg`}
+            {raceSessions.map(
+              (
+                session: {
+                  name: string;
+                  short_name: string;
+                  date: string;
+                  time: string;
+                  datetime: string;
+                },
+                index: number,
+              ) => {
+                const isPast = isPastSession(session.datetime);
+                return (
+                  <motion.div
+                    key={index}
+                    className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+                      isPast ? "bg-white/5 opacity-60" : "bg-white/10 border border-white/10"
+                    }`}
+                    data-testid={`session-${session.short_name.toLowerCase()}`}
+                    variants={{ hidden: { opacity: 0, x: -15 }, visible: { opacity: 1, x: 0 } }}
+                    whileHover={
+                      !isPast ? { x: 4, backgroundColor: "rgba(255,255,255,0.08)" } : undefined
+                    }
                   >
-                    <span className="font-heading text-xs text-white">{session.short_name}</span>
-                  </div>
-
-                  {/* Session Info */}
-                  <div className="flex-1">
-                    <p className={`font-body text-sm ${isPast ? "text-gray-500" : "text-white"}`}>
-                      {session.name}
-                    </p>
-                    <p
-                      className={`font-body text-xs ${isPast ? "text-gray-600" : "text-gray-400"}`}
+                    {/* Session Badge */}
+                    <div
+                      className={`w-16 h-12 rounded-lg bg-gradient-to-br ${getSessionColor(session.short_name)} flex items-center justify-center shadow-lg`}
                     >
-                      {formatDate(session.datetime)}
-                    </p>
-                  </div>
+                      <span className="font-heading text-xs text-white">{session.short_name}</span>
+                    </div>
 
-                  {/* Time */}
-                  <div className="text-right">
-                    <p
-                      className={`font-data text-lg ${isPast ? "text-gray-500" : "text-cyan-400"}`}
-                    >
-                      {formatTime(session.datetime)}
-                    </p>
-                    <p className="font-body text-[10px] text-gray-500 uppercase">heure FR</p>
-                  </div>
-                </motion.div>
-              );
-            })}
+                    {/* Session Info */}
+                    <div className="flex-1">
+                      <p className={`font-body text-sm ${isPast ? "text-gray-500" : "text-white"}`}>
+                        {session.name}
+                      </p>
+                      <p
+                        className={`font-body text-xs ${isPast ? "text-gray-600" : "text-gray-400"}`}
+                      >
+                        {formatDate(session.datetime)}
+                      </p>
+                    </div>
+
+                    {/* Time */}
+                    <div className="text-right">
+                      <p
+                        className={`font-data text-lg ${isPast ? "text-gray-500" : "text-cyan-400"}`}
+                      >
+                        {formatTime(session.datetime)}
+                      </p>
+                      <p className="font-body text-[10px] text-gray-500 uppercase">heure FR</p>
+                    </div>
+                  </motion.div>
+                );
+              },
+            )}
           </motion.div>
 
           <div className="h-2 bg-kerb-stripe" />
@@ -405,11 +473,17 @@ export default function GrandPrixDetailPage() {
         {raceDetails.status === "upcoming" && (
           <motion.div
             className="card-arcade p-4 glass-card"
-            variants={{ hidden: { opacity: 0, y: 20, scale: 0.95 }, visible: { opacity: 1, y: 0, scale: 1 } }}
+            variants={{
+              hidden: { opacity: 0, y: 20, scale: 0.95 },
+              visible: { opacity: 1, y: 0, scale: 1 },
+            }}
           >
             <motion.div whileTap={{ scale: 0.96 }} whileHover={{ scale: 1.02 }}>
               <Button
-                onClick={() => { haptic("selection"); navigate(`/predictions/${raceId}`); }}
+                onClick={() => {
+                  haptic("selection");
+                  navigate(`/predictions/${raceId}`);
+                }}
                 className="btn-racing w-full h-14 text-lg animate-neon relative overflow-hidden group"
                 data-testid="make-predictions-cta"
               >

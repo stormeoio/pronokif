@@ -7,8 +7,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import AnimatedNumber from "../components/AnimatedNumber";
 import ResultComparisonCard from "./results/ResultComparisonCard";
-import { useAuth } from "@/lib/auth";
-import { api } from "@/lib/api";
+import { api, getApiStatus } from "@/lib/api";
 import type { Race } from "@/types/api";
 
 // Lazy-load 3D podium scene (code-split with Three.js chunk)
@@ -18,21 +17,25 @@ const PodiumScene = lazy(() => import("../components/three/PodiumScene"));
 interface ResultData {
   results: {
     quali_pole: string;
-    quali_top3: string[];
+    quali_top3?: string[];
     quali_top10: string[];
     race_winner: string;
-    race_top3: string[];
+    race_top3?: string[];
     race_top10: string[];
-    safety_car: boolean;
-    dnf_drivers: string[];
-    fastest_lap: string | null;
-    first_corner_leader: string | null;
+    bonus?: {
+      safety_car?: boolean | null;
+      dnf_drivers?: string[];
+      fastest_lap?: string | null;
+      first_corner_leader?: string | null;
+    };
   };
   prediction?: {
     quali_pole: string;
-    quali_top3: string[];
+    quali_top3?: string[];
+    quali_top10?: string[];
     race_winner: string;
-    race_top3: string[];
+    race_top3?: string[];
+    race_top10?: string[];
   };
   points?: {
     total: number;
@@ -44,13 +47,13 @@ interface ResultData {
 export default function ResultsPage() {
   const { raceId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const [manualRaceId, setManualRaceId] = useState<string | null>(null);
 
   const { data: races = [], isLoading: racesLoading } = useQuery({
     queryKey: ["/races"],
     queryFn: () => api.races.list(),
+    refetchInterval: 60_000,
   });
 
   const { data: drivers = [], isLoading: driversLoading } = useQuery({
@@ -67,8 +70,16 @@ export default function ResultsPage() {
 
   const { data: result = null } = useQuery<ResultData | null>({
     queryKey: ["/results", selectedRace?.id],
-    queryFn: () => api.results.get(String(selectedRace!.id)) as unknown as Promise<ResultData | null>,
+    queryFn: async () => {
+      try {
+        return (await api.results.get(String(selectedRace!.id))) as unknown as ResultData;
+      } catch (error) {
+        if (getApiStatus(error) === 404) return null;
+        throw error;
+      }
+    },
     enabled: !!selectedRace?.id,
+    refetchInterval: (query) => (query.state.data?.results ? false : 30_000),
   });
 
   const loading = racesLoading || driversLoading;
@@ -82,6 +93,13 @@ export default function ResultsPage() {
     const driver = drivers.find((d) => d.id === String(driverId));
     return driver?.name || String(driverId);
   };
+
+  const qualiTop3 = result?.results?.quali_top3 ?? result?.results?.quali_top10?.slice(0, 3);
+  const raceTop3 = result?.results?.race_top3 ?? result?.results?.race_top10?.slice(0, 3);
+  const predictionQualiTop3 =
+    result?.prediction?.quali_top3 ?? result?.prediction?.quali_top10?.slice(0, 3);
+  const predictionRaceTop3 =
+    result?.prediction?.race_top3 ?? result?.prediction?.race_top10?.slice(0, 3);
 
   const finishedRaces = races.filter((r) => r.status === "finished");
 
@@ -219,7 +237,11 @@ export default function ResultsPage() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.2 }}
           >
-            <Suspense fallback={<div className="h-[180px] w-full rounded-xl bg-zinc-900/50 animate-pulse" />}>
+            <Suspense
+              fallback={
+                <div className="h-[180px] w-full rounded-xl bg-zinc-900/50 animate-pulse" />
+              }
+            >
               <PodiumScene className="rounded-xl overflow-hidden" />
             </Suspense>
           </motion.div>
@@ -272,7 +294,13 @@ export default function ResultsPage() {
                       {result.points.xp_earned && (
                         <div className="text-right">
                           <span className="font-data text-sm text-yellow-400">
-                            +<AnimatedNumber value={result.points.xp_earned} delay={800} className="" /> XP
+                            +
+                            <AnimatedNumber
+                              value={result.points.xp_earned}
+                              delay={800}
+                              className=""
+                            />{" "}
+                            XP
                           </span>
                         </div>
                       )}
@@ -295,8 +323,8 @@ export default function ResultsPage() {
                 winnerLabel="Pole Position"
                 winnerId={result.results.quali_pole}
                 predictionWinnerId={result.prediction?.quali_pole}
-                top3={result.results.quali_top3}
-                predictionTop3={result.prediction?.quali_top3}
+                top3={qualiTop3}
+                predictionTop3={predictionQualiTop3}
                 getDriverName={getDriverName}
               />
             </motion.div>
@@ -314,8 +342,8 @@ export default function ResultsPage() {
                 winnerLabel="Vainqueur"
                 winnerId={result.results.race_winner}
                 predictionWinnerId={result.prediction?.race_winner}
-                top3={result.results.race_top3}
-                predictionTop3={result.prediction?.race_top3}
+                top3={raceTop3}
+                predictionTop3={predictionRaceTop3}
                 getDriverName={getDriverName}
               />
             </motion.div>

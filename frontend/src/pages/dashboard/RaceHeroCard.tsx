@@ -1,7 +1,6 @@
-import { motion } from "framer-motion";
 import { ArrowRight, Clock } from "lucide-react";
 import { iconSmall } from "@/lib/icons";
-import { easing, duration } from "@/lib/motion";
+import { getRaceThumbnail } from "@/lib/raceThumbnails";
 
 // ----------------------------------------------------------- types ---
 
@@ -21,6 +20,7 @@ interface RaceHeroCardProps {
         date: string;
         can_predict?: boolean;
         is_sprint_weekend?: boolean;
+        thumbnail_url?: string | null;
       }
     | undefined;
   countdown: CountdownValues;
@@ -88,6 +88,7 @@ export default function RaceHeroCard({
     .replace("Grand Prix du ", "")
     .replace("Grand Prix d'", "")
     .replace(" Grand Prix", "");
+  const thumbnailUrl = getRaceThumbnail(race);
 
   const cdUnits = [
     { val: countdown.days, label: "Jours" },
@@ -103,13 +104,36 @@ export default function RaceHeroCard({
         border border-white/[0.08]"
       data-testid="race-hero-card"
     >
-      {/* Red glow corner */}
-      <div
-        className="absolute top-0 right-0 w-[200px] h-[200px] pointer-events-none"
-        style={{
-          background: "radial-gradient(circle, rgba(225,6,0,0.1) 0%, transparent 70%)",
-        }}
-      />
+      {thumbnailUrl ? (
+        <button
+          type="button"
+          onClick={onViewDetails}
+          className="relative block w-full aspect-[16/9] overflow-hidden border-b border-white/[0.08]"
+          aria-label={`Voir les détails de ${race.name}`}
+        >
+          <img
+            src={thumbnailUrl}
+            alt={`Vignette ${race.name}`}
+            className="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03]"
+            loading="lazy"
+            decoding="async"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-pk-carbon/90 via-pk-carbon/10 to-transparent" />
+          <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-sm border border-pk-red/35 bg-pk-carbon/70 px-2 py-1 backdrop-blur-md">
+            <span className="h-1.5 w-1.5 rounded-full bg-pk-red animate-[pulse-dot_2s_ease-in-out_infinite]" />
+            <span className="font-mono text-[0.5625rem] uppercase tracking-[0.14em] text-pk-piste">
+              Prochain GP
+            </span>
+          </div>
+        </button>
+      ) : (
+        <div
+          className="absolute top-0 right-0 w-[200px] h-[200px] pointer-events-none"
+          style={{
+            background: "radial-gradient(circle, rgba(225,6,0,0.1) 0%, transparent 70%)",
+          }}
+        />
+      )}
 
       <div className="relative z-[1] p-5">
         {/* Badge */}

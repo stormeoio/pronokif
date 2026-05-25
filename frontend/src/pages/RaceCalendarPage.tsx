@@ -18,6 +18,7 @@ import {
 import { Button } from "../components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
+import { getRaceThumbnail } from "@/lib/raceThumbnails";
 import type { Race } from "@/types/api";
 
 // Country flag emojis mapping
@@ -115,11 +116,18 @@ export default function RaceCalendarPage() {
   }
 
   return (
-    <div className="min-h-screen bg-app-main pb-24" data-testid="race-calendar-page" aria-labelledby="calendar-title">
+    <div
+      className="min-h-screen bg-app-main pb-24"
+      data-testid="race-calendar-page"
+      aria-labelledby="calendar-title"
+    >
       {/* Header */}
       <div className="sticky top-0 z-40 bg-[#050a14]/95 backdrop-blur-md border-b border-red-500/30">
         <div className="max-w-2xl mx-auto p-4">
-          <h1 id="calendar-title" className="font-heading text-xl uppercase tracking-tight text-white flex items-center gap-2">
+          <h1
+            id="calendar-title"
+            className="font-heading text-xl uppercase tracking-tight text-white flex items-center gap-2"
+          >
             <Calendar className="w-5 h-5 text-red-500" aria-hidden="true" />
             Calendrier F1 2026
           </h1>
@@ -198,13 +206,19 @@ export default function RaceCalendarPage() {
             const canPredict = (race as Race & { can_predict?: boolean }).can_predict;
             const isNextRace = index === 0 && filter === "upcoming";
             const flag = (COUNTRY_FLAGS as Record<string, string>)[race.country] || "🏁";
+            const raceThumbnail = getRaceThumbnail(race);
 
             return (
               <motion.div
                 key={race.id}
                 variants={{
                   hidden: { opacity: 0, y: 20, scale: 0.97 },
-                  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] } },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] },
+                  },
                 }}
                 className={`card-arcade overflow-hidden transition-all glass-card ${
                   isNextRace ? "ring-2 ring-red-500/50 animated-border" : ""
@@ -212,6 +226,34 @@ export default function RaceCalendarPage() {
                 whileHover={{ scale: 1.01, y: -2 }}
                 whileTap={{ scale: 0.98 }}
               >
+                {raceThumbnail && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/race/${race.id}`)}
+                    className="relative block aspect-[16/9] w-full overflow-hidden border-b border-white/[0.08]"
+                    aria-label={`Voir ${race.name}`}
+                  >
+                    <img
+                      src={raceThumbnail}
+                      alt={`Vignette ${race.name}`}
+                      className={`h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03] ${
+                        race.status === "finished" ? "opacity-60 saturate-[0.75]" : ""
+                      }`}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#050a14]/80 via-transparent to-[#050a14]/20" />
+                    <div className="absolute left-3 top-3 rounded-sm border border-white/15 bg-black/55 px-2 py-1 font-data text-[0.6875rem] text-white backdrop-blur">
+                      #{index + 1}
+                    </div>
+                    {isNextRace && (
+                      <div className="absolute right-3 top-3 rounded-sm border border-red-500/40 bg-red-500/20 px-2 py-1 font-heading text-[0.625rem] uppercase tracking-wider text-white backdrop-blur">
+                        Prochain GP
+                      </div>
+                    )}
+                  </button>
+                )}
+
                 {/* Race header with country flag */}
                 <div className="p-4">
                   <div className="flex items-start gap-3">

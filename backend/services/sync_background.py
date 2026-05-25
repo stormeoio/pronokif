@@ -16,19 +16,60 @@ from __future__ import annotations
 import asyncio
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
-import httpx
-
-from config import JOLPICA_API, db, logger
-from data.f1_data import F1_DRIVERS_2026, F1_RACES_2026
+from config import db, logger
+from data.f1_data import F1_RACES_2026
 from services.auth import send_user_notification
-from services.scoring import calculate_points
 
 AUTO_SYNC_INTERVAL_HOURS = 1
+AUTO_SYNC_ACTIVE_INTERVAL_SECONDS = 300
+AUTO_SYNC_ENTERED_BY = "system-auto-sync"
+RACE_SYNC_WINDOW_START_HOURS_BEFORE = 1
+RACE_SYNC_WINDOW_END_HOURS_AFTER = 12
 
 
-def _number_to_id_map() -> dict:
-    return {d["number"]: d["id"] for d in F1_DRIVERS_2026}
+def _race_start_at_utc(race: dict) -> datetime:
+    """Return the race start as UTC, interpreting calendar times as local."""
+    race_date = race.get("date")
+    race_time = race.get("race_time", "15:00")
+    race_tz = ZoneInfo(race.get("timezone", "Europe/Paris"))
+    local_start = datetime.fromisoformat(f"{race_date}T{race_time}:00").replace(tzinfo=race_tz)
+    return local_start.astimezone(UTC)
+
+
+def _race_sync_window(race: dict) -> tuple[datetime, datetime]:
+    """Window where the app should poll frequently for official results."""
+    race_start = _race_start_at_utc(race)
+    return (
+        race_start - timedelta(hours=RACE_SYNC_WINDOW_START_HOURS_BEFORE),
+        race_start + timedelta(hours=RACE_SYNC_WINDOW_END_HOURS_AFTER),
+    )
+
+
+def _has_complete_results(result_doc: dict | None) -> bool:
+    """Stored results are complete enough to score once and stop polling."""
+    if not result_doc:
+        return False
+    results = result_doc.get("results") or {}
+    return bool(results.get("race_winner") and results.get("race_top10"))
+
+
+def _is_inside_race_sync_window(race: dict, now: datetime) -> bool:
+    window_start, window_end = _race_sync_window(race)
+    return window_start <= now <= window_end
+
+
+def _should_attempt_result_sync(
+    race: dict,
+    now: datetime,
+    result_doc: dict | None,
+) -> bool:
+    """Sync from one hour before race start until results are complete."""
+    if _has_complete_results(result_doc):
+        return False
+    window_start, _ = _race_sync_window(race)
+    return now >= window_start
 
 
 async def sync_race_from_api(race: dict) -> dict:
@@ -37,148 +78,43 @@ async def sync_race_from_api(race: dict) -> dict:
     Used by the auto-sync loop and by ``sync_all_pending``. Returns
     ``{"success": bool, "winner"/"error": ...}``.
     """
-    race_id = race["id"]
-    race_date = race.get("date", "")
-    year = race_date.split("-")[0] if race_date else "2026"
-    number_to_id = _number_to_id_map()
-
-    fetched_data: dict[str, Any] = {
-        "quali_pole": None,
-        "quali_top10": [],
-        "sprint_quali_top10": [],
-        "sprint_race_top10": [],
-        "race_winner": None,
-        "race_top10": [],
-        "bonus": {"safety_car": None, "dnf_drivers": [], "fastest_lap": None, "first_corner_leader": None},
-    }
-
     try:
-        async with httpx.AsyncClient(timeout=60) as client:
-            schedule_resp = await client.get(f"{JOLPICA_API}/{year}.json")
-            round_number = None
-            if schedule_resp.status_code == 200:
-                races_list = schedule_resp.json().get("MRData", {}).get("RaceTable", {}).get("Races", [])
-                circuit_name = race.get("circuit", "").lower()
-                race_name = race.get("name", "").lower().replace("grand prix", "").strip()
-                for r in races_list:
-                    r_circuit = r.get("Circuit", {}).get("circuitId", "").lower()
-                    r_name = r.get("raceName", "").lower().replace("grand prix", "").strip()
-                    if race_date == r.get("date", "") or circuit_name in r_circuit or race_name in r_name:
-                        round_number = r.get("round")
-                        break
+        # Import lazily to avoid a module-level circular import: services.sync
+        # re-exports these background functions for backward compatibility.
+        from services.sync import auto_sync_and_save
 
-            if not round_number:
-                return {"success": False, "error": "Round not found"}
+        result = await auto_sync_and_save(race["id"], AUTO_SYNC_ENTERED_BY)
+        fetched_data: dict[str, Any] = result.get("fetched_data") or {}
+        success = result.get("status") == "success" and bool(
+            fetched_data.get("race_winner")
+        )
 
-            quali_resp = await client.get(f"{JOLPICA_API}/{year}/{round_number}/qualifying.json")
-            if quali_resp.status_code == 200:
-                quali_results = (
-                    quali_resp.json()
-                    .get("MRData", {})
-                    .get("RaceTable", {})
-                    .get("Races", [{}])[0]
-                    .get("QualifyingResults", [])
-                )
-                if quali_results:
-                    pole_num = quali_results[0].get("Driver", {}).get("permanentNumber")
-                    if pole_num:
-                        fetched_data["quali_pole"] = number_to_id.get(int(pole_num))
-                    for result in quali_results[:10]:
-                        d_num = result.get("Driver", {}).get("permanentNumber")
-                        if d_num and number_to_id.get(int(d_num)):
-                            fetched_data["quali_top10"].append(number_to_id.get(int(d_num)))
-
-            race_resp = await client.get(f"{JOLPICA_API}/{year}/{round_number}/results.json")
-            if race_resp.status_code == 200:
-                race_results = (
-                    race_resp.json().get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0].get("Results", [])
-                )
-                if race_results:
-                    winner_num = race_results[0].get("Driver", {}).get("permanentNumber")
-                    if winner_num:
-                        fetched_data["race_winner"] = number_to_id.get(int(winner_num))
-                    for result in race_results[:10]:
-                        d_num = result.get("Driver", {}).get("permanentNumber")
-                        if d_num and number_to_id.get(int(d_num)):
-                            fetched_data["race_top10"].append(number_to_id.get(int(d_num)))
-                    short_dnf = ["Accident", "Collision", "Engine", "Gearbox", "Hydraulics", "Retired", "Mechanical"]
-                    for result in race_results:
-                        if any(s in result.get("status", "") for s in short_dnf):
-                            d_num = result.get("Driver", {}).get("permanentNumber")
-                            if d_num and number_to_id.get(int(d_num)):
-                                fetched_data["bonus"]["dnf_drivers"].append(number_to_id.get(int(d_num)))
-                        if result.get("FastestLap", {}).get("rank") == "1":
-                            d_num = result.get("Driver", {}).get("permanentNumber")
-                            if d_num:
-                                fetched_data["bonus"]["fastest_lap"] = number_to_id.get(int(d_num))
-
-        if fetched_data["race_winner"]:
-            await db.race_results.update_one(
-                {"race_id": race_id},
-                {
-                    "$set": {
-                        "race_id": race_id,
-                        "results": fetched_data,
-                        "entered_at": datetime.now(UTC).isoformat(),
-                        "auto_synced": True,
-                    }
-                },
-                upsert=True,
-            )
-
-            predictions = await db.predictions.find({"race_id": race_id}, {"_id": 0}).to_list(1000)
-            for pred in predictions:
-                try:
-                    points = calculate_points(pred, fetched_data)
-                    await db.users.update_one({"id": pred["user_id"]}, {"$inc": {"xp": points["xp_earned"]}})
-                    await send_user_notification(
-                        pred["user_id"], f"Résultats {race['name']}: +{points['total']} pts!", "results"
-                    )
-                    leagues = await db.leagues.find({"members": pred["user_id"]}, {"_id": 0}).to_list(100)
-                    for league in leagues:
-                        entry = await db.leaderboard.find_one({"league_id": league["id"], "user_id": pred["user_id"]})
-                        if entry:
-                            all_entries = await db.leaderboard.find({"league_id": league["id"]}, {"_id": 0}).to_list(100)
-                            all_entries.sort(key=lambda x: x.get("total_points", 0), reverse=True)
-                            current_pos = next(
-                                (i + 1 for i, e in enumerate(all_entries) if e["user_id"] == pred["user_id"]),
-                                len(all_entries),
-                            )
-                            await db.leaderboard.update_one(
-                                {"id": entry["id"]},
-                                {
-                                    "$inc": {"total_points": points["total"]},
-                                    "$set": {"last_race_points": points["total"], "previous_position": current_pos},
-                                },
-                            )
-                except Exception:
-                    pass
-
-            await db.predictions.update_many({"race_id": race_id}, {"$set": {"locked": True}})
-            return {"success": True, "winner": fetched_data["race_winner"]}
-
-        return {"success": False, "error": "No winner found"}
+        return {
+            **result,
+            "success": success,
+            "winner": fetched_data.get("race_winner"),
+            "error": None if success else result.get("message", "No winner found"),
+        }
     except Exception as e:
         return {"success": False, "error": str(e)}
 
 
 async def sync_all_pending() -> dict:
-    """Sync every past race that does not yet have results stored."""
+    """Sync every race whose result window has opened and lacks results."""
     now = datetime.now(UTC)
     synced: list[dict] = []
     failed: list[dict] = []
 
     for race in F1_RACES_2026:
-        race_date = datetime.fromisoformat(race["date"] + "T18:00:00+00:00")
-        if now > race_date:
-            result_doc = await db.race_results.find_one({"race_id": race["id"]}, {"_id": 0})
-            has_results = result_doc and result_doc.get("results", {}).get("race_winner")
-            if not has_results:
-                sync_result = await sync_race_from_api(race)
-                if sync_result.get("success"):
-                    synced.append({"race": race["name"], "winner": sync_result.get("winner")})
-                else:
-                    failed.append({"race": race["name"], "error": sync_result.get("error")})
+        result_doc = await db.race_results.find_one({"race_id": race["id"]}, {"_id": 0})
+        if not _should_attempt_result_sync(race, now, result_doc):
+            continue
+
+        sync_result = await sync_race_from_api(race)
+        if sync_result.get("success"):
+            synced.append({"race": race["name"], "winner": sync_result.get("winner")})
+        else:
+            failed.append({"race": race["name"], "error": sync_result.get("error")})
 
     return {
         "message": f"Sync completed: {len(synced)} synced, {len(failed)} failed",
@@ -193,14 +129,16 @@ async def sync_status() -> dict:
     races_status: list[dict] = []
 
     for race in F1_RACES_2026:
-        race_date = datetime.fromisoformat(race["date"] + "T15:00:00+00:00")
         result_doc = await db.race_results.find_one({"race_id": race["id"]}, {"_id": 0})
-        has_results = result_doc and result_doc.get("results", {}).get("race_winner")
+        has_results = _has_complete_results(result_doc)
+        window_start, window_end = _race_sync_window(race)
 
         status = "upcoming"
         if has_results:
             status = "synced"
-        elif now > race_date:
+        elif window_start <= now <= window_end:
+            status = "live_sync_window"
+        elif now > window_end:
             status = "pending_sync"
 
         races_status.append(
@@ -208,6 +146,9 @@ async def sync_status() -> dict:
                 "id": race["id"],
                 "name": race["name"],
                 "date": race["date"],
+                "race_start_at": _race_start_at_utc(race).isoformat(),
+                "sync_window_start": window_start.isoformat(),
+                "sync_window_end": window_end.isoformat(),
                 "status": status,
                 "has_results": has_results,
                 "auto_synced": result_doc.get("auto_synced", False) if result_doc else False,
@@ -217,10 +158,12 @@ async def sync_status() -> dict:
     return {
         "auto_sync_enabled": True,
         "sync_interval_hours": AUTO_SYNC_INTERVAL_HOURS,
+        "active_sync_interval_seconds": AUTO_SYNC_ACTIVE_INTERVAL_SECONDS,
         "races": races_status,
         "summary": {
             "synced": len([r for r in races_status if r["status"] == "synced"]),
             "pending": len([r for r in races_status if r["status"] == "pending_sync"]),
+            "live_sync_window": len([r for r in races_status if r["status"] == "live_sync_window"]),
             "upcoming": len([r for r in races_status if r["status"] == "upcoming"]),
         },
     }
@@ -252,39 +195,49 @@ async def send_reminders() -> dict:
 
 
 async def auto_sync_loop() -> None:
-    """Background coroutine: every hour, sync past races missing results.
+    """Background coroutine: sync opened race windows until results are stored.
 
-    Owns its own retry-on-error sleep (5 min) and respects ``CancelledError``
-    so the FastAPI shutdown hook can stop it cleanly.
+    Polls every five minutes during an active race result window, then falls
+    back to hourly catch-up for older races. It respects ``CancelledError`` so
+    the FastAPI shutdown hook can stop it cleanly.
     """
     while True:
         try:
-            await asyncio.sleep(AUTO_SYNC_INTERVAL_HOURS * 3600)
-
             now = datetime.now(UTC)
             logger.info(f"[Auto-Sync] Starting automatic results synchronization at {now.isoformat()}")
 
             synced_races: list[str] = []
+            active_window_open = False
+
             for race in F1_RACES_2026:
-                race_date = datetime.fromisoformat(race["date"] + "T18:00:00+00:00")
-                if now > race_date:
-                    result_doc = await db.race_results.find_one({"race_id": race["id"]}, {"_id": 0})
-                    has_results = result_doc and result_doc.get("results", {}).get("race_winner")
-                    if not has_results:
-                        try:
-                            sync_result = await sync_race_from_api(race)
-                            if sync_result.get("success"):
-                                synced_races.append(race["name"])
-                                logger.info(f"[Auto-Sync] Successfully synced {race['name']}")
-                            else:
-                                logger.warning(f"[Auto-Sync] Could not sync {race['name']}: {sync_result.get('error')}")
-                        except Exception as e:
-                            logger.error(f"[Auto-Sync] Error syncing {race['name']}: {e}")
+                result_doc = await db.race_results.find_one({"race_id": race["id"]}, {"_id": 0})
+                if _is_inside_race_sync_window(race, now) and not _has_complete_results(result_doc):
+                    active_window_open = True
+
+                if not _should_attempt_result_sync(race, now, result_doc):
+                    continue
+
+                try:
+                    sync_result = await sync_race_from_api(race)
+                    if sync_result.get("success"):
+                        synced_races.append(race["name"])
+                        logger.info(f"[Auto-Sync] Successfully synced {race['name']}")
+                    else:
+                        logger.warning(f"[Auto-Sync] Could not sync {race['name']}: {sync_result.get('error')}")
+                except Exception as e:
+                    logger.error(f"[Auto-Sync] Error syncing {race['name']}: {e}")
 
             if synced_races:
                 logger.info(f"[Auto-Sync] Completed. Synced races: {', '.join(synced_races)}")
             else:
                 logger.info("[Auto-Sync] No new races to sync")
+
+            sleep_seconds = (
+                AUTO_SYNC_ACTIVE_INTERVAL_SECONDS
+                if active_window_open
+                else AUTO_SYNC_INTERVAL_HOURS * 3600
+            )
+            await asyncio.sleep(sleep_seconds)
 
         except asyncio.CancelledError:
             logger.info("[Auto-Sync] Background task cancelled")
