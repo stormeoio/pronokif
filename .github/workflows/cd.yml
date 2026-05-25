@@ -1,44 +1,40 @@
-# Pronokif CD — auto-deploy on push to main (after CI passes).
+# Pronokif CD — trigger StormDeploy on push to main.
 #
-# Strategy:
-#   1. Build Docker images for backend + frontend
-#   2. Push to DigitalOcean Container Registry (DOCR)
-#   3. Trigger app re-deployment via doctl
+# Required GitHub secret:
+#   STORMDEPLOY_WEBHOOK_SECRET — HMAC secret configured on the StormDeploy app
 #
-# Required secrets:
-#   DIGITALOCEAN_ACCESS_TOKEN — DO API token with read/write
-#   DIGITALOCEAN_APP_ID_BACKEND — App Platform app ID (backend)
-#   DIGITALOCEAN_APP_ID_FRONTEND — App Platform app ID (frontend)
-#   VITE_BACKEND_URL — production backend URL
-#   VITE_SENTRY_DSN — Sentry DSN for frontend (optional)
+# Optional GitHub variable:
+#   STORMDEPLOY_WEBHOOK_URL — defaults to the production Pronokif StormDeploy webhook
 
 name: CD
 
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
   checks: read
-  actions: read
 
 concurrency:
   group: cd-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  REGISTRY: registry.digitalocean.com/pronokif
-  BACKEND_IMAGE: pronokif-backend
-  FRONTEND_IMAGE: pronokif-frontend
-
 jobs:
-  # Wait for CI to pass before deploying
   ci-check:
     name: Wait for CI
     runs-on: ubuntu-latest
     steps:
-      - name: Wait for CI workflow
+      - name: Wait for backend CI gate
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.sha }}
+          check-name: "Backend (lint + test)"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+
+      - name: Wait for frontend CI gate
         uses: lewagon/wait-on-check-action@v1.3.4
         with:
           ref: ${{ github.sha }}
@@ -46,79 +42,71 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 10
 
-  deploy-backend:
-    name: Deploy Backend
+      - name: Wait for Docker build gate
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.sha }}
+          check-name: "Docker build check"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+
+  deploy:
+    name: Trigger StormDeploy
     runs-on: ubuntu-latest
     needs: [ci-check]
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
-      - name: Login to DOCR
-        run: doctl registry login --expiry-seconds 300
-
-      - name: Build & push backend image
+      - name: Trigger signed StormDeploy webhook
+        env:
+          STORMDEPLOY_WEBHOOK_URL: ${{ vars.STORMDEPLOY_WEBHOOK_URL || 'https://beta.stormeo.io/api/storm-deploy/webhook/pronokif' }}
+          STORMDEPLOY_WEBHOOK_SECRET: ${{ secrets.STORMDEPLOY_WEBHOOK_SECRET }}
         run: |
-          docker build -t ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }} \
-                       -t ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:latest \
-                       ./backend
-          docker push ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:latest
+          if [ -z "$STORMDEPLOY_WEBHOOK_SECRET" ]; then
+            echo "::error::Missing STORMDEPLOY_WEBHOOK_SECRET. Configure the GitHub secret with the value stored on the StormDeploy app."
+            exit 1
+          fi
 
-      - name: Trigger backend re-deploy
-        if: ${{ vars.DIGITALOCEAN_APP_ID_BACKEND != '' }}
+          commit_message="$(git log -1 --pretty=%s)"
+          payload="$(jq -nc \
+            --arg ref "$GITHUB_REF" \
+            --arg after "$GITHUB_SHA" \
+            --arg message "$commit_message" \
+            '{ref: $ref, after: $after, head_commit: {message: $message}}')"
+
+          signature="$(printf '%s' "$payload" | openssl dgst -sha256 -hmac "$STORMDEPLOY_WEBHOOK_SECRET" | awk '{print $2}')"
+
+          curl --fail-with-body --show-error --silent \
+            -X POST "$STORMDEPLOY_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-Hub-Signature-256: sha256=$signature" \
+            --data "$payload"
+
+      - name: Canary health check
         run: |
-          doctl apps create-deployment ${{ vars.DIGITALOCEAN_APP_ID_BACKEND }} --force-rebuild --wait
-
-  deploy-frontend:
-    name: Deploy Frontend
-    runs-on: ubuntu-latest
-    needs: [ci-check]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
-      - name: Login to DOCR
-        run: doctl registry login --expiry-seconds 300
-
-      - name: Build & push frontend image
-        run: |
-          docker build -t ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }} \
-                       -t ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:latest \
-                       --build-arg VITE_BACKEND_URL=${{ secrets.VITE_BACKEND_URL }} \
-                       --build-arg VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }} \
-                       ./frontend
-          docker push ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:latest
-
-      - name: Trigger frontend re-deploy
-        if: ${{ vars.DIGITALOCEAN_APP_ID_FRONTEND != '' }}
-        run: |
-          doctl apps create-deployment ${{ vars.DIGITALOCEAN_APP_ID_FRONTEND }} --force-rebuild --wait
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error https://pronokif.stormeo.io/api/health >/tmp/pronokif-health.json; then
+              cat /tmp/pronokif-health.json
+              exit 0
+            fi
+            echo "Waiting for Pronokif health check ($attempt/30)..."
+            sleep 10
+          done
+          echo "::error::Pronokif health check did not recover after deploy trigger."
+          exit 1
 
   notify:
-    name: Notify deployment
+    name: Deployment summary
     runs-on: ubuntu-latest
-    needs: [deploy-backend, deploy-frontend]
+    needs: [deploy]
     if: always()
 
     steps:
-      - name: Deployment summary
+      - name: Summary
         run: |
-          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Backend:** ${{ needs.deploy-backend.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Frontend:** ${{ needs.deploy-frontend.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Author:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "## Deployment Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Commit:** \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Branch:** \`${{ github.ref_name }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **StormDeploy:** ${{ needs.deploy.result }}" >> "$GITHUB_STEP_SUMMARY"
