@@ -17,7 +17,7 @@ import NetworkStatus from "@/components/NetworkStatus";
 import ScrollToTop from "@/components/ScrollToTop";
 import PageTransition from "@/components/PageTransition";
 import EmailVerificationBanner from "@/components/EmailVerificationBanner";
-import PronoKifSplashScreen from "@/components/splash/PronoKifSplashScreen";
+import SplashScreen from "@/components/SplashScreen";
 import "@/App.css";
 
 // Lazy-load heavy 3D components for performance
@@ -113,12 +113,12 @@ export default function App() {
 
   if (!hasStarted) {
     return (
-      <PronoKifSplashScreen
+      <SplashScreen
         iconSrc="/icons/icon-512.png"
-        videoSrc="/video/_Topaz_86430.mp4"
-        introDelayMs={7000}
-        buttonDelayMs={11000}
-        onStart={handleSplashStart}
+        videoSrc="/video/splash-trailer.mp4"
+        introDelayMs={950}
+        buttonDelayMs={3600}
+        onComplete={handleSplashStart}
       />
     );
   }

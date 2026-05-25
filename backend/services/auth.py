@@ -159,7 +159,7 @@ def generate_verification_token() -> str:
     return secrets.token_urlsafe(32)
 
 
-async def send_verification_email(email: str, token: str) -> None:
+async def send_verification_email(email: str, token: str) -> bool:
     """Send email verification link via SMTP, with a dev log fallback."""
     frontend_url = os.environ.get("FRONTEND_URL", "https://pronokif.stormeo.io").rstrip("/")
     verify_url = f"{frontend_url}/verify-email?token={token}"
@@ -202,6 +202,7 @@ Si tu n'as pas cree de compte PronoKif, ignore ce message.
     )
     if not sent and not is_smtp_enabled():
         logger.info(f"[Email Verification] To: {email} | URL: {verify_url}")
+    return sent
 
 
 # ── Password reset (P1-4 fix) ─────────────────────────────────────────────
@@ -229,7 +230,7 @@ def create_magic_login_token(user_id: str) -> tuple[str, str]:
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM), jti
 
 
-async def send_reset_email(email: str, token: str) -> None:
+async def send_reset_email(email: str, token: str) -> bool:
     """Send password reset link via SMTP, with a dev log fallback."""
     frontend_url = os.environ.get("FRONTEND_URL", "https://pronokif.stormeo.io").rstrip("/")
     reset_url = f"{frontend_url}/reset-password?token={token}"
@@ -274,9 +275,10 @@ Si tu n'as rien demande, ignore ce message.
     )
     if not sent and not is_smtp_enabled():
         logger.info(f"[Password Reset] To: {email} | URL: {reset_url}")
+    return sent
 
 
-async def send_magic_login_email(email: str, token: str) -> None:
+async def send_magic_login_email(email: str, token: str) -> bool:
     """Send user magic login link via SMTP, with a dev log fallback."""
     frontend_url = os.environ.get("FRONTEND_URL", "https://pronokif.stormeo.io").rstrip("/")
     magic_url = f"{frontend_url}/auth?magic_token={token}"
@@ -322,6 +324,7 @@ Si tu n'as pas demande ce lien, ignore ce message.
     )
     if not sent and not is_smtp_enabled():
         logger.info(f"[Magic Login] To: {email} | URL: {magic_url}")
+    return sent
 
 
 # ── Utility helpers ──────────────────────────────────────────────────────────

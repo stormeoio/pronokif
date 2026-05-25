@@ -10,6 +10,7 @@ Security fixes implemented:
   P1-3: email verification on registration
 """
 
+import re
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -26,6 +27,7 @@ from config import (
     JWT_SECRET,
     REFRESH_TOKEN_EXPIRE_DAYS,
     db,
+    logger,
 )
 from features import get_default_user_stats
 from middleware.security import limiter
@@ -54,6 +56,16 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 _rate_5_per_min = limiter.limit("5/minute") if limiter else lambda f: f
 
 # ── Cookie helpers ───────────────────────────────────────────────────────────
+
+
+def _normalize_email(email: str) -> str:
+    """Normalize user emails before storage and lookup."""
+    return email.strip().lower()
+
+
+def _user_email_filter(email: str) -> dict:
+    """Case-insensitive lookup for legacy accounts stored before normalization."""
+    return {"email": {"$regex": f"^{re.escape(_normalize_email(email))}$", "$options": "i"}}
 
 
 def _set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
@@ -116,12 +128,14 @@ async def _record_login(user: dict, request: Request) -> None:
 @_rate_5_per_min
 async def register(request: Request, data: UserCreate, response: Response):
     """Register a new user with password validation and email verification."""
+    email = _normalize_email(data.email)
+
     # P1-2: validate password complexity
     password_error = validate_password(data.password)
     if password_error:
         raise HTTPException(status_code=422, detail=password_error)
 
-    existing = await db.users.find_one({"email": data.email})
+    existing = await db.users.find_one(_user_email_filter(email))
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
@@ -131,7 +145,7 @@ async def register(request: Request, data: UserCreate, response: Response):
     user_id = str(uuid.uuid4())
     user = {
         "id": user_id,
-        "email": data.email,
+        "email": email,
         "password_hash": hash_password(data.password),
         "username": None,
         "current_league_id": None,
@@ -149,7 +163,7 @@ async def register(request: Request, data: UserCreate, response: Response):
     await db.user_stats.insert_one({"user_id": user_id, **get_default_user_stats()})
 
     # Send verification email (logs URL in dev, sends real email in prod)
-    await send_verification_email(data.email, verification_token)
+    await send_verification_email(email, verification_token)
 
     # P0-2 + P1-1: set httpOnly cookies
     access_token = create_access_token(user_id)
@@ -160,7 +174,7 @@ async def register(request: Request, data: UserCreate, response: Response):
         access_token=access_token,
         user=UserResponse(
             id=user_id,
-            email=data.email,
+            email=email,
             username=None,
             created_at=user["created_at"],
             current_league_id=None,
@@ -180,7 +194,8 @@ async def register(request: Request, data: UserCreate, response: Response):
 @_rate_5_per_min
 async def login(data: UserLogin, request: Request, response: Response):
     """Login with email and password. Sets httpOnly cookies."""
-    user = await db.users.find_one({"email": data.email}, {"_id": 0})
+    email = _normalize_email(data.email)
+    user = await db.users.find_one(_user_email_filter(email), {"_id": 0})
     if not user or not verify_password(data.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
@@ -226,8 +241,8 @@ async def send_magic_link(request: Request, data: MagicLinkRequest) -> dict:
     Send a one-time login link.
     Always returns success to prevent email enumeration.
     """
-    email = data.email.lower()
-    user = await db.users.find_one({"email": email}, {"_id": 0})
+    email = _normalize_email(data.email)
+    user = await db.users.find_one(_user_email_filter(email), {"_id": 0})
 
     if user:
         token, token_id = create_magic_login_token(user["id"])
@@ -241,7 +256,9 @@ async def send_magic_link(request: Request, data: MagicLinkRequest) -> dict:
                 "expires_at": datetime.now(UTC) + timedelta(minutes=MAGIC_LINK_EXPIRE_MINUTES),
             }
         )
-        await send_magic_login_email(email, token)
+        sent = await send_magic_login_email(email, token)
+        if not sent:
+            logger.warning("[Magic Login] Email delivery was not confirmed for %s", email)
 
     return {"message": "Si un compte existe avec cet email, un lien magique a ete envoye."}
 
@@ -437,8 +454,8 @@ async def forgot_password(request: Request, data: ForgotPasswordRequest):
     Request a password reset link.
     Always returns success to prevent email enumeration.
     """
-    email = data.email.lower()
-    user = await db.users.find_one({"email": email})
+    email = _normalize_email(data.email)
+    user = await db.users.find_one(_user_email_filter(email))
 
     if user:
         token = generate_reset_token()
@@ -453,7 +470,10 @@ async def forgot_password(request: Request, data: ForgotPasswordRequest):
                 }
             },
         )
-        await send_reset_email(email, token)
+        sent = await send_reset_email(email, token)
+        if not sent:
+            # Keep the public response enumeration-safe while preserving ops visibility.
+            logger.warning("[Password Reset] Email delivery was not confirmed for %s", email)
 
     # Always return same message (no email enumeration)
     return {"message": "Si un compte existe avec cet email, un lien de reinitialisation a ete envoye."}

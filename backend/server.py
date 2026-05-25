@@ -55,6 +55,7 @@ from routes.predictions import router as predictions_router
 from routes.profile import router as profile_router
 from routes.races import router as races_router
 from routes.results import router as results_router
+from services.email import get_smtp_settings
 from services.indexes import ensure_indexes
 from services.sync import auto_sync_loop
 
@@ -101,6 +102,18 @@ auto_sync_task: asyncio.Task | None = None
 async def startup_event() -> None:
     global auto_sync_task
     await ensure_indexes()
+    smtp_settings = get_smtp_settings()
+    if smtp_settings:
+        logger.info(
+            "[Email] SMTP enabled host=%s port=%s from=%s tls=%s ssl=%s",
+            smtp_settings.host,
+            smtp_settings.port,
+            smtp_settings.from_email,
+            smtp_settings.use_tls,
+            smtp_settings.use_ssl,
+        )
+    else:
+        logger.warning("[Email] SMTP disabled: SMTP_HOST is not configured")
     auto_sync_task = asyncio.create_task(auto_sync_loop())
     logger.info("[Auto-Sync] Background synchronization task started")
 

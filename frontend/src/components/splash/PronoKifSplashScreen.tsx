@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /**
  * PronoKif F1 splashscreen
@@ -14,9 +14,9 @@ import React, { useEffect, useMemo, useState } from "react";
  * - Stronger glow layers, but composited on GPU.
  *
  * Timeline:
- * 0s  -> intro video starts
- * 7s  -> app icon + wordmark + baseline appear
- * 11s -> progress bar is replaced by the "Commencer" button
+ * 0s    -> intro video + centered progress bar start immediately
+ * ~1s   -> app icon + wordmark + baseline appear
+ * ~3.6s -> progress reaches 100% and morphs into "Commencer"
  */
 
 type BorderGlowButtonProps = {
@@ -41,11 +41,20 @@ type PronoKifSplashScreenProps = {
   appName?: string;
   baseline?: string;
   loadingLabel?: string;
+  loadingLogs?: string[];
   introDelayMs?: number;
   buttonDelayMs?: number;
+  maxDurationMs?: number;
   onStart?: () => void;
   className?: string;
 };
+
+const DEFAULT_LOADING_LOGS = [
+  "Initialisation du paddock",
+  "Chargement du calendrier 2026",
+  "Préparation des pronostics",
+  "Ouverture de la grille",
+];
 
 export function BorderGlowButton({
   children,
@@ -106,18 +115,30 @@ export function AppIconGlow({
 
 export default function PronoKifSplashScreen({
   iconSrc,
-  videoSrc = "/video/_Topaz_86430.mp4",
+  videoSrc = "/video/splash-trailer.mp4",
   posterSrc,
   appName = "PronoKif F1",
   baseline = "Pronostiquez. Défiez. Vivez.",
-  loadingLabel = "Chargement de la grille…",
-  introDelayMs = 7000,
-  buttonDelayMs = 11000,
+  loadingLabel = "Synchronisation paddock",
+  loadingLogs = DEFAULT_LOADING_LOGS,
+  introDelayMs = 950,
+  buttonDelayMs = 3600,
+  maxDurationMs = 13000,
   onStart,
   className = "",
 }: PronoKifSplashScreenProps) {
   const [logoVisible, setLogoVisible] = useState(false);
   const [ready, setReady] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [activeLogIndex, setActiveLogIndex] = useState(0);
+  const hasCompletedRef = useRef(false);
+
+  const completeSplash = useCallback(() => {
+    if (hasCompletedRef.current) return;
+    hasCompletedRef.current = true;
+    setIsLeaving(true);
+    window.setTimeout(() => onStart?.(), 620);
+  }, [onStart]);
 
   useEffect(() => {
     const logoTimer = window.setTimeout(() => setLogoVisible(true), introDelayMs);
@@ -129,13 +150,37 @@ export default function PronoKifSplashScreen({
     };
   }, [introDelayMs, buttonDelayMs]);
 
-  const progressDuration = useMemo(
-    () => Math.max(buttonDelayMs - introDelayMs, 1200),
-    [buttonDelayMs, introDelayMs],
-  );
+  const startupLogs = useMemo(() => loadingLogs.filter(Boolean), [loadingLogs]);
+
+  useEffect(() => {
+    if (ready || startupLogs.length <= 1) return undefined;
+
+    const logTimer = window.setInterval(
+      () => {
+        setActiveLogIndex((index) => Math.min(index + 1, startupLogs.length - 1));
+      },
+      Math.max(buttonDelayMs / startupLogs.length, 560),
+    );
+
+    return () => window.clearInterval(logTimer);
+  }, [buttonDelayMs, ready, startupLogs.length]);
+
+  useEffect(() => {
+    const media = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    if (media?.matches) {
+      completeSplash();
+    }
+  }, [completeSplash]);
+
+  useEffect(() => {
+    const safetyTimer = window.setTimeout(completeSplash, maxDurationMs);
+    return () => window.clearTimeout(safetyTimer);
+  }, [completeSplash, maxDurationMs]);
+
+  const progressDuration = useMemo(() => Math.max(buttonDelayMs, 1200), [buttonDelayMs]);
 
   return (
-    <main className={`pk-splash ${className}`}>
+    <main className={`pk-splash ${isLeaving ? "is-leaving" : ""} ${className}`}>
       <style>{styles}</style>
 
       <div className="pk-splash__videoLayer" aria-hidden="true">
@@ -146,9 +191,13 @@ export default function PronoKifSplashScreen({
           autoPlay
           muted
           playsInline
-          loop
           preload="auto"
           data-testid="splash-video"
+          onEnded={completeSplash}
+          onError={() => {
+            setLogoVisible(true);
+            setReady(true);
+          }}
         />
         <div className="pk-splash__videoOverlay" />
       </div>
@@ -158,6 +207,15 @@ export default function PronoKifSplashScreen({
         <div className="pk-splash__redFog pk-splash__redFog--left" />
         <div className="pk-splash__redFog pk-splash__redFog--right" />
       </div>
+
+      <button
+        type="button"
+        className="pk-splash__skip"
+        onClick={completeSplash}
+        data-testid="splash-skip"
+      >
+        Passer
+      </button>
 
       <section
         className={`pk-splash__content ${logoVisible ? "is-visible" : ""}`}
@@ -173,8 +231,15 @@ export default function PronoKifSplashScreen({
           </h1>
           <p className="pk-splash__baseline">{baseline}</p>
         </div>
+      </section>
 
-        <div className={`pk-splash__actionZone ${ready ? "is-ready" : ""}`}>
+      <section
+        className={`pk-splash__loaderDock ${logoVisible ? "has-logo" : ""} ${
+          ready ? "is-ready" : ""
+        }`}
+        aria-label="Chargement PronoKif F1"
+      >
+        <div className="pk-splash__actionZone">
           <div className="pk-progress" role="status" aria-live="polite">
             <div className="pk-progress__track">
               <div
@@ -182,10 +247,22 @@ export default function PronoKifSplashScreen({
                 style={{ animationDuration: `${progressDuration}ms` }}
               />
             </div>
-            <span>{loadingLabel}</span>
+            <div className="pk-progress__copy">
+              <span className="pk-progress__label">{loadingLabel}</span>
+              <div className="pk-progress__logs" aria-label="Étapes de chargement">
+                {startupLogs.map((log, index) => (
+                  <span
+                    key={log}
+                    className={`pk-progress__log ${index <= activeLogIndex ? "is-active" : ""}`}
+                  >
+                    {log}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <BorderGlowButton onClick={onStart} className="pk-splash__startButton">
+          <BorderGlowButton onClick={completeSplash} className="pk-splash__startButton">
             Commencer
           </BorderGlowButton>
         </div>
@@ -215,6 +292,50 @@ const styles = `
   background: #020307;
   font-family: Chivo, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   isolation: isolate;
+}
+
+.pk-splash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(-110%, 0, 0);
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(225, 6, 0, .04) 30%,
+      rgba(225, 6, 0, .28) 47%,
+      rgba(255, 255, 255, .82) 50%,
+      rgba(225, 6, 0, .28) 53%,
+      rgba(225, 6, 0, .04) 70%,
+      transparent 100%
+    );
+}
+
+.pk-splash.is-leaving::after {
+  opacity: 1;
+  animation: pkExitSweep 620ms cubic-bezier(.22, 1, .36, 1) forwards;
+}
+
+.pk-splash.is-leaving .pk-splash__videoLayer,
+.pk-splash.is-leaving .pk-splash__background,
+.pk-splash.is-leaving .pk-splash__content,
+.pk-splash.is-leaving .pk-splash__loaderDock,
+.pk-splash.is-leaving .pk-splash__skip {
+  opacity: 0;
+  filter: blur(10px);
+  transform: scale(1.018);
+  transition:
+    opacity 520ms ease,
+    filter 520ms ease,
+    transform 520ms ease;
+}
+
+.pk-splash.is-leaving .pk-splash__loaderDock {
+  transform: translate3d(-50%, -50%, 0) scale(1.018);
 }
 
 .pk-splash__videoLayer {
@@ -298,6 +419,39 @@ const styles = `
   animation-delay: -1.2s;
 }
 
+.pk-splash__skip {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 16px);
+  right: 16px;
+  z-index: 20;
+  min-height: 44px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 999px;
+  padding: 0 16px;
+  color: rgba(255,255,255,.64);
+  background: rgba(11,13,18,.46);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 14px 34px rgba(0,0,0,.32);
+  backdrop-filter: blur(14px);
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 180ms ease;
+}
+
+.pk-splash__skip:hover {
+  color: #fff;
+  border-color: rgba(255,255,255,.2);
+  background: rgba(26,29,36,.66);
+  transform: translate3d(0, -1px, 0);
+}
+
+.pk-splash__skip:active {
+  transform: translate3d(0, 1px, 0);
+}
+
 .pk-splash__content {
   width: min(460px, 100%);
   display: grid;
@@ -376,13 +530,34 @@ const styles = `
   text-shadow: 0 0 18px rgba(255,255,255,.12);
 }
 
+.pk-splash__loaderDock {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 14;
+  width: min(316px, 78vw);
+  display: grid;
+  justify-items: center;
+  transform: translate3d(-50%, -50%, 0);
+  transition:
+    top 720ms cubic-bezier(.22, 1, .36, 1),
+    width 520ms cubic-bezier(.22, 1, .36, 1),
+    transform 720ms cubic-bezier(.22, 1, .36, 1);
+  will-change: top, transform;
+}
+
+.pk-splash__loaderDock.has-logo {
+  top: calc(50% + 222px);
+  width: min(306px, 76vw);
+}
+
 .pk-splash__actionZone {
   position: relative;
-  width: min(288px, 76vw);
-  height: 64px;
+  width: 100%;
+  min-height: 116px;
   display: grid;
-  place-items: center;
-  margin-top: 4px;
+  align-items: start;
+  justify-items: center;
 }
 
 .pk-progress,
@@ -393,7 +568,7 @@ const styles = `
 .pk-progress {
   width: 100%;
   display: grid;
-  gap: 11px;
+  gap: 10px;
   justify-items: center;
   color: rgba(255,255,255,.62);
   font-size: .72rem;
@@ -405,10 +580,13 @@ const styles = `
   will-change: opacity, transform;
 }
 
-.pk-splash__actionZone.is-ready .pk-progress {
+.pk-splash__loaderDock.is-ready .pk-progress {
   opacity: 0;
-  transform: translate3d(0, -8px, 0) scale(.96);
+  transform: translate3d(0, -1px, 0) scale(.995);
   pointer-events: none;
+  transition:
+    opacity 320ms ease 130ms,
+    transform 460ms cubic-bezier(.22, 1, .36, 1);
 }
 
 .pk-progress__track {
@@ -419,6 +597,21 @@ const styles = `
   border-radius: 999px;
   background: rgba(255,255,255,.12);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 0 24px rgba(255,0,0,.14);
+  transform: translateZ(0);
+  transition:
+    height 460ms cubic-bezier(.22, 1, .36, 1),
+    border-radius 460ms cubic-bezier(.22, 1, .36, 1),
+    box-shadow 460ms cubic-bezier(.22, 1, .36, 1),
+    background 460ms cubic-bezier(.22, 1, .36, 1);
+}
+
+.pk-splash__loaderDock.is-ready .pk-progress__track {
+  height: 54px;
+  border-radius: 18px;
+  background: rgba(225,6,0,.34);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.18),
+    0 0 34px rgba(255,0,0,.36);
 }
 
 .pk-progress__bar {
@@ -434,6 +627,49 @@ const styles = `
   animation-timing-function: cubic-bezier(.2,.88,.2,1);
   animation-fill-mode: forwards;
   will-change: transform;
+}
+
+.pk-progress__copy {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  width: min(100%, 292px);
+}
+
+.pk-progress__label {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  color: rgba(255,255,255,.56);
+}
+
+.pk-progress__logs {
+  min-height: 46px;
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .55rem;
+  line-height: 1.15;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.pk-progress__log {
+  color: rgba(244,244,244,.24);
+  transform: translate3d(0, 2px, 0);
+  opacity: .48;
+  transition:
+    color 220ms ease,
+    opacity 220ms ease,
+    transform 220ms ease;
+}
+
+.pk-progress__log.is-active {
+  color: rgba(244,244,244,.62);
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
 }
 
 .pk-borderButton {
@@ -455,10 +691,13 @@ const styles = `
   will-change: opacity, transform;
 }
 
-.pk-splash__actionZone.is-ready .pk-borderButton {
+.pk-splash__loaderDock.is-ready .pk-borderButton {
   opacity: 1;
   transform: translate3d(0, 0, 0) scale(1);
   pointer-events: auto;
+  transition:
+    opacity 360ms ease 210ms,
+    transform 560ms cubic-bezier(.22, 1, .36, 1) 150ms;
 }
 
 .pk-borderButton__halo,
@@ -784,6 +1023,11 @@ const styles = `
   to { transform: translate3d(7%, 0, 0) rotate(0.001deg); }
 }
 
+@keyframes pkExitSweep {
+  from { transform: translate3d(-110%, 0, 0); }
+  to { transform: translate3d(110%, 0, 0); }
+}
+
 @media (max-width: 480px) {
   .pk-splash {
     padding: 24px;
@@ -795,6 +1039,53 @@ const styles = `
 
   .pk-splash__baseline {
     letter-spacing: .24em;
+  }
+
+  .pk-splash__loaderDock,
+  .pk-splash__loaderDock.has-logo {
+    width: min(300px, 82vw);
+  }
+}
+
+@media (max-height: 680px) {
+  .pk-splash__content {
+    gap: 16px;
+  }
+
+  .pk-splash__content .pk-appIcon {
+    --pk-icon-size: 150px !important;
+    --pk-radius: 36px !important;
+  }
+
+  .pk-splash__wordmark {
+    font-size: clamp(2rem, 9vw, 3.45rem);
+  }
+
+  .pk-splash__baseline {
+    font-size: .68rem;
+  }
+
+  .pk-splash__loaderDock.has-logo {
+    top: calc(50% + 184px);
+  }
+}
+
+@media (max-height: 560px) {
+  .pk-splash__content .pk-appIcon {
+    --pk-icon-size: 118px !important;
+    --pk-radius: 28px !important;
+  }
+
+  .pk-splash__baseline {
+    display: none;
+  }
+
+  .pk-splash__loaderDock.has-logo {
+    top: calc(50% + 132px);
+  }
+
+  .pk-progress__logs {
+    min-height: 34px;
   }
 }
 

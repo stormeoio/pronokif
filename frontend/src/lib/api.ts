@@ -63,6 +63,8 @@ const REFRESH_EXCLUDED_PATHS = [
   "/auth/register",
   "/auth/refresh",
   "/auth/magic-link",
+  "/auth/forgot-password",
+  "/auth/reset-password",
 ];
 
 function shouldAttemptRefresh(url?: string): boolean {

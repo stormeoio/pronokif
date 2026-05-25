@@ -46,6 +46,17 @@ ADMIN_EMAILS = [
 
 MAGIC_LINK_EXPIRY_MINUTES = 15
 
+
+def _frontend_url() -> str:
+    """Return the configured frontend base URL without a trailing slash."""
+    return os.environ.get("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+
+
+def _build_admin_magic_url(token: str) -> str:
+    """Build the frontend URL that consumes an admin magic link token."""
+    return f"{_frontend_url()}/admin-bo/auth?token={token}"
+
+
 # ── JWT helpers ──────────────────────────────────────────────────────────────
 
 
@@ -278,7 +289,7 @@ Cette invitation expire dans 7 jours.
 @router.post("/auth/magic-link")
 async def send_magic_link(data: MagicLinkRequest) -> dict:
     """Send a magic link to the admin email."""
-    email = data.email.lower()
+    email = data.email.strip().lower()
     if email not in ADMIN_EMAILS:
         return {"message": "Si cette adresse est autorisee, un lien de connexion a ete envoye."}
 
@@ -292,8 +303,7 @@ async def send_magic_link(data: MagicLinkRequest) -> dict:
         "expires_at": datetime.now(UTC) + timedelta(minutes=MAGIC_LINK_EXPIRY_MINUTES),
     })
 
-    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
-    magic_url = f"{frontend_url}/admin/auth?token={token}"
+    magic_url = _build_admin_magic_url(token)
 
     if not await _send_magic_link_email(email, magic_url):
         logger.info(f"[Admin Auth] Magic link for {email}: {magic_url}")
