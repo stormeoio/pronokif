@@ -54,6 +54,8 @@ vi.mock("@/pages/driver-detail/DriverDetailPage", () => ({
 vi.mock("@/pages/driver-comparison/DriverComparisonPage", () => ({
   default: () => <div>DriverComparisonPage</div>,
 }));
+vi.mock("@/pages/admin-bo/AdminAuthPage", () => ({ default: () => <div>AdminAuthPage</div> }));
+vi.mock("@/pages/admin-bo/AdminLayout", () => ({ default: () => <div>AdminLayout</div> }));
 
 function createQueryClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -129,6 +131,21 @@ describe("AppRouter", () => {
   it("renders protected route /minigames", async () => {
     renderRoute("/minigames");
     expect(await screen.findByText("MiniGamesPage")).toBeInTheDocument();
+  });
+
+  it("renders the admin back-office at /admin-bo", async () => {
+    renderRoute("/admin-bo");
+    expect(await screen.findByText("AdminLayout")).toBeInTheDocument();
+  });
+
+  it("redirects legacy /bo-admin route to the admin back-office", async () => {
+    renderRoute("/bo-admin");
+    expect(await screen.findByText("AdminLayout")).toBeInTheDocument();
+  });
+
+  it("redirects legacy /bo-admin/auth route to admin auth", async () => {
+    renderRoute("/bo-admin/auth");
+    expect(await screen.findByText("AdminAuthPage")).toBeInTheDocument();
   });
 
   it("renders NotFoundPage for unknown routes", async () => {

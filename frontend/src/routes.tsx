@@ -149,6 +149,8 @@ export function AppRouter() {
       <Route path="/verify-email" element={<VerifyEmailPage />} />
 
       {/* Admin Back-Office (separate auth) */}
+      <Route path="/bo-admin/auth" element={<Navigate to="/admin-bo/auth" replace />} />
+      <Route path="/bo-admin" element={<Navigate to="/admin-bo" replace />} />
       <Route path="/admin-bo/auth" element={<AdminAuthPage />} />
       <Route path="/admin-bo" element={<AdminLayout />} />
 

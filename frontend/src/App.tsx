@@ -45,7 +45,9 @@ const markSplashSeen = () => {
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-  const hideNav = ["/auth", "/set-username"].includes(location.pathname);
+  const isAdminBackOfficeRoute =
+    location.pathname.startsWith("/admin-bo") || location.pathname.startsWith("/bo-admin");
+  const hideNav = isAdminBackOfficeRoute || ["/auth", "/set-username"].includes(location.pathname);
 
   return (
     <div className="min-h-screen bg-background relative">
