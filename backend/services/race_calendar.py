@@ -271,13 +271,13 @@ def race_temporal_status(
     """Return upcoming, in_progress or finished using the local circuit schedule."""
     if race.get("is_cancelled"):
         return "cancelled"
-    if has_results:
-        return "finished"
 
     now_utc = (now or datetime.now(UTC)).astimezone(UTC)
     start_at = race_start_at_utc(race)
     end_at = race_end_at_utc(race)
     if not start_at or not end_at:
+        if has_results:
+            return "finished"
         return str(race.get("status") or "upcoming")
     if now_utc < start_at:
         return "upcoming"

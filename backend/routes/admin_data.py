@@ -161,8 +161,9 @@ async def _race_prediction_overview(race_id: str) -> dict:
     race = await _get_admin_race(race_id)
     result_doc = await db.race_results.find_one({"race_id": race_id}, {"_id": 0, "results": 1})
     has_results = False if race.get("is_cancelled") else has_complete_race_results(result_doc)
-    race.update(race_timing_payload(race, has_results=has_results))
-    race["has_results"] = has_results
+    timing = race_timing_payload(race, has_results=has_results)
+    race.update(timing)
+    race["has_results"] = has_results and timing["status"] == "finished"
     users = await (
         db.users.find(
             {"is_banned": {"$ne": True}},
@@ -497,7 +498,7 @@ async def list_races(
         has_results = False if race.get("is_cancelled") else has_complete_race_results(result_doc)
         timing = race_timing_payload(race, now=now, has_results=has_results)
         race.update(timing)
-        race["has_results"] = has_results
+        race["has_results"] = has_results and timing["status"] == "finished"
         if total_users:
             submitted = await db.predictions.count_documents(
                 {"race_id": race_id, "user_id": {"$in": active_user_ids}}

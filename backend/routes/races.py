@@ -64,6 +64,7 @@ async def _race_result_doc(race_id: str) -> dict | None:
 def _race_response_payload(race: dict, result_doc: dict | None, now: datetime) -> dict:
     has_results = has_complete_race_results(result_doc)
     timing = race_timing_payload(race, now=now, has_results=has_results)
+    visible_results = has_results and timing["status"] == "finished"
     start_at = timing["race_start_at"]
     quali_at = session_at_utc(race, "quali_date", "quali_time", default_time="14:00")
     fp1_at = session_at_utc(race, "fp1_date", "fp1_time")
@@ -92,7 +93,7 @@ def _race_response_payload(race: dict, result_doc: dict | None, now: datetime) -
             and not race.get("is_cancelled")
         ),
         "is_sprint_weekend": is_sprint_weekend,
-        "results": result_doc.get("results") if result_doc else None,
+        "results": result_doc.get("results") if result_doc and visible_results else None,
         "race_time": race.get("race_time", "15:00"),
         "quali_time": race.get("quali_time", "14:00"),
         "sprint_quali_time": race.get("sprint_quali_time"),

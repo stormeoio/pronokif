@@ -48,6 +48,19 @@ def test_temporal_status_changes_during_configured_duration() -> None:
     assert race_temporal_status(race, now=datetime(2026, 10, 25, 20, 31, tzinfo=UTC)) == "finished"
 
 
+def test_future_race_is_not_finished_when_stale_results_exist() -> None:
+    race = _austin_test_race()
+
+    assert (
+        race_temporal_status(
+            race,
+            now=datetime(2026, 10, 25, 18, 59, tzinfo=UTC),
+            has_results=True,
+        )
+        == "upcoming"
+    )
+
+
 def test_legacy_paris_calendar_is_converted_to_circuit_local_time() -> None:
     race = {
         "id": "austin-2026",
