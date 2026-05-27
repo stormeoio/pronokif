@@ -29,7 +29,6 @@ vi.mock("@/pages/predictions/PredictionsPage", () => ({
 vi.mock("@/pages/LeaderboardPage", () => ({ default: () => <div>LeaderboardPage</div> }));
 vi.mock("@/pages/ResultsPage", () => ({ default: () => <div>ResultsPage</div> }));
 vi.mock("@/pages/profile/ProfilePage", () => ({ default: () => <div>ProfilePage</div> }));
-vi.mock("@/pages/admin/AdminPage", () => ({ default: () => <div>AdminPage</div> }));
 vi.mock("@/pages/NotificationsPage", () => ({ default: () => <div>NotificationsPage</div> }));
 vi.mock("@/pages/MiniGamesPage", () => ({ default: () => <div>MiniGamesPage</div> }));
 vi.mock("@/pages/MissionsPage", () => ({ default: () => <div>MissionsPage</div> }));
@@ -133,18 +132,38 @@ describe("AppRouter", () => {
     expect(await screen.findByText("MiniGamesPage")).toBeInTheDocument();
   });
 
-  it("renders the admin back-office at /admin-bo", async () => {
-    renderRoute("/admin-bo");
+  it("renders the admin back-office at /admin", async () => {
+    renderRoute("/admin");
     expect(await screen.findByText("AdminLayout")).toBeInTheDocument();
   });
 
-  it("redirects legacy /bo-admin route to the admin back-office", async () => {
+  it("renders admin auth at /admin when a magic token is present", async () => {
+    renderRoute("/admin?token=abc123");
+    expect(await screen.findByText("AdminAuthPage")).toBeInTheDocument();
+  });
+
+  it("renders the admin auth page at /admin/auth", async () => {
+    renderRoute("/admin/auth");
+    expect(await screen.findByText("AdminAuthPage")).toBeInTheDocument();
+  });
+
+  it("redirects legacy /bo-admin route to /admin", async () => {
     renderRoute("/bo-admin");
     expect(await screen.findByText("AdminLayout")).toBeInTheDocument();
   });
 
-  it("redirects legacy /bo-admin/auth route to admin auth", async () => {
+  it("redirects legacy /bo-admin/auth route to /admin/auth", async () => {
     renderRoute("/bo-admin/auth");
+    expect(await screen.findByText("AdminAuthPage")).toBeInTheDocument();
+  });
+
+  it("redirects legacy /admin-bo route to /admin", async () => {
+    renderRoute("/admin-bo");
+    expect(await screen.findByText("AdminLayout")).toBeInTheDocument();
+  });
+
+  it("redirects legacy /admin-bo/auth route to /admin/auth", async () => {
+    renderRoute("/admin-bo/auth");
     expect(await screen.findByText("AdminAuthPage")).toBeInTheDocument();
   });
 

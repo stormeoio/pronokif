@@ -49,7 +49,7 @@ export const brandAssets = {
   version: "pronokif-v1",
 
   /** App tile icon: favicon, PWA, splash compact. */
-  icon: "/icons/icon-512.png",
+  icon: "/icons/icon-pronokif-v1-512.png",
   appIconSourcePng: `${brandAssetsBase}/logo-pronokif-app-icon.png`,
   iconSourceSvg: `${brandAssetsBase}/logo-pronokif-icone-black-red.svg`,
   iconSourcePng: `${brandAssetsBase}/logo-pronokif-icone-black-red.png`,
@@ -68,11 +68,11 @@ export const brandAssets = {
   symbolWhiteRed: `${brandAssetsBase}/logo-pronokif-symbole-white-red.svg`,
   symbolWhiteRedPng: `${brandAssetsBase}/logo-pronokif-symbole-white-red.png`,
 
-  favicon16: "/icons/favicon-16.png",
-  favicon32: "/icons/favicon-32.png",
-  appleTouchIcon: "/icons/apple-touch-icon.png",
-  pwaIcon192: "/icons/icon-192.png",
-  pwaIcon512: "/icons/icon-512.png",
+  favicon16: "/icons/favicon-pronokif-v1-16.png",
+  favicon32: "/icons/favicon-pronokif-v1-32.png",
+  appleTouchIcon: "/icons/apple-touch-icon-pronokif-v1.png",
+  pwaIcon192: "/icons/icon-pronokif-v1-192.png",
+  pwaIcon512: "/icons/icon-pronokif-v1-512.png",
 } as const;
 
 /* ------------------------------------------------

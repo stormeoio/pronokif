@@ -47,7 +47,9 @@ const markSplashSeen = () => {
 function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const isAdminBackOfficeRoute =
-    location.pathname.startsWith("/admin-bo") || location.pathname.startsWith("/bo-admin");
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/admin-bo") ||
+    location.pathname.startsWith("/bo-admin");
   const hideNav = isAdminBackOfficeRoute || ["/auth", "/set-username"].includes(location.pathname);
 
   return (

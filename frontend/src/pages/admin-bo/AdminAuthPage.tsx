@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { BorderGlowButton } from "@/components/ui/border-glow-button";
 import { brandAssets } from "@/lib/brand";
 
+const ADMIN_HOME_PATH = "/admin";
+
 export default function AdminAuthPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -28,7 +30,7 @@ export default function AdminAuthPage() {
   useEffect(() => {
     adminApi
       .me()
-      .then(() => navigate("/admin-bo"))
+      .then(() => navigate(ADMIN_HOME_PATH))
       .catch(() => {});
   }, [navigate]);
 
@@ -42,7 +44,7 @@ export default function AdminAuthPage() {
           setRequires2fa(true);
           setPartialToken(res.data.partial_token);
         } else {
-          navigate("/admin-bo");
+          navigate(ADMIN_HOME_PATH);
         }
       } catch (err: unknown) {
         const e = err as { response?: { data?: { detail?: string } } };
@@ -83,7 +85,7 @@ export default function AdminAuthPage() {
     setError("");
     try {
       await adminApi.validate2fa(totpCode, partialToken);
-      navigate("/admin-bo");
+      navigate(ADMIN_HOME_PATH);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
       setError(e.response?.data?.detail || "Code invalide");

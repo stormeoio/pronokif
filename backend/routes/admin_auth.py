@@ -5,12 +5,12 @@ Magic link auth + optional TOTP 2FA for whitelisted admin emails.
 Exports `get_current_admin` dependency used by admin_data and admin_content.
 
 Endpoints:
-  POST /admin-bo/auth/magic-link     - send magic link email
-  POST /admin-bo/auth/verify         - verify magic link token
-  POST /admin-bo/auth/2fa/setup      - generate TOTP secret
-  POST /admin-bo/auth/2fa/verify     - verify TOTP code and enable
-  POST /admin-bo/auth/2fa/validate   - validate TOTP on login
-  GET  /admin-bo/auth/me             - current admin session
+  POST /api/admin-bo/auth/magic-link     - send magic link email
+  POST /api/admin-bo/auth/verify         - verify magic link token
+  POST /api/admin-bo/auth/2fa/setup      - generate TOTP secret
+  POST /api/admin-bo/auth/2fa/verify     - verify TOTP code and enable
+  POST /api/admin-bo/auth/2fa/validate   - validate TOTP on login
+  GET  /api/admin-bo/auth/me             - current admin session
 """
 
 from __future__ import annotations
@@ -54,12 +54,17 @@ MAGIC_LINK_EXPIRY_MINUTES = 15
 
 def _frontend_url() -> str:
     """Return the configured frontend base URL without a trailing slash."""
-    return os.environ.get("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+    return os.environ.get("FRONTEND_URL", "https://pronokif.eu").rstrip("/")
+
+
+def _admin_frontend_url() -> str:
+    """Return the public admin base URL without a trailing slash."""
+    return os.environ.get("ADMIN_FRONTEND_URL", f"{_frontend_url()}/admin").rstrip("/")
 
 
 def _build_admin_magic_url(token: str) -> str:
     """Build the frontend URL that consumes an admin magic link token."""
-    return f"{_frontend_url()}/admin-bo/auth?token={token}"
+    return f"{_admin_frontend_url()}?token={token}"
 
 
 # ── JWT helpers ──────────────────────────────────────────────────────────────

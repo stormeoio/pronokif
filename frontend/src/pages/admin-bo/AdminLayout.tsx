@@ -38,6 +38,8 @@ import { adminApi } from "./adminApi";
 import { Button } from "@/components/ui/button";
 import { brandAssets } from "@/lib/brand";
 
+const ADMIN_AUTH_PATH = "/admin/auth";
+
 const NAV_ITEMS = [
   { key: "dashboard", label: "Tableau de bord", icon: LayoutDashboard, section: "general" },
   { key: "users", label: "Utilisateurs", icon: Users, section: "general" },
@@ -62,7 +64,7 @@ export default function AdminLayout() {
     adminApi
       .me()
       .then((res) => setAdminEmail(res.data.email))
-      .catch(() => navigate("/admin-bo/auth"));
+      .catch(() => navigate(ADMIN_AUTH_PATH));
   }, [navigate]);
 
   const handleLogout = async () => {
@@ -71,7 +73,7 @@ export default function AdminLayout() {
     } catch {
       /* ignore */
     }
-    navigate("/admin-bo/auth");
+    navigate(ADMIN_AUTH_PATH);
   };
 
   const renderTab = () => {

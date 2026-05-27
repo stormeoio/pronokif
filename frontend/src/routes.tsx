@@ -3,7 +3,7 @@
  * Extracted from App.tsx (Sprint 4 S3-T3: App.tsx < 150L).
  */
 import { lazy } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ProtectedRoute, useAuth } from "@/lib/auth";
 
 // --- lazy page imports (code-split: each page = separate chunk) ----------
@@ -16,7 +16,6 @@ const PredictionsPage = lazy(() => import("@/pages/predictions/PredictionsPage")
 const LeaderboardPage = lazy(() => import("@/pages/LeaderboardPage"));
 const ResultsPage = lazy(() => import("@/pages/ResultsPage"));
 const ProfilePage = lazy(() => import("@/pages/profile/ProfilePage"));
-const AdminPage = lazy(() => import("@/pages/admin/AdminPage"));
 const NotificationsPage = lazy(() => import("@/pages/NotificationsPage"));
 const MiniGamesPage = lazy(() => import("@/pages/MiniGamesPage"));
 const MissionsPage = lazy(() => import("@/pages/MissionsPage"));
@@ -48,7 +47,6 @@ const PROTECTED_ROUTES: Array<{ path: string; element: React.ReactNode }> = [
   { path: "/results", element: <ResultsPage /> },
   { path: "/results/:raceId", element: <ResultsPage /> },
   { path: "/profile", element: <ProfilePage /> },
-  { path: "/admin", element: <AdminPage /> },
   { path: "/notifications", element: <NotificationsPage /> },
   { path: "/minigames", element: <MiniGamesPage /> },
   { path: "/missions", element: <MissionsPage /> },
@@ -75,6 +73,13 @@ export function PageLoader() {
       <p className="text-sm text-gray-500 animate-pulse">Chargement...</p>
     </div>
   );
+}
+
+function AdminEntry() {
+  const location = useLocation();
+  const hasMagicToken = new URLSearchParams(location.search).has("token");
+
+  return hasMagicToken ? <AdminAuthPage /> : <AdminLayout />;
 }
 
 // --- Router component ---
@@ -149,10 +154,12 @@ export function AppRouter() {
       <Route path="/verify-email" element={<VerifyEmailPage />} />
 
       {/* Admin Back-Office (separate auth) */}
-      <Route path="/bo-admin/auth" element={<Navigate to="/admin-bo/auth" replace />} />
-      <Route path="/bo-admin" element={<Navigate to="/admin-bo" replace />} />
-      <Route path="/admin-bo/auth" element={<AdminAuthPage />} />
-      <Route path="/admin-bo" element={<AdminLayout />} />
+      <Route path="/admin/auth" element={<AdminAuthPage />} />
+      <Route path="/admin" element={<AdminEntry />} />
+      <Route path="/bo-admin/auth" element={<Navigate to="/admin/auth" replace />} />
+      <Route path="/bo-admin" element={<Navigate to="/admin" replace />} />
+      <Route path="/admin-bo/auth" element={<Navigate to="/admin/auth" replace />} />
+      <Route path="/admin-bo" element={<Navigate to="/admin" replace />} />
 
       {/* 404 page */}
       <Route path="*" element={<NotFoundPage />} />
