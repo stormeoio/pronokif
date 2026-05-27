@@ -29,6 +29,11 @@ export const adminApi = {
   // Stats
   stats: () => api.get("/stats").then((r) => r.data),
 
+  // Demo data
+  demo: {
+    seed: () => api.post("/demo/seed", { confirm: "SEED_DEMO" }).then((r) => r.data),
+  },
+
   // Users
   users: {
     list: (params?: { skip?: number; limit?: number; search?: string }) =>
@@ -52,6 +57,13 @@ export const adminApi = {
   races: {
     list: (season?: number) =>
       api.get("/races", { params: season ? { season } : {} }).then((r) => r.data),
+    seed2026: () => api.post("/races/seed-2026", {}).then((r) => r.data),
+    predictionsOverview: (id: string) =>
+      api.get(`/races/${id}/predictions-overview`).then((r) => r.data),
+    sendReminders: (
+      id: string,
+      data?: { user_ids?: string[]; send_email?: boolean; send_notification?: boolean },
+    ) => api.post(`/races/${id}/reminders`, data ?? {}).then((r) => r.data),
     create: (data: Record<string, unknown>) => api.post("/races", data).then((r) => r.data),
     update: (id: string, data: Record<string, unknown>) =>
       api.put(`/races/${id}`, data).then((r) => r.data),

@@ -36,6 +36,7 @@ type AppIconGlowProps = {
 
 type PronoKifSplashScreenProps = {
   iconSrc?: string;
+  wordmarkSrc?: string;
   videoSrc?: string;
   posterSrc?: string;
   appName?: string;
@@ -115,6 +116,7 @@ export function AppIconGlow({
 
 export default function PronoKifSplashScreen({
   iconSrc,
+  wordmarkSrc = "/brand/pronokif-v1/logo-pronokif-markdown-white-red.svg",
   videoSrc = "/video/splash-trailer.mp4",
   posterSrc,
   appName = "PronoKif F1",
@@ -225,9 +227,20 @@ export default function PronoKifSplashScreen({
 
         <div className="pk-splash__brandBlock">
           <h1 className="pk-splash__wordmark" aria-label={appName}>
-            <span className="pk-splash__wordmarkWhite">Prono</span>
-            <span className="pk-splash__wordmarkRed">Kif</span>
-            <span className="pk-splash__wordmarkF1">F1</span>
+            {wordmarkSrc ? (
+              <img
+                className="pk-splash__wordmarkImage"
+                src={wordmarkSrc}
+                alt=""
+                draggable={false}
+              />
+            ) : (
+              <span className="pk-splash__wordmarkFallback" aria-hidden="true">
+                <span className="pk-splash__wordmarkWhite">Prono</span>
+                <span className="pk-splash__wordmarkRed">Kif</span>
+                <span className="pk-splash__wordmarkF1">F1</span>
+              </span>
+            )}
           </h1>
           <p className="pk-splash__baseline">{baseline}</p>
         </div>
@@ -484,6 +497,20 @@ const styles = `
 
 .pk-splash__wordmark {
   margin: 0;
+  line-height: 0;
+  filter: drop-shadow(0 18px 28px rgba(0,0,0,.72));
+}
+
+.pk-splash__wordmarkImage {
+  display: block;
+  width: min(342px, 78vw);
+  max-height: 72px;
+  height: auto;
+  object-fit: contain;
+  user-select: none;
+}
+
+.pk-splash__wordmarkFallback {
   display: flex;
   align-items: baseline;
   justify-content: center;
@@ -491,11 +518,10 @@ const styles = `
   font-size: clamp(2.35rem, 10vw, 4.35rem);
   font-family: "Racing Sans One", Chivo, ui-sans-serif, system-ui, sans-serif;
   line-height: .9;
-  letter-spacing: .01em;
+  letter-spacing: 0;
   font-weight: 400;
   text-transform: uppercase;
   transform: skewX(-8deg) translateZ(0);
-  filter: drop-shadow(0 18px 28px rgba(0,0,0,.72));
 }
 
 .pk-splash__wordmarkWhite {
@@ -517,7 +543,7 @@ const styles = `
 
 .pk-splash__wordmarkF1 {
   margin-left: .14em;
-  letter-spacing: -.04em;
+  letter-spacing: 0;
   font-size: .72em;
 }
 
@@ -1057,8 +1083,13 @@ const styles = `
     --pk-radius: 36px !important;
   }
 
-  .pk-splash__wordmark {
+  .pk-splash__wordmarkFallback {
     font-size: clamp(2rem, 9vw, 3.45rem);
+  }
+
+  .pk-splash__wordmarkImage {
+    width: min(300px, 76vw);
+    max-height: 58px;
   }
 
   .pk-splash__baseline {

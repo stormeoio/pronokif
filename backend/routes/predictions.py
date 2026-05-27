@@ -4,12 +4,11 @@ PRONOKIF - Prediction Routes
 """
 
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from config import db
-from data.f1_data import F1_RACES_2026
 from models.schemas import (
     CustomPredictionAnswer,
     CustomPredictionCreate,
@@ -20,6 +19,12 @@ from models.schemas import (
 )
 from services.auth import get_current_user
 from services.predictions import count_individual_predictions  # re-export for backward compat
+from services.race_calendar import (
+    active_2026_races,
+    predictions_close_at_utc,
+    race_with_circuit_timezone,
+    sprint_predictions_close_at_utc,
+)
 from services.scoring import calculate_points
 
 router = APIRouter(prefix="/predictions", tags=["Predictions"])
@@ -30,22 +35,27 @@ router = APIRouter(prefix="/predictions", tags=["Predictions"])
 
 def get_predictions_close_time(race: dict) -> datetime:
     """Get the time when main race predictions close (15 min before Q1)"""
-    quali_date = race["quali_date"]
-    quali_time = race.get("quali_time", "14:00")
-    quali_datetime = datetime.fromisoformat(f"{quali_date}T{quali_time}:00+00:00")
-    return quali_datetime - timedelta(minutes=15)
+    close_at = predictions_close_at_utc(race)
+    if close_at is None:
+        raise ValueError(f"Invalid qualifying schedule for {race.get('id')}")
+    return close_at
 
 
 def get_sprint_predictions_close_time(race: dict):
     """Get the time when sprint predictions close (15 min before SQ1)"""
-    if not race.get("is_sprint"):
-        return None
-    sprint_quali_date = race.get("sprint_quali_date")
-    sprint_quali_time = race.get("sprint_quali_time", "10:30")
-    if sprint_quali_date:
-        sq_datetime = datetime.fromisoformat(f"{sprint_quali_date}T{sprint_quali_time}:00+00:00")
-        return sq_datetime - timedelta(minutes=15)
-    return None
+    return sprint_predictions_close_at_utc(race)
+
+
+async def _get_race(race_id: str) -> dict | None:
+    race = await db.races.find_one({"id": race_id}, {"_id": 0})
+    if race:
+        return race_with_circuit_timezone(race)
+    return next((r for r in active_2026_races() if r["id"] == race_id), None)
+
+
+async def _calendar_races() -> list[dict]:
+    races = await db.races.find({"season": 2026}, {"_id": 0}).to_list(200)
+    return [race_with_circuit_timezone(race) for race in (races or active_2026_races())]
 
 
 # count_individual_predictions moved to services/predictions.py (S1 lot 3 dedup).
@@ -58,7 +68,7 @@ def get_sprint_predictions_close_time(race: dict):
 @router.post("")
 async def create_prediction(data: PredictionCreate, user: dict = Depends(get_current_user)) -> dict:
     """Create or update a prediction for a race"""
-    race = next((r for r in F1_RACES_2026 if r["id"] == data.race_id), None)
+    race = await _get_race(data.race_id)
     if not race:
         raise HTTPException(status_code=404, detail="Race not found")
 
@@ -124,7 +134,7 @@ async def get_my_prediction(race_id: str, user: dict = Depends(get_current_user)
 @router.delete("/race/{race_id}")
 async def delete_my_prediction(race_id: str, user: dict = Depends(get_current_user)) -> dict:
     """Delete user's prediction for a specific race"""
-    race = next((r for r in F1_RACES_2026 if r["id"] == race_id), None)
+    race = await _get_race(race_id)
     if not race:
         raise HTTPException(status_code=404, detail="Course non trouvée")
 
@@ -172,7 +182,7 @@ async def get_points_history(user: dict = Depends(get_current_user)) -> dict:
     predictions = await db.predictions.find({"user_id": user["id"]}, {"_id": 0}).to_list(100)
 
     history = []
-    race_map = {r["id"]: r for r in F1_RACES_2026}
+    race_map = {r["id"]: r for r in await _calendar_races()}
 
     for pred in predictions:
         race_id = pred.get("race_id")
@@ -249,11 +259,11 @@ async def get_points_history(user: dict = Depends(get_current_user)) -> dict:
 @router.post("/sprint")
 async def save_sprint_prediction(data: SprintPredictionCreate, user: dict = Depends(get_current_user)) -> dict:
     """Save sprint predictions separately (closes 15 min before SQ1)"""
-    race = next((r for r in F1_RACES_2026 if r["id"] == data.race_id), None)
+    race = await _get_race(data.race_id)
     if not race:
         raise HTTPException(status_code=404, detail="Race not found")
 
-    if not race.get("is_sprint"):
+    if not (race.get("is_sprint") or race.get("is_sprint_weekend")):
         raise HTTPException(status_code=400, detail="This is not a sprint weekend")
 
     sprint_predictions_close = get_sprint_predictions_close_time(race)
@@ -296,7 +306,7 @@ async def save_sprint_prediction(data: SprintPredictionCreate, user: dict = Depe
 @router.post("/main")
 async def save_main_prediction(data: MainPredictionCreate, user: dict = Depends(get_current_user)) -> dict:
     """Save main race predictions separately (closes 15 min before Q1)"""
-    race = next((r for r in F1_RACES_2026 if r["id"] == data.race_id), None)
+    race = await _get_race(data.race_id)
     if not race:
         raise HTTPException(status_code=404, detail="Race not found")
 

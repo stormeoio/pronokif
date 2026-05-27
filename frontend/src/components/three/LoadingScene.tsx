@@ -7,6 +7,7 @@ import { useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { AdditiveBlending } from "three";
 import type { Group, Points } from "three";
+import { hasWebGLSupport } from "./webglSupport";
 
 function SpinningWheel() {
   const groupRef = useRef<Group>(null);
@@ -94,6 +95,18 @@ function SpinningWheel() {
 }
 
 export default function LoadingScene({ message = "Chargement..." }: { message?: string }) {
+  if (!hasWebGLSupport()) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center gap-6"
+        style={{ background: "linear-gradient(180deg, #0a0f1a 0%, #050a14 100%)" }}
+      >
+        <div className="w-12 h-12 rounded-full border-3 border-orange-500/30 border-t-orange-500 animate-spin" />
+        <p className="font-heading text-sm text-white/80 uppercase tracking-widest">{message}</p>
+      </div>
+    );
+  }
+
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center gap-6"

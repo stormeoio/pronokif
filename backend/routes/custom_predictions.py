@@ -10,12 +10,24 @@ post-S1 work — keep the paths exact here so the SPA does not break.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 
 from config import db
 from services.auth import get_current_user
 
 router = APIRouter(tags=["custom-predictions"])
+
+
+class CustomPredictionAnswerIn(BaseModel):
+    answer: Any
+
+
+class SetCorrectAnswerIn(BaseModel):
+    correct_answer: Any
 
 
 @router.get("/custom-predictions/my-created")
@@ -48,3 +60,70 @@ async def get_custom_predictions_to_answer(
         pred["has_answered"] = answer is not None
 
     return predictions
+
+
+@router.post("/custom-predictions/{prediction_id}/answer")
+async def answer_custom_prediction_legacy(
+    prediction_id: str, body: CustomPredictionAnswerIn, user: dict = Depends(get_current_user)
+) -> dict:
+    """Submit an answer through the frontend legacy path."""
+    custom_pred = await db.custom_predictions.find_one({"id": prediction_id}, {"_id": 0})
+    if not custom_pred:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Custom prediction not found")
+
+    league = await db.leagues.find_one({"id": custom_pred["league_id"]}, {"_id": 0})
+    if not league or user["id"] not in league.get("members", []):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this league")
+
+    await db.custom_prediction_answers.update_one(
+        {"prediction_id": prediction_id, "user_id": user["id"]},
+        {
+            "$set": {
+                "prediction_id": prediction_id,
+                "user_id": user["id"],
+                "answer": body.answer,
+                "answered_at": datetime.now(UTC).isoformat(),
+            }
+        },
+        upsert=True,
+    )
+    return {"message": "Answer saved"}
+
+
+@router.post("/custom-predictions/{prediction_id}/set-correct")
+async def set_correct_answer_legacy(
+    prediction_id: str, body: SetCorrectAnswerIn, user: dict = Depends(get_current_user)
+) -> dict:
+    """Set the correct answer through the frontend legacy path."""
+    custom_pred = await db.custom_predictions.find_one({"id": prediction_id}, {"_id": 0})
+    if not custom_pred:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Custom prediction not found")
+    if custom_pred["created_by"] != user["id"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only creator can set correct answer")
+
+    await db.custom_predictions.update_one(
+        {"id": prediction_id}, {"$set": {"correct_answer": body.correct_answer}}
+    )
+
+    answers = await db.custom_prediction_answers.find({"prediction_id": prediction_id}, {"_id": 0}).to_list(1000)
+    for answer in answers:
+        user_answer = answer.get("answer")
+        correct = body.correct_answer
+        is_correct = False
+
+        if custom_pred.get("multiple_choice"):
+            if isinstance(user_answer, list) and isinstance(correct, list):
+                is_correct = any(item in correct for item in user_answer)
+            elif isinstance(user_answer, list):
+                is_correct = correct in user_answer
+        else:
+            is_correct = user_answer == correct
+
+        if is_correct:
+            await db.leaderboard.update_one(
+                {"league_id": custom_pred["league_id"], "user_id": answer["user_id"]},
+                {"$inc": {"total_points": 2}},
+            )
+            await db.users.update_one({"id": answer["user_id"]}, {"$inc": {"xp": 10}})
+
+    return {"message": "Correct answer set and points calculated"}

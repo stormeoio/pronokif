@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth";
 import type { User } from "@/lib/auth";
 import { iconProps } from "@/lib/icons";
 import { fadeUp, easing, duration } from "@/lib/motion";
+import { brandAssets } from "@/lib/brand";
 import { BorderGlowButton } from "@/components/ui/border-glow-button";
 
 // ----------------------------------------------------------- component ---
@@ -22,15 +23,18 @@ export default function AuthPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const navigateAfterAuth = (user: User) => {
-    if (!user.username) {
-      navigate("/set-username");
-    } else if (!user.current_league_id) {
-      navigate("/league");
-    } else {
-      navigate("/");
-    }
-  };
+  const navigateAfterAuth = useCallback(
+    (user: User) => {
+      if (!user.username) {
+        navigate("/set-username");
+      } else if (!user.current_league_id) {
+        navigate("/league");
+      } else {
+        navigate("/");
+      }
+    },
+    [navigate],
+  );
 
   useEffect(() => {
     const token = searchParams.get("magic_token");
@@ -52,7 +56,7 @@ export default function AuthPage() {
         toast.error(message);
       })
       .finally(() => setVerifyingMagic(false));
-  }, [loginWithMagicLink, navigate, searchParams]);
+  }, [loginWithMagicLink, navigateAfterAuth, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>, type: "login" | "register") => {
     e.preventDefault();
@@ -154,10 +158,13 @@ export default function AuthPage() {
           data-testid="auth-card"
         >
           {/* Logo */}
-          <div className="text-center mb-1">
-            <h1 className="font-display text-[1.75rem]">
-              <span className="text-pk-red">Prono</span>Kif
-            </h1>
+          <div className="mb-2 text-center">
+            <img
+              src={brandAssets.wordmarkWhiteRed}
+              alt="PronoKif"
+              className="mx-auto h-9 w-auto max-w-[220px] object-contain"
+              draggable={false}
+            />
           </div>
           <p className="text-center text-pk-titane text-[0.75rem] mb-7 leading-relaxed">
             Pronostiquez, défiez vos amis,

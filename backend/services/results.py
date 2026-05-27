@@ -23,8 +23,8 @@ from typing import Any
 from fastapi import Depends, HTTPException, status
 
 from config import db
-from data.f1_data import F1_RACES_2026
 from services.auth import get_current_user, send_user_notification
+from services.race_calendar import active_2026_races
 from services.scoring import calculate_points
 
 # ---------- Auth helper -------------------------------------------------
@@ -68,7 +68,7 @@ async def list_admin_races() -> list[dict]:
     admin race-picker UI."""
     out: list[dict] = []
     now = datetime.now(UTC)
-    for race in F1_RACES_2026:
+    for race in active_2026_races():
         result = await db.race_results.find_one({"race_id": race["id"]}, {"_id": 0})
         race_date = datetime.fromisoformat(race["date"] + "T15:00:00+00:00")
         out.append(
@@ -120,7 +120,7 @@ async def set_official_and_score(*, race_id: str, results: dict, entered_by: str
 
     predictions = await db.predictions.find({"race_id": race_id}, {"_id": 0}).to_list(1000)
 
-    race_name = next((r["name"] for r in F1_RACES_2026 if r["id"] == race_id), race_id)
+    race_name = next((r["name"] for r in active_2026_races() if r["id"] == race_id), race_id)
 
     for pred in predictions:
         points = calculate_points(pred, results)
@@ -228,7 +228,7 @@ async def get_latest_unseen(user_id: str) -> dict | None:
             continue
 
         # Get race name
-        race_info = next((r for r in F1_RACES_2026 if r["id"] == race_id), None)
+        race_info = next((r for r in active_2026_races() if r["id"] == race_id), None)
         race_name = race_info["name"] if race_info else race_id
 
         # Get user's score for this race from leaderboard or compute

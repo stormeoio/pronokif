@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Shield,
   LayoutDashboard,
   Users,
   Trophy,
@@ -35,6 +34,7 @@ import RoadmapTab from "./tabs/RoadmapTab";
 import PreviewPanel from "./PreviewPanel";
 import { adminApi } from "./adminApi";
 import { Button } from "@/components/ui/button";
+import { brandAssets } from "@/lib/brand";
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "Tableau de bord", icon: LayoutDashboard, section: "general" },
@@ -119,13 +119,19 @@ export default function AdminLayout() {
           {/* Logo */}
           <div className="p-4 border-b border-gray-800">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-red-500/20 rounded-xl flex items-center justify-center">
-                <Shield className="w-5 h-5 text-red-400" />
-              </div>
+              <img
+                src={brandAssets.icon}
+                alt=""
+                className="h-10 w-10 rounded-xl object-cover"
+                draggable={false}
+              />
               <div>
-                <h1 className="font-heading text-sm uppercase text-white tracking-tight">
-                  Pronokif
-                </h1>
+                <img
+                  src={brandAssets.wordmarkWhiteRed}
+                  alt="PronoKif"
+                  className="h-5 w-auto max-w-[132px] object-contain"
+                  draggable={false}
+                />
                 <p className="text-[10px] text-gray-500 font-body">Administration</p>
               </div>
             </div>

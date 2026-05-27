@@ -8,6 +8,7 @@ import { useRef, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Color, AdditiveBlending } from "three";
 import type { Points, GridHelper } from "three";
+import { hasWebGLSupport } from "./webglSupport";
 
 function Particles({ count = 300 }: { count?: number }) {
   const ref = useRef<Points>(null);
@@ -91,6 +92,14 @@ function GridFloor() {
 }
 
 export default function ParticleBackground() {
+  if (!hasWebGLSupport()) {
+    return (
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-60">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(34,211,238,0.12),transparent_28%),radial-gradient(circle_at_80%_30%,rgba(225,6,0,0.10),transparent_24%),linear-gradient(rgba(14,165,233,0.10)_1px,transparent_1px),linear-gradient(90deg,rgba(14,165,233,0.10)_1px,transparent_1px)] bg-[length:auto,auto,48px_48px,48px_48px]" />
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-0 pointer-events-none opacity-60">
       <Canvas

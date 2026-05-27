@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   Search,
@@ -30,34 +29,125 @@ import {
 import { useAuth } from "@/lib/auth";
 import type { Race } from "@/types/api";
 
+const RACE_FLAGS: Record<string, string> = {
+  australia: "\u{1F1E6}\u{1F1FA}",
+  china: "\u{1F1E8}\u{1F1F3}",
+  japan: "\u{1F1EF}\u{1F1F5}",
+  miami: "\u{1F1FA}\u{1F1F8}",
+  canada: "\u{1F1E8}\u{1F1E6}",
+  monaco: "\u{1F1F2}\u{1F1E8}",
+  spain: "\u{1F1EA}\u{1F1F8}",
+  austria: "\u{1F1E6}\u{1F1F9}",
+  silverstone: "\u{1F1EC}\u{1F1E7}",
+  belgium: "\u{1F1E7}\u{1F1EA}",
+  hungary: "\u{1F1ED}\u{1F1FA}",
+  netherlands: "\u{1F1F3}\u{1F1F1}",
+  monza: "\u{1F1EE}\u{1F1F9}",
+  madrid: "\u{1F1EA}\u{1F1F8}",
+  azerbaijan: "\u{1F1E6}\u{1F1FF}",
+  singapore: "\u{1F1F8}\u{1F1EC}",
+  austin: "\u{1F1FA}\u{1F1F8}",
+  mexico: "\u{1F1F2}\u{1F1FD}",
+  brazil: "\u{1F1E7}\u{1F1F7}",
+  vegas: "\u{1F1FA}\u{1F1F8}",
+  qatar: "\u{1F1F6}\u{1F1E6}",
+  abudhabi: "\u{1F1E6}\u{1F1EA}",
+};
+
+function formatRaceDate(value: string) {
+  return new Intl.DateTimeFormat("fr-FR", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(`${value}T12:00:00Z`));
+}
+
+function raceFlag(raceId: string) {
+  const key = raceId.replace("-2026", "");
+  return RACE_FLAGS[key] ?? "\u{1F3C1}";
+}
+
+function tierLabel(rank: number, totalPlayers: number) {
+  if (!rank || !totalPlayers) return "Classement";
+  const ratio = rank / totalPlayers;
+  if (ratio <= 0.05) return "Diamant";
+  if (ratio <= 0.15) return "Platine";
+  if (ratio <= 0.35) return "Or";
+  if (ratio <= 0.65) return "Argent";
+  return "Bronze";
+}
+
 // ----------------------------------------------------------- component ---
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
 
-  const { loading, upcomingRaces, userLeagues, predictions } = useDashboardData();
+  const {
+    loading,
+    upcomingRaces,
+    userLeagues,
+    predictions,
+    leagueRanks,
+    predictionStats,
+    pointsHistory,
+    globalLeaderboard,
+  } = useDashboardData(user?.id);
 
   const [currentRaceIndex, setCurrentRaceIndex] = useState(0);
-  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [countdown, setCountdown] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    phase: "upcoming" as "upcoming" | "in_progress" | "finished" | "cancelled",
+  });
 
-  // Countdown timer
+  // Race state timer: upcoming -> in progress -> finished using circuit-local API timestamps.
   useEffect(() => {
     const currentRace = upcomingRaces[currentRaceIndex];
-    if (!currentRace?.predictions_close_at) return;
+    if (!currentRace) return;
+
     const update = () => {
-      const diff = new Date(currentRace.predictions_close_at).getTime() - Date.now();
-      if (diff <= 0) {
-        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-      } else {
-        setCountdown({
-          days: Math.floor(diff / 86_400_000),
-          hours: Math.floor((diff / 3_600_000) % 24),
-          minutes: Math.floor((diff / 60_000) % 60),
-          seconds: Math.floor((diff / 1000) % 60),
-        });
+      if (currentRace.status === "cancelled" || currentRace.is_cancelled) {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, phase: "cancelled" });
+        return;
       }
+
+      const startAt = new Date(currentRace.race_start_at ?? currentRace.date).getTime();
+      const durationMs = (currentRace.race_duration_minutes ?? 120) * 60_000;
+      const endAt = currentRace.race_end_at
+        ? new Date(currentRace.race_end_at).getTime()
+        : startAt + durationMs;
+      if (Number.isNaN(startAt) || Number.isNaN(endAt)) {
+        setCountdown({
+          days: 0,
+          hours: 0,
+          minutes: 0,
+          seconds: 0,
+          phase: currentRace.status ?? "upcoming",
+        });
+        return;
+      }
+
+      const now = Date.now();
+      if (now >= endAt) {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, phase: "finished" });
+        return;
+      }
+      if (now >= startAt) {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, phase: "in_progress" });
+        return;
+      }
+
+      const diff = startAt - now;
+      setCountdown({
+        days: Math.floor(diff / 86_400_000),
+        hours: Math.floor((diff / 3_600_000) % 24),
+        minutes: Math.floor((diff / 60_000) % 60),
+        seconds: Math.floor((diff / 1000) % 60),
+        phase: "upcoming",
+      });
     };
     update();
     const id = setInterval(update, 1000);
@@ -67,40 +157,50 @@ export default function DashboardPage() {
   const currentRace = upcomingRaces[currentRaceIndex];
   const currentPrediction = currentRace ? (predictions[currentRace.id] ?? null) : null;
 
-  // ---- Mock stats (will be replaced by real API data) ----
-  const stats = {
-    points: 847,
-    gpsPlayed: 12,
-    precision: 68,
-    streak: 5,
-    rank: 17,
-    totalPlayers: 1240,
-  };
-
-  // ---- Recent results mock ----
-  const recentResults = [
-    {
-      flag: "\u{1F1EA}\u{1F1F8}",
-      name: "GP d'Espagne",
-      date: "18 mai 2026",
-      pts: 92,
-      trend: "up" as const,
-    },
-    {
-      flag: "\u{1F1EE}\u{1F1F9}",
-      name: "GP d'Emilie-Romagne",
-      date: "11 mai 2026",
-      pts: 54,
-      trend: "down" as const,
-    },
-    {
-      flag: "\u{1F1FA}\u{1F1F8}",
-      name: "GP de Miami",
-      date: "4 mai 2026",
-      pts: 78,
-      trend: "up" as const,
-    },
-  ];
+  const resultHistory = useMemo(
+    () => pointsHistory.history.filter((race) => race.has_results),
+    [pointsHistory.history],
+  );
+  const myGlobalEntry = globalLeaderboard?.leaderboard.find((entry) => entry.user_id === user?.id);
+  const stats = useMemo(() => {
+    const racesWithResults = pointsHistory.summary.races_with_results;
+    const totalPoints = pointsHistory.summary.total_points;
+    const averageMaxPoints = Math.max(1, racesWithResults * 60);
+    const rank = globalLeaderboard?.my_position ?? myGlobalEntry?.position ?? 0;
+    const totalPlayers =
+      globalLeaderboard?.total_players ?? globalLeaderboard?.leaderboard.length ?? 0;
+    return {
+      points: totalPoints,
+      lastRacePoints: resultHistory[0]?.total_points ?? 0,
+      gpsPlayed: racesWithResults || predictionStats?.races_participated || 0,
+      precision: Math.min(100, Math.round((totalPoints / averageMaxPoints) * 100)),
+      streak: Math.min(7, predictionStats?.races_participated ?? racesWithResults),
+      rank,
+      totalPlayers,
+      tier: tierLabel(rank, totalPlayers),
+    };
+  }, [
+    globalLeaderboard?.leaderboard.length,
+    globalLeaderboard?.my_position,
+    globalLeaderboard?.total_players,
+    myGlobalEntry?.position,
+    pointsHistory.summary.races_with_results,
+    pointsHistory.summary.total_points,
+    predictionStats?.races_participated,
+    resultHistory,
+  ]);
+  const recentResults = useMemo(
+    () =>
+      resultHistory.slice(0, 3).map((result, index, entries) => ({
+        id: result.race_id,
+        flag: raceFlag(result.race_id),
+        name: result.race_name.replace(" Grand Prix", " GP"),
+        date: formatRaceDate(result.race_date),
+        pts: result.total_points,
+        trend: result.total_points >= (entries[index + 1]?.total_points ?? 0) ? "up" : "down",
+      })),
+    [resultHistory],
+  );
 
   if (loading) {
     return (
@@ -214,7 +314,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center gap-1 mt-1 text-pk-emerald">
               <TrendingUp size={12} strokeWidth={2} />
-              <span className="font-mono text-[0.6875rem]">+92 ce GP</span>
+              <span className="font-mono text-[0.6875rem]">+{stats.lastRacePoints} dernier GP</span>
             </div>
             {/* Sparkline */}
             <svg viewBox="0 0 120 32" preserveAspectRatio="none" className="w-full h-8 mt-2">
@@ -267,8 +367,14 @@ export default function DashboardPage() {
               />
             </div>
             <div className="flex justify-between mt-1">
-              <span className="font-mono text-[0.5rem] text-pk-titane">Top 1.4%</span>
-              <span className="font-mono text-[0.5rem] text-pk-titane">Diamant</span>
+              <span className="font-mono text-[0.5rem] text-pk-titane">
+                Top{" "}
+                {stats.rank && stats.totalPlayers
+                  ? Math.max(1, Math.round((stats.rank / stats.totalPlayers) * 100))
+                  : 0}
+                %
+              </span>
+              <span className="font-mono text-[0.5rem] text-pk-titane">{stats.tier}</span>
             </div>
           </motion.div>
 
@@ -362,46 +468,52 @@ export default function DashboardPage() {
             >
               {userLeagues.map(
                 (league: {
-                  id: string | number;
+                  id: string;
                   name: string;
                   member_count?: number;
                   members?: unknown[];
-                }) => (
-                  <div
-                    key={league.id}
-                    onClick={() => navigate(`/league/${league.id}/details`)}
-                    className="flex-shrink-0 w-[200px] snap-start
+                }) => {
+                  const rank = leagueRanks[league.id];
+                  const memberCount =
+                    league.member_count || (league.members as unknown[])?.length || 0;
+                  return (
+                    <div
+                      key={league.id}
+                      onClick={() => navigate(`/league/${league.id}/details`)}
+                      className="flex-shrink-0 w-[200px] snap-start
                       bg-pk-surface border border-white/[0.08] rounded-md p-3.5
                       cursor-pointer hover:border-white/[0.15]
                       transition-colors duration-pk-short"
-                  >
-                    <div className="flex items-center gap-2 mb-2.5">
-                      <span className="text-2xl">
-                        {league.id === userLeagues[0]?.id
-                          ? "\u{1F3C6}"
-                          : league.id === userLeagues[1]?.id
-                            ? "\u{1F3AF}"
-                            : "⚡"}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-[0.8125rem] truncate">{league.name}</p>
-                        <p className="font-mono text-[0.625rem] text-pk-titane">
-                          {league.member_count || (league.members as unknown[])?.length || 0}{" "}
-                          membres
-                        </p>
+                    >
+                      <div className="flex items-center gap-2 mb-2.5">
+                        <span className="text-2xl">
+                          {league.id === userLeagues[0]?.id
+                            ? "\u{1F3C6}"
+                            : league.id === userLeagues[1]?.id
+                              ? "\u{1F3AF}"
+                              : "⚡"}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-[0.8125rem] truncate">{league.name}</p>
+                          <p className="font-mono text-[0.625rem] text-pk-titane">
+                            {memberCount} membres
+                          </p>
+                        </div>
                       </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="font-mono text-[1.125rem] font-bold text-pk-gold">
+                          {rank?.position ? `${rank.position}e` : "-"}
+                        </span>
+                        <span className="font-mono text-[0.625rem] text-pk-titane">
+                          / {rank?.total || memberCount}
+                        </span>
+                      </div>
+                      <p className="font-mono text-[0.5625rem] text-pk-titane uppercase tracking-[0.1em] mt-0.5">
+                        {rank?.total_points ?? 0} pts
+                      </p>
                     </div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="font-mono text-[1.125rem] font-bold text-pk-gold">2e</span>
-                      <span className="font-mono text-[0.625rem] text-pk-titane">
-                        / {league.member_count || 8}
-                      </span>
-                    </div>
-                    <p className="font-mono text-[0.5625rem] text-pk-titane uppercase tracking-[0.1em] mt-0.5">
-                      Classement
-                    </p>
-                  </div>
-                ),
+                  );
+                },
               )}
               {/* Add league card */}
               <div
@@ -455,15 +567,22 @@ export default function DashboardPage() {
             </button>
           </div>
           <div className="flex flex-col gap-2">
-            {recentResults.map((result, i) => (
+            {recentResults.length === 0 && (
+              <div className="bg-pk-surface border border-white/[0.08] rounded-md p-4 text-center">
+                <p className="font-mono text-[0.6875rem] text-pk-titane uppercase">
+                  Aucun résultat importé
+                </p>
+              </div>
+            )}
+            {recentResults.map((result) => (
               <motion.div
-                key={result.name}
+                key={result.id}
                 variants={fadeUp}
                 className="flex items-center gap-3
                   bg-pk-surface border border-white/[0.08] rounded-md p-3
                   cursor-pointer hover:border-white/[0.15]
                   transition-colors duration-pk-short"
-                onClick={() => navigate("/results")}
+                onClick={() => navigate(`/results/${result.id}`)}
               >
                 <span className="text-[1.125rem]">{result.flag}</span>
                 <div className="flex-1 min-w-0">

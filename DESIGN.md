@@ -68,49 +68,50 @@
 - **Dark mode strategy:** N/A — dark only, pas de mode clair a gerer
 
 ## Logo & Brand Identity
-
 ### Sources du kit logo
-| Asset | Dimensions | Usage canonique |
-|-------|------------|-----------------|
-| `_0-WORK/BRANDING/pronokif-logo11.png` | 1916x821 | Lockup horizontal officiel `PK | PronoKif F1`, marketing, splash, supports externes |
-| `_0-WORK/BRANDING/pronokif-logo1.png` | 1672x941 | Brandboard de reference : variantes, palette, typographie, zone de protection, usages |
-| `_0-WORK/BRANDING/pronokif-logo3.png` | 1254x1254 | Icône app source : favicon, PWA, notifications, avatar compact |
+| Asset                                                               | Dimensions       | Usage canonique                                                               |
+| ------------------------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------- |
+| `_0-WORK/BRANDING/LOGO V2/SVG/logo-pronokif-icone-black-red.svg`    | 297x297 viewBox  | Icône app officielle v1 : favicon, PWA, notifications, splash compact         |
+| `_0-WORK/BRANDING/LOGO V2/SVG/logo-pronokif-markdown-white-red.svg` | 1139x187 viewBox | Wordmark horizontal sur fond sombre : menus, headers, splash, auth            |
+| `_0-WORK/BRANDING/LOGO V2/SVG/logo-pronokif-markdown-black-red.svg` | 1139x187 viewBox | Wordmark horizontal sur fond clair : documents, exports, supports partenaires |
+| `_0-WORK/BRANDING/LOGO V2/SVG/logo-pronokif-symbole-white-red.svg`  | 405x338 viewBox  | Symbole seul sur fond sombre : UI compacte, avatars internes                  |
+| `_0-WORK/BRANDING/LOGO V2/SVG/logo-pronokif-symbole-black-red.svg`  | 405x338 viewBox  | Symbole seul sur fond clair : print, docs, exports                            |
 
 ### Logo principal
-- **Construction:** monogramme metallique `PK` + wordmark `PronoKif`, avec `K` rouge et relief argent. Le rendu logo est un asset de marque : ne pas le recreer avec une font web ou du CSS.
-- **Extension F1:** le lockup `PK | PronoKif F1` est la version officielle pour les supports marketing, la presentation du championnat, les splash/badges et les contexts ou la categorie F1 doit etre explicite.
-- **App UI:** dans les surfaces applicatives repetitives, preferer `PronoKif` ou le symbole `PK` seul pour eviter de surcharger l'interface avec `F1` partout.
+- **Construction:** symbole Pronokif stylise + wordmark horizontal, avec accent Rouge Vitesse. Le rendu logo est un asset de marque : ne pas le recreer avec une font web ou du CSS.
+- **Extension F1:** la v1 officielle n'integre pas de mention F1 dans le lockup. Si le contexte l'exige, ajouter la categorie en texte UI adjacent, jamais dans le fichier logo.
+- **App UI:** dans les surfaces applicatives repetitives, preferer le wordmark horizontal `markdown-white-red` pour les menus/headers et l'icône app pour les contextes compacts.
 - **Fond minimum:** utiliser le logo sur Noir Carbone `#0B0D12`, Anthracite `#1A1D24`, ou sur fond clair uniquement avec la variante dediee. Sur photo/video, ajouter un overlay sombre avant d'afficher le logo.
 
-### Symbole PK
-- **Forme:** monogramme stylise "PK" — lettres imbriquees, angles dynamiques evoquant la vitesse, relief metal et accent Rouge Vitesse sur le `K`.
+### Symbole Pronokif
+- **Forme:** symbole dynamique inspire par la vitesse, avec contre-forme blanche/noire selon variante et accent Rouge Vitesse.
 - **Usage:** icônes compactes, avatar reseaux sociaux, app icon, favicon, boutons d'identite, splash compact.
 - **Lisibilite:** a 16px/32px, utiliser le symbole seul. Le wordmark complet n'est pas assez lisible en favicon ou micro UI.
-- **Zone de protection:** espace minimum autour du logo = hauteur du `X` mesure dans le symbole PK. Aucun texte, badge, bordure ou autre element graphique ne doit empieter sur cette zone.
+- **Zone de protection:** espace minimum autour du logo = hauteur de l'accent rouge mesure dans le symbole. Aucun texte, badge, bordure ou autre element graphique ne doit empieter sur cette zone.
 
 ### Variantes du logo
-| Variante | Usage | Fond |
-|----------|-------|------|
-| **Sur fond sombre** | Interface app, headers, splash, videos avec overlay | Noir Carbone `#0B0D12` / Anthracite `#1A1D24` |
-| **Sur fond clair** | Partenariats, documents, supports print clairs | Blanc Piste `#F4F4F4` |
-| **Monochrome blanc** | Filigrane, overlays video, UI compacte sur fond sombre | Transparent ou fond sombre |
-| **Monochrome noir** | Documents clairs, exports admin, print monochrome | Fond clair uniquement |
-| **Icône app** | PWA, favicon, notifications, app install, homescreen | Tuile noire glossy arrondie + halo Rouge Vitesse |
+| Variante             | Usage                                                  | Fond                                             |
+| -------------------- | ------------------------------------------------------ | ------------------------------------------------ |
+| **Sur fond sombre**  | Interface app, headers, splash, videos avec overlay    | Noir Carbone `#0B0D12` / Anthracite `#1A1D24`    |
+| **Sur fond clair**   | Partenariats, documents, supports print clairs         | Blanc Piste `#F4F4F4`                            |
+| **Monochrome blanc** | Filigrane, overlays video, UI compacte sur fond sombre | Transparent ou fond sombre                       |
+| **Monochrome noir**  | Documents clairs, exports admin, print monochrome      | Fond clair uniquement                            |
+| **Icône app**        | PWA, favicon, notifications, app install, homescreen   | Tuile noire glossy arrondie + halo Rouge Vitesse |
 
 ### Tailles et lisibilite
-| Contexte | Taille | Notes |
-|----------|--------|-------|
-| Hero / Splash | 128-220px | Lockup principal ou badge selon surface, avec animation d'entree |
-| Header desktop | 40-48px hauteur | Symbole + wordmark si l'espace le permet |
-| Header mobile | 32px hauteur | Symbole seul ou wordmark court |
-| Avatar reseaux sociaux | 512px source | Symbole PK en crop circulaire avec bord rouge |
-| Favicon navigateur | 16px / 32px | Symbole PK seul depuis l'icône app |
-| PWA / App install | 180px / 192px / 512px | Exports depuis `_0-WORK/BRANDING/pronokif-logo3.png` |
+| Contexte               | Taille                | Notes                                                            |
+| ---------------------- | --------------------- | ---------------------------------------------------------------- |
+| Hero / Splash          | 128-220px             | Lockup principal ou badge selon surface, avec animation d'entree |
+| Header desktop         | 32-48px hauteur       | Wordmark horizontal si l'espace le permet                        |
+| Header mobile          | 24-32px hauteur       | Symbole seul ou wordmark court                                   |
+| Avatar reseaux sociaux | 512px source          | Symbole en crop circulaire avec bord rouge                       |
+| Favicon navigateur     | 16px / 32px           | Icône app depuis `logo-pronokif-icone-black-red`                 |
+| PWA / App install      | 180px / 192px / 512px | Exports depuis `logo-pronokif-icone-black-red.png`               |
 
 ### Signature
-- Format principal : `[PK] | PronoKif F1` pour les supports officiels.
+- Format principal : wordmark horizontal officiel v1 (`logo-pronokif-markdown-*`).
 - Signature verbale : `PRONOSTIQUEZ. DEFIEZ. VIVEZ.` avec `VIVEZ.` en Rouge Vitesse.
-- Espacement entre symbole et wordmark : 12px desktop, 8px mobile. Le separateur vertical Rouge Vitesse fait partie du lockup officiel et ne doit pas etre improvise ailleurs.
+- Espacement entre symbole et wordmark : utiliser les proportions natives de l'asset, sans separateur improvise.
 - Le nom "PronoKif" s'ecrit toujours avec P et K majuscules
 
 ### Interdits
@@ -156,17 +157,16 @@
 - **Performance:** Toutes les animations doivent utiliser `transform` et `opacity` uniquement (GPU-accelerated). Tester sur mobile bas de gamme. `will-change` sur les elements animes frequemment. `prefers-reduced-motion: reduce` doit desactiver les animations non-essentielles.
 
 ## Assets 3D & Video
-
 ### Inventaire des assets de marque
-| Asset | Format | Usage |
-|-------|--------|-------|
-| **Kit logo brandboard** | PNG, 1672x941 | Reference visuelle officielle pour variantes, palette, zone de protection, usages |
-| **Logo principal / extension F1** | PNG, 1916x821 | Lockup `PK | PronoKif F1`, splash, marketing, supports externes |
-| **Icône app PK** | PNG, 1254x1254 | Source favicon, PWA, notifications, homescreen |
-| **Cinematic trailer** | MP4, 9:16 | Splash screen, onboarding, landing page hero |
-| **Jingle intro** | M4A | Splash screen audio, notifications sonores, branding audio |
-| **Modeles 3D** | glTF/GLB | Transitions, celebrations podium, animations hero |
-| **Videos de marque** | MP4, 9:16 | Login background, pages marketing, teasing GP |
+| Asset                   | Format                                | Usage                                                      |
+| ----------------------- | ------------------------------------- | ---------------------------------------------------------- |
+| **Kit logo v1**         | SVG + PNG                             | Reference officielle pour variantes, favicon, PWA et menus |
+| **Wordmark horizontal** | SVG prioritaire, PNG fallback         | Menus, headers, splash, auth, supports externes            |
+| **Icône app**           | PNG source, exports 16/32/180/192/512 | Source favicon, PWA, notifications, homescreen             |
+| **Cinematic trailer**   | MP4, 9:16                             | Splash screen, onboarding, landing page hero               |
+| **Jingle intro**        | M4A                                   | Splash screen audio, notifications sonores, branding audio |
+| **Modeles 3D**          | glTF/GLB                              | Transitions, celebrations podium, animations hero          |
+| **Videos de marque**    | MP4, 9:16                             | Login background, pages marketing, teasing GP              |
 
 ### Guidelines video
 - **Splash screen:** Video 9:16 plein ecran (`/video/splash-trailer.mp4`, 1080x1920, 12.1s, H.264+AAC). Autoplay muted, unmute au premier tap. Fondu audio progressif sur les 2 dernieres secondes. Bouton "Passer" en haut a droite (pill glass). Barre de progression rouge en bas. Transition de sortie : sweep rouge horizontal + flash blanc-rouge + fade vers le formulaire auth. Skip au tap ou a la fin de la video. `prefers-reduced-motion` : pas de splash, affichage direct du formulaire.
@@ -188,7 +188,6 @@
 - Parallax leger sur scroll (translateY a 50% de la vitesse de scroll), gradient overlay Noir Carbone pour garantir la lisibilite du texte.
 
 ## Component Patterns
-
 ### Boutons
 - **Primary:** `bg-primary hover:bg-[#C00500] text-white shadow-[0_0_15px_rgba(225,6,0,0.4)] transition-all duration-300 hover:scale-105` — Racing Sans One uppercase
 - **Effet lumineux bordure v2 (CTA critiques):** variante inspiree de ReactBits Border Glow : le glow reagit a la proximite du pointeur avec une bordure mesh-gradient rouge/blanc et un halo externe directionnel. Appliquer via le composant `BorderGlowButton` et la classe `.btn-pk-glow` aux actions determinantes uniquement : login, creation de compte, finalisation/enregistrement des pronostics, paiement/validation future.
@@ -235,18 +234,18 @@
 - Les photos de pilotes et circuits sont des assets essentiels — ne pas les remplacer par des placeholders generiques en production.
 
 ## Decisions Log
-| Date | Decision | Rationale |
-|------|----------|-----------|
-| 2026-05-22 | Design system "Broadcast Premium" cree | Formalise la direction artistique existante des mockups PronoKif F1 |
-| 2026-05-22 | Racing Sans One conserve comme display font | Font signature du projet, deja presente dans le branding et les mockups |
-| 2026-05-22 | Dark-only confirme | Tous les concurrents sont dark/dark-first, les fans F1 s'y attendent, cohérent avec l'ambiance broadcast nocturne |
-| 2026-05-22 | Motion expressive choisie | Differenciation "plus fun que l'officiel" — les animations sont l'investissement UX principal |
-| 2026-05-22 | Assets 3D et video 9:16 integres au design system | Le fondateur dispose de modeles 3D et videos de marque, les guidelines d'implementation sont documentees |
-| 2026-05-22 | Or/Argent/Bronze pour le podium | Medailles visuelles pour le top 3 dans les classements, pattern des mockups existants |
-| 2026-05-22 | Palette officielle integree (Rouge Vitesse #E10600, Noir Carbone #0B0D12) | Alignement sur la charte de marque officielle — remplace les couleurs provisoires (#EF4444, #09090b) |
-| 2026-05-22 | Section Logo & Brand Identity ajoutee | PK monogramme, variantes, tailles, zone de protection — formalise les regles d'usage du logo |
-| 2026-05-22 | Assets audio documentes (jingle, feedback sonore) | Le fondateur dispose d'un jingle intro, guidelines d'implementation audio ajoutees |
-| 2026-05-22 | Splash screen video integre | Video cinematique 12.1s en splash avec fondu audio, transition dynamique sweep rouge, skip button |
-| 2026-05-22 | Effets lumineux bordure boutons | Conic-gradient rotatif CSS Houdini sur .btn-pk (primary) et .btn-pk-outline (hover), sweep lumineux interne |
-| 2026-05-23 | Theme v2 CTA Border Glow ajoute | Adapte ReactBits Border Glow aux CTA critiques avec palette PronoKif, halo directionnel pointer-aware et fallback motion reduite |
-| 2026-05-24 | Kit logo officiel integre | Les assets `pronokif-logo11.png`, `pronokif-logo1.png` et `pronokif-logo3.png` deviennent les references pour lockup, brandboard, favicon et PWA |
+| Date       | Decision                                                                  | Rationale                                                                                                                        |
+| ---------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-05-22 | Design system "Broadcast Premium" cree                                    | Formalise la direction artistique existante des mockups PronoKif F1                                                              |
+| 2026-05-22 | Racing Sans One conserve comme display font                               | Font signature du projet, deja presente dans le branding et les mockups                                                          |
+| 2026-05-22 | Dark-only confirme                                                        | Tous les concurrents sont dark/dark-first, les fans F1 s'y attendent, cohérent avec l'ambiance broadcast nocturne                |
+| 2026-05-22 | Motion expressive choisie                                                 | Differenciation "plus fun que l'officiel" — les animations sont l'investissement UX principal                                    |
+| 2026-05-22 | Assets 3D et video 9:16 integres au design system                         | Le fondateur dispose de modeles 3D et videos de marque, les guidelines d'implementation sont documentees                         |
+| 2026-05-22 | Or/Argent/Bronze pour le podium                                           | Medailles visuelles pour le top 3 dans les classements, pattern des mockups existants                                            |
+| 2026-05-22 | Palette officielle integree (Rouge Vitesse #E10600, Noir Carbone #0B0D12) | Alignement sur la charte de marque officielle — remplace les couleurs provisoires (#EF4444, #09090b)                             |
+| 2026-05-22 | Section Logo & Brand Identity ajoutee                                     | PK monogramme, variantes, tailles, zone de protection — formalise les regles d'usage du logo                                     |
+| 2026-05-22 | Assets audio documentes (jingle, feedback sonore)                         | Le fondateur dispose d'un jingle intro, guidelines d'implementation audio ajoutees                                               |
+| 2026-05-22 | Splash screen video integre                                               | Video cinematique 12.1s en splash avec fondu audio, transition dynamique sweep rouge, skip button                                |
+| 2026-05-22 | Effets lumineux bordure boutons                                           | Conic-gradient rotatif CSS Houdini sur .btn-pk (primary) et .btn-pk-outline (hover), sweep lumineux interne                      |
+| 2026-05-23 | Theme v2 CTA Border Glow ajoute                                           | Adapte ReactBits Border Glow aux CTA critiques avec palette PronoKif, halo directionnel pointer-aware et fallback motion reduite |
+| 2026-05-27 | Branding officiel v1 integre                                              | Les assets `LOGO V2` deviennent les references pour favicon, PWA, wordmark horizontal et symboles UI                             |

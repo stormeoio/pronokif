@@ -35,6 +35,21 @@ class MinigameLeaderboardEntry(BaseModel):
     position: int
 
 
+class ReactionResultCreate(BaseModel):
+    race_id: str
+    league_id: str
+    reaction_time_ms: int
+    is_training: bool = False
+
+
+class BatakResultCreate(BaseModel):
+    race_id: str
+    league_id: str
+    score: int
+    time_seconds: int | None = None
+    is_training: bool = False
+
+
 # ==================== ENDPOINTS ====================
 
 
@@ -89,10 +104,38 @@ async def save_minigame_result(data: MinigameResultCreate, user: dict = Depends(
                 await db.user_stats.update_one({"user_id": user["id"]}, {"$set": {"best_batak_score": int(data.score)}})
 
         # Increment games played
-        stat_key = f"minigame_{data.game_type}_played"
+        stat_key = "reaction_games_played" if data.game_type == "reaction" else "batak_games_played"
         await db.user_stats.update_one({"user_id": user["id"]}, {"$inc": {stat_key: 1}})
 
     return {"message": "Result saved", "result_id": result_id, "score": data.score, "is_training": data.is_training}
+
+
+@router.post("/reaction")
+async def save_reaction_result(data: ReactionResultCreate, user: dict = Depends(get_current_user)) -> dict:
+    """Frontend-compatible endpoint for reaction results."""
+    payload = MinigameResultCreate(
+        game_type="reaction",
+        score=data.reaction_time_ms,
+        league_id=data.league_id,
+        race_id=data.race_id,
+        is_training=data.is_training,
+    )
+    return await save_minigame_result(payload, user)
+
+
+@router.post("/batak")
+async def save_batak_result(data: BatakResultCreate, user: dict = Depends(get_current_user)) -> dict:
+    """Frontend-compatible endpoint for batak results."""
+    payload = MinigameResultCreate(
+        game_type="batak",
+        score=data.score,
+        league_id=data.league_id,
+        race_id=data.race_id,
+        is_training=data.is_training,
+    )
+    result = await save_minigame_result(payload, user)
+    result["time_seconds"] = data.time_seconds
+    return result
 
 
 @router.get("/leaderboard/{game_type}/{league_id}/{race_id}")

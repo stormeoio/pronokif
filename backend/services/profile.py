@@ -12,7 +12,6 @@ import uuid
 from datetime import UTC, datetime
 
 from config import db
-from data.f1_data import F1_RACES_2026
 from features import (
     MISSIONS,
     get_default_user_stats,
@@ -21,6 +20,7 @@ from features import (
 )
 from services.auth import send_user_notification
 from services.predictions import count_individual_predictions
+from services.race_calendar import active_2026_races
 
 
 class MissionError(Exception):
@@ -98,7 +98,7 @@ async def get_public_profile(target_user_id: str, requesting_user_id: str) -> di
         .to_list(5)
     )
 
-    race_map = {r["id"]: r["name"] for r in F1_RACES_2026}
+    race_map = {r["id"]: r["name"] for r in active_2026_races()}
     for pred in recent_predictions:
         pred["race_name"] = race_map.get(pred["race_id"], pred["race_id"])
 
@@ -123,8 +123,8 @@ async def get_public_profile(target_user_id: str, requesting_user_id: str) -> di
         "created_at": target_user.get("created_at"),
         "stats": {
             "total_predictions": total_predictions,
-            "correct_poles": stats.get("correct_poles", 0),
-            "correct_winners": stats.get("correct_winners", 0),
+            "correct_poles": stats.get("correct_poles", stats.get("poles_correct", 0)),
+            "correct_winners": stats.get("correct_winners", stats.get("winners_correct", 0)),
             "perfect_top10": stats.get("perfect_top10", 0),
             "races_participated": races_participated,
         },
@@ -266,7 +266,7 @@ async def get_streak(user_id: str) -> dict:
 
     past_races = [
         r
-        for r in F1_RACES_2026
+        for r in active_2026_races()
         if parse_race_date(r["date"]) <= now
     ]
     # Most recent first

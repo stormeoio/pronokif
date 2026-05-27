@@ -18,6 +18,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import PageTransition from "@/components/PageTransition";
 import EmailVerificationBanner from "@/components/EmailVerificationBanner";
 import SplashScreen from "@/components/SplashScreen";
+import { brandAssets } from "@/lib/brand";
 import "@/App.css";
 
 // Lazy-load heavy 3D components for performance
@@ -116,7 +117,8 @@ export default function App() {
   if (!hasStarted) {
     return (
       <SplashScreen
-        iconSrc="/icons/icon-512.png"
+        iconSrc={brandAssets.pwaIcon512}
+        wordmarkSrc={brandAssets.wordmarkWhiteRed}
         videoSrc="/video/splash-trailer.mp4"
         introDelayMs={950}
         buttonDelayMs={3600}

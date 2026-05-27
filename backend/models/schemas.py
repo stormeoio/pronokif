@@ -213,6 +213,12 @@ class RaceResponse(BaseModel):
     sprint_quali_time: str | None = None
     sprint_race_time: str | None = None
     timezone: str | None = "Europe/Paris"
+    race_start_at: str | None = None
+    race_end_at: str | None = None
+    race_duration_minutes: int | None = None
+    is_test_race: bool = False
+    thumbnail_url: str | None = None
+    is_cancelled: bool = False
 
 
 class DriverResponse(BaseModel):

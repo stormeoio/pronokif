@@ -59,7 +59,13 @@ async def create(*, title: str, message: str, ntype: str, author: dict) -> dict:
 async def list_for_user(user: dict, limit: int = MAX_LIST_LIMIT) -> list[dict]:
     """Return the most recent notifications, decorated with per-user
     `is_read` status."""
-    notifications = await db.notifications.find({}, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    query = {
+        "$or": [
+            {"target_user_ids": {"$exists": False}},
+            {"target_user_ids": user["id"]},
+        ]
+    }
+    notifications = await db.notifications.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
 
     user_doc = await db.users.find_one({"id": user["id"]}, {"unread_notifications": 1})
     unread_ids = set((user_doc or {}).get("unread_notifications", []))

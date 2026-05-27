@@ -98,7 +98,7 @@ export interface Race {
   sprint_quali_date: string | null;
   sprint_race_date: string | null;
   predictions_close_at: string;
-  status: "upcoming" | "in_progress" | "finished";
+  status: "upcoming" | "in_progress" | "finished" | "cancelled";
   is_sprint_weekend: boolean;
   results: RaceResults | null;
   race_time: string | null;
@@ -106,6 +106,14 @@ export interface Race {
   sprint_quali_time: string | null;
   sprint_race_time: string | null;
   timezone: string;
+  race_start_at: string | null;
+  race_end_at: string | null;
+  race_duration_minutes: number | null;
+  is_test_race?: boolean;
+  thumbnail_url?: string | null;
+  is_cancelled?: boolean;
+  can_predict?: boolean;
+  can_predict_sprint?: boolean;
 }
 
 export interface RaceDetails extends Race {
@@ -259,6 +267,29 @@ export interface PointsHistoryEntry {
   date: string;
 }
 
+export interface PointsHistoryRaceEntry {
+  race_id: string;
+  race_name: string;
+  race_date: string;
+  is_sprint_weekend: boolean;
+  has_results: boolean;
+  total_points: number;
+  xp_earned: number;
+  points_breakdown: Record<string, { points: number; label: string }> | null;
+  sprint_breakdown: Record<string, { points: number; label: string }> | null;
+  details: string[];
+}
+
+export interface PointsHistoryResponse {
+  history: PointsHistoryRaceEntry[];
+  summary: {
+    total_points: number;
+    total_xp: number;
+    races_with_results: number;
+    races_pending: number;
+  };
+}
+
 // ═══════════════════════════════════════ CUSTOM PREDICTIONS ════════════════════
 
 export interface CustomPredictionChoice {
@@ -322,15 +353,18 @@ export interface MinigameLeaderboardEntry {
 export interface Avatar {
   id: string;
   name: string;
-  url: string;
   category: string;
-  rarity: "common" | "rare" | "epic" | "legendary";
-  unlock_level?: number;
+  icon?: string;
+  colors?: [string, string];
+  number?: number;
+  team?: string;
 }
 
 export interface AvatarsResponse {
+  default?: Avatar[];
+  teams?: Avatar[];
+  drivers?: Avatar[];
   all: Avatar[];
-  unlocked: string[];
 }
 
 // ═══════════════════════════════════════ GLOBAL LEADERBOARD ════════════════════

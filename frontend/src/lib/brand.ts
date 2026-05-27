@@ -41,6 +41,40 @@ export const brand = {
 } as const;
 
 /* ------------------------------------------------
+   BRAND ASSETS — official Pronokif v1 logo kit
+   ------------------------------------------------ */
+const brandAssetsBase = "/brand/pronokif-v1";
+
+export const brandAssets = {
+  version: "pronokif-v1",
+
+  /** App tile icon: favicon, PWA, splash compact. */
+  icon: "/icons/icon-512.png",
+  iconSourceSvg: `${brandAssetsBase}/logo-pronokif-icone-black-red.svg`,
+  iconSourcePng: `${brandAssetsBase}/logo-pronokif-icone-black-red.png`,
+
+  /** Horizontal wordmark for light backgrounds. */
+  wordmarkBlackRed: `${brandAssetsBase}/logo-pronokif-markdown-black-red.svg`,
+  wordmarkBlackRedPng: `${brandAssetsBase}/logo-pronokif-markdown-black-red.png`,
+
+  /** Horizontal wordmark for dark app surfaces. */
+  wordmarkWhiteRed: `${brandAssetsBase}/logo-pronokif-markdown-white-red.svg`,
+  wordmarkWhiteRedPng: `${brandAssetsBase}/logo-pronokif-markdown-white-red.png`,
+
+  /** Standalone symbol without app tile. */
+  symbolBlackRed: `${brandAssetsBase}/logo-pronokif-symbole-black-red.svg`,
+  symbolBlackRedPng: `${brandAssetsBase}/logo-pronokif-symbole-black-red.png`,
+  symbolWhiteRed: `${brandAssetsBase}/logo-pronokif-symbole-white-red.svg`,
+  symbolWhiteRedPng: `${brandAssetsBase}/logo-pronokif-symbole-white-red.png`,
+
+  favicon16: "/icons/favicon-16.png",
+  favicon32: "/icons/favicon-32.png",
+  appleTouchIcon: "/icons/apple-touch-icon.png",
+  pwaIcon192: "/icons/icon-192.png",
+  pwaIcon512: "/icons/icon-512.png",
+} as const;
+
+/* ------------------------------------------------
    SEMANTIC COLORS
    ------------------------------------------------ */
 export const semantic = {

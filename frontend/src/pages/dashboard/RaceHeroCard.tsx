@@ -9,6 +9,7 @@ interface CountdownValues {
   hours: number;
   minutes: number;
   seconds: number;
+  phase?: "upcoming" | "in_progress" | "finished" | "cancelled";
 }
 
 interface RaceHeroCardProps {
@@ -18,6 +19,11 @@ interface RaceHeroCardProps {
         name: string;
         circuit: string;
         date: string;
+        race_start_at?: string | null;
+        race_end_at?: string | null;
+        timezone?: string | null;
+        race_duration_minutes?: number | null;
+        status?: "upcoming" | "in_progress" | "finished" | "cancelled";
         can_predict?: boolean;
         is_sprint_weekend?: boolean;
         thumbnail_url?: string | null;
@@ -96,6 +102,17 @@ export default function RaceHeroCard({
     { val: countdown.minutes, label: "Min" },
     { val: countdown.seconds, label: "Sec" },
   ];
+  const phase = countdown.phase ?? race.status ?? "upcoming";
+  const isLive = phase === "in_progress";
+  const isFinished = phase === "finished";
+  const isCancelled = phase === "cancelled";
+  const raceEndLabel = race.race_end_at
+    ? new Intl.DateTimeFormat("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: race.timezone || undefined,
+      }).format(new Date(race.race_end_at))
+    : null;
 
   return (
     <div
@@ -167,23 +184,55 @@ export default function RaceHeroCard({
         )}
 
         {/* Countdown */}
-        <div className="flex gap-2 mb-5">
-          {cdUnits.map((u) => (
-            <div
-              key={u.label}
-              className="flex flex-col items-center
-                bg-white/[0.03] border border-white/[0.08]
-                rounded-sm py-2 px-2.5 min-w-[52px]"
-            >
-              <span className="font-mono text-[1.375rem] font-bold text-pk-piste">
-                {String(u.val).padStart(2, "0")}
-              </span>
-              <span className="font-mono text-[0.5625rem] uppercase tracking-[0.15em] text-pk-titane mt-0.5">
-                {u.label}
+        {phase === "upcoming" ? (
+          <div className="flex gap-2 mb-5">
+            {cdUnits.map((u) => (
+              <div
+                key={u.label}
+                className="flex flex-col items-center
+                  bg-white/[0.03] border border-white/[0.08]
+                  rounded-sm py-2 px-2.5 min-w-[52px]"
+              >
+                <span className="font-mono text-[1.375rem] font-bold text-pk-piste">
+                  {String(u.val).padStart(2, "0")}
+                </span>
+                <span className="font-mono text-[0.5625rem] uppercase tracking-[0.15em] text-pk-titane mt-0.5">
+                  {u.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div
+            className={`mb-5 rounded-sm border px-3 py-3 ${
+              isLive
+                ? "border-pk-red/35 bg-pk-red/10"
+                : isFinished
+                  ? "border-white/[0.1] bg-white/[0.04]"
+                  : "border-pk-amber/25 bg-pk-amber/10"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  isLive ? "bg-pk-red animate-[pulse-dot_2s_ease-in-out_infinite]" : "bg-pk-titane"
+                }`}
+              />
+              <span
+                className={`font-mono text-[0.75rem] uppercase tracking-[0.16em] ${
+                  isLive ? "text-pk-red" : "text-pk-piste"
+                }`}
+              >
+                {isCancelled ? "Course annulée" : isLive ? "Course en cours" : "Course terminée"}
               </span>
             </div>
-          ))}
-        </div>
+            {isLive && raceEndLabel && (
+              <p className="mt-1 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-pk-titane">
+                Fin estimée {raceEndLabel} locale
+              </p>
+            )}
+          </div>
+        )}
 
         {/* CTA */}
         {race.can_predict !== false && (

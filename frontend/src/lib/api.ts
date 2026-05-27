@@ -29,6 +29,7 @@ import type {
   MissionsResponse,
   Notification,
   PointsHistoryEntry,
+  PointsHistoryResponse,
   Prediction,
   PredictionStats,
   Race,
@@ -189,7 +190,7 @@ export const api = {
     next: () => get<Race>("/races/next"),
     get: (id: string) => get<RaceDetails>(`/races/${id}`),
     details: (id: string) => get<RaceDetails>(`/races/${id}/details`),
-    results: (raceId: string) => get<ResultsResponse>(`/races/${raceId}/results`),
+    results: (raceId: string) => get<ResultsResponse>(`/results/${raceId}`),
     predictionCount: (raceId: string) =>
       get<{ count: number }>(`/races/${raceId}/prediction-count`),
   },
@@ -227,10 +228,10 @@ export const api = {
   // ── Chat ─────────────────────────────────────────────────────
   chat: {
     messages: (leagueId: string, limit = 50) =>
-      get<ChatMessageResponse[]>(`/leagues/${leagueId}/chat?limit=${limit}`),
+      get<ChatMessageResponse[]>(`/leagues/${leagueId}/messages?limit=${limit}`),
     send: (leagueId: string, body: { content: string }) =>
-      post<ChatMessageResponse>(`/leagues/${leagueId}/chat`, body),
-    markRead: (leagueId: string) => post<void>(`/leagues/${leagueId}/chat/read`),
+      post<ChatMessageResponse>(`/leagues/${leagueId}/messages`, body),
+    markRead: (leagueId: string) => post<void>(`/leagues/${leagueId}/messages/read`),
   },
 
   // ── Predictions ──────────────────────────────────────────────
@@ -241,7 +242,7 @@ export const api = {
     delete: (raceId: string) => del<void>(`/predictions/race/${raceId}`),
     stats: () => get<PredictionStats>("/predictions/stats"),
     history: () => get<PointsHistoryEntry[]>("/predictions/history"),
-    pointsHistory: () => get<PointsHistoryEntry[]>("/predictions/points-history"),
+    pointsHistory: () => get<PointsHistoryResponse>("/predictions/points-history"),
   },
 
   // ── Custom Predictions ───────────────────────────────────────
@@ -331,7 +332,8 @@ export const api = {
 
   // ── Feedback ────────────────────────────────────────────────
   feedback: {
-    send: (body: { type: string; message: string }) => post<void>("/feedback", body),
+    send: (body: { type: string; message: string }) =>
+      post<void>("/feedback", { category: body.type, message: body.message }),
   },
 
   // ── Profile ─────────────────────────────────────────────────

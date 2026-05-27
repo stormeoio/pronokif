@@ -21,8 +21,9 @@ from typing import Any
 import httpx
 
 from config import JOLPICA_API, OPENF1_API, db, logger
-from data.f1_data import F1_DRIVERS_2026, F1_RACES_2026
+from data.f1_data import F1_DRIVERS_2026
 from services.auth import send_user_notification
+from services.race_calendar import syncable_2026_races
 from services.scoring import calculate_points
 
 AUTO_SYNC_INTERVAL_HOURS = 1
@@ -55,7 +56,7 @@ class RaceNotFoundError(Exception):
 
 
 def _find_race(race_id: str) -> dict:
-    race = next((r for r in F1_RACES_2026 if r["id"] == race_id), None)
+    race = next((r for r in syncable_2026_races() if r["id"] == race_id), None)
     if not race:
         raise RaceNotFoundError(race_id)
     return race

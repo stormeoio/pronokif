@@ -37,8 +37,8 @@ export default defineConfig(({ mode }) => {
           "icons/icon-512.png",
         ],
         manifest: {
-          name: "Pronokif - Pronostics F1",
-          short_name: "Pronokif",
+          name: "PronoKif - Pronostics F1",
+          short_name: "PronoKif",
           description: "Jeu de pronostics Formule 1 entre amis",
           start_url: "/",
           display: "standalone",
@@ -50,19 +50,20 @@ export default defineConfig(({ mode }) => {
               src: "/icons/icon-192.png",
               sizes: "192x192",
               type: "image/png",
-              purpose: "any",
+              purpose: "any maskable",
             },
             {
               src: "/icons/icon-512.png",
               sizes: "512x512",
               type: "image/png",
-              purpose: "any",
+              purpose: "any maskable",
             },
           ],
           categories: ["games", "sports"],
         },
         workbox: {
           globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+          globIgnores: ["**/logo-pronokif-icone-black-red.svg"],
           navigateFallback: "/index.html",
           runtimeCaching: [
             {

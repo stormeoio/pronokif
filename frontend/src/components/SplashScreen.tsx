@@ -1,4 +1,5 @@
 import PronoKifSplashScreen from "@/components/splash/PronoKifSplashScreen";
+import { brandAssets } from "@/lib/brand";
 
 // ----------------------------------------------------------- props ---
 
@@ -7,6 +8,8 @@ interface SplashScreenProps {
   onComplete: () => void;
   /** App icon source shown in the branded splash overlay. */
   iconSrc?: string;
+  /** Horizontal logo source shown under the app icon. */
+  wordmarkSrc?: string;
   /** Video source path (default: /video/splash-trailer.mp4) */
   videoSrc?: string;
   /** Max duration before auto-skip (ms) */
@@ -21,7 +24,8 @@ interface SplashScreenProps {
 
 export default function SplashScreen({
   onComplete,
-  iconSrc = "/icons/icon-512.png",
+  iconSrc = brandAssets.pwaIcon512,
+  wordmarkSrc = brandAssets.wordmarkWhiteRed,
   videoSrc = "/video/splash-trailer.mp4",
   maxDuration = 13000,
   introDelayMs = 950,
@@ -30,6 +34,7 @@ export default function SplashScreen({
   return (
     <PronoKifSplashScreen
       iconSrc={iconSrc}
+      wordmarkSrc={wordmarkSrc}
       videoSrc={videoSrc}
       introDelayMs={introDelayMs}
       buttonDelayMs={buttonDelayMs}

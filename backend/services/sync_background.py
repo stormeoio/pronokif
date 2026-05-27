@@ -16,11 +16,10 @@ from __future__ import annotations
 import asyncio
 from datetime import UTC, datetime, timedelta
 from typing import Any
-from zoneinfo import ZoneInfo
 
 from config import db, logger
-from data.f1_data import F1_RACES_2026
 from services.auth import send_user_notification
+from services.race_calendar import active_2026_races, race_start_at_utc, syncable_2026_races
 
 AUTO_SYNC_INTERVAL_HOURS = 1
 AUTO_SYNC_ACTIVE_INTERVAL_SECONDS = 300
@@ -31,11 +30,10 @@ RACE_SYNC_WINDOW_END_HOURS_AFTER = 12
 
 def _race_start_at_utc(race: dict) -> datetime:
     """Return the race start as UTC, interpreting calendar times as local."""
-    race_date = race.get("date")
-    race_time = race.get("race_time", "15:00")
-    race_tz = ZoneInfo(race.get("timezone", "Europe/Paris"))
-    local_start = datetime.fromisoformat(f"{race_date}T{race_time}:00").replace(tzinfo=race_tz)
-    return local_start.astimezone(UTC)
+    race_start = race_start_at_utc(race)
+    if race_start is None:
+        raise ValueError(f"Invalid race schedule for {race.get('id')}")
+    return race_start
 
 
 def _race_sync_window(race: dict) -> tuple[datetime, datetime]:
@@ -105,7 +103,7 @@ async def sync_all_pending() -> dict:
     synced: list[dict] = []
     failed: list[dict] = []
 
-    for race in F1_RACES_2026:
+    for race in syncable_2026_races():
         result_doc = await db.race_results.find_one({"race_id": race["id"]}, {"_id": 0})
         if not _should_attempt_result_sync(race, now, result_doc):
             continue
@@ -128,7 +126,23 @@ async def sync_status() -> dict:
     now = datetime.now(UTC)
     races_status: list[dict] = []
 
-    for race in F1_RACES_2026:
+    for race in active_2026_races():
+        if race.get("is_cancelled"):
+            races_status.append(
+                {
+                    "id": race["id"],
+                    "name": race["name"],
+                    "date": race["date"],
+                    "race_start_at": None,
+                    "sync_window_start": None,
+                    "sync_window_end": None,
+                    "status": "cancelled",
+                    "has_results": False,
+                    "auto_synced": False,
+                }
+            )
+            continue
+
         result_doc = await db.race_results.find_one({"race_id": race["id"]}, {"_id": 0})
         has_results = _has_complete_results(result_doc)
         window_start, window_end = _race_sync_window(race)
@@ -165,6 +179,7 @@ async def sync_status() -> dict:
             "pending": len([r for r in races_status if r["status"] == "pending_sync"]),
             "live_sync_window": len([r for r in races_status if r["status"] == "live_sync_window"]),
             "upcoming": len([r for r in races_status if r["status"] == "upcoming"]),
+            "cancelled": len([r for r in races_status if r["status"] == "cancelled"]),
         },
     }
 
@@ -174,7 +189,7 @@ async def send_reminders() -> dict:
     now = datetime.now(UTC)
     notifications_sent = 0
 
-    for race in F1_RACES_2026:
+    for race in syncable_2026_races():
         quali_date = datetime.fromisoformat(race["quali_date"] + "T14:00:00+00:00")
         predictions_close = quali_date - timedelta(hours=1)
         time_until_close = predictions_close - now
@@ -209,7 +224,7 @@ async def auto_sync_loop() -> None:
             synced_races: list[str] = []
             active_window_open = False
 
-            for race in F1_RACES_2026:
+            for race in syncable_2026_races():
                 result_doc = await db.race_results.find_one({"race_id": race["id"]}, {"_id": 0})
                 if _is_inside_race_sync_window(race, now) and not _has_complete_results(result_doc):
                     active_window_open = True

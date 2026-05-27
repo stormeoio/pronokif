@@ -121,10 +121,6 @@ export default function LeagueDetailPage() {
 
   const getAvatar = (member: Record<string, unknown>): string | null => {
     if (member.custom_avatar_url) return member.custom_avatar_url as string;
-    if (member.avatar_id && avatars?.all) {
-      const found = avatars.all.find((a) => a.id === member.avatar_id);
-      if (found) return found.url;
-    }
     return null;
   };
 
@@ -279,7 +275,10 @@ export default function LeagueDetailPage() {
         {/* Tab Toggle */}
         <div className="flex gap-2 p-1 bg-gray-800/50 rounded-xl backdrop-blur-sm">
           <motion.button
-            onClick={() => { haptic("light"); setActiveTab("leaderboard"); }}
+            onClick={() => {
+              haptic("light");
+              setActiveTab("leaderboard");
+            }}
             className={`flex-1 py-2 px-4 rounded-lg font-heading text-sm uppercase transition-all flex items-center justify-center gap-2 relative ${activeTab === "leaderboard" ? "text-white shadow-lg" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
             whileTap={{ scale: 0.95 }}
           >
@@ -296,7 +295,10 @@ export default function LeagueDetailPage() {
             </span>
           </motion.button>
           <motion.button
-            onClick={() => { haptic("light"); setActiveTab("members"); }}
+            onClick={() => {
+              haptic("light");
+              setActiveTab("members");
+            }}
             className={`flex-1 py-2 px-4 rounded-lg font-heading text-sm uppercase transition-all flex items-center justify-center gap-2 relative ${activeTab === "members" ? "text-white shadow-lg" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
             whileTap={{ scale: 0.95 }}
           >

@@ -12,9 +12,9 @@ route layer wires `Depends(require_admin)`).
 from __future__ import annotations
 
 from config import db, logger
-from data.f1_data import F1_RACES_2026
 from features import get_default_user_stats
 from services.predictions import count_individual_predictions
+from services.race_calendar import active_2026_races
 
 
 class MemberNotFoundError(LookupError):
@@ -58,7 +58,7 @@ async def get_details(member_id: str) -> dict:
         db.predictions.find({"user_id": member_id}, {"_id": 0}).sort("created_at", -1).limit(10).to_list(10)
     )
 
-    race_map = {r["id"]: r["name"] for r in F1_RACES_2026}
+    race_map = {r["id"]: r["name"] for r in active_2026_races()}
     for pred in recent_predictions:
         pred["race_name"] = race_map.get(pred["race_id"], pred["race_id"])
 
@@ -78,8 +78,8 @@ async def get_details(member_id: str) -> dict:
         "current_league_id": member.get("current_league_id"),
         "stats": {
             "predictions_count": predictions_count,
-            "correct_poles": stats.get("correct_poles", 0),
-            "correct_winners": stats.get("correct_winners", 0),
+            "correct_poles": stats.get("correct_poles", stats.get("poles_correct", 0)),
+            "correct_winners": stats.get("correct_winners", stats.get("winners_correct", 0)),
             "perfect_top10": stats.get("perfect_top10", 0),
             "races_participated": races_participated,
         },

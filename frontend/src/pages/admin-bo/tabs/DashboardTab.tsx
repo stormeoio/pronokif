@@ -1,16 +1,45 @@
 /**
  * Admin Dashboard — overview stats.
  */
-import { useQuery } from "@tanstack/react-query";
-import { Users, Trophy, Flag, MessageSquare, Mail, TrendingUp } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Database,
+  Flag,
+  Loader2,
+  Mail,
+  MessageSquare,
+  RefreshCw,
+  TrendingUp,
+  Trophy,
+  Users,
+} from "lucide-react";
+import { toast } from "sonner";
 import { adminApi } from "../adminApi";
+import { Button } from "@/components/ui/button";
 
 export default function DashboardTab() {
+  const queryClient = useQueryClient();
   const { data: stats, isLoading } = useQuery({
     queryKey: ["admin-bo", "stats"],
     queryFn: () => adminApi.stats(),
     refetchInterval: 30_000,
   });
+
+  const seedDemoMutation = useMutation({
+    mutationFn: () => adminApi.demo.seed(),
+    onSuccess: (data) => {
+      toast.success(
+        `Demo synchronisee: ${data.summary?.users ?? 0} utilisateurs, ${data.summary?.predictions ?? 0} pronostics`,
+      );
+      queryClient.invalidateQueries({ queryKey: ["admin-bo"] });
+    },
+    onError: () => toast.error("Seed demo impossible"),
+  });
+
+  const handleSeedDemo = () => {
+    if (!confirm("Synchroniser le jeu de données demo complet ?")) return;
+    seedDemoMutation.mutate();
+  };
 
   const cards = [
     { label: "Utilisateurs", value: stats?.total_users ?? "—", icon: Users, color: "cyan" },
@@ -73,6 +102,36 @@ export default function DashboardTab() {
               </p>
             </div>
           )}
+
+          <div className="card-arcade p-4 mt-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-md border border-pk-red/25 bg-pk-red/10 flex items-center justify-center">
+                  <Database className="h-5 w-5 text-pk-red" />
+                </div>
+                <div>
+                  <h3 className="font-heading text-sm text-white uppercase">Données demo</h3>
+                  <p className="font-body text-xs text-gray-500">
+                    Calendrier, résultats, ligues, pronostics, médias et compteurs.
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                className="btn-racing text-xs"
+                onClick={handleSeedDemo}
+                disabled={seedDemoMutation.isPending}
+              >
+                {seedDemoMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-1" />
+                )}
+                Seed demo complet
+              </Button>
+            </div>
+          </div>
         </>
       )}
     </div>

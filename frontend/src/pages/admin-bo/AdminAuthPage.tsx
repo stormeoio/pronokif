@@ -5,10 +5,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Shield, Mail, Loader2, KeyRound, CheckCircle, AlertCircle } from "lucide-react";
+import { Mail, Loader2, KeyRound, CheckCircle, AlertCircle } from "lucide-react";
 import { adminApi } from "./adminApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { brandAssets } from "@/lib/brand";
 
 export default function AdminAuthPage() {
   const navigate = useNavigate();
@@ -105,14 +106,21 @@ export default function AdminAuthPage() {
           {/* Header */}
           <div className="bg-gradient-to-r from-red-600/20 to-transparent p-6 border-b border-red-500/30">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
-                <Shield className="w-6 h-6 text-red-400" />
-              </div>
+              <img
+                src={brandAssets.icon}
+                alt=""
+                className="h-12 w-12 rounded-xl object-cover"
+                draggable={false}
+              />
               <div>
-                <h1 className="font-heading text-xl text-white uppercase tracking-tight">
-                  Administration
-                </h1>
-                <p className="font-body text-xs text-gray-400">Panneau d'administration Pronokif</p>
+                <h1 className="sr-only">Administration PronoKif</h1>
+                <img
+                  src={brandAssets.wordmarkWhiteRed}
+                  alt="PronoKif"
+                  className="mb-1 h-6 w-auto max-w-[168px] object-contain"
+                  draggable={false}
+                />
+                <p className="font-body text-xs text-gray-400">Panneau d'administration</p>
               </div>
             </div>
           </div>
