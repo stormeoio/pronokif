@@ -1,29 +1,32 @@
+/**
+ * Race Calendar — V1 List (vertical timeline).
+ * Broadcast Premium theme.
+ */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import { toast } from "sonner";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
-  ChevronRight,
   Calendar,
   MapPin,
   Flag,
   Clock,
   Check,
   Lock,
-  Zap,
-  Trophy,
   Target,
+  ChevronRight,
+  Zap,
 } from "lucide-react";
-import { Button } from "../components/ui/button";
-import { BorderGlowButton } from "@/components/ui/border-glow-button";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
+import { haptic } from "@/lib/haptics";
 import { getRaceThumbnail } from "@/lib/raceThumbnails";
+import { fadeUp, staggerContainer, easing, duration, getReducedMotionProps } from "@/lib/motion";
 import type { Race } from "@/types/api";
 
-// Country flag emojis mapping
-const COUNTRY_FLAGS = {
+/* ── Country flags ─────────────────────────────────────── */
+
+const COUNTRY_FLAGS: Record<string, string> = {
   Australia: "🇦🇺",
   China: "🇨🇳",
   Japan: "🇯🇵",
@@ -47,11 +50,72 @@ const COUNTRY_FLAGS = {
   UAE: "🇦🇪",
 };
 
+type FilterKey = "upcoming" | "completed" | "all";
+
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: "upcoming", label: "A venir" },
+  { key: "completed", label: "Termines" },
+  { key: "all", label: "Tous" },
+];
+
+/* ── Helpers ───────────────────────────────────────────── */
+
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+function formatCloseTime(dateStr: string) {
+  return new Date(dateStr).toLocaleString("fr-FR", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/* ── Shimmer Loading ───────────────────────────────────── */
+
+function CalendarSkeleton() {
+  return (
+    <div className="min-h-screen bg-pk-carbon">
+      <div className="sticky top-0 z-50 p-4 bg-pk-carbon/85 backdrop-blur-xl border-b border-white/[0.08]">
+        <div className="h-5 w-40 rounded bg-pk-anthracite animate-shimmer mb-2" />
+        <div className="h-3 w-56 rounded bg-pk-anthracite animate-shimmer mb-3" />
+        <div className="flex gap-1.5">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-8 flex-1 rounded-full bg-pk-anthracite animate-shimmer"
+              style={{ animationDelay: `${i * 100}ms` }}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="px-4 pt-3 space-y-2 pb-24">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div
+            key={i}
+            className="h-20 bg-pk-surface border border-white/[0.08] rounded-lg animate-shimmer"
+            style={{ animationDelay: `${i * 100}ms` }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Main Component ────────────────────────────────────── */
+
 export default function RaceCalendarPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const prefersReducedMotion = useReducedMotion() ?? false;
+  const rmProps = getReducedMotionProps(prefersReducedMotion);
 
-  const [filter, setFilter] = useState<"upcoming" | "all" | "completed">("upcoming");
+  const [filter, setFilter] = useState<FilterKey>("upcoming");
 
   const { data: races = [], isLoading: racesLoading } = useQuery({
     queryKey: ["/races/upcoming"],
@@ -72,305 +136,173 @@ export default function RaceCalendarPage() {
 
   const loading = racesLoading || predsLoading;
 
-  const getFilteredRaces = () => {
-    if (filter === "upcoming") {
-      return races.filter((r) => r.status === "upcoming" || r.status === "in_progress");
-    }
-    if (filter === "completed") {
-      return races.filter((r) => r.status === "finished");
-    }
+  const filteredRaces = (() => {
+    if (filter === "upcoming")
+      return races.filter((r: Race) => r.status === "upcoming" || r.status === "in_progress");
+    if (filter === "completed") return races.filter((r: Race) => r.status === "finished");
     return races;
-  };
+  })();
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
-  };
-
-  const formatCloseTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleString("fr-FR", {
-      day: "numeric",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const filteredRaces = getFilteredRaces();
   const upcomingCount = races.filter(
-    (r) => r.status === "upcoming" || r.status === "in_progress",
+    (r: Race) => r.status === "upcoming" || r.status === "in_progress",
   ).length;
-  const completedCount = races.filter((r) => r.status === "finished").length;
+  const completedCount = races.filter((r: Race) => r.status === "finished").length;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-app-main p-4 pt-6">
-        <div className="max-w-2xl mx-auto space-y-4">
-          <div className="h-12 skeleton-arcade rounded-lg" />
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-24 skeleton-arcade rounded-lg" />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <CalendarSkeleton />;
 
   return (
-    <div
-      className="min-h-screen bg-app-main pb-24"
-      data-testid="race-calendar-page"
-      aria-labelledby="calendar-title"
-    >
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-[#050a14]/95 backdrop-blur-md border-b border-red-500/30">
-        <div className="max-w-2xl mx-auto p-4">
-          <h1
-            id="calendar-title"
-            className="font-heading text-xl uppercase tracking-tight text-white flex items-center gap-2"
-          >
-            <Calendar className="w-5 h-5 text-red-500" aria-hidden="true" />
-            Calendrier F1 2026
+    <div className="min-h-screen bg-pk-carbon pb-24" data-testid="race-calendar-page">
+      {/* ── Glass Header ── */}
+      <header className="sticky top-0 z-50 bg-pk-carbon/85 backdrop-blur-xl saturate-[1.3] border-b border-white/[0.08]">
+        <div className="px-4 pt-3 pb-3">
+          <h1 className="font-display text-lg flex items-center gap-2 mb-0.5">
+            <Calendar className="w-4 h-4 text-pk-red" />
+            Calendrier 2026
           </h1>
-          <p className="font-body text-xs text-gray-400 mt-1">
-            Pronostique en avance sur tous les GP • Clôture 15min avant FP1
-          </p>
-        </div>
+          <p className="text-[0.625rem] text-pk-titane mb-2.5">Cloture 15min avant FP1</p>
 
-        {/* Filter Tabs */}
-        <div className="max-w-2xl mx-auto px-4 pb-3">
-          <div className="flex gap-2" role="tablist" aria-label="Filtrer les courses">
-            <button
-              onClick={() => setFilter("upcoming")}
-              role="tab"
-              aria-selected={filter === "upcoming"}
-              className={`flex-1 py-2 px-3 rounded-lg font-body text-sm transition-all ${
-                filter === "upcoming"
-                  ? "bg-red-500 text-white shadow-lg"
-                  : "bg-white/5 text-gray-400 hover:bg-white/10"
-              }`}
-            >
-              À venir ({upcomingCount})
-            </button>
-            <button
-              onClick={() => setFilter("completed")}
-              role="tab"
-              aria-selected={filter === "completed"}
-              className={`flex-1 py-2 px-3 rounded-lg font-body text-sm transition-all ${
-                filter === "completed"
-                  ? "bg-red-500 text-white shadow-lg"
-                  : "bg-white/5 text-gray-400 hover:bg-white/10"
-              }`}
-            >
-              Terminés ({completedCount})
-            </button>
-            <button
-              onClick={() => setFilter("all")}
-              role="tab"
-              aria-selected={filter === "all"}
-              className={`flex-1 py-2 px-3 rounded-lg font-body text-sm transition-all ${
-                filter === "all"
-                  ? "bg-red-500 text-white shadow-lg"
-                  : "bg-white/5 text-gray-400 hover:bg-white/10"
-              }`}
-            >
-              Tous ({races.length})
-            </button>
+          {/* Filter chips */}
+          <div className="flex gap-1.5">
+            {FILTERS.map((f) => {
+              const count =
+                f.key === "upcoming"
+                  ? upcomingCount
+                  : f.key === "completed"
+                    ? completedCount
+                    : races.length;
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => {
+                    haptic("selection");
+                    setFilter(f.key);
+                  }}
+                  className={`flex-1 py-1.5 rounded-full text-center font-data text-[0.5625rem] border transition-colors ${
+                    filter === f.key
+                      ? "bg-pk-red-subtle border-pk-red/30 text-pk-red"
+                      : "bg-white/[0.04] border-white/[0.08] text-pk-titane"
+                  }`}
+                >
+                  {f.label} ({count})
+                </button>
+              );
+            })}
           </div>
         </div>
-      </div>
+      </header>
 
-      <motion.div
-        className="max-w-2xl mx-auto p-4 space-y-3"
-        initial="hidden"
-        animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
-        key={filter}
-      >
-        {filteredRaces.length === 0 ? (
-          <motion.div
-            className="card-arcade p-8 text-center"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-          >
-            <Calendar className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-            <p className="font-heading text-lg uppercase text-gray-400">Aucune course</p>
-            <p className="font-body text-sm text-gray-500 mt-2">
-              {filter === "upcoming"
-                ? "Toutes les courses sont terminées"
-                : "Aucune course terminée"}
-            </p>
-          </motion.div>
-        ) : (
-          filteredRaces.map((race, index) => {
-            const hasPrediction = !!myPredictions[race.id];
-            const canPredict = (race as Race & { can_predict?: boolean }).can_predict;
-            const isNextRace = index === 0 && filter === "upcoming";
-            const flag = (COUNTRY_FLAGS as Record<string, string>)[race.country] || "🏁";
-            const raceThumbnail = getRaceThumbnail(race);
+      {/* ── Race List ── */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={filter}
+          className="px-4 pt-3 space-y-2"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          exit={{ opacity: 0, transition: { duration: 0.1 } }}
+          {...rmProps}
+        >
+          {filteredRaces.length === 0 ? (
+            <motion.div variants={fadeUp} className="text-center py-16">
+              <Calendar className="w-10 h-10 text-pk-titane mx-auto mb-3 opacity-40" />
+              <p className="font-display text-sm text-pk-titane">Aucune course</p>
+              <p className="text-xs text-pk-titane/60 mt-1">
+                {filter === "upcoming" ? "Saison terminee" : "Aucune course terminee"}
+              </p>
+            </motion.div>
+          ) : (
+            filteredRaces.map((race: Race, index: number) => {
+              const hasPrediction = !!myPredictions[race.id];
+              const canPredict = (race as Race & { can_predict?: boolean }).can_predict;
+              const isNextRace = index === 0 && filter === "upcoming";
+              const flag = COUNTRY_FLAGS[race.country] || "🏁";
 
-            return (
-              <motion.div
-                key={race.id}
-                variants={{
-                  hidden: { opacity: 0, y: 20, scale: 0.97 },
-                  visible: {
-                    opacity: 1,
-                    y: 0,
-                    scale: 1,
-                    transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] },
-                  },
-                }}
-                className={`card-arcade overflow-hidden transition-all glass-card ${
-                  isNextRace ? "ring-2 ring-red-500/50 animated-border" : ""
-                }`}
-                whileHover={{ scale: 1.01, y: -2 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {raceThumbnail && (
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/race/${race.id}`)}
-                    className="relative block aspect-[16/9] w-full overflow-hidden border-b border-white/[0.08]"
-                    aria-label={`Voir ${race.name}`}
-                  >
-                    <img
-                      src={raceThumbnail}
-                      alt={`Vignette ${race.name}`}
-                      className={`h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03] ${
-                        race.status === "finished" ? "opacity-60 saturate-[0.75]" : ""
-                      }`}
-                      loading="lazy"
-                      decoding="async"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#050a14]/80 via-transparent to-[#050a14]/20" />
-                    <div className="absolute left-3 top-3 rounded-sm border border-white/15 bg-black/55 px-2 py-1 font-data text-[0.6875rem] text-white backdrop-blur">
-                      #{index + 1}
-                    </div>
-                    {isNextRace && (
-                      <div className="absolute right-3 top-3 rounded-sm border border-red-500/40 bg-red-500/20 px-2 py-1 font-heading text-[0.625rem] uppercase tracking-wider text-white backdrop-blur">
-                        Prochain GP
-                      </div>
-                    )}
-                  </button>
-                )}
+              return (
+                <motion.button
+                  key={race.id}
+                  variants={fadeUp}
+                  onClick={() => navigate(`/race/${race.id}`)}
+                  className={`w-full text-left bg-pk-surface border rounded-lg overflow-hidden transition-all active:scale-[0.98] ${
+                    isNextRace ? "border-pk-red/30 shadow-glow-red" : "border-white/[0.08]"
+                  }`}
+                >
+                  {/* Next race accent */}
+                  {isNextRace && <div className="h-0.5 bg-pk-red" />}
 
-                {/* Race header with country flag */}
-                <div className="p-4">
-                  <div className="flex items-start gap-3">
-                    {/* Round number */}
+                  <div className="flex items-center gap-3 p-3.5">
+                    {/* Round badge */}
                     <div
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center font-heading text-lg ${
+                      className={`w-10 h-10 rounded-lg flex items-center justify-center font-display text-sm flex-shrink-0 ${
                         race.status === "finished"
-                          ? "bg-gray-700 text-gray-400"
+                          ? "bg-pk-anthracite text-pk-titane"
                           : isNextRace
-                            ? "bg-gradient-to-br from-red-500 to-red-700 text-white shadow-lg"
+                            ? "bg-pk-red text-white"
                             : "bg-pk-anthracite border border-white/[0.08] text-pk-piste"
                       }`}
                     >
-                      {index + 1}
+                      {flag}
                     </div>
 
+                    {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xl">{flag}</span>
-                        <h3
-                          className={`font-heading text-base uppercase truncate ${
-                            race.status === "finished" ? "text-gray-400" : "text-white"
+                      <div className="flex items-center gap-1.5">
+                        <p
+                          className={`font-bold text-[0.8125rem] truncate ${
+                            race.status === "finished" ? "text-pk-titane" : "text-pk-piste"
                           }`}
                         >
                           {race.name.replace(" Grand Prix", "")}
-                        </h3>
+                        </p>
                         {race.is_sprint_weekend && (
-                          <span className="flex-shrink-0 bg-yellow-500/20 text-yellow-400 text-[10px] px-2 py-0.5 rounded-full font-heading uppercase">
+                          <span className="font-data text-[0.4375rem] px-1.5 py-0.5 rounded bg-pk-amber/20 text-pk-amber uppercase flex-shrink-0">
                             Sprint
                           </span>
                         )}
                       </div>
-
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-                        <span className="font-body text-gray-400 flex items-center gap-1">
-                          <MapPin className="w-3 h-3" /> {race.circuit}
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[0.625rem] text-pk-titane flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {race.circuit}
                         </span>
-                        <span className="font-body text-gray-400 flex items-center gap-1">
-                          <Flag className="w-3 h-3" /> {formatDate(race.date)}
+                        <span className="text-[0.625rem] text-pk-titane">
+                          {formatDate(race.date)}
                         </span>
                       </div>
-
-                      {/* Prediction close info */}
-                      {canPredict && (
-                        <p className="font-body text-[10px] text-pk-red mt-2 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          Clôture: {formatCloseTime(race.predictions_close_at)}
+                      {canPredict && !hasPrediction && (
+                        <p className="text-[0.5rem] text-pk-red mt-1 flex items-center gap-1">
+                          <Clock className="w-2.5 h-2.5" />
+                          Cloture: {formatCloseTime(race.predictions_close_at)}
                         </p>
                       )}
                     </div>
 
-                    {/* Status / Action */}
+                    {/* Status badge */}
                     <div className="flex-shrink-0">
                       {race.status === "finished" ? (
-                        <div className="w-10 h-10 rounded-lg bg-gray-700 flex items-center justify-center">
-                          <Check className="w-5 h-5 text-gray-500" />
+                        <div className="w-8 h-8 rounded-md bg-pk-anthracite flex items-center justify-center">
+                          <Check className="w-4 h-4 text-pk-titane" />
                         </div>
                       ) : hasPrediction ? (
-                        <div className="w-10 h-10 rounded-lg bg-green-500/20 border border-green-500/50 flex items-center justify-center">
-                          <Check className="w-5 h-5 text-green-500" />
+                        <div className="w-8 h-8 rounded-md bg-pk-emerald/[0.12] border border-pk-emerald/25 flex items-center justify-center">
+                          <Check className="w-4 h-4 text-pk-emerald" />
                         </div>
                       ) : canPredict ? (
-                        <div className="w-10 h-10 rounded-lg bg-red-500/20 border border-red-500/50 flex items-center justify-center animate-pulse">
-                          <Target className="w-5 h-5 text-red-400" />
+                        <div className="w-8 h-8 rounded-md bg-pk-red/[0.12] border border-pk-red/25 flex items-center justify-center animate-glow-pulse">
+                          <Target className="w-4 h-4 text-pk-red" />
                         </div>
                       ) : (
-                        <div className="w-10 h-10 rounded-lg bg-gray-700 flex items-center justify-center">
-                          <Lock className="w-5 h-5 text-gray-500" />
+                        <div className="w-8 h-8 rounded-md bg-pk-anthracite flex items-center justify-center">
+                          <Lock className="w-4 h-4 text-pk-titane" />
                         </div>
                       )}
                     </div>
                   </div>
-                </div>
-
-                {/* Action bar */}
-                {race.status !== "finished" && (
-                  <>
-                    <div className="h-[1px] bg-gray-700/50" />
-                    <div className="p-3 bg-white/[0.02]">
-                      {canPredict ? (
-                        hasPrediction ? (
-                          <Button
-                            onClick={() => navigate(`/predictions/${race.id}`)}
-                            className="w-full h-10 font-heading uppercase tracking-wider text-sm btn-gold"
-                            data-testid={`predict-btn-${race.id}`}
-                          >
-                            Modifier mes pronos
-                          </Button>
-                        ) : (
-                          <BorderGlowButton
-                            onClick={() => navigate(`/predictions/${race.id}`)}
-                            className="w-full h-10 font-heading uppercase tracking-wider text-sm"
-                            data-testid={`predict-btn-${race.id}`}
-                          >
-                            Faire mes pronos <ChevronRight className="w-4 h-4 ml-1" />
-                          </BorderGlowButton>
-                        )
-                      ) : (
-                        <div className="text-center py-1">
-                          <span className="font-body text-xs text-gray-500 flex items-center justify-center gap-1">
-                            <Lock className="w-3 h-3" />
-                            Pronostics fermés
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-
-                {/* Kerb stripe for next race */}
-                {isNextRace && <div className="h-1.5 bg-kerb-stripe" />}
-              </motion.div>
-            );
-          })
-        )}
-      </motion.div>
+                </motion.button>
+              );
+            })
+          )}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

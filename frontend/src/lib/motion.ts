@@ -231,7 +231,6 @@ export const getReducedMotionProps = (prefersReducedMotion: boolean) => {
     return {
       initial: false,
       animate: false,
-      exit: false,
       transition: { duration: 0 },
     };
   }

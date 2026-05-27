@@ -1,19 +1,14 @@
 /**
  * ErrorBoundary — catches unhandled errors in the React tree.
- *
- * Displays an arcade-themed fallback UI with a retry button.
- * Prevents white-screen-of-death in production.
+ * Broadcast Premium fallback UI with retry / home buttons.
  */
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { AlertTriangle, RotateCcw, Home } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { AlertTriangle, RotateCcw, Home, Flag } from "lucide-react";
 import { captureError } from "@/lib/sentry";
 
 interface Props {
   children: ReactNode;
-  /** Optional fallback to render instead of the default UI */
   fallback?: ReactNode;
-  /** Called when an error is caught — useful for logging/reporting */
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
@@ -48,10 +43,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      if (this.props.fallback) {
-        return this.props.fallback;
-      }
-
+      if (this.props.fallback) return this.props.fallback;
       return (
         <ErrorFallback
           error={this.state.error}
@@ -60,12 +52,11 @@ export class ErrorBoundary extends Component<Props, State> {
         />
       );
     }
-
     return this.props.children;
   }
 }
 
-// ─── Default fallback UI ─────────────────────────────────────────────────────
+/* ── Default fallback UI ───────────────────────────────── */
 
 interface ErrorFallbackProps {
   error: Error | null;
@@ -75,46 +66,61 @@ interface ErrorFallbackProps {
 
 function ErrorFallback({ error, onRetry, onHome }: ErrorFallbackProps) {
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-6"
-      style={{ background: "linear-gradient(180deg, #0a0f1a 0%, #151c2c 50%, #0a0f1a 100%)" }}
-    >
-      <div className="max-w-md w-full text-center space-y-6">
-        {/* Icon */}
-        <div className="mx-auto w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center">
-          <AlertTriangle className="w-10 h-10 text-red-400" />
-        </div>
+    <div className="min-h-screen bg-pk-carbon flex flex-col">
+      {/* Red Flag Banner */}
+      <div className="w-full py-2 bg-pk-red text-white font-display text-xs uppercase tracking-wider flex items-center justify-center gap-2">
+        <Flag className="w-3 h-3" fill="currentColor" />
+        Drapeau rouge — Erreur systeme
+      </div>
 
-        {/* Title */}
-        <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-white">Oups, quelque chose a plante !</h1>
-          <p className="text-sm text-gray-400">
-            Une erreur inattendue s&apos;est produite. Pas de panique, vos pronostics sont en
-            securite.
-          </p>
-        </div>
-
-        {/* Error details (dev only) */}
-        {import.meta.env.DEV && error && (
-          <div className="bg-red-950/30 border border-red-500/20 rounded-lg p-4 text-left">
-            <p className="text-xs font-mono text-red-300 break-all">{error.message}</p>
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="max-w-sm w-full text-center">
+          {/* Icon */}
+          <div className="w-16 h-16 rounded-full bg-pk-red/[0.12] border border-pk-red/20 flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="w-7 h-7 text-pk-red" />
           </div>
-        )}
 
-        {/* Actions */}
-        <div className="flex gap-3 justify-center">
-          <Button
-            onClick={onRetry}
-            variant="outline"
-            className="gap-2 border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Reessayer
-          </Button>
-          <Button onClick={onHome} className="gap-2 bg-orange-600 hover:bg-orange-700 text-white">
-            <Home className="w-4 h-4" />
-            Accueil
-          </Button>
+          {/* Title */}
+          <h1 className="font-display text-xl mb-2">Incident en piste</h1>
+          <p className="text-sm text-pk-titane leading-relaxed mb-6 max-w-[280px] mx-auto">
+            Une erreur inattendue s'est produite. Tes pronostics sont en securite.
+          </p>
+
+          {/* Radio message */}
+          <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-3.5 mb-6 text-left">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-pk-red animate-live-pulse" />
+              <span className="font-data text-[0.5rem] text-pk-red uppercase">Radio team</span>
+            </div>
+            <p className="text-[0.8125rem] italic text-pk-piste leading-snug">
+              "On a un probleme technique. Rentre au stand, on relance."
+            </p>
+          </div>
+
+          {/* Error details (dev only) */}
+          {import.meta.env.DEV && error && (
+            <div className="bg-pk-red/[0.05] border border-pk-red/[0.15] rounded-lg p-3 mb-4 text-left">
+              <p className="font-data text-[0.5625rem] text-pk-red break-all">{error.message}</p>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={onRetry}
+              className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm flex items-center justify-center gap-2 shadow-glow-red active:scale-[0.97] transition-transform"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Relancer
+            </button>
+            <button
+              onClick={onHome}
+              className="w-full h-11 rounded-lg bg-white/[0.04] border border-white/[0.08] text-pk-piste text-sm flex items-center justify-center gap-2 active:scale-[0.97] transition-transform"
+            >
+              <Home className="w-4 h-4" />
+              Retour au paddock
+            </button>
+          </div>
         </div>
       </div>
     </div>

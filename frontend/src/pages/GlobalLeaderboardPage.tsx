@@ -1,14 +1,15 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import { toast } from "sonner";
-import { ChevronLeft, Crown, Trophy, Users, Globe, Zap } from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { motion, useReducedMotion } from "framer-motion";
+import { ChevronLeft, Crown, Users, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { AvatarDisplay } from "../components/AvatarDisplay";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import type { AvatarsResponse } from "@/types/api";
+import { haptic } from "@/lib/haptics";
+import { fadeUp, staggerContainer, easing, duration, getReducedMotionProps } from "@/lib/motion";
+
+/* ── Types ─────────────────────────────────────────────── */
 
 interface LeaderboardEntry {
   user_id: string;
@@ -17,11 +18,119 @@ interface LeaderboardEntry {
   total_points: number;
   position: number;
   level: number;
+  delta?: number;
 }
+
+type FilterKey = "season" | "month" | "gp";
+
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: "season", label: "Saison" },
+  { key: "month", label: "Ce mois" },
+  { key: "gp", label: "Dernier GP" },
+];
+
+/* ── Podium Colors ─────────────────────────────────────── */
+
+const PODIUM_CONFIG = [
+  {
+    order: 1,
+    label: "P2",
+    height: "h-16",
+    color: "from-pk-silver/30 to-pk-silver/10",
+    border: "border-pk-silver/30",
+    avatarSize: "lg" as const,
+    textColor: "text-pk-silver",
+  },
+  {
+    order: 0,
+    label: "P1",
+    height: "h-24",
+    color: "from-pk-gold/30 to-pk-gold/10",
+    border: "border-pk-gold/40",
+    avatarSize: "xl" as const,
+    textColor: "text-pk-gold",
+  },
+  {
+    order: 2,
+    label: "P3",
+    height: "h-12",
+    color: "from-pk-bronze/30 to-pk-bronze/10",
+    border: "border-pk-bronze/30",
+    avatarSize: "lg" as const,
+    textColor: "text-pk-bronze",
+  },
+];
+
+/* ── Shimmer Loading ───────────────────────────────────── */
+
+function LeaderboardSkeleton() {
+  return (
+    <div className="min-h-screen bg-pk-carbon">
+      <div className="sticky top-0 z-50 p-4 bg-pk-carbon/85 backdrop-blur-xl border-b border-white/[0.08]">
+        <div className="h-5 w-36 rounded bg-pk-anthracite animate-shimmer mb-2" />
+        <div className="flex gap-2">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-7 flex-1 rounded-full bg-pk-anthracite animate-shimmer"
+              style={{ animationDelay: `${i * 100}ms` }}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="px-4 pt-4 pb-24 space-y-3">
+        <div className="h-16 bg-pk-surface border border-white/[0.08] rounded-lg animate-shimmer" />
+        <div className="flex items-end justify-center gap-3 py-8">
+          <div className="w-20 h-28 bg-pk-surface rounded-t-lg animate-shimmer" />
+          <div
+            className="w-24 h-40 bg-pk-surface rounded-t-lg animate-shimmer"
+            style={{ animationDelay: "150ms" }}
+          />
+          <div
+            className="w-20 h-24 bg-pk-surface rounded-t-lg animate-shimmer"
+            style={{ animationDelay: "300ms" }}
+          />
+        </div>
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div
+            key={i}
+            className="h-14 bg-pk-surface border border-white/[0.08] rounded-md animate-shimmer"
+            style={{ animationDelay: `${i * 80}ms` }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Delta Badge ───────────────────────────────────────── */
+
+function DeltaBadge({ delta }: { delta?: number }) {
+  if (!delta || delta === 0) return <Minus className="w-3 h-3 text-pk-titane" />;
+  if (delta > 0) {
+    return (
+      <span className="flex items-center gap-0.5 font-data text-[0.5rem] text-pk-emerald">
+        <TrendingUp className="w-3 h-3" />+{delta}
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-center gap-0.5 font-data text-[0.5rem] text-pk-red">
+      <TrendingDown className="w-3 h-3" />
+      {delta}
+    </span>
+  );
+}
+
+/* ── Main Component ────────────────────────────────────── */
 
 export default function GlobalLeaderboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const prefersReducedMotion = useReducedMotion() ?? false;
+  const rmProps = getReducedMotionProps(prefersReducedMotion);
+
+  const [activeFilter, setActiveFilter] = useState<FilterKey>("season");
 
   const { data: lbData, isLoading: lbLoading } = useQuery({
     queryKey: ["/leaderboard/global?limit=100"],
@@ -35,233 +144,198 @@ export default function GlobalLeaderboardPage() {
   });
 
   const loading = lbLoading || avatarsLoading;
-  const leaderboard = lbData?.leaderboard || [];
-  const myPosition = lbData?.my_position || null;
-  const totalPlayers = lbData?.total_players || 0;
+  const leaderboard = (lbData?.leaderboard || []) as unknown as LeaderboardEntry[];
+  const myPosition: number | null = lbData?.my_position || null;
+  const totalPlayers: number = lbData?.total_players || 0;
 
   const getAvatarById = (avatarId: string | null | undefined) => {
     if (!avatarId) return null;
-    return avatars?.all?.find((a) => a.id === avatarId) || null;
+    return avatars?.all?.find((a: { id: string }) => a.id === avatarId) || null;
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-app-main p-4 pt-6">
-        <div className="max-w-2xl mx-auto space-y-4">
-          <div className="h-8 w-48 skeleton-arcade rounded" />
-          <div className="space-y-2">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-16 skeleton-arcade rounded-md" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <LeaderboardSkeleton />;
 
-  // Top 3 for podium
   const podium = leaderboard.slice(0, 3);
   const rest = leaderboard.slice(3);
 
   return (
-    <div className="min-h-screen bg-app-main pb-24" data-testid="global-leaderboard-page">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-[#050a14]/95 backdrop-blur-md border-b border-cyan-500/30">
-        <div className="max-w-2xl mx-auto p-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate(-1)}
-              className="text-gray-400 hover:text-white hover:bg-white/10"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </Button>
-            <div className="flex-1">
-              <h1 className="font-heading text-xl uppercase tracking-tight text-white flex items-center gap-2">
-                <Crown className="w-5 h-5 text-cyan-500" />
-                Classement Global
-              </h1>
-              <p className="font-body text-xs text-gray-400 flex items-center gap-1">
-                <Globe className="w-3 h-3" />
-                {totalPlayers} joueurs au total
-              </p>
+    <div className="min-h-screen bg-pk-carbon pb-24" data-testid="global-leaderboard-page">
+      {/* ── Glass Header ── */}
+      <header className="sticky top-0 z-50 bg-pk-carbon/85 backdrop-blur-xl saturate-[1.3] border-b border-white/[0.08]">
+        <div className="px-4 pt-3 pb-3">
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate(-1)}
+                className="p-1.5 -ml-1.5 rounded-lg text-pk-titane hover:text-pk-piste transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <h1 className="font-display text-lg">Classement</h1>
             </div>
+            <span className="font-data text-[0.5rem] text-pk-titane">{totalPlayers} joueurs</span>
+          </div>
+
+          {/* Filter chips */}
+          <div className="flex gap-1.5">
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => {
+                  haptic("selection");
+                  setActiveFilter(f.key);
+                }}
+                className={`flex-1 py-1.5 rounded-full text-center font-data text-[0.5625rem] border transition-colors ${
+                  activeFilter === f.key
+                    ? "bg-pk-red-subtle border-pk-red/30 text-pk-red"
+                    : "bg-white/[0.04] border-white/[0.08] text-pk-titane"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
           </div>
         </div>
-      </div>
+      </header>
 
       <motion.div
-        className="max-w-2xl mx-auto p-4 space-y-6"
+        className="px-4 pt-3"
+        variants={staggerContainer}
         initial="hidden"
         animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.1 } }, hidden: {} }}
+        {...rmProps}
       >
-        {/* My Position Card */}
-        {myPosition && (
+        {/* My Position Banner */}
+        {myPosition && user && (
           <motion.div
-            className="card-arcade border-cyan-500/50 p-4 flex items-center justify-between glass-card"
-            variants={{
-              hidden: { opacity: 0, y: 20, scale: 0.97 },
-              visible: { opacity: 1, y: 0, scale: 1 },
-            }}
-            whileHover={{ scale: 1.01 }}
+            variants={fadeUp}
+            className="flex items-center gap-3 p-3.5 bg-pk-surface border border-white/[0.08] rounded-lg mb-4"
           >
-            <div className="flex items-center gap-3">
-              <AvatarDisplay
-                avatar={getAvatarById(user?.avatar_id)}
-                customUrl={user?.custom_avatar_url}
-                size="md"
-              />
-              <div>
-                <p className="font-heading text-sm text-white uppercase">{user?.username}</p>
-                <p className="font-body text-xs text-gray-400">Ta position</p>
-              </div>
+            <AvatarDisplay
+              avatar={getAvatarById(user.avatar_id)}
+              customUrl={user.custom_avatar_url}
+              size="md"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-sm truncate">{user.username}</p>
+              <p className="font-data text-[0.5rem] text-pk-titane">Ta position</p>
             </div>
             <div className="text-right">
               <motion.p
-                className="font-data text-3xl text-cyan-neon"
+                className="font-data text-2xl font-bold text-pk-red"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", stiffness: 300, delay: 0.3 }}
               >
                 #{myPosition}
               </motion.p>
-              <p className="font-body text-xs text-gray-500">sur {totalPlayers}</p>
+              <p className="font-data text-[0.5rem] text-pk-titane">/ {totalPlayers}</p>
             </div>
           </motion.div>
         )}
 
-        {/* Podium */}
+        {/* Visual Podium */}
         {podium.length >= 3 && (
-          <motion.div
-            className="flex items-end justify-center gap-2 py-4"
-            variants={{
-              hidden: { opacity: 0 },
-              visible: { opacity: 1, transition: { staggerChildren: 0.15 } },
-            }}
-          >
-            {/* 2nd Place */}
-            <motion.div
-              className="flex flex-col items-center"
-              variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }}
-            >
-              <AvatarDisplay avatar={getAvatarById(podium[1]?.avatar_id)} size="lg" />
-              <p className="font-heading text-sm text-white mt-2 truncate max-w-[80px]">
-                {podium[1]?.username}
-              </p>
-              <p className="font-data text-xs text-gray-400">{podium[1]?.total_points} pts</p>
-              <div className="w-20 h-16 position-2 rounded-t-lg mt-2 flex items-center justify-center">
-                <span className="font-heading text-2xl">2</span>
-              </div>
-            </motion.div>
+          <motion.div variants={fadeUp} className="flex items-end justify-center gap-2 py-6 mb-4">
+            {PODIUM_CONFIG.map((cfg, displayIndex) => {
+              const entry = podium[cfg.order];
+              if (!entry) return null;
 
-            {/* 1st Place */}
-            <motion.div
-              className="flex flex-col items-center -mt-4"
-              variants={{ hidden: { opacity: 0, y: 40, scale: 0.8 }, visible: { opacity: 1, y: 0, scale: 1 } }}
-            >
-              <motion.div
-                animate={{ rotateZ: [-5, 5, -5] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <Crown className="w-8 h-8 text-yellow-500 mb-1" />
-              </motion.div>
-              <AvatarDisplay avatar={getAvatarById(podium[0]?.avatar_id)} size="xl" />
-              <p className="font-heading text-sm text-white mt-2 truncate max-w-[90px]">
-                {podium[0]?.username}
-              </p>
-              <p className="font-data text-xs text-yellow-400">{podium[0]?.total_points} pts</p>
-              <div className="w-24 h-24 position-1 rounded-t-lg mt-2 flex items-center justify-center">
-                <span className="font-heading text-3xl">1</span>
-              </div>
-            </motion.div>
+              return (
+                <motion.div
+                  key={entry.user_id}
+                  className="flex flex-col items-center"
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    delay: displayIndex * 0.15 + 0.2,
+                    duration: duration.medium / 1000,
+                    ease: easing.enter,
+                  }}
+                >
+                  {/* Crown for P1 */}
+                  {cfg.order === 0 && (
+                    <motion.div
+                      animate={prefersReducedMotion ? {} : { rotateZ: [-5, 5, -5] }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                      className="mb-1"
+                    >
+                      <Crown className="w-6 h-6 text-pk-gold" />
+                    </motion.div>
+                  )}
 
-            {/* 3rd Place */}
-            <motion.div
-              className="flex flex-col items-center"
-              variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }}
-            >
-              <AvatarDisplay avatar={getAvatarById(podium[2]?.avatar_id)} size="lg" />
-              <p className="font-heading text-sm text-white mt-2 truncate max-w-[80px]">
-                {podium[2]?.username}
-              </p>
-              <p className="font-data text-xs text-gray-400">{podium[2]?.total_points} pts</p>
-              <div className="w-20 h-12 position-3 rounded-t-lg mt-2 flex items-center justify-center">
-                <span className="font-heading text-2xl">3</span>
-              </div>
-            </motion.div>
+                  <AvatarDisplay avatar={getAvatarById(entry.avatar_id)} size={cfg.avatarSize} />
+                  <p className="font-bold text-xs mt-1.5 truncate max-w-[72px]">{entry.username}</p>
+                  <p className={`font-data text-[0.5625rem] ${cfg.textColor}`}>
+                    {entry.total_points} pts
+                  </p>
+
+                  {/* Podium block */}
+                  <div
+                    className={`w-20 ${cfg.height} mt-2 rounded-t-lg bg-gradient-to-t ${cfg.color} border border-b-0 ${cfg.border} flex items-center justify-center`}
+                  >
+                    <span className="font-display text-xl opacity-60">{cfg.order + 1}</span>
+                  </div>
+                </motion.div>
+              );
+            })}
           </motion.div>
         )}
 
-        {/* Rest of leaderboard */}
+        {/* Ranking List */}
         <motion.div
-          className="card-arcade overflow-hidden glass-card"
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0 },
-          }}
+          variants={fadeUp}
+          className="bg-pk-surface border border-white/[0.08] rounded-lg overflow-hidden"
         >
-          <div className="bg-gradient-to-r from-cyan-600/20 to-transparent px-4 py-3 border-b border-gray-700/50">
-            <h3 className="font-heading text-sm uppercase text-gray-300 flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Classement complet
-            </h3>
-          </div>
-          <div>
-            {rest.length === 0 ? (
-              <p className="font-body text-sm text-gray-500 text-center py-8">
-                Pas assez de joueurs pour afficher le classement
-              </p>
-            ) : (
-              <motion.div
-                className="divide-y divide-gray-800/50"
-                initial="hidden"
-                animate="visible"
-                variants={{ visible: { transition: { staggerChildren: 0.03 } }, hidden: {} }}
-              >
-                {rest.map((entry) => {
-                  const isMe = entry.user_id === user?.id;
-                  return (
-                    <motion.div
-                      key={entry.user_id}
-                      className={`flex items-center gap-3 p-3 transition-colors ${
-                        isMe ? "bg-cyan-500/10" : "hover:bg-white/5"
+          {rest.length === 0 ? (
+            <p className="text-sm text-pk-titane text-center py-8">Pas assez de joueurs.</p>
+          ) : (
+            rest.map((entry) => {
+              const isMe = entry.user_id === user?.id;
+
+              return (
+                <div
+                  key={entry.user_id}
+                  className={`flex items-center gap-2.5 px-3.5 py-2.5 border-b border-white/[0.08] last:border-b-0 ${
+                    isMe ? "bg-pk-red/[0.04]" : ""
+                  }`}
+                >
+                  {/* Position */}
+                  <span className="w-8 font-data text-[0.6875rem] text-pk-titane text-center flex-shrink-0">
+                    {entry.position}
+                  </span>
+
+                  {/* Avatar */}
+                  <AvatarDisplay avatar={getAvatarById(entry.avatar_id)} size="sm" />
+
+                  {/* Name */}
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className={`text-xs font-semibold truncate ${
+                        isMe ? "text-pk-red" : "text-pk-piste"
                       }`}
-                      variants={{
-                        hidden: { opacity: 0, x: -10 },
-                        visible: { opacity: 1, x: 0 },
-                      }}
-                      whileHover={{ x: 4 }}
                     >
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-gray-800">
-                        <span className="font-heading text-sm text-gray-400">{entry.position}</span>
-                      </div>
-                      <AvatarDisplay avatar={getAvatarById(entry.avatar_id)} size="sm" />
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className={`font-body text-sm truncate ${isMe ? "text-cyan-400" : "text-white"}`}
-                        >
-                          {entry.username}
-                          {isMe && <span className="text-xs text-gray-500 ml-1">(toi)</span>}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <span className="font-body text-xs text-gray-500">
-                            Niv. {entry.level}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-data text-sm text-yellow-500">{entry.total_points}</p>
-                        <p className="font-body text-[10px] text-gray-500 uppercase">points</p>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </motion.div>
-            )}
-          </div>
-          <div className="h-2 bg-kerb-stripe" />
+                      {entry.username}
+                      {isMe && <span className="text-pk-titane font-normal ml-1">(toi)</span>}
+                    </p>
+                    <p className="font-data text-[0.5rem] text-pk-titane">Niv. {entry.level}</p>
+                  </div>
+
+                  {/* Delta */}
+                  <DeltaBadge delta={entry.delta} />
+
+                  {/* Points */}
+                  <span className="font-data text-[0.6875rem] text-pk-amber w-12 text-right flex-shrink-0">
+                    {entry.total_points}
+                  </span>
+                </div>
+              );
+            })
+          )}
         </motion.div>
       </motion.div>
     </div>
