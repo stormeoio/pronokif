@@ -27,7 +27,11 @@ from config import (
 from services.email import is_smtp_enabled, send_email
 from services.email_templates import (
     magic_login as magic_login_tpl,
+)
+from services.email_templates import (
     password_reset as password_reset_tpl,
+)
+from services.email_templates import (
     verification as verification_tpl,
 )
 

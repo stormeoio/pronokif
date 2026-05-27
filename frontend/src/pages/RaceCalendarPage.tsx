@@ -16,6 +16,7 @@ import {
   Target,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
+import { BorderGlowButton } from "@/components/ui/border-glow-button";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { getRaceThumbnail } from "@/lib/raceThumbnails";
@@ -264,7 +265,7 @@ export default function RaceCalendarPage() {
                           ? "bg-gray-700 text-gray-400"
                           : isNextRace
                             ? "bg-gradient-to-br from-red-500 to-red-700 text-white shadow-lg"
-                            : "bg-gradient-to-br from-blue-600 to-blue-800 text-white"
+                            : "bg-pk-anthracite border border-white/[0.08] text-pk-piste"
                       }`}
                     >
                       {index + 1}
@@ -298,7 +299,7 @@ export default function RaceCalendarPage() {
 
                       {/* Prediction close info */}
                       {canPredict && (
-                        <p className="font-body text-[10px] text-cyan-400 mt-2 flex items-center gap-1">
+                        <p className="font-body text-[10px] text-pk-red mt-2 flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           Clôture: {formatCloseTime(race.predictions_close_at)}
                         </p>
@@ -334,21 +335,23 @@ export default function RaceCalendarPage() {
                     <div className="h-[1px] bg-gray-700/50" />
                     <div className="p-3 bg-white/[0.02]">
                       {canPredict ? (
-                        <Button
-                          onClick={() => navigate(`/predictions/${race.id}`)}
-                          className={`w-full h-10 font-heading uppercase tracking-wider text-sm ${
-                            hasPrediction ? "btn-gold" : "btn-racing"
-                          }`}
-                          data-testid={`predict-btn-${race.id}`}
-                        >
-                          {hasPrediction ? (
-                            <>Modifier mes pronos</>
-                          ) : (
-                            <>
-                              Faire mes pronos <ChevronRight className="w-4 h-4 ml-1" />
-                            </>
-                          )}
-                        </Button>
+                        hasPrediction ? (
+                          <Button
+                            onClick={() => navigate(`/predictions/${race.id}`)}
+                            className="w-full h-10 font-heading uppercase tracking-wider text-sm btn-gold"
+                            data-testid={`predict-btn-${race.id}`}
+                          >
+                            Modifier mes pronos
+                          </Button>
+                        ) : (
+                          <BorderGlowButton
+                            onClick={() => navigate(`/predictions/${race.id}`)}
+                            className="w-full h-10 font-heading uppercase tracking-wider text-sm"
+                            data-testid={`predict-btn-${race.id}`}
+                          >
+                            Faire mes pronos <ChevronRight className="w-4 h-4 ml-1" />
+                          </BorderGlowButton>
+                        )
                       ) : (
                         <div className="text-center py-1">
                           <span className="font-body text-xs text-gray-500 flex items-center justify-center gap-1">

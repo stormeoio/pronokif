@@ -115,7 +115,7 @@ export function AppIconGlow({
 }
 
 export default function PronoKifSplashScreen({
-  iconSrc,
+  iconSrc = "/icons/icon-512.png",
   wordmarkSrc = "/brand/pronokif-v1/logo-pronokif-markdown-white-red.svg",
   videoSrc = "/video/splash-trailer.mp4",
   posterSrc,
@@ -192,10 +192,10 @@ export default function PronoKifSplashScreen({
           poster={posterSrc}
           autoPlay
           muted
+          loop
           playsInline
           preload="auto"
           data-testid="splash-video"
-          onEnded={completeSplash}
           onError={() => {
             setLogoVisible(true);
             setReady(true);

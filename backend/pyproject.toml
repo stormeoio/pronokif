@@ -27,6 +27,7 @@ ignore = [
 "tests/*" = ["E501"]                # test assertions can be verbose
 "services/sync.py" = ["E501"]       # deeply chained API response parsing
 "services/sync_background.py" = ["E501"]  # background sync persistence blocks can be verbose
+"services/email_templates.py" = ["E501"]  # HTML email templates have long inline lines
 "routes/races.py" = ["E501"]        # ISO date string construction
 "routes/admin_data.py" = ["UP045"]  # legacy admin DTOs kept stable for now
 "server.py" = ["E402", "I001"]      # route imports intentionally happen after Sentry setup

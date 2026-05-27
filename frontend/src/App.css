@@ -1,7 +1,7 @@
 /* App specific styles */
 .App {
   min-height: 100vh;
-  background-color: #09090b;
+  background-color: var(--pk-carbon);
 }
 
 /* Racing stripe accent */
@@ -16,7 +16,13 @@
   top: 0;
   bottom: 0;
   width: 4px;
-  background: linear-gradient(180deg, #ef4444 0%, #ef4444 50%, #ffffff 50%, #ffffff 100%);
+  background: linear-gradient(
+    180deg,
+    var(--pk-red) 0%,
+    var(--pk-red) 50%,
+    var(--pk-piste) 50%,
+    var(--pk-piste) 100%
+  );
 }
 
 /* Checkered flag pattern */
@@ -36,7 +42,7 @@
 
 /* Hero background overlay */
 .hero-overlay {
-  background: linear-gradient(to bottom, rgba(9, 9, 11, 0.7) 0%, rgba(9, 9, 11, 0.95) 100%);
+  background: linear-gradient(to bottom, rgba(11, 13, 18, 0.62) 0%, rgba(11, 13, 18, 0.96) 100%);
 }
 
 /* Driver card hover effect */
@@ -49,9 +55,9 @@
 }
 
 .driver-card.selected {
-  border-color: #ef4444;
-  background: rgba(239, 68, 68, 0.1);
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+  border-color: var(--pk-red);
+  background: var(--pk-red-subtle);
+  box-shadow: var(--pk-shadow-glow-lg);
 }
 
 /* Countdown timer styling */
@@ -113,7 +119,7 @@
 /* Input focus glow */
 input:focus,
 select:focus {
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+  box-shadow: 0 0 0 2px rgba(225, 6, 0, 0.18);
 }
 
 /* Button press effect */
@@ -146,7 +152,12 @@ button:active:not(:disabled) {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+  background: linear-gradient(
+    90deg,
+    var(--pk-surface) 25%,
+    var(--pk-anthracite) 50%,
+    var(--pk-surface) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -157,8 +168,12 @@ button:active:not(:disabled) {
 
 /* Shimmer loading bar */
 @keyframes shimmer-bar {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(200%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
 }
 
 .animate-shimmer {
@@ -167,7 +182,9 @@ button:active:not(:disabled) {
 
 /* Glass morphism cards */
 .glass-card {
-  background: rgba(10, 22, 40, 0.7);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(225, 6, 0, 0.055), transparent 42%),
+    rgba(26, 29, 36, 0.78);
   backdrop-filter: blur(12px) saturate(1.4);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
@@ -176,30 +193,40 @@ button:active:not(:disabled) {
 }
 
 .glass-card-hover:hover {
-  border-color: rgba(0, 204, 255, 0.2);
+  border-color: rgba(225, 6, 0, 0.24);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.4),
-    0 0 20px rgba(0, 204, 255, 0.1),
+    0 0 20px rgba(225, 6, 0, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 /* Neon text glow */
 .text-glow-orange {
-  text-shadow: 0 0 10px rgba(255, 102, 0, 0.6), 0 0 30px rgba(255, 102, 0, 0.3);
+  text-shadow:
+    0 0 10px rgba(225, 6, 0, 0.58),
+    0 0 30px rgba(225, 6, 0, 0.25);
 }
 
 .text-glow-cyan {
-  text-shadow: 0 0 10px rgba(0, 204, 255, 0.6), 0 0 30px rgba(0, 204, 255, 0.3);
+  text-shadow:
+    0 0 10px rgba(244, 244, 244, 0.4),
+    0 0 26px rgba(225, 6, 0, 0.18);
 }
 
 .text-glow-gold {
-  text-shadow: 0 0 10px rgba(251, 191, 36, 0.6), 0 0 30px rgba(251, 191, 36, 0.3);
+  text-shadow:
+    0 0 10px rgba(251, 191, 36, 0.6),
+    0 0 30px rgba(251, 191, 36, 0.3);
 }
 
 /* Gradient border animation */
 @keyframes border-rotate {
-  from { --angle: 0deg; }
-  to { --angle: 360deg; }
+  from {
+    --angle: 0deg;
+  }
+  to {
+    --angle: 360deg;
+  }
 }
 
 @property --angle {
@@ -213,8 +240,15 @@ button:active:not(:disabled) {
   background-origin: border-box;
   background-clip: padding-box, border-box;
   background-image:
-    linear-gradient(#0a0f1a, #0a0f1a),
-    conic-gradient(from var(--angle), #ff6600, #00ccff, #fbbf24, #ff6600);
+    linear-gradient(var(--pk-carbon), var(--pk-carbon)),
+    conic-gradient(
+      from var(--angle),
+      rgba(225, 6, 0, 0.2),
+      rgba(225, 6, 0, 0.92),
+      rgba(244, 244, 244, 0.8),
+      rgba(225, 6, 0, 0.92),
+      rgba(225, 6, 0, 0.2)
+    );
   animation: border-rotate 4s linear infinite;
 }
 
@@ -229,7 +263,9 @@ button:active:not(:disabled) {
 
 /* Hover lift with perspective */
 .hover-3d {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
   transform-style: preserve-3d;
   perspective: 800px;
 }
@@ -256,12 +292,24 @@ button:active:not(:disabled) {
 }
 
 /* Stagger delay utility */
-.stagger-1 { animation-delay: 0.05s; }
-.stagger-2 { animation-delay: 0.1s; }
-.stagger-3 { animation-delay: 0.15s; }
-.stagger-4 { animation-delay: 0.2s; }
-.stagger-5 { animation-delay: 0.25s; }
-.stagger-6 { animation-delay: 0.3s; }
+.stagger-1 {
+  animation-delay: 0.05s;
+}
+.stagger-2 {
+  animation-delay: 0.1s;
+}
+.stagger-3 {
+  animation-delay: 0.15s;
+}
+.stagger-4 {
+  animation-delay: 0.2s;
+}
+.stagger-5 {
+  animation-delay: 0.25s;
+}
+.stagger-6 {
+  animation-delay: 0.3s;
+}
 
 /* Pulse ring for buttons */
 @keyframes pulse-ring {
@@ -282,4 +330,233 @@ button:active:not(:disabled) {
   border-radius: inherit;
   border: 2px solid currentColor;
   animation: pulse-ring 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* ============================================
+   LEGACY UI ALIASES — mapped to DESIGN.md
+   Keeps older app/admin screens inside the PronoKif identity.
+   ============================================ */
+
+.bg-app-main {
+  background:
+    radial-gradient(circle at 50% -12%, rgba(225, 6, 0, 0.13), transparent 34%),
+    radial-gradient(circle at 0% 24%, rgba(244, 244, 244, 0.035), transparent 28%),
+    linear-gradient(180deg, var(--pk-carbon) 0%, #07090d 54%, var(--pk-carbon) 100%);
+}
+
+.card-arcade,
+.game-card {
+  position: relative;
+  border-radius: 6px;
+  border: 1px solid var(--pk-border);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(225, 6, 0, 0.055), transparent 36%),
+    linear-gradient(180deg, rgba(26, 29, 36, 0.92), rgba(18, 20, 24, 0.96));
+  box-shadow: var(--pk-shadow-card);
+  color: var(--pk-piste);
+}
+
+.card-arcade::before,
+.game-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.07), transparent 18%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 32%);
+  opacity: 0.8;
+}
+
+.card-arcade > *,
+.game-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.card-arcade:hover,
+.game-card:hover {
+  border-color: var(--pk-border-hover);
+  box-shadow: var(--pk-shadow-card-hover);
+}
+
+.btn-racing,
+.btn-gold {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background:
+    radial-gradient(120% 140% at 80% 0%, rgba(255, 255, 255, 0.12), transparent 34%),
+    linear-gradient(180deg, #f20a03 0%, var(--pk-red) 46%, #a70400 100%);
+  color: white;
+  font-family: "Racing Sans One", sans-serif;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  box-shadow:
+    0 12px 32px rgba(225, 6, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  transition:
+    transform 220ms var(--pk-ease-enter),
+    box-shadow 220ms var(--pk-ease-enter),
+    border-color 220ms var(--pk-ease-enter);
+}
+
+.btn-racing::before,
+.btn-gold::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: -1;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--angle),
+    transparent 0deg,
+    rgba(225, 6, 0, 0.16) 42deg,
+    rgba(255, 111, 104, 0.9) 72deg,
+    rgba(244, 244, 244, 0.9) 86deg,
+    rgba(225, 6, 0, 0.92) 104deg,
+    transparent 148deg,
+    transparent 226deg,
+    rgba(225, 6, 0, 0.78) 264deg,
+    rgba(244, 244, 244, 0.86) 282deg,
+    transparent 322deg
+  );
+  animation: border-rotate 3.2s linear infinite;
+}
+
+.btn-racing::after,
+.btn-gold::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: inherit;
+  background:
+    radial-gradient(120% 140% at 80% 0%, rgba(255, 255, 255, 0.12), transparent 34%),
+    linear-gradient(180deg, #f20a03 0%, var(--pk-red) 46%, #a70400 100%);
+}
+
+.btn-gold {
+  background:
+    radial-gradient(120% 140% at 80% 0%, rgba(255, 255, 255, 0.12), transparent 34%),
+    linear-gradient(180deg, #ffc94a 0%, #d99a00 44%, #7a4b00 100%);
+  box-shadow:
+    0 12px 32px rgba(245, 158, 11, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.btn-gold::after {
+  background:
+    radial-gradient(120% 140% at 80% 0%, rgba(255, 255, 255, 0.12), transparent 34%),
+    linear-gradient(180deg, #ffc94a 0%, #d99a00 44%, #7a4b00 100%);
+}
+
+.btn-racing:hover,
+.btn-gold:hover {
+  transform: translateY(-1px) scale(1.015);
+  border-color: rgba(244, 244, 244, 0.28);
+  box-shadow:
+    0 16px 40px rgba(225, 6, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.btn-racing:disabled,
+.btn-gold:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
+}
+
+.bg-kerb-stripe {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--pk-red) 0 18px,
+    var(--pk-piste) 18px 28px,
+    var(--pk-red) 28px 46px,
+    var(--pk-carbon) 46px 54px
+  );
+}
+
+.skeleton-arcade {
+  background: linear-gradient(
+    90deg,
+    rgba(26, 29, 36, 0.85) 25%,
+    rgba(95, 102, 115, 0.22) 50%,
+    rgba(26, 29, 36, 0.85) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.35s infinite;
+}
+
+.animate-neon {
+  animation: glow-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(225, 6, 0, 0.28),
+      0 0 18px rgba(225, 6, 0, 0.26);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(244, 244, 244, 0.42),
+      0 0 24px rgba(225, 6, 0, 0.54),
+      0 0 42px rgba(225, 6, 0, 0.28);
+  }
+}
+
+.text-cyan-400,
+.text-cyan-500,
+.text-orange-400,
+.text-orange-500,
+.text-purple-400,
+.text-purple-500,
+.text-blue-400,
+.text-blue-500,
+.hover\:text-blue-400:hover,
+.hover\:text-cyan-400:hover,
+.hover\:text-orange-400:hover,
+.hover\:text-purple-400:hover {
+  color: var(--pk-red) !important;
+}
+
+.border-cyan-500\/20,
+.border-cyan-500\/30,
+.border-cyan-500\/50,
+.border-orange-500\/30,
+.border-orange-500\/50,
+.border-purple-500\/30,
+.border-purple-500\/50,
+.hover\:border-orange-500\/50:hover,
+.hover\:border-cyan-500\/50:hover,
+.hover\:border-purple-500\/50:hover {
+  border-color: rgba(225, 6, 0, 0.32) !important;
+}
+
+.bg-cyan-500\/10,
+.bg-orange-500\/10,
+.bg-purple-500\/10,
+.bg-blue-500\/10,
+.from-cyan-500\/10,
+.from-purple-500\/10,
+.from-orange-500\/10,
+.to-cyan-500\/10,
+.to-purple-500\/10,
+.to-orange-500\/10 {
+  --tw-gradient-from: rgba(225, 6, 0, 0.1) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgba(225, 6, 0, 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  background-color: rgba(225, 6, 0, 0.08) !important;
 }

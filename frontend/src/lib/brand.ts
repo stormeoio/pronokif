@@ -50,6 +50,7 @@ export const brandAssets = {
 
   /** App tile icon: favicon, PWA, splash compact. */
   icon: "/icons/icon-512.png",
+  appIconSourcePng: `${brandAssetsBase}/logo-pronokif-app-icon.png`,
   iconSourceSvg: `${brandAssetsBase}/logo-pronokif-icone-black-red.svg`,
   iconSourcePng: `${brandAssetsBase}/logo-pronokif-icone-black-red.png`,
 

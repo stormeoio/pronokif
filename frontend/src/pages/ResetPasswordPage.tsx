@@ -7,6 +7,8 @@ import { useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Lock, CheckCircle2, XCircle } from "lucide-react";
 import { apiClient } from "@/lib/api";
+import { BorderGlowButton } from "@/components/ui/border-glow-button";
+import { brandAssets } from "@/lib/brand";
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -52,17 +54,20 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen bg-app-main flex items-center justify-center px-4">
       <div className="card-arcade p-8 max-w-sm w-full">
+        <img
+          src={brandAssets.wordmarkWhiteRed}
+          alt="PronoKif"
+          className="mx-auto mb-7 h-8 w-auto max-w-[220px] object-contain"
+          draggable={false}
+        />
         {status === "success" && (
           <div className="text-center">
             <CheckCircle2 className="w-12 h-12 text-green-400 mx-auto mb-4" />
-            <h2 className="font-heading text-xl text-white mb-2">Mot de passe modifie !</h2>
-            <p className="text-gray-400 font-body text-sm mb-6">
+            <h2 className="font-heading text-xl text-pk-piste mb-2">Mot de passe modifié !</h2>
+            <p className="text-pk-titane font-body text-sm mb-6">
               Tu peux maintenant te connecter avec ton nouveau mot de passe.
             </p>
-            <Link
-              to="/auth"
-              className="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-heading uppercase tracking-wider text-sm hover:from-blue-500 hover:to-blue-600 transition-all"
-            >
+            <Link to="/auth" className="btn-pk-outline text-sm">
               Se connecter
             </Link>
           </div>
@@ -71,12 +76,9 @@ export default function ResetPasswordPage() {
         {status === "error" && !token && (
           <div className="text-center">
             <XCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-            <h2 className="font-heading text-xl text-white mb-2">Lien invalide</h2>
-            <p className="text-gray-400 font-body text-sm mb-6">{error}</p>
-            <Link
-              to="/forgot-password"
-              className="inline-block px-6 py-3 bg-gray-700 text-white rounded-lg font-heading uppercase tracking-wider text-sm hover:bg-gray-600 transition-all"
-            >
+            <h2 className="font-heading text-xl text-pk-piste mb-2">Lien invalide</h2>
+            <p className="text-pk-titane font-body text-sm mb-6">{error}</p>
+            <Link to="/forgot-password" className="btn-pk-outline text-sm">
               Demander un nouveau lien
             </Link>
           </div>
@@ -85,16 +87,16 @@ export default function ResetPasswordPage() {
         {(status === "form" || status === "loading") && (
           <>
             <div className="text-center mb-6">
-              <Lock className="w-10 h-10 text-blue-400 mx-auto mb-3" />
-              <h2 className="font-heading text-xl text-white mb-1">Nouveau mot de passe</h2>
-              <p className="text-gray-400 font-body text-sm">
+              <Lock className="w-10 h-10 text-pk-red mx-auto mb-3" />
+              <h2 className="font-heading text-xl text-pk-piste mb-1">Nouveau mot de passe</h2>
+              <p className="text-pk-titane font-body text-sm">
                 Choisis un nouveau mot de passe securise.
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-300 font-body mb-1">
+                <label className="block text-sm text-pk-piste font-body mb-1">
                   Nouveau mot de passe
                 </label>
                 <input
@@ -104,15 +106,15 @@ export default function ResetPasswordPage() {
                   placeholder="8 caracteres minimum"
                   required
                   minLength={8}
-                  className="w-full px-4 py-3 bg-[#0a1628] border border-gray-700 rounded-lg font-body text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 outline-none"
+                  className="input-pk w-full placeholder:text-pk-titane/70"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-pk-titane mt-1">
                   Min. 8 caracteres, 1 majuscule, 1 minuscule, 1 chiffre
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm text-gray-300 font-body mb-1">Confirmer</label>
+                <label className="block text-sm text-pk-piste font-body mb-1">Confirmer</label>
                 <input
                   type="password"
                   value={confirmPassword}
@@ -120,19 +122,19 @@ export default function ResetPasswordPage() {
                   placeholder="Confirme ton mot de passe"
                   required
                   minLength={8}
-                  className="w-full px-4 py-3 bg-[#0a1628] border border-gray-700 rounded-lg font-body text-white placeholder:text-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 outline-none"
+                  className="input-pk w-full placeholder:text-pk-titane/70"
                 />
               </div>
 
               {error && <p className="text-red-400 text-sm font-body">{error}</p>}
 
-              <button
+              <BorderGlowButton
                 type="submit"
                 disabled={status === "loading"}
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-heading uppercase tracking-wider text-sm hover:from-blue-500 hover:to-blue-600 transition-all disabled:opacity-50"
+                className="w-full h-12 text-sm"
               >
                 {status === "loading" ? "Reinitialisation..." : "Reinitialiser"}
-              </button>
+              </BorderGlowButton>
             </form>
           </>
         )}

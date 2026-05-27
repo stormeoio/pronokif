@@ -100,10 +100,10 @@ export default function AdminLayout() {
   const devItems = NAV_ITEMS.filter((i) => i.section === "dev");
 
   return (
-    <div className="min-h-screen bg-[#050a14] flex">
+    <div className="min-h-screen bg-pk-carbon text-pk-piste flex">
       {/* Mobile sidebar toggle */}
       <button
-        className="fixed top-4 left-4 z-50 lg:hidden p-2 bg-gray-800 rounded-lg text-gray-400"
+        className="fixed top-4 left-4 z-50 lg:hidden p-2 bg-pk-anthracite/90 border border-white/[0.08] rounded-md text-pk-titane"
         onClick={() => setSidebarOpen(!sidebarOpen)}
       >
         {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -111,13 +111,13 @@ export default function AdminLayout() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-[#0a0f1a] border-r border-gray-800 transform transition-transform lg:translate-x-0 flex-shrink-0 ${
+        className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-pk-carbon/95 backdrop-blur-xl border-r border-white/[0.08] transform transition-transform lg:translate-x-0 flex-shrink-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="p-4 border-b border-gray-800">
+          <div className="p-4 border-b border-white/[0.08]">
             <div className="flex items-center gap-3">
               <img
                 src={brandAssets.icon}
@@ -132,7 +132,7 @@ export default function AdminLayout() {
                   className="h-5 w-auto max-w-[132px] object-contain"
                   draggable={false}
                 />
-                <p className="text-[10px] text-gray-500 font-body">Administration</p>
+                <p className="text-[10px] text-pk-titane font-body">Administration</p>
               </div>
             </div>
           </div>
@@ -150,19 +150,19 @@ export default function AdminLayout() {
                   }}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${
                     isActive
-                      ? "bg-orange-500/10 text-orange-400 border border-orange-500/30"
-                      : "text-gray-400 hover:bg-white/5 hover:text-gray-200"
+                      ? "bg-pk-red-subtle text-pk-piste border border-pk-red/35 shadow-[0_0_20px_rgba(225,6,0,.12)]"
+                      : "text-pk-titane hover:bg-white/[0.04] hover:text-pk-piste"
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? "text-orange-400" : "text-gray-500"}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? "text-pk-red" : "text-pk-titane"}`} />
                   <span className="font-body text-sm">{label}</span>
                 </button>
               );
             })}
 
             {/* Dev section */}
-            <div className="pt-3 mt-3 border-t border-gray-800">
-              <p className="px-3 pb-2 font-body text-[10px] uppercase text-gray-600 tracking-wider">
+            <div className="pt-3 mt-3 border-t border-white/[0.08]">
+              <p className="px-3 pb-2 font-body text-[10px] uppercase text-pk-titane tracking-wider">
                 Développement
               </p>
               {devItems.map(({ key, label, icon: Icon }) => {
@@ -176,11 +176,11 @@ export default function AdminLayout() {
                     }}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${
                       isActive
-                        ? "bg-purple-500/10 text-purple-400 border border-purple-500/30"
-                        : "text-gray-400 hover:bg-white/5 hover:text-gray-200"
+                        ? "bg-pk-red-subtle text-pk-piste border border-pk-red/35 shadow-[0_0_20px_rgba(225,6,0,.12)]"
+                        : "text-pk-titane hover:bg-white/[0.04] hover:text-pk-piste"
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${isActive ? "text-purple-400" : "text-gray-500"}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? "text-pk-red" : "text-pk-titane"}`} />
                     <span className="font-body text-sm">{label}</span>
                   </button>
                 );
@@ -191,32 +191,32 @@ export default function AdminLayout() {
                 onClick={() => setPreviewOpen(!previewOpen)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all mt-1 ${
                   previewOpen
-                    ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/30"
-                    : "text-gray-400 hover:bg-white/5 hover:text-gray-200"
+                    ? "bg-pk-red-subtle text-pk-piste border border-pk-red/35"
+                    : "text-pk-titane hover:bg-white/[0.04] hover:text-pk-piste"
                 }`}
               >
                 <Smartphone
-                  className={`w-4 h-4 ${previewOpen ? "text-cyan-400" : "text-gray-500"}`}
+                  className={`w-4 h-4 ${previewOpen ? "text-pk-red" : "text-pk-titane"}`}
                 />
                 <span className="font-body text-sm">Preview App</span>
                 {previewOpen ? (
-                  <PanelRightClose className="w-3 h-3 ml-auto text-cyan-500" />
+                  <PanelRightClose className="w-3 h-3 ml-auto text-pk-red" />
                 ) : (
-                  <PanelRightOpen className="w-3 h-3 ml-auto text-gray-600" />
+                  <PanelRightOpen className="w-3 h-3 ml-auto text-pk-titane" />
                 )}
               </button>
             </div>
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-gray-800">
-            <p className="font-body text-xs text-gray-500 truncate mb-3">{adminEmail}</p>
+          <div className="p-4 border-t border-white/[0.08]">
+            <p className="font-body text-xs text-pk-titane truncate mb-3">{adminEmail}</p>
             <div className="flex gap-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate("/")}
-                className="flex-1 text-gray-400 hover:text-white text-xs"
+                className="flex-1 text-pk-titane hover:text-pk-piste text-xs"
               >
                 <ChevronLeft className="w-3 h-3 mr-1" />
                 App
@@ -238,7 +238,7 @@ export default function AdminLayout() {
       {/* Backdrop for mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -246,6 +246,10 @@ export default function AdminLayout() {
       {/* Main content */}
       <main
         className={`flex-1 min-h-screen overflow-y-auto transition-all ${previewOpen ? "mr-[380px]" : ""}`}
+        style={{
+          background:
+            "radial-gradient(circle at 50% -8%, rgba(225,6,0,.11), transparent 34%), linear-gradient(180deg, rgba(11,13,18,1) 0%, rgba(7,9,13,1) 100%)",
+        }}
       >
         <div className="max-w-6xl mx-auto p-4 lg:p-8">
           <AnimatePresence mode="wait">

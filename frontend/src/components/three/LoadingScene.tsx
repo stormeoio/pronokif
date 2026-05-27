@@ -41,8 +41,8 @@ function SpinningWheel() {
         <mesh>
           <torusGeometry args={[1, 0.04, 12, 48]} />
           <meshStandardMaterial
-            color="#ff6600"
-            emissive="#ff6600"
+            color="#E10600"
+            emissive="#E10600"
             emissiveIntensity={1}
             metalness={0.9}
             roughness={0.1}
@@ -54,9 +54,9 @@ function SpinningWheel() {
           <mesh key={i} rotation={[0, 0, (i / 6) * Math.PI * 2]}>
             <boxGeometry args={[1.8, 0.02, 0.02]} />
             <meshStandardMaterial
-              color="#00ccff"
-              emissive="#00ccff"
-              emissiveIntensity={0.5}
+              color="#F4F4F4"
+              emissive="#E10600"
+              emissiveIntensity={0.35}
               transparent
               opacity={0.6}
             />
@@ -67,8 +67,8 @@ function SpinningWheel() {
         <mesh>
           <sphereGeometry args={[0.15, 16, 16]} />
           <meshStandardMaterial
-            color="#fbbf24"
-            emissive="#fbbf24"
+            color="#E10600"
+            emissive="#E10600"
             emissiveIntensity={1.5}
             metalness={1}
             roughness={0}
@@ -83,7 +83,7 @@ function SpinningWheel() {
         </bufferGeometry>
         <pointsMaterial
           size={0.04}
-          color="#00ccff"
+          color="#E10600"
           transparent
           opacity={0.7}
           blending={AdditiveBlending}
@@ -99,9 +99,9 @@ export default function LoadingScene({ message = "Chargement..." }: { message?: 
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center gap-6"
-        style={{ background: "linear-gradient(180deg, #0a0f1a 0%, #050a14 100%)" }}
+        style={{ background: "linear-gradient(180deg, #0B0D12 0%, #07090D 100%)" }}
       >
-        <div className="w-12 h-12 rounded-full border-3 border-orange-500/30 border-t-orange-500 animate-spin" />
+        <div className="w-12 h-12 rounded-full border-3 border-pk-red/25 border-t-pk-red animate-spin shadow-glow-red" />
         <p className="font-heading text-sm text-white/80 uppercase tracking-widest">{message}</p>
       </div>
     );
@@ -110,7 +110,7 @@ export default function LoadingScene({ message = "Chargement..." }: { message?: 
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center gap-6"
-      style={{ background: "linear-gradient(180deg, #0a0f1a 0%, #050a14 100%)" }}
+      style={{ background: "linear-gradient(180deg, #0B0D12 0%, #07090D 100%)" }}
     >
       <div style={{ width: 160, height: 160 }}>
         <Canvas
@@ -120,8 +120,8 @@ export default function LoadingScene({ message = "Chargement..." }: { message?: 
           dpr={[1, 1.5]}
         >
           <ambientLight intensity={0.3} />
-          <pointLight position={[2, 2, 2]} color="#ff6600" intensity={1.5} />
-          <pointLight position={[-2, -1, 2]} color="#00ccff" intensity={1} />
+          <pointLight position={[2, 2, 2]} color="#E10600" intensity={1.5} />
+          <pointLight position={[-2, -1, 2]} color="#F4F4F4" intensity={0.55} />
           <SpinningWheel />
         </Canvas>
       </div>
@@ -130,8 +130,8 @@ export default function LoadingScene({ message = "Chargement..." }: { message?: 
         <p className="font-heading text-sm text-white/80 uppercase tracking-widest animate-pulse">
           {message}
         </p>
-        <div className="w-32 h-0.5 mx-auto bg-gray-800 rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-orange-500 via-cyan-400 to-orange-500 animate-shimmer rounded-full" />
+        <div className="w-32 h-0.5 mx-auto bg-pk-anthracite rounded-full overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-pk-red via-pk-piste to-pk-red animate-shimmer rounded-full" />
         </div>
       </div>
     </div>

@@ -33,6 +33,8 @@ from config import JWT_ALGORITHM, JWT_SECRET, db, logger
 from services.email import send_email
 from services.email_templates import (
     admin_magic_link as admin_magic_link_tpl,
+)
+from services.email_templates import (
     invitation as invitation_tpl,
 )
 

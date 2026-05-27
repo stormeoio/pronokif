@@ -9,6 +9,7 @@ import { Mail, Loader2, KeyRound, CheckCircle, AlertCircle } from "lucide-react"
 import { adminApi } from "./adminApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BorderGlowButton } from "@/components/ui/border-glow-button";
 import { brandAssets } from "@/lib/brand";
 
 export default function AdminAuthPage() {
@@ -93,8 +94,11 @@ export default function AdminAuthPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{ background: "linear-gradient(180deg, #0a0f1a 0%, #151c2c 50%, #0a0f1a 100%)" }}
+      className="min-h-screen flex items-center justify-center p-4 bg-app-main"
+      style={{
+        background:
+          "radial-gradient(circle at 50% -12%, rgba(225,6,0,.16), transparent 34%), radial-gradient(circle at 0% 34%, rgba(244,244,244,.04), transparent 28%), linear-gradient(180deg, #0B0D12 0%, #07090D 56%, #0B0D12 100%)",
+      }}
     >
       <motion.div
         className="w-full max-w-md"
@@ -102,9 +106,9 @@ export default function AdminAuthPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <div className="card-arcade overflow-hidden">
+        <div className="card-arcade overflow-hidden border-white/[0.1]">
           {/* Header */}
-          <div className="bg-gradient-to-r from-red-600/20 to-transparent p-6 border-b border-red-500/30">
+          <div className="border-b border-pk-red/25 bg-gradient-to-r from-pk-red/12 to-transparent p-6">
             <div className="flex items-center gap-3">
               <img
                 src={brandAssets.icon}
@@ -120,7 +124,7 @@ export default function AdminAuthPage() {
                   className="mb-1 h-6 w-auto max-w-[168px] object-contain"
                   draggable={false}
                 />
-                <p className="font-body text-xs text-gray-400">Panneau d'administration</p>
+                <p className="font-body text-xs text-pk-titane">Back-office sécurisé</p>
               </div>
             </div>
           </div>
@@ -129,16 +133,16 @@ export default function AdminAuthPage() {
             {verifying && !requires2fa ? (
               /* Verifying magic link */
               <div className="text-center py-8">
-                <Loader2 className="w-8 h-8 text-orange-500 animate-spin mx-auto mb-4" />
-                <p className="font-body text-gray-400">Vérification du lien...</p>
+                <Loader2 className="w-8 h-8 text-pk-red animate-spin mx-auto mb-4" />
+                <p className="font-body text-pk-titane">Vérification du lien...</p>
               </div>
             ) : requires2fa ? (
               /* 2FA verification */
               <form onSubmit={handleVerify2fa} className="space-y-4">
                 <div className="text-center mb-4">
-                  <KeyRound className="w-10 h-10 text-cyan-400 mx-auto mb-2" />
-                  <h2 className="font-heading text-lg text-white">Vérification 2FA</h2>
-                  <p className="font-body text-sm text-gray-400">
+                  <KeyRound className="w-10 h-10 text-pk-red mx-auto mb-2" />
+                  <h2 className="font-heading text-lg text-pk-piste">Vérification 2FA</h2>
+                  <p className="font-body text-sm text-pk-titane">
                     Entrez le code de votre application d'authentification
                   </p>
                 </div>
@@ -149,7 +153,7 @@ export default function AdminAuthPage() {
                   placeholder="000000"
                   value={totpCode}
                   onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
-                  className="text-center text-2xl tracking-[0.5em] bg-gray-900 border-gray-700 text-white"
+                  className="input-pk text-center text-2xl tracking-[0.5em]"
                   autoFocus
                 />
                 {error && (
@@ -158,31 +162,31 @@ export default function AdminAuthPage() {
                     {error}
                   </div>
                 )}
-                <Button
+                <BorderGlowButton
                   type="submit"
                   disabled={totpCode.length !== 6 || verifying}
-                  className="w-full h-12 btn-racing font-heading"
+                  className="w-full h-12 font-heading"
                 >
                   {verifying ? <Loader2 className="w-5 h-5 animate-spin" /> : "Vérifier"}
-                </Button>
+                </BorderGlowButton>
               </form>
             ) : sent ? (
               /* Email sent confirmation */
               <div className="text-center py-8">
                 <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-4" />
-                <h2 className="font-heading text-lg text-green-400 mb-2">Lien envoyé !</h2>
-                <p className="font-body text-sm text-gray-400 mb-4">
+                <h2 className="font-heading text-lg text-pk-emerald mb-2">Lien envoyé !</h2>
+                <p className="font-body text-sm text-pk-titane mb-4">
                   Un lien de connexion a été envoyé à{" "}
-                  <strong className="text-white">{email}</strong>
+                  <strong className="text-pk-piste">{email}</strong>
                 </p>
-                <p className="font-body text-xs text-gray-500">
+                <p className="font-body text-xs text-pk-titane/80">
                   Vérifiez votre boîte mail et cliquez sur le lien pour vous connecter. Le lien
                   expire dans 15 minutes.
                 </p>
                 <Button
                   variant="ghost"
                   onClick={() => setSent(false)}
-                  className="mt-4 text-gray-400 hover:text-white"
+                  className="mt-4 text-pk-titane hover:text-pk-piste"
                 >
                   Renvoyer un lien
                 </Button>
@@ -191,9 +195,9 @@ export default function AdminAuthPage() {
               /* Email input form */
               <form onSubmit={handleSendMagicLink} className="space-y-4">
                 <div className="text-center mb-4">
-                  <Mail className="w-10 h-10 text-orange-400 mx-auto mb-2" />
-                  <h2 className="font-heading text-lg text-white">Connexion par email</h2>
-                  <p className="font-body text-sm text-gray-400">
+                  <Mail className="w-10 h-10 text-pk-red mx-auto mb-2" />
+                  <h2 className="font-heading text-lg text-pk-piste">Connexion par email</h2>
+                  <p className="font-body text-sm text-pk-titane">
                     Entrez votre adresse administrateur pour recevoir un lien de connexion
                   </p>
                 </div>
@@ -202,7 +206,7 @@ export default function AdminAuthPage() {
                   placeholder="admin@pronokif.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+                  className="input-pk placeholder:text-pk-titane/70"
                   autoFocus
                   required
                 />
@@ -212,10 +216,10 @@ export default function AdminAuthPage() {
                     {error}
                   </div>
                 )}
-                <Button
+                <BorderGlowButton
                   type="submit"
                   disabled={!email || sending}
-                  className="w-full h-12 btn-racing font-heading"
+                  className="w-full h-12 font-heading"
                 >
                   {sending ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -225,7 +229,7 @@ export default function AdminAuthPage() {
                       Envoyer le lien magique
                     </>
                   )}
-                </Button>
+                </BorderGlowButton>
               </form>
             )}
           </div>

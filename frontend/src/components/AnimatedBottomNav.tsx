@@ -31,16 +31,19 @@ interface NavItem {
   path: string;
   icon: LucideIcon;
   label: string;
-  glow: string;
 }
 
 const navItems: NavItem[] = [
-  { path: "/", icon: Home, label: "Accueil", glow: "#00ccff" },
-  { path: "/predictions", icon: Target, label: "Pronos", glow: "#ff6600" },
-  { path: "/championship", icon: Flag, label: "Champ.", glow: "#fbbf24" },
-  { path: "/league", icon: Users, label: "Ligues", glow: "#22d3ee" },
-  { path: "/profile", icon: User, label: "Profil", glow: "#a855f7" },
+  { path: "/", icon: Home, label: "Accueil" },
+  { path: "/predictions", icon: Target, label: "Pronos" },
+  { path: "/championship", icon: Flag, label: "Champ." },
+  { path: "/league", icon: Users, label: "Ligues" },
+  { path: "/profile", icon: User, label: "Profil" },
 ];
+
+const BRAND_RED = "#E10600";
+const BRAND_PISTE = "#F4F4F4";
+const BRAND_TITANE = "#5F6673";
 
 export default function AnimatedBottomNav() {
   const location = useLocation();
@@ -91,18 +94,18 @@ export default function AnimatedBottomNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50" aria-label="Navigation principale">
       {/* Top racing kerb stripe */}
-      <div className="h-[3px] bg-gradient-to-r from-red-600 via-white to-red-600 opacity-60" />
+      <div className="h-[3px] bg-kerb-stripe opacity-75" />
 
       {/* Glass nav bar */}
-      <div className="relative h-[72px] bg-[#0a0f1a]/95 backdrop-blur-xl border-t border-white/5">
+      <div className="relative h-[72px] bg-pk-carbon/95 backdrop-blur-xl border-t border-white/[0.06]">
         {/* Animated glow indicator */}
         <motion.div
           className="absolute top-0 h-[3px] rounded-full"
           style={{ width: `${100 / navItems.length}%` }}
           animate={{
             left: `${(activeIndex / navItems.length) * 100}%`,
-            backgroundColor: navItems[activeIndex]?.glow ?? "#00ccff",
-            boxShadow: `0 0 20px ${navItems[activeIndex]?.glow ?? "#00ccff"}, 0 0 40px ${navItems[activeIndex]?.glow ?? "#00ccff"}40`,
+            backgroundColor: BRAND_RED,
+            boxShadow: `0 0 20px ${BRAND_RED}, 0 0 40px rgba(225,6,0,.28)`,
           }}
           transition={{ type: "spring", stiffness: 350, damping: 30 }}
         />
@@ -112,7 +115,8 @@ export default function AnimatedBottomNav() {
           className="absolute top-3 w-14 h-14 rounded-2xl"
           animate={{
             left: `calc(${(activeIndex / navItems.length) * 100}% + ${100 / navItems.length / 2}% - 28px)`,
-            backgroundColor: `${navItems[activeIndex]?.glow ?? "#00ccff"}15`,
+            backgroundColor: "rgba(225,6,0,.12)",
+            boxShadow: "inset 0 0 0 1px rgba(225,6,0,.16)",
           }}
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
         />
@@ -147,7 +151,7 @@ export default function AnimatedBottomNav() {
                     size={22}
                     strokeWidth={isActive ? 2.5 : 1.8}
                     className="transition-colors duration-200"
-                    style={{ color: isActive ? item.glow : "#6b7280" }}
+                    style={{ color: isActive ? BRAND_PISTE : BRAND_TITANE }}
                   />
 
                   {/* Unread badge */}
@@ -168,7 +172,7 @@ export default function AnimatedBottomNav() {
                   <motion.span
                     className="text-[9px] mt-1 font-body font-semibold uppercase tracking-wider"
                     animate={{
-                      color: isActive ? item.glow : "#6b7280",
+                      color: isActive ? BRAND_PISTE : BRAND_TITANE,
                       opacity: isActive ? 1 : 0.7,
                     }}
                     transition={{ duration: 0.2 }}
@@ -181,7 +185,7 @@ export default function AnimatedBottomNav() {
                 {isActive && (
                   <motion.div
                     className="absolute bottom-1.5 w-1 h-1 rounded-full"
-                    style={{ backgroundColor: item.glow }}
+                    style={{ backgroundColor: BRAND_RED, boxShadow: "0 0 10px rgba(225,6,0,.7)" }}
                     layoutId="nav-dot"
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   />
@@ -193,7 +197,7 @@ export default function AnimatedBottomNav() {
       </div>
 
       {/* Safe area padding for iOS */}
-      <div className="h-safe bg-[#0a0f1a]/95" />
+      <div className="h-safe bg-pk-carbon/95" />
     </nav>
   );
 }

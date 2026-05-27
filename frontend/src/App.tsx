@@ -55,7 +55,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Skip to content link for keyboard users */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-orange-500 focus:text-white focus:rounded-lg focus:outline-none"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-pk-red focus:text-white focus:rounded-md focus:outline-none"
       >
         Aller au contenu principal
       </a>
@@ -98,8 +98,8 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 /** Minimal inline loader before 3D scene loads */
 function FallbackLoader() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0a0f1a]">
-      <div className="w-12 h-12 rounded-full border-3 border-orange-500/30 border-t-orange-500 animate-spin" />
+    <div className="min-h-screen flex items-center justify-center bg-pk-carbon">
+      <div className="w-12 h-12 rounded-full border-3 border-pk-red/25 border-t-pk-red animate-spin shadow-glow-red" />
     </div>
   );
 }
@@ -140,9 +140,10 @@ export default function App() {
                 position="top-center"
                 toastOptions={{
                   style: {
-                    background: "#121214",
-                    color: "#fafafa",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "#121418",
+                    color: "#F4F4F4",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    boxShadow: "0 14px 38px rgba(0,0,0,0.42), 0 0 20px rgba(225,6,0,0.12)",
                     backdropFilter: "blur(8px)",
                   },
                 }}

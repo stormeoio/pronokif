@@ -1,4 +1,5 @@
 import { ArrowRight, Clock } from "lucide-react";
+import { BorderGlowButton } from "@/components/ui/border-glow-button";
 import { iconSmall } from "@/lib/icons";
 import { getRaceThumbnail } from "@/lib/raceThumbnails";
 
@@ -243,14 +244,14 @@ export default function RaceHeroCard({
                 Modifier mes pronos
               </button>
             ) : (
-              <button
+              <BorderGlowButton
                 onClick={onPredict}
-                className="btn-pk text-[0.8125rem]"
+                className="text-[0.8125rem] px-4"
                 data-testid="make-predictions-btn"
               >
                 <ArrowRight {...iconSmall} size={14} strokeWidth={2} />
                 Pronostiquer
-              </button>
+              </BorderGlowButton>
             )}
             <button onClick={onViewDetails} className="btn-pk-outline text-[0.75rem] px-3">
               Infos
