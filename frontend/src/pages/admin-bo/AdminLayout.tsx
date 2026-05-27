@@ -21,6 +21,7 @@ import {
   Map,
   PanelRightOpen,
   PanelRightClose,
+  Shield,
 } from "lucide-react";
 import DashboardTab from "./tabs/DashboardTab";
 import UsersTab from "./tabs/UsersTab";
@@ -31,6 +32,7 @@ import InvitationsTab from "./tabs/InvitationsTab";
 import MediaTab from "./tabs/MediaTab";
 import SettingsTab from "./tabs/SettingsTab";
 import RoadmapTab from "./tabs/RoadmapTab";
+import AuditTab from "./tabs/AuditTab";
 import PreviewPanel from "./PreviewPanel";
 import { adminApi } from "./adminApi";
 import { Button } from "@/components/ui/button";
@@ -44,6 +46,7 @@ const NAV_ITEMS = [
   { key: "feedbacks", label: "Feedbacks", icon: MessageSquare, section: "general" },
   { key: "invitations", label: "Invitations", icon: Mail, section: "general" },
   { key: "media", label: "Médias", icon: Image, section: "general" },
+  { key: "audit", label: "Audit", icon: Shield, section: "dev" },
   { key: "roadmap", label: "Roadmap", icon: Map, section: "dev" },
   { key: "settings", label: "Paramètres", icon: Settings, section: "general" },
 ];
@@ -89,6 +92,8 @@ export default function AdminLayout() {
         return <MediaTab />;
       case "settings":
         return <SettingsTab />;
+      case "audit":
+        return <AuditTab />;
       case "roadmap":
         return <RoadmapTab />;
       default:
