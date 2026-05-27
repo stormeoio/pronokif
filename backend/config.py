@@ -50,7 +50,7 @@ REFRESH_TOKEN_EXPIRE_DAYS = 7
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
 COOKIE_SECURE = ENVIRONMENT not in ("development", "dev", "local")
 COOKIE_SAMESITE: str = "lax"
-COOKIE_DOMAIN: str | None = os.environ.get("COOKIE_DOMAIN")  # e.g. ".stormeo.io"
+COOKIE_DOMAIN: str | None = os.environ.get("COOKIE_DOMAIN")  # e.g. ".pronokif.eu"
 
 # External APIs
 OPENF1_API = "https://api.openf1.org/v1"

@@ -83,7 +83,7 @@ def get_smtp_settings() -> SMTPSettings | None:
         port=_env_int("SMTP_PORT", 587),
         username=os.environ.get("SMTP_USER", "").strip(),
         password=os.environ.get("SMTP_PASS", ""),
-        from_email=os.environ.get("SMTP_FROM", "noreply@pronokif.stormeo.io").strip(),
+        from_email=os.environ.get("SMTP_FROM", "noreply@pronokif.eu").strip(),
         from_name=os.environ.get("SMTP_FROM_NAME", "PronoKif").strip(),
         use_tls=_env_bool("SMTP_USE_TLS", True),
         use_ssl=_env_bool("SMTP_USE_SSL", False),

@@ -19,7 +19,7 @@ class EmailContent(NamedTuple):
 
 
 def _frontend_url() -> str:
-    return os.environ.get("FRONTEND_URL", "https://pronokif.stormeo.io").rstrip("/")
+    return os.environ.get("FRONTEND_URL", "https://pronokif.eu").rstrip("/")
 
 
 def _logo_url(variant: str = "white-red") -> str:
