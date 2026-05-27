@@ -18,7 +18,6 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
-import html
 import os
 import secrets
 import struct
@@ -32,6 +31,10 @@ from pydantic import BaseModel, EmailStr, Field
 
 from config import JWT_ALGORITHM, JWT_SECRET, db, logger
 from services.email import send_email
+from services.email_templates import (
+    admin_magic_link as admin_magic_link_tpl,
+    invitation as invitation_tpl,
+)
 
 router = APIRouter(prefix="/admin-bo", tags=["admin-backoffice-auth"])
 
@@ -191,94 +194,29 @@ class TotpVerifyRequest(BaseModel):
 
 async def _send_magic_link_email(email: str, magic_url: str) -> bool:
     """Send admin magic link via SMTP."""
-    safe_magic_url = html.escape(magic_url, quote=True)
-    text_body = f"""Connexion admin PronoKif
-
-Ouvre ce lien pour te connecter au back-office :
-{magic_url}
-
-Ce lien expire dans {MAGIC_LINK_EXPIRY_MINUTES} minutes.
-Si tu n'as pas demande ce lien, ignore ce message.
-"""
-    html_body = f"""
-    <html>
-      <body style="margin:0;background:#080d12;color:#f4f4f4;font-family:Arial,sans-serif;">
-        <div style="max-width:560px;margin:0 auto;padding:40px 20px;">
-          <div style="background:#0f1720;border:1px solid #2a3442;border-radius:18px;padding:32px;">
-            <p style="margin:0 0 8px;color:#e10600;font-weight:700;letter-spacing:.08em;">PRONOKIF ADMIN</p>
-            <h1 style="margin:0 0 16px;font-size:26px;color:#ffffff;">Connexion back-office</h1>
-            <p style="margin:0 0 24px;color:#c5ccd6;line-height:1.55;">
-              Clique sur le bouton pour ouvrir ta session administrateur.
-            </p>
-            <a href="{safe_magic_url}" style="display:inline-block;background:#e10600;color:#ffffff;
-              padding:14px 24px;border-radius:10px;text-decoration:none;font-weight:700;">
-              Se connecter
-            </a>
-            <p style="margin:24px 0 0;color:#7f8a99;font-size:12px;line-height:1.5;">
-              Ce lien expire dans {MAGIC_LINK_EXPIRY_MINUTES} minutes.
-              Si tu n'as pas demande ce lien, ignore ce message.
-            </p>
-          </div>
-        </div>
-      </body>
-    </html>
-    """
+    tpl = admin_magic_link_tpl(magic_url, MAGIC_LINK_EXPIRY_MINUTES)
     return await send_email(
         email,
-        "PronoKif Admin - Connexion",
-        text_body,
-        html_body,
+        tpl.subject,
+        tpl.text,
+        tpl.html_body,
         raise_on_error=True,
     )
 
 
-async def _send_invitation_email(email: str, invite_url: str, message: str | None = None) -> bool:
+async def _send_invitation_email(
+    email: str,
+    invite_url: str,
+    message: str | None = None,
+    league_code: str | None = None,
+) -> bool:
     """Send invitation email via SMTP."""
-    safe_invite_url = html.escape(invite_url, quote=True)
-    safe_message = html.escape(message) if message else ""
-    personal_text = f"\nMessage de l'equipe : {message}\n" if message else ""
-    personal_html = (
-        f'<p style="color:#c5ccd6;margin:0 0 18px;font-style:italic;">"{safe_message}"</p>'
-        if message
-        else ""
-    )
-    text_body = f"""Invitation PronoKif
-
-Tu es invite a rejoindre PronoKif, le jeu de pronostics F1 entre amis.
-{personal_text}
-Creer ton compte :
-{invite_url}
-
-Cette invitation expire dans 7 jours.
-"""
-    html_body = f"""
-    <html>
-      <body style="margin:0;background:#080d12;color:#f4f4f4;font-family:Arial,sans-serif;">
-        <div style="max-width:560px;margin:0 auto;padding:40px 20px;">
-          <div style="background:#0f1720;border:1px solid #2a3442;border-radius:18px;padding:32px;">
-            <p style="margin:0 0 8px;color:#e10600;font-weight:700;letter-spacing:.08em;">PRONOKIF</p>
-            <h1 style="margin:0 0 16px;font-size:26px;color:#ffffff;">Invitation paddock</h1>
-            <p style="margin:0 0 18px;color:#c5ccd6;line-height:1.55;">
-              Tu es invite a rejoindre PronoKif, le jeu de pronostics F1 entre amis.
-            </p>
-            {personal_html}
-            <a href="{safe_invite_url}" style="display:inline-block;background:#e10600;color:#ffffff;
-              padding:14px 24px;border-radius:10px;text-decoration:none;font-weight:700;">
-              Creer mon compte
-            </a>
-            <p style="margin:24px 0 0;color:#7f8a99;font-size:12px;line-height:1.5;">
-              Cette invitation expire dans 7 jours.
-            </p>
-          </div>
-        </div>
-      </body>
-    </html>
-    """
+    tpl = invitation_tpl(invite_url, message, league_code)
     return await send_email(
         email,
-        "Invitation a rejoindre PronoKif",
-        text_body,
-        html_body,
+        tpl.subject,
+        tpl.text,
+        tpl.html_body,
         raise_on_error=True,
     )
 

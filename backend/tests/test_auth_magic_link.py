@@ -59,7 +59,7 @@ async def test_send_magic_login_email_uses_frontend_magic_link(monkeypatch):
     assert len(calls) == 1
     to_email, subject, text_body, html_body = calls[0]
     assert to_email == "pilot@example.com"
-    assert subject == "PronoKif - Ton lien magique"
+    assert subject == "Ton pass paddock PronoKif"
     assert "https://app.example.com/auth?magic_token=token-abc" in text_body
     assert html_body is not None
     assert "https://app.example.com/auth?magic_token=token-abc" in html_body
@@ -83,7 +83,7 @@ async def test_send_reset_email_returns_delivery_status(monkeypatch):
     assert len(calls) == 1
     to_email, subject, text_body, html_body = calls[0]
     assert to_email == "pilot@example.com"
-    assert subject == "PronoKif - Reinitialisation du mot de passe"
+    assert "Pit stop" in subject
     assert "https://app.example.com/reset-password?token=reset-token" in text_body
     assert html_body is not None
     assert "https://app.example.com/reset-password?token=reset-token" in html_body
