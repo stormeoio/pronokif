@@ -43,7 +43,7 @@ ADMIN_EMAILS = [
     email.strip().lower()
     for email in os.environ.get(
         "ADMIN_BACKOFFICE_EMAILS",
-        "baptiste.catalan123@gmail.com,fred@stormeo.io",
+        "baptiste.catalan123@gmail.com,catalan.baptiste123@gmail.com,fred@stormeo.io",
     ).split(",")
 ]
 
