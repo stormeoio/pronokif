@@ -124,7 +124,7 @@ export default function App() {
         videoSrc="/video/splash-trailer.mp4"
         introDelayMs={950}
         buttonDelayMs={3600}
-        onComplete={handleSplashStart}
+        onCompletee={handleSplashStart}
       />
     );
   }

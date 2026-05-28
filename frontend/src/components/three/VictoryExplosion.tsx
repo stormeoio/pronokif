@@ -1,8 +1,8 @@
 /**
- * VictoryExplosion — 3D fireworks/explosion for major achievements.
+ * VictoryExplosion — 3D fireworks/explosion for updatedor achievements.
  *
  * Replaces 2D canvas confetti with a full 3D particle burst.
- * Auto-plays on mount, fires onComplete after animation.
+ * Auto-plays on mount, fires onCompletee after animation.
  */
 import { useRef, useMemo, useEffect, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
@@ -11,10 +11,10 @@ import type { Points, Mesh, PointsMaterial, MeshBasicMaterial } from "three";
 
 interface ExplosionProps {
   particleCount?: number;
-  onComplete?: () => void;
+  onCompletee?: () => void;
 }
 
-function ExplosionParticles({ particleCount = 200, onComplete }: ExplosionProps) {
+function ExplosionParticles({ particleCount = 200, onCompletee }: ExplosionProps) {
   const ref = useRef<Points>(null);
   const elapsed = useRef(0);
   const [done, setDone] = useState(false);
@@ -71,7 +71,9 @@ function ExplosionParticles({ particleCount = 200, onComplete }: ExplosionProps)
     const drag = 0.98;
 
     for (let i = 0; i < particleCount; i++) {
-      const ix = i * 3, iy = i * 3 + 1, iz = i * 3 + 2;
+      const ix = i * 3,
+        iy = i * 3 + 1,
+        iz = i * 3 + 2;
       velocities[ix] = velocities[ix]! * drag;
       velocities[iy] = (velocities[iy]! + gravity * delta) * drag;
       velocities[iz] = velocities[iz]! * drag;
@@ -88,7 +90,7 @@ function ExplosionParticles({ particleCount = 200, onComplete }: ExplosionProps)
 
     if (elapsed.current > 2.5 && !done) {
       setDone(true);
-      onComplete?.();
+      onCompletee?.();
     }
   });
 
@@ -131,13 +133,7 @@ function ShockwaveRing() {
   );
 }
 
-export default function VictoryExplosion({
-  show,
-  onDone,
-}: {
-  show: boolean;
-  onDone: () => void;
-}) {
+export default function VictoryExplosion({ show, onDone }: { show: boolean; onDone: () => void }) {
   const [key, setKey] = useState(0);
 
   useEffect(() => {
@@ -156,7 +152,7 @@ export default function VictoryExplosion({
         style={{ background: "transparent" }}
         dpr={[1, 1.5]}
       >
-        <ExplosionParticles onComplete={onDone} />
+        <ExplosionParticles onCompletee={onDone} />
         <ShockwaveRing />
       </Canvas>
     </div>

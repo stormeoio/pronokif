@@ -41,6 +41,17 @@ Object.defineProperty(window, "ResizeObserver", {
   value: MockResizeObserver,
 });
 
+Object.defineProperty(window, "requestIdleCallback", {
+  writable: true,
+  value: (callback: IdleRequestCallback) =>
+    window.setTimeout(() => callback({ didTimeout: false, timeRemaining: () => 0 }), 0),
+});
+
+Object.defineProperty(window, "cancelIdleCallback", {
+  writable: true,
+  value: (id: number) => window.clearTimeout(id),
+});
+
 // Suppress console.error in tests (noisy React warnings)
 // Remove this if you want to see them.
 const originalError = console.error;

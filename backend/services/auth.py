@@ -43,13 +43,13 @@ PASSWORD_MIN_LENGTH = 8
 def validate_password(password: str) -> str | None:
     """Validate password complexity. Returns error message or None if valid."""
     if len(password) < PASSWORD_MIN_LENGTH:
-        return f"Le mot de passe doit contenir au moins {PASSWORD_MIN_LENGTH} caracteres"
+        return f"The password must contain at least {PASSWORD_MIN_LENGTH} characters"
     if not re.search(r"[A-Z]", password):
-        return "Le mot de passe doit contenir au moins une lettre majuscule"
+        return "The password must contain at least one uppercase letter"
     if not re.search(r"[a-z]", password):
-        return "Le mot de passe doit contenir au moins une lettre minuscule"
+        return "The password must contain at least one lowercase letter"
     if not re.search(r"\d", password):
-        return "Le mot de passe doit contenir au moins un chiffre"
+        return "The password must contain at least one digit"
     return None
 
 

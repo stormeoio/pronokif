@@ -68,7 +68,7 @@ function raceFlag(raceId: string) {
 }
 
 function tierLabel(rank: number, totalPlayers: number) {
-  if (!rank || !totalPlayers) return "Classement";
+  if (!rank || !totalPlayers) return "Leaderboard";
   const ratio = rank / totalPlayers;
   if (ratio <= 0.05) return "Diamant";
   if (ratio <= 0.15) return "Platine";
@@ -244,7 +244,7 @@ export default function DashboardPage() {
           <div>
             <p className="text-[0.75rem] text-pk-titane leading-tight">Salut</p>
             <p className="font-display text-[1rem] uppercase leading-tight">
-              {user?.username || "Pilote"}
+              {user?.username || "Driver"}
             </p>
           </div>
         </div>
@@ -302,7 +302,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-1.5 mb-1.5">
               <Zap size={12} strokeWidth={1.5} className="text-pk-titane" />
               <span className="font-mono text-[0.5625rem] uppercase tracking-[0.12em] text-pk-titane">
-                Points totaux
+                Total points
               </span>
             </div>
             <div
@@ -357,7 +357,7 @@ export default function DashboardPage() {
               <span className="text-[1rem] text-pk-titane">e</span>
             </div>
             <p className="font-mono text-[0.625rem] text-pk-titane mt-1">
-              / {stats.totalPlayers.toLocaleString("fr-FR")} joueurs
+              / {stats.totalPlayers.toLocaleString("fr-FR")} players
             </p>
             {/* Progress bar */}
             <div className="w-full h-1 bg-white/[0.04] rounded-sm mt-3 overflow-hidden">
@@ -453,7 +453,7 @@ export default function DashboardPage() {
         {userLeagues.length > 0 && (
           <motion.div variants={fadeUp}>
             <div className="flex items-center justify-between mb-2">
-              <h2 className="font-display text-[1rem] uppercase">Mes ligues</h2>
+              <h2 className="font-display text-[1rem] uppercase">My leagues</h2>
               <button
                 onClick={() => navigate("/league")}
                 className="flex items-center gap-1 font-mono text-[0.6875rem] text-pk-red"
@@ -496,7 +496,7 @@ export default function DashboardPage() {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-[0.8125rem] truncate">{league.name}</p>
                           <p className="font-mono text-[0.625rem] text-pk-titane">
-                            {memberCount} membres
+                            {memberCount} members
                           </p>
                         </div>
                       </div>
@@ -527,9 +527,7 @@ export default function DashboardPage() {
                 <div className="w-10 h-10 rounded-full bg-pk-red-subtle flex items-center justify-center">
                   <Plus size={18} strokeWidth={2} className="text-pk-red" />
                 </div>
-                <span className="font-mono text-[0.625rem] text-pk-titane text-center">
-                  Rejoindre
-                </span>
+                <span className="font-mono text-[0.625rem] text-pk-titane text-center">Join</span>
               </div>
             </div>
           </motion.div>
@@ -545,7 +543,7 @@ export default function DashboardPage() {
             </div>
             <h3 className="font-display text-[1.125rem] uppercase mb-1">Rejoins une Ligue !</h3>
             <p className="text-[0.8125rem] text-pk-titane mb-4">
-              Cree ou rejoins une ligue pour jouer avec tes amis
+              Create or join a league to play with your friends
             </p>
             <button onClick={() => navigate("/league")} className="btn-pk text-[0.8125rem] px-6">
               <Plus {...iconSmall} size={14} strokeWidth={2} />
@@ -557,7 +555,7 @@ export default function DashboardPage() {
         {/* ---- RECENT RESULTS ---- */}
         <motion.div variants={fadeUp}>
           <div className="flex items-center justify-between mb-2">
-            <h2 className="font-display text-[1rem] uppercase">Derniers resultats</h2>
+            <h2 className="font-display text-[1rem] uppercase">Latest results</h2>
             <button
               onClick={() => navigate("/results")}
               className="flex items-center gap-1 font-mono text-[0.6875rem] text-pk-red"
@@ -570,7 +568,7 @@ export default function DashboardPage() {
             {recentResults.length === 0 && (
               <div className="bg-pk-surface border border-white/[0.08] rounded-md p-4 text-center">
                 <p className="font-mono text-[0.6875rem] text-pk-titane uppercase">
-                  Aucun résultat importé
+                  No result imported
                 </p>
               </div>
             )}
@@ -628,15 +626,15 @@ export default function DashboardPage() {
             {[
               {
                 icon: Target,
-                label: "Pronostiquer",
+                label: "Pickstiquer",
                 sub: currentRace?.name?.replace(" Grand Prix", "") || "GP",
                 color: "red" as const,
                 action: () => currentRace && navigate(`/predictions/${currentRace.id}`),
               },
               {
                 icon: Trophy,
-                label: "Classements",
-                sub: "Saison 2026",
+                label: "Leaderboards",
+                sub: "Season 2026",
                 color: "emerald" as const,
                 action: () => navigate("/leaderboard"),
               },
@@ -649,7 +647,7 @@ export default function DashboardPage() {
                   if (navigator.share) {
                     navigator.share({
                       title: "PronoKif",
-                      text: "Pronostique la F1 avec moi !",
+                      text: "Make F1 picks with me!",
                       url: window.location.origin,
                     });
                   }
@@ -658,7 +656,7 @@ export default function DashboardPage() {
               {
                 icon: Radio,
                 label: "Direct",
-                sub: "Pas de course",
+                sub: "No race",
                 color: "info" as const,
                 action: () => navigate("/live"),
               },

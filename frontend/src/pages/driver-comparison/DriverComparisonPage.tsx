@@ -1,9 +1,12 @@
+/**
+ * DriverComparisonPage — Side-by-side driver stat comparison.
+ * Broadcast Premium: glass header, pk-surface cards, team-color bars.
+ */
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
-  ArrowLeft,
+  ChevronLeft,
   Trophy,
   Medal,
   Zap,
@@ -28,10 +31,136 @@ import {
 } from "./ComparisonComponents";
 import { useAllDrivers, useDriverComparison } from "./useDriverComparisonData";
 import { haptic } from "@/lib/haptics";
+import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
+
+/* ── Skeleton ─────────────────────────────────────────── */
+
+function ComparisonSkeleton() {
+  return (
+    <div className="min-h-screen bg-pk-carbon flex items-center justify-center">
+      <Loader2 className="w-10 h-10 text-pk-red animate-spin" />
+    </div>
+  );
+}
+
+/* ── Driver Selector ──────────────────────────────────── */
+
+interface DriverSelectorProps {
+  drivers: Record<string, any>[];
+  excludeId: string;
+  selectedId: string;
+  onSelect: (id: string) => void;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+  testId: string;
+}
+
+function DriverSelector({
+  drivers,
+  excludeId,
+  selectedId,
+  onSelect,
+  isOpen,
+  setIsOpen,
+  testId,
+}: DriverSelectorProps) {
+  const selected = drivers.find((d) => d.id === selectedId);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full p-3 bg-pk-surface border border-white/[0.08] rounded-lg flex items-center justify-between hover:border-white/[0.15] transition-colors"
+        data-testid={testId}
+      >
+        <div className="flex items-center gap-2 truncate">
+          {selected ? (
+            <>
+              <div
+                className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0"
+                style={{
+                  borderWidth: "2px",
+                  borderStyle: "solid",
+                  borderColor: getTeamColor(selected.team_id),
+                }}
+              >
+                <img
+                  src={selected.photo_url}
+                  alt={selected.full_name || selected.last_name || ""}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <span className="font-display text-xs truncate">
+                {selected.last_name?.toUpperCase()}
+              </span>
+            </>
+          ) : (
+            <span className="text-pk-titane text-xs">Driver</span>
+          )}
+        </div>
+        <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+          <ChevronDown className="w-4 h-4 text-pk-titane" />
+        </motion.div>
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            className="absolute z-50 mt-1 w-full bg-pk-surface border border-white/[0.08] rounded-lg shadow-xl max-h-64 overflow-y-auto scrollbar-none"
+            initial={{ opacity: 0, y: -4, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.97 }}
+            transition={{ duration: 0.15 }}
+          >
+            {drivers
+              .filter((d) => d.id !== excludeId)
+              .map((driver) => (
+                <button
+                  key={driver.id}
+                  onClick={() => onSelect(driver.id)}
+                  className={`w-full p-2 flex items-center gap-2 hover:bg-white/[0.04] transition-colors ${driver.id === selectedId ? "bg-pk-red-subtle" : ""}`}
+                >
+                  <div
+                    className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0"
+                    style={{
+                      borderWidth: "2px",
+                      borderStyle: "solid",
+                      borderColor: getTeamColor(driver.team_id),
+                    }}
+                  >
+                    <img
+                      src={driver.photo_url}
+                      alt={`${driver.first_name} ${driver.last_name}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="font-display text-xs truncate">
+                      {driver.first_name} {driver.last_name}
+                    </p>
+                    <p className="font-data text-[0.5rem] text-pk-titane">{driver.team}</p>
+                  </div>
+                  {driver.id === selectedId && <Check className="w-3.5 h-3.5 text-pk-red" />}
+                </button>
+              ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ── Component ─────────────────────────────────────────── */
 
 export default function DriverComparisonPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion() ?? false;
+  const rmProps = getReducedMotionProps(prefersReducedMotion);
   const [driver1Id, setDriver1Id] = useState(searchParams.get("d1") || "");
   const [driver2Id, setDriver2Id] = useState(searchParams.get("d2") || "");
   const [dropdown1Open, setDropdown1Open] = useState(false);
@@ -41,7 +170,6 @@ export default function DriverComparisonPage() {
   const allDrivers = driversQuery.data ?? [];
   const loadingDrivers = driversQuery.isLoading;
 
-  // Set default selections once drivers load
   const hydratedRef = useRef(false);
   useEffect(() => {
     if (hydratedRef.current || allDrivers.length === 0) return;
@@ -61,52 +189,46 @@ export default function DriverComparisonPage() {
     setDriver2Id(t);
   };
 
-  if (loadingDrivers) {
-    return (
-      <div className="min-h-screen bg-app-main flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-cyan-500 animate-spin" />
-      </div>
-    );
-  }
+  if (loadingDrivers) return <ComparisonSkeleton />;
 
   const d1 = comparison?.driver1;
   const d2 = comparison?.driver2;
   const stats = comparison?.stats_comparison;
 
   return (
-    <div className="min-h-screen bg-app-main pb-24">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-[#050a14]/95 backdrop-blur-md border-b border-cyan-500/30">
-        <div className="max-w-2xl mx-auto p-4">
+    <div className="min-h-screen bg-pk-carbon pb-24" data-testid="comparison-page">
+      {/* Glass Header */}
+      <header className="sticky top-0 z-50 bg-pk-carbon/85 backdrop-blur-xl saturate-[1.3] border-b border-white/[0.08]">
+        <div className="max-w-2xl mx-auto px-4 pt-3 pb-3">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/championship")}
-              className="p-2 bg-gray-800/50 rounded-full text-gray-400 hover:text-white hover:bg-gray-700/50 transition-colors"
-              aria-label="Retour au championnat"
-              data-testid="back-button"
+              className="p-1.5 -ml-1.5 rounded-lg text-pk-titane hover:text-pk-piste transition-colors"
+              data-testid="comparison-back"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
             <div className="flex-1">
-              <h1 className="font-heading text-lg uppercase tracking-tight text-white flex items-center gap-2">
-                <GitCompare className="w-5 h-5 text-cyan-400" /> Comparateur
+              <h1 className="font-display text-lg flex items-center gap-2">
+                <GitCompare className="w-5 h-5 text-pk-info" /> Comparateur
               </h1>
-              <p className="font-body text-xs text-gray-400">
-                Comparez les statistiques de 2 pilotes
+              <p className="font-data text-[0.5625rem] text-pk-titane">
+                Compare stats for 2 drivers
               </p>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
       <motion.div
-        className="max-w-2xl mx-auto px-4 py-4"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+        className="max-w-2xl mx-auto px-4 pt-4 space-y-4"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        {...rmProps}
       >
         {/* Driver Selectors */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        <motion.div variants={fadeUp} className="grid grid-cols-2 gap-2">
           <DriverSelector
             drivers={allDrivers}
             excludeId={driver2Id}
@@ -137,57 +259,51 @@ export default function DriverComparisonPage() {
             }}
             testId="driver2-selector"
           />
-        </div>
+        </motion.div>
 
-        <div className="flex justify-center mb-6">
-          <motion.button
+        {/* Swap button */}
+        <motion.div variants={fadeUp} className="flex justify-center">
+          <button
             onClick={swapDrivers}
-            className="px-4 py-2 bg-gray-800/50 border border-gray-700 rounded-full font-body text-xs text-gray-400 hover:text-white hover:border-cyan-500/50 transition-colors flex items-center gap-2"
-            whileTap={{ scale: 0.9, rotate: 180 }}
-            whileHover={{ scale: 1.05 }}
+            className="px-4 py-2 bg-white/[0.04] border border-white/[0.08] rounded-full font-data text-[0.5625rem] text-pk-titane hover:text-pk-piste hover:border-pk-info/30 transition-colors flex items-center gap-1.5"
+            data-testid="comparison-swap"
           >
-            <GitCompare className="w-4 h-4" /> Inverser
-          </motion.button>
-        </div>
+            <GitCompare className="w-3.5 h-3.5" /> Inverser
+          </button>
+        </motion.div>
 
+        {/* Results */}
         {loading ? (
           <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
+            <Loader2 className="w-8 h-8 text-pk-red animate-spin" />
           </div>
         ) : comparison && d1 && d2 ? (
           <motion.div
-            className="space-y-4"
+            className="space-y-3"
             initial="hidden"
             animate="visible"
-            variants={{ visible: { transition: { staggerChildren: 0.08 } }, hidden: {} }}
+            variants={staggerContainer}
             key={`${driver1Id}-${driver2Id}`}
           >
-            <motion.div
-              className="grid grid-cols-2 gap-3"
-              variants={{
-                hidden: { opacity: 0, scale: 0.95 },
-                visible: { opacity: 1, scale: 1 },
-              }}
-            >
+            {/* Driver Cards */}
+            <motion.div variants={fadeUp} className="grid grid-cols-2 gap-2">
               <DriverCard driver={d1} />
               <DriverCard driver={d2} />
             </motion.div>
 
+            {/* F1 Stats */}
             <motion.div
-              className="card-arcade p-4 glass-card"
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0 },
-              }}
+              variants={fadeUp}
+              className="bg-pk-surface border border-white/[0.08] rounded-lg p-4"
             >
-              <h3 className="font-heading text-sm text-gray-400 uppercase mb-4 flex items-center gap-2">
-                <Trophy className="w-4 h-4 text-yellow-500" /> Statistiques F1
+              <h3 className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                <Trophy className="w-3.5 h-3.5 text-pk-gold" /> Statistiques F1
               </h3>
               <motion.div
-                className="space-y-4"
+                className="space-y-3"
                 initial="hidden"
                 animate="visible"
-                variants={{ visible: { transition: { staggerChildren: 0.06 } }, hidden: {} }}
+                variants={staggerContainer}
               >
                 <ComparisonBar
                   label="Titres mondiaux"
@@ -230,7 +346,7 @@ export default function DriverComparisonPage() {
                   color2={getTeamColor(d2.team_id)}
                 />
                 <ComparisonBar
-                  label="Points en carriere"
+                  label="Career points"
                   icon={Hash}
                   value1={stats?.points?.driver1 || 0}
                   value2={stats?.points?.driver2 || 0}
@@ -248,17 +364,15 @@ export default function DriverComparisonPage() {
               </motion.div>
             </motion.div>
 
+            {/* Efficiency */}
             <motion.div
-              className="card-arcade p-4 glass-card"
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0 },
-              }}
+              variants={fadeUp}
+              className="bg-pk-surface border border-white/[0.08] rounded-lg p-4"
             >
-              <h3 className="font-heading text-sm text-gray-400 uppercase mb-4 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-green-500" /> Efficacite
+              <h3 className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                <TrendingUp className="w-3.5 h-3.5 text-pk-emerald" /> Efficacite
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2">
                 <EfficiencyCard
                   label="Taux de victoire"
                   value1={comparison.win_rate?.driver1 || 0}
@@ -284,7 +398,7 @@ export default function DriverComparisonPage() {
                   suffix="%"
                 />
                 <EfficiencyCard
-                  label="Points/course"
+                  label="Points/race"
                   value1={comparison.points_per_race?.driver1 || 0}
                   value2={comparison.points_per_race?.driver2 || 0}
                   driver1={d1}
@@ -294,120 +408,29 @@ export default function DriverComparisonPage() {
               </div>
             </motion.div>
 
+            {/* Verdict */}
             <motion.div
-              className="card-arcade p-4 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border-cyan-500/30 glass-card"
-              variants={{
-                hidden: { opacity: 0, y: 20, scale: 0.97 },
-                visible: { opacity: 1, y: 0, scale: 1 },
-              }}
+              variants={fadeUp}
+              className="bg-pk-info/[0.06] border border-pk-info/20 rounded-lg p-4"
             >
-              <h3 className="font-heading text-sm text-white mb-2 flex items-center gap-2">
-                <Award className="w-4 h-4 text-cyan-400" /> Verdict rapide
+              <h3 className="font-display text-sm mb-2 flex items-center gap-2">
+                <Award className="w-4 h-4 text-pk-info" /> Verdict rapide
               </h3>
-              <p className="font-body text-sm text-gray-300">{getVerdict(comparison, d1, d2)}</p>
+              <p className="text-xs text-pk-piste/80 leading-relaxed">
+                {getVerdict(comparison, d1, d2)}
+              </p>
             </motion.div>
           </motion.div>
         ) : (
           <motion.div
-            className="card-arcade p-8 text-center glass-card"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+            variants={fadeUp}
+            className="bg-pk-surface border border-white/[0.08] rounded-lg p-8 text-center"
           >
-            <GitCompare className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-            <p className="font-body text-gray-400">
-              Selectionnez deux pilotes differents pour les comparer
-            </p>
+            <GitCompare className="w-10 h-10 text-pk-titane mx-auto mb-3" />
+            <p className="text-sm text-pk-titane">Select two different drivers to compare them</p>
           </motion.div>
         )}
       </motion.div>
-    </div>
-  );
-}
-
-interface DriverSelectorProps {
-  drivers: Record<string, any>[];
-  excludeId: string;
-  selectedId: string;
-  onSelect: (id: string) => void;
-  isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
-  testId: string;
-}
-
-function DriverSelector({
-  drivers,
-  excludeId,
-  selectedId,
-  onSelect,
-  isOpen,
-  setIsOpen,
-  testId,
-}: DriverSelectorProps) {
-  const selected = drivers.find((d) => d.id === selectedId);
-  return (
-    <div className="relative">
-      <motion.button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full p-3 bg-gray-800/50 border border-gray-700 rounded-xl flex items-center justify-between hover:border-cyan-500/50 transition-colors"
-        data-testid={testId}
-        whileTap={{ scale: 0.97 }}
-      >
-        <div className="flex items-center gap-2 truncate">
-          {selected ? (
-            <>
-              <div
-                className="w-8 h-8 rounded-full overflow-hidden border-2"
-                style={{ borderColor: getTeamColor(selected.team_id) }}
-              >
-                <img src={selected.photo_url} alt={selected.full_name || selected.last_name || "Photo du pilote"} className="w-full h-full object-cover" loading="lazy" decoding="async" />
-              </div>
-              <span className="font-heading text-sm text-white truncate">
-                {selected.last_name?.toUpperCase()}
-              </span>
-            </>
-          ) : (
-            <span className="text-gray-500">Pilote</span>
-          )}
-        </div>
-        <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-          <ChevronDown className="w-4 h-4 text-gray-400" />
-        </motion.div>
-      </motion.button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            className="absolute z-50 mt-1 w-full bg-gray-900 border border-gray-700 rounded-xl shadow-xl max-h-64 overflow-y-auto"
-            initial={{ opacity: 0, y: -5, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -5, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-          >
-            {drivers
-              .filter((d) => d.id !== excludeId)
-              .map((driver) => (
-                <button
-                  key={driver.id}
-                  onClick={() => onSelect(driver.id)}
-                  className={`w-full p-2 flex items-center gap-2 hover:bg-gray-800 transition-colors ${driver.id === selectedId ? "bg-cyan-500/20" : ""}`}
-                >
-                  <div
-                    className="w-8 h-8 rounded-full overflow-hidden border-2"
-                    style={{ borderColor: getTeamColor(driver.team_id) }}
-                  >
-                    <img src={driver.photo_url} alt={`${driver.first_name} ${driver.last_name}`} className="w-full h-full object-cover" loading="lazy" decoding="async" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="font-heading text-xs text-white">
-                      {driver.first_name} {driver.last_name}
-                    </p>
-                    <p className="font-body text-[10px] text-gray-500">{driver.team}</p>
-                  </div>
-                  {driver.id === selectedId && <Check className="w-4 h-4 text-cyan-400" />}
-                </button>
-              ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

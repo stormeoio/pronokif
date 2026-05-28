@@ -1,14 +1,25 @@
+/**
+ * LeagueMembers — Member list inside league detail.
+ * Broadcast Premium: pk-surface rows, pk-red "toi", pk-amber owner badge.
+ */
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Users, Crown, Star, Target, User } from "lucide-react";
+import { Crown, Zap, User } from "lucide-react";
+import { haptic } from "@/lib/haptics";
+import { fadeUp, staggerContainer } from "@/lib/motion";
+import type { LeagueMember as LeagueMemberType, LeaderboardEntry } from "@/types/api";
+
+/* ── Types ─────────────────────────────────────────────── */
 
 interface LeagueMembersProps {
-  members: Record<string, any>[];
-  leaderboard: Record<string, any>[];
+  members: LeagueMemberType[];
+  leaderboard: LeaderboardEntry[];
   userId: string;
   ownerId: string;
-  getAvatar: (member: Record<string, any>) => string | null;
+  getAvatar: (member: LeagueMemberType) => string | null;
 }
+
+/* ── Component ─────────────────────────────────────────── */
 
 export default function LeagueMembers({
   members,
@@ -21,80 +32,87 @@ export default function LeagueMembers({
 
   return (
     <motion.div
-      className="space-y-2"
+      className="space-y-1.5"
+      variants={staggerContainer}
       initial="hidden"
       animate="visible"
-      variants={{ visible: { transition: { staggerChildren: 0.04 } }, hidden: {} }}
     >
       {members.map((member) => {
         const isMe = member.id === userId;
         const isMemberOwner = ownerId === member.id;
         const avatar = getAvatar(member);
-        const leaderboardEntry = leaderboard.find((e) => e.user_id === member.id);
+        const lbEntry = leaderboard.find((e) => e.user_id === member.id);
 
         return (
           <motion.button
             key={member.id}
-            onClick={() => navigate(`/profile/${member.id}`)}
-            className={`w-full p-3 rounded-lg border bg-gray-800/30 border-gray-700/50 hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all text-left ${isMe ? "ring-2 ring-cyan-500/30" : ""}`}
-            variants={{ hidden: { opacity: 0, x: -12 }, visible: { opacity: 1, x: 0 } }}
-            whileHover={{ x: 4 }}
-            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              haptic("light");
+              navigate(`/profile/${member.id}`);
+            }}
+            className={`w-full p-3 rounded-lg border text-left transition-colors hover:bg-white/[0.02] ${
+              isMe ? "bg-pk-red-subtle border-pk-red/20" : "bg-white/[0.02] border-white/[0.08]"
+            }`}
+            variants={fadeUp}
+            data-testid={`member-row-${member.id}`}
           >
             <div className="flex items-center gap-3">
               {/* Avatar */}
-              <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-700 flex-shrink-0 relative">
+              <div className="w-10 h-10 rounded-lg overflow-hidden bg-pk-anthracite flex-shrink-0 relative">
                 {avatar ? (
-                  <img src={avatar} alt={`Avatar de ${member.username || "membre"}`} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                  <img
+                    src={avatar}
+                    alt={member.username ?? "member"}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <User className="w-6 h-6 text-gray-500" />
+                    <User className="w-4.5 h-4.5 text-pk-titane" />
                   </div>
                 )}
                 {isMemberOwner && (
-                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center">
-                    <Crown className="w-3 h-3 text-white" />
+                  <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-pk-amber rounded-full flex items-center justify-center">
+                    <Crown className="w-2.5 h-2.5 text-white" />
                   </div>
                 )}
               </div>
 
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p
-                    className={`font-heading text-sm truncate ${isMe ? "text-cyan-400" : "text-white"}`}
-                  >
-                    {member.username || "Anonyme"}
+                <div className="flex items-center gap-1.5">
+                  <p className={`font-display text-sm truncate ${isMe ? "text-pk-red" : ""}`}>
+                    {member.username ?? "Anonyme"}
                   </p>
                   {isMe && (
-                    <span className="text-[10px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded">
-                      TOI
+                    <span className="font-data text-[0.5rem] bg-pk-red/20 text-pk-red px-1 py-0.5 rounded uppercase">
+                      Toi
                     </span>
                   )}
                   {isMemberOwner && (
-                    <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded">
-                      CRÉATEUR
+                    <span className="font-data text-[0.5rem] bg-pk-amber/20 text-pk-amber px-1 py-0.5 rounded uppercase">
+                      Createur
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="font-body text-xs text-gray-500 flex items-center gap-1">
-                    <Star className="w-3 h-3" />
-                    Niveau {member.level || 1}
+                <div className="flex items-center gap-2.5 mt-0.5">
+                  <span className="font-data text-[0.5625rem] text-pk-titane">
+                    Niv. {member.level || 1}
                   </span>
-                  <span className="font-body text-xs text-gray-500 flex items-center gap-1">
-                    <Target className="w-3 h-3" />
+                  <span className="font-data text-[0.5625rem] text-pk-titane flex items-center gap-0.5">
+                    <Zap className="w-2.5 h-2.5" />
                     {member.xp || 0} XP
                   </span>
                 </div>
               </div>
 
-              {/* Points in league */}
+              {/* Points */}
               <div className="text-right">
-                <p className="font-data text-lg text-yellow-400">
-                  {leaderboardEntry?.total_points || 0}
+                <p className="font-data text-base font-bold text-pk-amber">
+                  {Number(lbEntry?.total_points) || 0}
                 </p>
-                <p className="font-body text-[10px] text-gray-500 uppercase">pts</p>
+                <p className="font-data text-[0.5rem] text-pk-titane uppercase">pts</p>
               </div>
             </div>
           </motion.button>

@@ -23,7 +23,7 @@ export default function PredictionsPage() {
     race,
     drivers,
     existingPrediction: fetchedPrediction,
-    minigamesComplete,
+    minigamesCompletee,
   } = usePredictionData(raceId);
 
   // ---- Form state ----
@@ -83,10 +83,10 @@ export default function PredictionsPage() {
       <div className="min-h-dvh bg-pk-carbon p-4 pt-16 max-w-[430px] mx-auto">
         <div className="bg-pk-surface border border-white/[0.08] rounded-md p-6 text-center">
           <AlertTriangle size={32} strokeWidth={1.5} className="text-pk-red mx-auto mb-3" />
-          <p className="text-pk-piste text-[0.875rem]">Course non trouvee</p>
+          <p className="text-pk-piste text-[0.875rem]">Race not found</p>
           <button onClick={() => navigate(-1)} className="btn-pk-outline text-[0.75rem] mt-4 px-4">
             <ChevronLeft size={14} strokeWidth={2} />
-            Retour
+            Back
           </button>
         </div>
       </div>
@@ -106,7 +106,7 @@ export default function PredictionsPage() {
         show={form.showCelebration}
         onDone={form.dismissCelebration}
         xpEarned={form.celebrationXp}
-        message={form.activeTab === "sprint" ? "Sprint enregistre !" : "Pronostics enregistres !"}
+        message={form.activeTab === "sprint" ? "Sprint saved!" : "Pickstics saved!"}
       />
 
       {/* Delete modal */}
@@ -143,7 +143,7 @@ export default function PredictionsPage() {
             {race.name.replace(" Grand Prix", "")}
           </h1>
           <p className="font-mono text-[0.5625rem] text-pk-titane uppercase tracking-[0.1em]">
-            Pronostic Course
+            Race pickstic
           </p>
         </div>
         {form.existingPrediction && (canPredictMain || canPredictSprint) && (
@@ -154,7 +154,7 @@ export default function PredictionsPage() {
               text-pk-red hover:bg-pk-red-subtle
               transition-colors duration-pk-short"
             data-testid="delete-predictions-btn"
-            title="Supprimer mes pronostics"
+            title="Delete my predictions"
           >
             <Trash2 size={16} strokeWidth={1.5} />
           </button>
@@ -188,9 +188,9 @@ export default function PredictionsPage() {
               <Zap size={16} strokeWidth={1.5} className="mx-auto mb-0.5" />
               <span className="font-display text-[0.75rem] uppercase">Sprint</span>
               {!canPredictSprint && (
-                <span className="block font-mono text-[0.5rem] text-pk-red mt-0.5">Ferme</span>
+                <span className="block font-mono text-[0.5rem] text-pk-red mt-0.5">Closed</span>
               )}
-              {form.isSprintComplete && canPredictSprint && (
+              {form.isSprintCompletee && canPredictSprint && (
                 <Check size={12} strokeWidth={2} className="text-pk-emerald mx-auto mt-0.5" />
               )}
               {form.activeTab === "sprint" && (
@@ -212,11 +212,11 @@ export default function PredictionsPage() {
               data-testid="tab-main"
             >
               <Flag size={16} strokeWidth={1.5} className="mx-auto mb-0.5" />
-              <span className="font-display text-[0.75rem] uppercase">Course</span>
+              <span className="font-display text-[0.75rem] uppercase">Race</span>
               {!canPredictMain && (
-                <span className="block font-mono text-[0.5rem] text-pk-red mt-0.5">Ferme</span>
+                <span className="block font-mono text-[0.5rem] text-pk-red mt-0.5">Closed</span>
               )}
-              {form.isMainComplete && canPredictMain && (
+              {form.isMainCompletee && canPredictMain && (
                 <Check size={12} strokeWidth={2} className="text-pk-emerald mx-auto mt-0.5" />
               )}
               {form.activeTab === "main" && (
@@ -257,9 +257,9 @@ export default function PredictionsPage() {
           setNoDnf={form.setNoDnf}
           fastestLapDriver={form.fastestLapDriver}
           firstCornerLeader={form.firstCornerLeader}
-          isSprintBonusComplete={form.isSprintBonusComplete}
-          isMainBonusComplete={form.isMainBonusComplete}
-          minigamesComplete={minigamesComplete}
+          isSprintBonusCompletee={form.isSprintBonusCompletee}
+          isMainBonusCompletee={form.isMainBonusCompletee}
+          minigamesCompletee={minigamesCompletee}
           handleDriverSelect={handleDriverSelect}
           isDriverSelected={isDriverSelected}
         />
@@ -277,12 +277,12 @@ export default function PredictionsPage() {
         <div className="flex-1">
           <p className="font-mono text-[0.625rem] text-pk-titane uppercase tracking-[0.1em]">
             {form.activeTab === "sprint"
-              ? form.isSprintComplete
-                ? "Sprint pret"
-                : "Sprint incomplet"
-              : form.isMainComplete
-                ? "Course pret"
-                : "Course incomplet"}
+              ? form.isSprintCompletee
+                ? "Sprint ready"
+                : "Sprint incomplete"
+              : form.isMainCompletee
+                ? "Race ready"
+                : "Race incomplete"}
           </p>
           <div className="w-full h-[3px] bg-white/[0.04] rounded-sm mt-1 overflow-hidden">
             <div
@@ -290,10 +290,10 @@ export default function PredictionsPage() {
               style={{
                 width: `${
                   form.activeTab === "sprint"
-                    ? form.isSprintComplete
+                    ? form.isSprintCompletee
                       ? 100
                       : 50
-                    : form.isMainComplete
+                    : form.isMainCompletee
                       ? 100
                       : 50
                 }%`,
@@ -305,7 +305,7 @@ export default function PredictionsPage() {
           onClick={form.handleSave}
           disabled={
             form.saving ||
-            (form.activeTab === "sprint" ? !form.isSprintComplete : !form.isMainComplete) ||
+            (form.activeTab === "sprint" ? !form.isSprintCompletee : !form.isMainCompletee) ||
             (form.activeTab === "sprint" ? !canPredictSprint : !canPredictMain)
           }
           className="text-[0.75rem] whitespace-nowrap min-h-[40px]
@@ -316,16 +316,16 @@ export default function PredictionsPage() {
           data-testid="save-predictions-btn"
         >
           {form.saving ? (
-            "Enregistrement..."
+            "Saving..."
           ) : (form.activeTab === "sprint" ? !canPredictSprint : !canPredictMain) ? (
-            "Pronos fermes"
-          ) : (form.activeTab === "sprint" ? form.isSprintComplete : form.isMainComplete) ? (
+            "Picks closed"
+          ) : (form.activeTab === "sprint" ? form.isSprintCompletee : form.isMainCompletee) ? (
             <>
               <Check size={14} strokeWidth={2} />
-              Enregistrer
+              Save
             </>
           ) : (
-            "Incomplet"
+            "Incomplete"
           )}
         </BorderGlowButton>
       </div>

@@ -1,6 +1,10 @@
+/**
+ * ProfilePage — User profile with stats, badges, history, leagues.
+ * Broadcast Premium theme: glass header, pk-* cards, tabbed layout.
+ */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import {
   LogOut,
@@ -9,30 +13,67 @@ import {
   ChevronRight,
   Zap,
   Shield,
-  Gamepad2,
   Medal,
-  Edit,
+  Pencil,
   Crown,
   Globe,
   MessageSquare,
+  ChevronLeft,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "../../components/ui/button";
 import { AvatarDisplay, AvatarSelector } from "../../components/AvatarDisplay";
 import BadgeCollection from "../../components/BadgeCollection";
 import StreakWidget from "../../components/StreakWidget";
 import PointsHistory from "./PointsHistory";
 import { MyLeaguesSection } from "./MyLeaguesSection";
 import { useProfileData } from "./useProfileData";
-import { apiClient, getApiError , api } from "@/lib/api";
+import { apiClient, getApiError, api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { haptic } from "@/lib/haptics";
+import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
+
+/* ── Skeleton ──────────────────────────────────────────── */
+
+function ProfileSkeleton() {
+  return (
+    <div className="min-h-screen bg-pk-carbon">
+      <div className="sticky top-0 z-50 bg-pk-carbon/85 backdrop-blur-xl border-b border-white/[0.08] px-4 pt-3 pb-3">
+        <div className="h-5 w-24 rounded bg-pk-anthracite animate-shimmer" />
+      </div>
+      <div className="px-4 pt-4 space-y-3 pb-24">
+        <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-5 animate-shimmer">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-pk-anthracite" />
+            <div className="flex-1 space-y-2">
+              <div className="h-5 w-32 rounded bg-pk-anthracite" />
+              <div className="h-3 w-24 rounded bg-pk-anthracite" />
+              <div className="h-6 w-20 rounded bg-pk-anthracite" />
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {[1, 2].map((i) => (
+            <div
+              key={i}
+              className="h-24 rounded-lg bg-pk-surface border border-white/[0.08] animate-shimmer"
+              style={{ animationDelay: `${i * 100}ms` }}
+            />
+          ))}
+        </div>
+        <div className="h-48 rounded-lg bg-pk-surface border border-white/[0.08] animate-shimmer" />
+      </div>
+    </div>
+  );
+}
+
+/* ── Main Component ────────────────────────────────────── */
 
 export default function ProfilePage() {
   const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion() ?? false;
+  const rmProps = getReducedMotionProps(prefersReducedMotion);
 
-  // ── Data fetching (TanStack Query) ──────────────────────────────────
   const { loading, leagues, avatars, globalPosition, pointsHistory, stats } = useProfileData(
     user!.id,
     user!.current_league_id ?? null,
@@ -40,6 +81,8 @@ export default function ProfilePage() {
 
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+
+  /* ── Actions ─────────────────────────────────────────── */
 
   const handleLogout = () => {
     haptic("heavy");
@@ -52,11 +95,11 @@ export default function ProfilePage() {
       await api.avatars.select(avatarId);
       if (updateUser) updateUser({ avatar_id: avatarId, custom_avatar_url: null });
       haptic("success");
-      toast.success("Avatar mis à jour !");
+      toast.success("Avatar mis a jour !");
       setShowAvatarModal(false);
-    } catch (e: unknown) {
+    } catch {
       haptic("error");
-      toast.error("Erreur lors de la mise à jour");
+      toast.error("Error while updating");
     }
   };
 
@@ -72,43 +115,59 @@ export default function ProfilePage() {
           avatar_id: undefined,
           custom_avatar_url: (res.data as { avatar_url: string }).avatar_url,
         });
-      toast.success("Photo uploadée !");
+      toast.success("Photo uploadee !");
       setShowAvatarModal(false);
     } catch (e: unknown) {
-      toast.error(getApiError(e, "Erreur lors de l'upload"));
+      toast.error(getApiError(e, "Error while uploading"));
     }
   };
 
   const getAvatarById = (avatarId: string | null | undefined) =>
     avatars?.all?.find((a) => a.id === avatarId) || null;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-app-main p-4 pt-6">
-        <div className="max-w-2xl mx-auto space-y-4">
-          <div className="h-24 skeleton-arcade rounded-lg" />
-          <div className="h-32 skeleton-arcade rounded-lg" />
-          <div className="h-48 skeleton-arcade rounded-lg" />
-        </div>
-      </div>
-    );
-  }
+  /* ── Loading ─────────────────────────────────────────── */
+
+  if (loading) return <ProfileSkeleton />;
+
+  /* ── Render ──────────────────────────────────────────── */
 
   return (
-    <div className="min-h-screen bg-app-main p-4 pt-6 pb-24" data-testid="profile-page">
+    <div className="min-h-screen bg-pk-carbon pb-24" data-testid="profile-page">
+      {/* Glass Header */}
+      <header className="sticky top-0 z-50 bg-pk-carbon/85 backdrop-blur-xl saturate-[1.3] border-b border-white/[0.08]">
+        <div className="px-4 pt-3 pb-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-1.5 -ml-1.5 rounded-lg text-pk-titane hover:text-pk-piste transition-colors"
+              data-testid="profile-back"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <h1 className="font-display text-lg">My Profile</h1>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="p-1.5 rounded-lg text-pk-titane hover:text-pk-red transition-colors"
+            data-testid="logout-btn"
+          >
+            <LogOut className="w-4.5 h-4.5" />
+          </button>
+        </div>
+      </header>
+
+      {/* Content */}
       <motion.div
-        className="max-w-2xl mx-auto space-y-4"
+        className="max-w-md mx-auto px-4 pt-4 space-y-3"
+        variants={staggerContainer}
         initial="hidden"
         animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.1 } }, hidden: {} }}
+        {...rmProps}
       >
-        {/* Profile Header */}
+        {/* Profile Card */}
         <motion.div
-          className="card-arcade p-5 glass-card"
-          variants={{
-            hidden: { opacity: 0, y: 20, scale: 0.97 },
-            visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5 } },
-          }}
+          variants={fadeUp}
+          className="bg-pk-surface border border-white/[0.08] rounded-lg p-5"
         >
           <div className="flex items-center gap-4">
             <div className="relative">
@@ -119,192 +178,181 @@ export default function ProfilePage() {
               />
               <button
                 onClick={() => setShowAvatarModal(true)}
-                className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center border-2 border-blue-400 shadow-lg hover:bg-blue-500 transition-colors glow-blue"
+                className="absolute -bottom-0.5 -right-0.5 w-7 h-7 bg-pk-red rounded-full flex items-center justify-center border-2 border-pk-carbon shadow-glow-red"
                 data-testid="edit-avatar-btn"
               >
-                <Edit className="w-4 h-4 text-white" />
+                <Pencil className="w-3 h-3 text-white" />
               </button>
             </div>
-            <div className="flex-1">
-              <h1 className="font-heading text-2xl uppercase tracking-tight text-white">
-                {user!.username}
-              </h1>
-              <p className="font-body text-sm text-gray-400">{user!.email}</p>
-              <div className="flex items-center gap-3 mt-2">
-                <div className="bg-blue-500/20 border border-blue-500/50 px-3 py-1 rounded-lg">
-                  <span className="font-heading text-sm text-blue-400">
-                    Niv. {user!.level || 1}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Zap className="w-4 h-4 text-yellow-500" />
-                  <span className="font-data text-sm text-yellow-400">{user!.xp || 0} XP</span>
-                </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-display text-xl truncate">{user!.username}</h2>
+              <p className="font-data text-[0.5625rem] text-pk-titane truncate">{user!.email}</p>
+              <div className="flex items-center gap-2.5 mt-2">
+                <span className="font-data text-[0.5625rem] px-2 py-0.5 rounded-full bg-pk-info/[0.12] border border-pk-info/20 text-pk-info">
+                  Niv. {user!.level || 1}
+                </span>
+                <span className="flex items-center gap-1 font-data text-[0.5625rem] text-pk-amber">
+                  <Zap className="w-3 h-3" />
+                  {user!.xp || 0} XP
+                </span>
               </div>
               {globalPosition && (
                 <div className="flex items-center gap-1 mt-1">
-                  <Globe className="w-3 h-3 text-gray-500" />
-                  <span className="font-body text-xs text-gray-400">
-                    Rang mondial:{" "}
-                    <span className="text-cyan-400 font-semibold">#{globalPosition}</span>
+                  <Globe className="w-3 h-3 text-pk-titane" />
+                  <span className="font-data text-[0.5625rem] text-pk-titane">
+                    Rang mondial : <span className="text-pk-red font-bold">#{globalPosition}</span>
                   </span>
                 </div>
               )}
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleLogout}
-              className="text-gray-500 hover:text-red-400 hover:bg-red-500/10"
-              data-testid="logout-btn"
-            >
-              <LogOut className="w-5 h-5" />
-            </Button>
           </div>
         </motion.div>
 
-        {/* Stats */}
-        <motion.div
-          className="grid grid-cols-2 gap-3"
-          variants={{
-            hidden: { opacity: 0 },
-            visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
-          }}
-        >
-          <motion.div
-            className="card-gold p-4 text-center hover-3d"
-            variants={{ hidden: { opacity: 0, scale: 0.9 }, visible: { opacity: 1, scale: 1 } }}
-          >
-            <Trophy className="w-8 h-8 text-yellow-700 mx-auto mb-2" />
-            <p className="font-data text-2xl text-yellow-800">{stats.totalPoints}</p>
-            <p className="font-body text-xs text-yellow-700 uppercase">Points totaux</p>
-          </motion.div>
-          <motion.div
-            className="card-racing p-4 text-center hover-3d"
-            variants={{ hidden: { opacity: 0, scale: 0.9 }, visible: { opacity: 1, scale: 1 } }}
-          >
-            <Target className="w-8 h-8 text-white mx-auto mb-2" />
-            <p className="font-data text-2xl text-white">{stats.totalPredictions}</p>
-            <p className="font-body text-xs text-white/80 uppercase">Pronostics</p>
-          </motion.div>
+        {/* Stats Grid */}
+        <motion.div variants={fadeUp} className="grid grid-cols-2 gap-2">
+          <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-4 text-center">
+            <div className="w-9 h-9 rounded-lg bg-pk-amber/[0.12] flex items-center justify-center mx-auto mb-2">
+              <Trophy className="w-4.5 h-4.5 text-pk-amber" />
+            </div>
+            <p className="font-data text-2xl font-bold">{stats.totalPoints}</p>
+            <p className="font-data text-[0.5625rem] text-pk-titane uppercase">Total points</p>
+          </div>
+          <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-4 text-center">
+            <div className="w-9 h-9 rounded-lg bg-pk-red/[0.12] flex items-center justify-center mx-auto mb-2">
+              <Target className="w-4.5 h-4.5 text-pk-red" />
+            </div>
+            <p className="font-data text-2xl font-bold">{stats.totalPredictions}</p>
+            <p className="font-data text-[0.5625rem] text-pk-titane uppercase">Pickstics</p>
+          </div>
         </motion.div>
 
         {/* Badge Collection */}
-        <BadgeCollection
-          totalPredictions={stats.totalPredictions}
-          totalPoints={stats.totalPoints}
-          level={user!.level || 1}
-          streak={0}
-        />
+        <motion.div variants={fadeUp}>
+          <BadgeCollection
+            totalPredictions={stats.totalPredictions}
+            totalPoints={stats.totalPoints}
+            level={user!.level || 1}
+            streak={0}
+          />
+        </motion.div>
 
-        <PointsHistory
-          pointsHistory={pointsHistory}
-          showHistory={showHistory}
-          setShowHistory={setShowHistory}
-        />
+        {/* Points History */}
+        <motion.div variants={fadeUp}>
+          <PointsHistory
+            pointsHistory={pointsHistory}
+            showHistory={showHistory}
+            setShowHistory={setShowHistory}
+          />
+        </motion.div>
 
         {/* Quick Links */}
-        <div className="card-arcade overflow-hidden">
-          <div className="divide-y divide-gray-700/50">
-            <QuickLink
-              icon={Medal}
-              label="Missions"
-              sub="Gagne de l'XP"
-              color="from-yellow-500 to-yellow-700"
-              onClick={() => navigate("/missions")}
-              testId="nav-missions"
-            />
-            <QuickLink
-              icon={Gamepad2}
-              label="Mini-Jeux"
-              sub="Reaction & Batak"
-              color="from-purple-500 to-purple-700"
-              onClick={() => navigate("/minigames")}
-              testId="nav-minigames"
-            />
-            <QuickLink
-              icon={MessageSquare}
-              label="Pronos Perso"
-              sub="Crée des pronos fun"
-              color="from-pink-500 to-pink-700"
-              onClick={() => navigate("/custom-predictions")}
-              testId="nav-custom-predictions"
-            />
-            <QuickLink
-              icon={Crown}
-              label="Classement Global"
-              sub="Tous les joueurs"
-              color="from-cyan-500 to-cyan-700"
-              onClick={() => navigate("/leaderboard/global")}
-              testId="nav-global-leaderboard"
-            />
-          </div>
-        </div>
+        <motion.div
+          variants={fadeUp}
+          className="bg-pk-surface border border-white/[0.08] rounded-lg overflow-hidden divide-y divide-white/[0.06]"
+        >
+          <QuickLink
+            icon={Medal}
+            label="Missions"
+            sub="Gagne de l'XP"
+            color="bg-pk-amber/[0.12]"
+            iconColor="text-pk-amber"
+            onClick={() => navigate("/missions")}
+            testId="nav-missions"
+          />
+          <QuickLink
+            icon={MessageSquare}
+            label="Picks Perso"
+            sub="Create fun picks"
+            color="bg-purple-500/[0.12]"
+            iconColor="text-purple-400"
+            onClick={() => navigate("/custom-predictions")}
+            testId="nav-custom-predictions"
+          />
+          <QuickLink
+            icon={Crown}
+            label="Global Leaderboard"
+            sub="All players"
+            color="bg-pk-info/[0.12]"
+            iconColor="text-pk-info"
+            onClick={() => navigate("/leaderboard/global")}
+            testId="nav-global-leaderboard"
+          />
+        </motion.div>
 
         {/* My Leagues */}
-        <MyLeaguesSection leagues={leagues} currentLeagueId={user!.current_league_id ?? null} />
+        <motion.div variants={fadeUp}>
+          <MyLeaguesSection leagues={leagues} currentLeagueId={user!.current_league_id ?? null} />
+        </motion.div>
 
         {/* Other Links */}
-        <div className="card-arcade overflow-hidden divide-y divide-gray-700/50">
+        <motion.div
+          variants={fadeUp}
+          className="bg-pk-surface border border-white/[0.08] rounded-lg overflow-hidden divide-y divide-white/[0.06]"
+        >
           <button
             onClick={() => navigate("/leaderboard")}
-            className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors"
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors"
             data-testid="nav-leaderboard"
           >
-            <div className="flex items-center gap-3">
-              <Trophy className="w-5 h-5 text-yellow-500" />
-              <span className="font-body text-gray-300 font-semibold">Classement Ligue</span>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-md bg-pk-amber/[0.12] flex items-center justify-center">
+                <Trophy className="w-4 h-4 text-pk-amber" />
+              </div>
+              <span className="font-display text-sm">League Leaderboard</span>
             </div>
-            <ChevronRight className="w-5 h-5 text-gray-500" />
+            <ChevronRight className="w-4 h-4 text-pk-titane" />
           </button>
           <button
             onClick={() => navigate("/admin")}
-            className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors"
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors"
             data-testid="nav-admin"
           >
-            <div className="flex items-center gap-3">
-              <Shield className="w-5 h-5 text-red-500" />
-              <span className="font-body text-gray-300 font-semibold">Administration</span>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-md bg-pk-red/[0.12] flex items-center justify-center">
+                <Shield className="w-4 h-4 text-pk-red" />
+              </div>
+              <span className="font-display text-sm">Administration</span>
             </div>
-            <ChevronRight className="w-5 h-5 text-gray-500" />
+            <ChevronRight className="w-4 h-4 text-pk-titane" />
           </button>
-        </div>
+        </motion.div>
 
-        <Button
-          onClick={handleLogout}
-          className="w-full h-12 bg-red-500/10 border-2 border-red-500/50 text-red-400 hover:bg-red-500/20 font-heading uppercase tracking-wider rounded-xl"
-          data-testid="logout-btn-bottom"
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          Déconnexion
-        </Button>
-        <p className="text-center text-gray-500 text-xs font-body">
-          PRONOKIF v3.0 • Made with passion for F1
-        </p>
+        {/* Logout button */}
+        <motion.div variants={fadeUp}>
+          <button
+            onClick={handleLogout}
+            className="w-full h-11 rounded-lg bg-pk-red/[0.08] border border-pk-red/20 text-pk-red font-display text-sm flex items-center justify-center gap-2 active:scale-[0.97] transition-transform"
+            data-testid="logout-btn-bottom"
+          >
+            <LogOut className="w-4 h-4" />
+            Deconnexion
+          </button>
+        </motion.div>
+
+        <p className="text-center font-data text-[0.5rem] text-pk-titane/40 pb-2">PRONOKIF v3.0</p>
       </motion.div>
 
       {/* Avatar Selection Modal */}
       {showAvatarModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
           onClick={() => setShowAvatarModal(false)}
         >
-          <div
-            className="card-arcade w-full max-w-lg max-h-[80vh] overflow-y-auto"
+          <motion.div
+            className="bg-pk-surface border border-white/[0.08] rounded-lg w-full max-w-lg max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.2 }}
           >
-            <div className="sticky top-0 bg-gradient-to-r from-blue-600/20 to-transparent p-4 border-b border-gray-700/50">
-              <div className="flex items-center justify-between">
-                <h2 className="font-heading text-lg uppercase text-white">Choisir un Avatar</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowAvatarModal(false)}
-                  className="text-gray-400 hover:text-white hover:bg-white/10"
-                >
-                  ✕
-                </Button>
-              </div>
+            <div className="sticky top-0 bg-pk-surface/95 backdrop-blur-lg border-b border-white/[0.08] px-4 py-3 flex items-center justify-between">
+              <h2 className="font-display text-base">Choisir un Avatar</h2>
+              <button
+                onClick={() => setShowAvatarModal(false)}
+                className="w-8 h-8 rounded-md flex items-center justify-center text-pk-titane hover:bg-white/[0.06] transition-colors"
+              >
+                ✕
+              </button>
             </div>
             <div className="p-4">
               <AvatarSelector
@@ -315,41 +363,45 @@ export default function ProfilePage() {
                 onUpload={handleAvatarUpload}
               />
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
     </div>
   );
 }
 
+/* ── Quick Link Row ────────────────────────────────────── */
+
 interface QuickLinkProps {
   icon: LucideIcon;
   label: string;
   sub: string;
   color: string;
+  iconColor: string;
   onClick: () => void;
   testId: string;
 }
 
-function QuickLink({ icon: Icon, label, sub, color, onClick, testId }: QuickLinkProps) {
+function QuickLink({ icon: Icon, label, sub, color, iconColor, onClick, testId }: QuickLinkProps) {
   return (
     <button
-      onClick={onClick}
-      className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors"
+      onClick={() => {
+        haptic("light");
+        onClick();
+      }}
+      className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors"
       data-testid={testId}
     >
-      <div className="flex items-center gap-3">
-        <div
-          className={`w-10 h-10 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center`}
-        >
-          <Icon className="w-5 h-5 text-white" />
+      <div className="flex items-center gap-2.5">
+        <div className={`w-8 h-8 rounded-md ${color} flex items-center justify-center`}>
+          <Icon className={`w-4 h-4 ${iconColor}`} />
         </div>
         <div className="text-left">
-          <span className="font-body text-white font-semibold block">{label}</span>
-          <span className="font-body text-xs text-gray-400">{sub}</span>
+          <span className="font-display text-sm block">{label}</span>
+          <span className="font-data text-[0.5625rem] text-pk-titane">{sub}</span>
         </div>
       </div>
-      <ChevronRight className="w-5 h-5 text-gray-500" />
+      <ChevronRight className="w-4 h-4 text-pk-titane" />
     </button>
   );
 }

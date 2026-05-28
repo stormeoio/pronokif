@@ -1,10 +1,11 @@
 /**
  * Admin Back-Office Layout with sidebar navigation + app preview panel.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  BarChart3,
   LayoutDashboard,
   Users,
   Trophy,
@@ -19,12 +20,15 @@ import {
   X,
   Smartphone,
   Map,
+  Network,
   PanelRightOpen,
   PanelRightClose,
   Shield,
 } from "lucide-react";
 import DashboardTab from "./tabs/DashboardTab";
 import UsersTab from "./tabs/UsersTab";
+import PredictionsTab from "./tabs/PredictionsTab";
+import LeaguesTab from "./tabs/LeaguesTab";
 import ChampionshipsTab from "./tabs/ChampionshipsTab";
 import RacesTab from "./tabs/RacesTab";
 import FeedbacksTab from "./tabs/FeedbacksTab";
@@ -40,22 +44,46 @@ import { brandAssets } from "@/lib/brand";
 
 const ADMIN_AUTH_PATH = "/admin/auth";
 
-const NAV_ITEMS = [
-  { key: "dashboard", label: "Tableau de bord", icon: LayoutDashboard, section: "general" },
-  { key: "users", label: "Utilisateurs", icon: Users, section: "general" },
+type AdminTabKey =
+  | "dashboard"
+  | "users"
+  | "predictions"
+  | "leagues"
+  | "championships"
+  | "races"
+  | "feedbacks"
+  | "invitations"
+  | "media"
+  | "audit"
+  | "roadmap"
+  | "settings";
+
+type NavItem = {
+  key: AdminTabKey;
+  label: string;
+  icon: typeof LayoutDashboard;
+  section: "general" | "dev";
+};
+
+const NAV_ITEMS: NavItem[] = [
+  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, section: "general" },
+  { key: "users", label: "Users", icon: Users, section: "general" },
+  { key: "predictions", label: "Pickstics", icon: BarChart3, section: "general" },
+  { key: "leagues", label: "Leagues", icon: Network, section: "general" },
   { key: "championships", label: "Championnats", icon: Trophy, section: "general" },
-  { key: "races", label: "Courses", icon: Flag, section: "general" },
+  { key: "races", label: "Races", icon: Flag, section: "general" },
   { key: "feedbacks", label: "Feedbacks", icon: MessageSquare, section: "general" },
   { key: "invitations", label: "Invitations", icon: Mail, section: "general" },
-  { key: "media", label: "Médias", icon: Image, section: "general" },
+  { key: "media", label: "Media", icon: Image, section: "general" },
   { key: "audit", label: "Audit", icon: Shield, section: "dev" },
   { key: "roadmap", label: "Roadmap", icon: Map, section: "dev" },
-  { key: "settings", label: "Paramètres", icon: Settings, section: "general" },
+  { key: "settings", label: "Settings", icon: Settings, section: "general" },
 ];
 
 export default function AdminLayout() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const mainRef = useRef<HTMLElement | null>(null);
+  const [activeTab, setActiveTab] = useState<AdminTabKey>("dashboard");
   const [adminEmail, setAdminEmail] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -76,12 +104,24 @@ export default function AdminLayout() {
     navigate(ADMIN_AUTH_PATH);
   };
 
+  const handleSelectTab = (tab: AdminTabKey) => {
+    setActiveTab(tab);
+    setSidebarOpen(false);
+    window.requestAnimationFrame(() => {
+      mainRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  };
+
   const renderTab = () => {
     switch (activeTab) {
       case "dashboard":
-        return <DashboardTab />;
+        return <DashboardTab onNavigate={handleSelectTab} />;
       case "users":
         return <UsersTab />;
+      case "predictions":
+        return <PredictionsTab />;
+      case "leagues":
+        return <LeaguesTab />;
       case "championships":
         return <ChampionshipsTab />;
       case "races":
@@ -125,22 +165,14 @@ export default function AdminLayout() {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-4 border-b border-white/[0.08]">
-            <div className="flex items-center gap-3">
+            <div className="min-w-0">
               <img
-                src={brandAssets.icon}
-                alt=""
-                className="h-10 w-10 rounded-xl object-cover"
+                src={brandAssets.wordmarkWhiteRed}
+                alt="PronoKif"
+                className="h-6 w-auto max-w-[154px] object-contain"
                 draggable={false}
               />
-              <div>
-                <img
-                  src={brandAssets.wordmarkWhiteRed}
-                  alt="PronoKif"
-                  className="h-5 w-auto max-w-[132px] object-contain"
-                  draggable={false}
-                />
-                <p className="text-[10px] text-pk-titane font-body">Administration</p>
-              </div>
+              <p className="mt-1 text-[10px] text-pk-titane font-body">Administration</p>
             </div>
           </div>
 
@@ -151,10 +183,7 @@ export default function AdminLayout() {
               return (
                 <button
                   key={key}
-                  onClick={() => {
-                    setActiveTab(key);
-                    setSidebarOpen(false);
-                  }}
+                  onClick={() => handleSelectTab(key)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${
                     isActive
                       ? "bg-pk-red-subtle text-pk-piste border border-pk-red/35 shadow-[0_0_20px_rgba(225,6,0,.12)]"
@@ -170,17 +199,14 @@ export default function AdminLayout() {
             {/* Dev section */}
             <div className="pt-3 mt-3 border-t border-white/[0.08]">
               <p className="px-3 pb-2 font-body text-[10px] uppercase text-pk-titane tracking-wider">
-                Développement
+                Development
               </p>
               {devItems.map(({ key, label, icon: Icon }) => {
                 const isActive = activeTab === key;
                 return (
                   <button
                     key={key}
-                    onClick={() => {
-                      setActiveTab(key);
-                      setSidebarOpen(false);
-                    }}
+                    onClick={() => handleSelectTab(key)}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${
                       isActive
                         ? "bg-pk-red-subtle text-pk-piste border border-pk-red/35 shadow-[0_0_20px_rgba(225,6,0,.12)]"
@@ -252,6 +278,7 @@ export default function AdminLayout() {
 
       {/* Main content */}
       <main
+        ref={mainRef}
         className={`flex-1 min-h-screen overflow-y-auto transition-all ${previewOpen ? "mr-[380px]" : ""}`}
         style={{
           background:

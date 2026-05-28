@@ -37,7 +37,7 @@ function useExistingPrediction(raceId: string | undefined) {
   });
 }
 
-function useMinigamesCompletion() {
+function useMinigamesCompleteion() {
   return useQuery({
     queryKey: ["/minigames/completion"],
     queryFn: async () => {
@@ -46,8 +46,12 @@ function useMinigamesCompletion() {
           apiClient.get("/minigames/reaction/scores").catch(() => ({ data: [] })),
           apiClient.get("/minigames/batak/scores").catch(() => ({ data: [] })),
         ]);
-        const reactionComp = reactionRes.data.filter((s: { mode: string }) => s.mode === "competition").length;
-        const batakComp = batakRes.data.filter((s: { mode: string }) => s.mode === "competition").length;
+        const reactionComp = reactionRes.data.filter(
+          (s: { mode: string }) => s.mode === "competition",
+        ).length;
+        const batakComp = batakRes.data.filter(
+          (s: { mode: string }) => s.mode === "competition",
+        ).length;
         return reactionComp >= 3 && batakComp >= 3;
       } catch {
         return false;
@@ -60,7 +64,7 @@ export function usePredictionData(raceId: string | undefined) {
   const raceQuery = useRaceDetails(raceId);
   const driversQuery = useDrivers();
   const predictionQuery = useExistingPrediction(raceId);
-  const minigamesQuery = useMinigamesCompletion();
+  const minigamesQuery = useMinigamesCompleteion();
 
   const loading = raceQuery.isLoading || driversQuery.isLoading || predictionQuery.isLoading;
 
@@ -69,7 +73,7 @@ export function usePredictionData(raceId: string | undefined) {
     race: raceQuery.data ?? null,
     drivers: driversQuery.data ?? [],
     existingPrediction: predictionQuery.data ?? null,
-    minigamesComplete: minigamesQuery.data ?? false,
+    minigamesCompletee: minigamesQuery.data ?? false,
     refetchPrediction: predictionQuery.refetch,
   };
 }

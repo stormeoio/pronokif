@@ -232,7 +232,7 @@ a{{color:#E10600;}}
 
 <!-- FOOTER -->
 <tr><td align="center" style="padding:28px 0 0;">
-<p style="margin:0 0 6px;font-family:'Arial Black',Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:2.5px;color:#5F6673;mso-line-height-rule:exactly;line-height:1.4;" class="footer-text">PRONOSTIQUEZ. D&Eacute;FIEZ. <span style="color:#E10600;">VIVEZ.</span></p>
+<p style="margin:0 0 6px;font-family:'Arial Black',Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:2.5px;color:#5F6673;mso-line-height-rule:exactly;line-height:1.4;" class="footer-text">PREDICT. CHALLENGE. <span style="color:#E10600;">FEEL IT.</span></p>
 <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#3d4350;mso-line-height-rule:exactly;line-height:1.4;" class="footer-text">&copy; 2026 PronoKif</p>
 </td></tr>
 
@@ -252,26 +252,26 @@ a{{color:#E10600;}}
 
 def verification(verify_url: str) -> EmailContent:
     return EmailContent(
-        subject="Confirme ton email — en piste !",
+        subject="Confirm your email — on track!",
         text=(
-            "Bienvenue dans le paddock PronoKif !\n\n"
-            "Ton compte est presque pret. Confirme ton email :\n"
+            "Welcome to the PronoKif paddock!\n\n"
+            "Your account is almost ready. Confirm your email:\n"
             f"{verify_url}\n\n"
-            "Tu n'as pas cree de compte PronoKif ? Ignore ce message."
+            "Did not create a PronoKif account? Ignore this message."
         ),
         html_body=_render(
-            preheader="Un dernier clic et tu es dans le paddock.",
-            title="Bienvenue dans le paddock !",
+            preheader="One last click and you are in the paddock.",
+            title="Welcome to the paddock!",
             paragraphs=[
-                "Ton compte est presque pr&ecirc;t. Un dernier clic pour "
-                "confirmer ton email et tu pourras faire tes pronos, "
-                "cr&eacute;er tes ligues et viser le podium.",
+                "Your account is almost ready. One last click to "
+                "confirm your email, then you can make picks, "
+                "create leagues, and aim for the podium.",
             ],
             button_url=verify_url,
-            button_label="CONFIRMER MON EMAIL",
+            button_label="CONFIRM MY EMAIL",
             fine_print=(
-                "Tu n'as pas cr&eacute;&eacute; de compte PronoKif ? "
-                "Ignore ce message, rien ne se passe."
+                "Did not create a PronoKif account? "
+                "Ignore this message, nothing will happen."
             ),
         ),
     )
@@ -279,27 +279,26 @@ def verification(verify_url: str) -> EmailContent:
 
 def password_reset(reset_url: str, expire_minutes: int = 30) -> EmailContent:
     return EmailContent(
-        subject="Pit stop — ton nouveau mot de passe",
+        subject="Pit stop — your new password",
         text=(
-            "Arret aux stands PronoKif\n\n"
-            "Utilise ce lien pour definir un nouveau mot de passe :\n"
+            "PronoKif pit stop\n\n"
+            "Use this link to set a new password:\n"
             f"{reset_url}\n\n"
-            f"Ce lien expire dans {expire_minutes} minutes.\n"
-            "Si tu n'as rien demande, ignore ce message."
+            f"This link expires in {expire_minutes} minutes.\n"
+            "If you did not request this, ignore this message."
         ),
         html_body=_render(
-            preheader="Passage au stand express pour ton mot de passe.",
-            title="Arr&ecirc;t aux stands",
+            preheader="A quick pit stop for your password.",
+            title="Pit stop",
             paragraphs=[
-                "Pas de panique, m&ecirc;me les meilleurs font un passage "
-                "au stand. Clique ci-dessous pour d&eacute;finir un "
-                "nouveau mot de passe.",
+                "No stress, even the best need a pit stop. "
+                "Click below to set a new password.",
             ],
             button_url=reset_url,
-            button_label="NOUVEAU MOT DE PASSE",
+            button_label="NEW PASSWORD",
             fine_print=(
-                f"Ce lien expire dans {expire_minutes} minutes. "
-                "Si tu n'as rien demand&eacute;, ignore ce message."
+                f"This link expires in {expire_minutes} minutes. "
+                "If you did not request this, ignore this message."
             ),
         ),
     )
@@ -307,28 +306,28 @@ def password_reset(reset_url: str, expire_minutes: int = 30) -> EmailContent:
 
 def magic_login(magic_url: str, expire_minutes: int = 15) -> EmailContent:
     return EmailContent(
-        subject="Ton pass paddock PronoKif",
+        subject="Your PronoKif paddock pass",
         text=(
-            "Connexion express PronoKif\n\n"
-            "Ouvre ce lien pour te connecter sans mot de passe :\n"
+            "PronoKif express sign-in\n\n"
+            "Open this link to sign in without a password:\n"
             f"{magic_url}\n\n"
-            f"Ce lien expire dans {expire_minutes} minutes "
-            "et ne peut etre utilise qu'une fois.\n"
-            "Si tu n'as pas demande ce lien, ignore ce message."
+            f"This link expires in {expire_minutes} minutes "
+            "and can only be used once.\n"
+            "If you did not request this link, ignore this message."
         ),
         html_body=_render(
-            preheader="Un clic et tu es dans le paddock.",
-            title="Connexion express",
+            preheader="One click and you are in the paddock.",
+            title="Express sign-in",
             paragraphs=[
-                "Un clic et tu es dans le paddock. "
-                "Pas de mot de passe, que du kif.",
+                "One click and you are in the paddock. "
+                "No password, just the good stuff.",
             ],
             button_url=magic_url,
-            button_label="ME CONNECTER",
+            button_label="SIGN ME IN",
             fine_print=(
-                f"Ce lien expire dans {expire_minutes} minutes "
-                "et ne peut &ecirc;tre utilis&eacute; qu'une fois. "
-                "Si tu n'as pas demand&eacute; ce lien, ignore ce message."
+                f"This link expires in {expire_minutes} minutes "
+                "and can only be used once. "
+                "If you did not request this link, ignore this message."
             ),
         ),
     )
@@ -336,26 +335,26 @@ def magic_login(magic_url: str, expire_minutes: int = 15) -> EmailContent:
 
 def admin_magic_link(magic_url: str, expire_minutes: int = 15) -> EmailContent:
     return EmailContent(
-        subject="Acces Direction de Course — PronoKif",
+        subject="Race Control access — PronoKif",
         text=(
-            "Connexion back-office PronoKif\n\n"
-            "Ouvre ce lien pour acceder au back-office :\n"
+            "PronoKif back-office sign-in\n\n"
+            "Open this link to access the back office:\n"
             f"{magic_url}\n\n"
-            f"Ce lien expire dans {expire_minutes} minutes.\n"
-            "Si tu n'as pas demande ce lien, ignore ce message."
+            f"This link expires in {expire_minutes} minutes.\n"
+            "If you did not request this link, ignore this message."
         ),
         html_body=_render(
-            preheader="Ton acces Direction de Course est pret.",
-            title="Direction de Course",
+            preheader="Your Race Control access is ready.",
+            title="Race Control",
             paragraphs=[
-                "Ton acc&egrave;s au back-office PronoKif est pr&ecirc;t. "
-                "Un clic pour entrer dans la salle de contr&ocirc;le.",
+                "Your PronoKif back-office access is ready. "
+                "One click to enter Race Control.",
             ],
             button_url=magic_url,
-            button_label="ACCÉDER AU BACK-OFFICE",
+            button_label="ACCESS THE BACK OFFICE",
             fine_print=(
-                f"Ce lien expire dans {expire_minutes} minutes. "
-                "Si tu n'as pas demand&eacute; ce lien, ignore ce message."
+                f"This link expires in {expire_minutes} minutes. "
+                "If you did not request this link, ignore this message."
             ),
             admin=True,
         ),
@@ -368,8 +367,8 @@ def invitation(
     league_code: str | None = None,
 ) -> EmailContent:
     paras = [
-        "Rejoins <strong>PronoKif</strong>, le jeu de pronostics F1 entre "
-        "amis. Fais tes pronos, d&eacute;fie tes potes et monte sur le podium.",
+        "Join <strong>PronoKif</strong>, the F1 prediction game with friends. "
+        "Make your picks, challenge your mates, and climb onto the podium.",
     ]
     if personal_message:
         safe_msg = html.escape(personal_message)
@@ -377,27 +376,27 @@ def invitation(
             f'<em style="color:#a1a1aa;">&laquo;&nbsp;{safe_msg}&nbsp;&raquo;</em>'
         )
 
-    text_personal = f"\nMessage : {personal_message}\n" if personal_message else ""
-    text_code = f"\nCode de ligue : {league_code}\n" if league_code else ""
+    text_personal = f"\nMessage: {personal_message}\n" if personal_message else ""
+    text_code = f"\nLeague code: {league_code}\n" if league_code else ""
 
     return EmailContent(
-        subject="Rejoins le paddock PronoKif",
+        subject="Join the PronoKif paddock",
         text=(
-            "Le paddock t'attend !\n\n"
-            "Tu es invite a rejoindre PronoKif, le jeu de pronostics F1 "
-            "entre amis.\n"
+            "The paddock is waiting!\n\n"
+            "You have been invited to join PronoKif, the F1 prediction game "
+            "with friends.\n"
             f"{text_personal}{text_code}\n"
-            f"Cree ton compte : {invite_url}\n\n"
-            "Cette invitation expire dans 7 jours."
+            f"Create your account: {invite_url}\n\n"
+            "This invitation expires in 7 days."
         ),
         html_body=_render(
-            preheader="Tu es attendu dans le paddock PronoKif.",
-            title="Le paddock t'attend !",
+            preheader="You are expected in the PronoKif paddock.",
+            title="The paddock is waiting!",
             paragraphs=paras,
             button_url=invite_url,
-            button_label="CRÉER MON COMPTE",
-            fine_print="Cette invitation expire dans 7 jours.",
+            button_label="CREATE MY ACCOUNT",
+            fine_print="This invitation expires in 7 days.",
             code=league_code,
-            code_label="CODE DE LA LIGUE",
+            code_label="LEAGUE CODE",
         ),
     )

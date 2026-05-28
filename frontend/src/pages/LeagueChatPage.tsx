@@ -1,22 +1,74 @@
+/**
+ * LeagueChatPage — League chat with classic bubbles.
+ * Broadcast Premium theme: glass header, member strip, pk-* bubbles.
+ */
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
-import { ArrowLeft, Send, Users, MessageCircle, RefreshCw, Crown, Clock } from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
+import { ChevronLeft, Send, Users, MessageCircle, RefreshCw, Crown, Clock } from "lucide-react";
 import { AvatarDisplay } from "../components/AvatarDisplay";
 import { api, getApiError } from "@/lib/api";
-import type { AvatarsResponse } from "@/types/api";
+import type { AvatarsResponse, LeagueMember, ChatMessageResponse } from "@/types/api";
 import { useAuth } from "@/lib/auth";
 import { haptic } from "@/lib/haptics";
+import { fadeUp, getReducedMotionProps } from "@/lib/motion";
+import { EmptyFullPage } from "@/components/EmptyState";
+
+/* ── Skeleton ──────────────────────────────────────────── */
+
+function ChatSkeleton() {
+  return (
+    <div className="min-h-screen bg-pk-carbon">
+      <div className="sticky top-0 z-50 bg-pk-carbon/85 backdrop-blur-xl border-b border-white/[0.08] p-4">
+        <div className="flex items-center gap-3">
+          <div className="w-5 h-5 rounded bg-pk-anthracite animate-shimmer" />
+          <div className="h-5 w-32 rounded bg-pk-anthracite animate-shimmer" />
+        </div>
+      </div>
+      <div className="px-4 pt-4 space-y-3">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className={`flex gap-2 ${i % 2 === 0 ? "flex-row-reverse" : ""}`}>
+            <div className="w-8 h-8 rounded-full bg-pk-anthracite animate-shimmer" />
+            <div
+              className="h-10 rounded-2xl bg-pk-anthracite animate-shimmer"
+              style={{ width: `${40 + ((i * 12) % 30)}%`, animationDelay: `${i * 100}ms` }}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Helpers ───────────────────────────────────────────── */
+
+function formatTime(isoString: string): string {
+  const date = new Date(isoString);
+  const diff = Date.now() - date.getTime();
+
+  if (diff < 60_000) return "A l'instant";
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)} min`;
+  if (diff < 86_400_000)
+    return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/* ── Component ─────────────────────────────────────────── */
 
 export default function LeagueChatPage() {
   const { leagueId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const prefersReducedMotion = useReducedMotion() ?? false;
+  const rmProps = getReducedMotionProps(prefersReducedMotion);
 
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -24,7 +76,8 @@ export default function LeagueChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // ── Data queries ──────────────────────────────────────────
+  /* ── Data queries ────────────────────────────────────── */
+
   const { data: league = null, isLoading: leagueLoading } = useQuery({
     queryKey: ["/leagues", leagueId],
     queryFn: () => api.leagues.get(leagueId!),
@@ -35,12 +88,11 @@ export default function LeagueChatPage() {
     queryKey: ["/leagues", leagueId, "messages"],
     queryFn: async () => {
       const data = await api.chat.messages(leagueId!);
-      // Mark messages as read (fire & forget)
       api.chat.markRead(leagueId!).catch(() => {});
       return data;
     },
     enabled: !!leagueId,
-    refetchInterval: 15_000, // Auto-refresh every 15 seconds
+    refetchInterval: 15_000,
   });
 
   const { data: members = [] } = useQuery({
@@ -55,7 +107,7 @@ export default function LeagueChatPage() {
     staleTime: 5 * 60_000,
   });
 
-  const loading = leagueLoading;
+  /* ── Scroll to bottom on new messages ────────────────── */
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -65,198 +117,162 @@ export default function LeagueChatPage() {
     scrollToBottom();
   }, [messages]);
 
+  /* ── Actions ─────────────────────────────────────────── */
+
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newMessage.trim() || sending) return;
 
     setSending(true);
     try {
+      haptic("light");
       await api.chat.send(leagueId!, { content: newMessage.trim() });
       setNewMessage("");
       queryClient.invalidateQueries({ queryKey: ["/leagues", leagueId, "messages"] });
     } catch (e: unknown) {
-      toast.error(getApiError(e, "Erreur lors de l'envoi"));
+      toast.error(getApiError(e, "Error while sending"));
     } finally {
       setSending(false);
     }
   };
 
   const refreshMessages = () => {
+    haptic("light");
     queryClient.invalidateQueries({ queryKey: ["/leagues", leagueId, "messages"] });
-    toast.success("Messages actualisés");
+    toast.success("Messages actualises");
   };
 
   const getAvatarById = (avatarId: string | undefined) => {
     return avatars?.all?.find((a: { id: string }) => a.id === avatarId) || null;
   };
 
-  const formatTime = (isoString: string) => {
-    const date = new Date(isoString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-
-    if (diff < 60000) return "À l'instant";
-    if (diff < 3600000) return `${Math.floor(diff / 60000)} min`;
-    if (diff < 86400000)
-      return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-    return date.toLocaleDateString("fr-FR", {
-      day: "numeric",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   const navigateToProfile = (userId: string) => {
     navigate(`/profile/${userId}`);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-app-main p-4 pt-6">
-        <div className="max-w-2xl mx-auto space-y-4">
-          <div className="h-12 skeleton-arcade rounded-xl w-48" />
-          <div className="h-96 skeleton-arcade rounded-xl" />
-        </div>
-      </div>
-    );
-  }
+  /* ── Loading ─────────────────────────────────────────── */
+
+  if (leagueLoading) return <ChatSkeleton />;
 
   if (!league) {
     return (
-      <div className="min-h-screen bg-app-main p-4 pt-6">
-        <div className="max-w-2xl mx-auto">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-cyan-400 mb-4"
-          >
-            <ArrowLeft className="w-5 h-5" /> Retour
-          </button>
-          <div className="card-arcade p-6 text-center">
-            <p className="text-red-400">Ligue non trouvée</p>
+      <div className="min-h-screen bg-pk-carbon">
+        <header className="sticky top-0 z-50 bg-pk-carbon/85 backdrop-blur-xl saturate-[1.3] border-b border-white/[0.08]">
+          <div className="px-4 pt-3 pb-3 flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-1.5 -ml-1.5 rounded-lg text-pk-titane hover:text-pk-piste transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <h1 className="font-display text-lg">Chat</h1>
           </div>
-        </div>
+        </header>
+        <EmptyFullPage
+          Icon={MessageCircle}
+          title="Ligue non trouvee"
+          description="This league does not exist or you no longer have access."
+        />
       </div>
     );
   }
 
+  /* ── Render ──────────────────────────────────────────── */
+
   return (
-    <div className="min-h-screen bg-app-main flex flex-col" data-testid="league-chat-page">
-      {/* Header */}
-      <motion.div
-        className="bg-gradient-to-b from-[#0a1628] to-transparent p-4 border-b border-blue-500/20"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-pk-carbon flex flex-col" data-testid="league-chat-page">
+      {/* Glass Header */}
+      <header className="sticky top-0 z-50 bg-pk-carbon/85 backdrop-blur-xl saturate-[1.3] border-b border-white/[0.08]">
+        <div className="px-4 pt-3 pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <motion.button
+              <button
                 onClick={() => navigate(-1)}
-                className="p-2 rounded-lg text-cyan-400 hover:bg-cyan-500/10 transition-colors"
+                className="p-1.5 -ml-1.5 rounded-lg text-pk-titane hover:text-pk-piste transition-colors"
                 data-testid="back-btn"
-                whileHover={{ x: -2 }}
-                whileTap={{ scale: 0.9 }}
               >
-                <ArrowLeft className="w-5 h-5" />
-              </motion.button>
+                <ChevronLeft className="w-5 h-5" />
+              </button>
               <div>
-                <h1 className="font-heading text-lg text-white uppercase tracking-tight flex items-center gap-2">
-                  <MessageCircle className="w-5 h-5 text-cyan-400" />
-                  {league.name}
-                </h1>
-                <p className="font-body text-xs text-gray-400">{members.length} membres</p>
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4 text-pk-info" />
+                  <h1 className="font-display text-base truncate max-w-[200px]">{league.name}</h1>
+                </div>
+                <p className="font-data text-[0.5625rem] text-pk-titane ml-6">
+                  {members.length} member{members.length > 1 ? "s" : ""}
+                </p>
               </div>
             </div>
-            <motion.button
-              onClick={refreshMessages}
-              className="p-2 rounded-lg text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors"
-              data-testid="refresh-btn"
-              whileTap={{ rotate: 180, scale: 0.9 }}
-              transition={{ duration: 0.3 }}
-            >
-              <RefreshCw className="w-5 h-5" />
-            </motion.button>
-          </div>
-        </div>
-      </motion.div>
 
-      {/* Members bar */}
-      <motion.div
-        className="bg-[#0a1220] border-b border-gray-800 px-4 py-2"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.15 }}
-      >
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {members.map((member, i) => (
-              <motion.button
-                key={member.id}
-                onClick={() => navigateToProfile(member.id)}
-                className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-colors min-w-[60px]"
-                data-testid={`member-${member.id}`}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 + i * 0.04 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <div className="relative">
-                  <AvatarDisplay
-                    avatar={getAvatarById(member.avatar_id)}
-                    customUrl={member.custom_avatar_url}
-                    size="sm"
-                  />
-                  {member.is_owner && (
-                    <Crown className="w-3 h-3 text-yellow-500 absolute -top-1 -right-1" />
-                  )}
-                </div>
-                <span
-                  className={`font-body text-[10px] truncate max-w-[50px] ${
-                    member.id === user?.id ? "text-cyan-400" : "text-gray-400"
-                  }`}
-                >
-                  {member.id === user?.id ? "Toi" : member.username}
-                </span>
-              </motion.button>
-            ))}
+            <button
+              onClick={refreshMessages}
+              className="p-1.5 rounded-lg text-pk-titane hover:text-pk-piste transition-colors"
+              data-testid="refresh-btn"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
           </div>
         </div>
-      </motion.div>
+
+        {/* Member strip */}
+        <div className="flex gap-1 px-4 pb-2.5 overflow-x-auto scrollbar-none">
+          {(members as LeagueMember[]).map((member, i) => (
+            <motion.button
+              key={member.id}
+              onClick={() => navigateToProfile(member.id)}
+              className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg hover:bg-white/[0.04] transition-colors min-w-[48px]"
+              data-testid={`member-${member.id}`}
+              initial={prefersReducedMotion ? {} : { opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 + i * 0.03 }}
+            >
+              <div className="relative">
+                <AvatarDisplay
+                  avatar={getAvatarById(member.avatar_id)}
+                  customUrl={member.custom_avatar_url}
+                  size="sm"
+                />
+                {member.is_owner && (
+                  <Crown className="w-2.5 h-2.5 text-pk-amber absolute -top-0.5 -right-0.5" />
+                )}
+              </div>
+              <span
+                className={`font-data text-[0.5rem] truncate max-w-[44px] ${
+                  member.id === user?.id ? "text-pk-red" : "text-pk-titane"
+                }`}
+              >
+                {member.id === user?.id ? "Toi" : member.username}
+              </span>
+            </motion.button>
+          ))}
+        </div>
+      </header>
 
       {/* Chat Messages */}
-      <div
-        ref={chatContainerRef}
-        className="flex-1 overflow-y-auto p-4 pb-24"
-        style={{ maxHeight: "calc(100vh - 250px)" }}
-      >
-        <div className="max-w-2xl mx-auto space-y-3">
+      <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-4 pt-3 pb-28">
+        <div className="max-w-2xl mx-auto space-y-2.5">
           {messages.length === 0 ? (
-            <motion.div
-              className="text-center py-12"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: "spring" }}
-            >
-              <MessageCircle className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <p className="font-heading text-lg text-gray-400 uppercase">Aucun message</p>
-              <p className="font-body text-sm text-gray-500">Sois le premier à écrire !</p>
-            </motion.div>
+            <EmptyFullPage
+              Icon={MessageCircle}
+              title="No messages"
+              description="Sois le premier a ecrire !"
+            />
           ) : (
-            messages.map((msg, index) => {
+            (messages as ChatMessageResponse[]).map((msg, index) => {
               const isMe = msg.user_id === user?.id;
-              const showAvatar = index === 0 || messages[index - 1]?.user_id !== msg.user_id;
+              const prevMsg = (messages as ChatMessageResponse[])[index - 1];
+              const showAvatar = index === 0 || prevMsg?.user_id !== msg.user_id;
 
               return (
                 <motion.div
                   key={msg.id}
                   className={`flex gap-2 ${isMe ? "flex-row-reverse" : ""}`}
                   data-testid={`message-${msg.id}`}
-                  initial={{ opacity: 0, y: 10, x: isMe ? 15 : -15 }}
-                  animate={{ opacity: 1, y: 0, x: 0 }}
-                  transition={{ duration: 0.2 }}
+                  initial={prefersReducedMotion ? {} : { opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.15 }}
                 >
+                  {/* Avatar */}
                   {showAvatar ? (
                     <button
                       onClick={() => navigateToProfile(msg.user_id)}
@@ -272,32 +288,33 @@ export default function LeagueChatPage() {
                     <div className="w-8" />
                   )}
 
+                  {/* Bubble */}
                   <div className={`max-w-[75%] ${isMe ? "items-end" : "items-start"}`}>
                     {showAvatar && (
                       <button
                         onClick={() => navigateToProfile(msg.user_id)}
-                        className={`font-body text-xs mb-1 hover:underline ${
-                          isMe ? "text-cyan-400 text-right block" : "text-gray-400"
+                        className={`font-data text-[0.5625rem] mb-0.5 hover:underline block ${
+                          isMe ? "text-pk-red text-right" : "text-pk-titane"
                         }`}
                       >
                         {isMe ? "Toi" : msg.username}
                       </button>
                     )}
                     <div
-                      className={`rounded-2xl px-4 py-2 ${
+                      className={`rounded-2xl px-3.5 py-2 ${
                         isMe
-                          ? "bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-tr-sm"
-                          : "bg-gray-800 text-gray-100 rounded-tl-sm"
+                          ? "bg-pk-red text-white rounded-tr-md"
+                          : "bg-pk-surface border border-white/[0.08] text-pk-piste rounded-tl-md"
                       }`}
                     >
-                      <p className="font-body text-sm break-words">{msg.content}</p>
+                      <p className="text-sm break-words leading-snug">{msg.content}</p>
                     </div>
                     <p
-                      className={`font-body text-[10px] text-gray-500 mt-1 flex items-center gap-1 ${
+                      className={`font-data text-[0.5rem] text-pk-titane mt-0.5 flex items-center gap-0.5 ${
                         isMe ? "justify-end" : ""
                       }`}
                     >
-                      <Clock className="w-3 h-3" />
+                      <Clock className="w-2.5 h-2.5" />
                       {formatTime(msg.created_at)}
                     </p>
                   </div>
@@ -309,37 +326,27 @@ export default function LeagueChatPage() {
         </div>
       </div>
 
-      {/* Message Input */}
-      <motion.div
-        className="fixed bottom-16 left-0 right-0 bg-gradient-to-t from-[#050a14] via-[#050a14] to-transparent pt-4 pb-4 px-4"
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.3 }}
-      >
-        <form onSubmit={(e) => { haptic("light"); handleSendMessage(e); }} className="max-w-2xl mx-auto">
-          <div className="flex gap-2">
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Écris un message..."
-              maxLength={500}
-              className="flex-1 bg-gray-900 border-gray-700 text-white placeholder:text-gray-500
-                        focus:border-cyan-500 focus:ring-cyan-500/30 rounded-xl h-12"
-              data-testid="message-input"
-            />
-            <motion.div whileTap={{ scale: 0.9 }}>
-              <Button
-                type="submit"
-                disabled={!newMessage.trim() || sending}
-                className="btn-racing h-12 px-4"
-                data-testid="send-btn"
-              >
-                <Send className="w-5 h-5" />
-              </Button>
-            </motion.div>
-          </div>
+      {/* Message Input — fixed above bottom nav */}
+      <div className="fixed bottom-16 left-0 right-0 z-40 bg-pk-carbon/90 backdrop-blur-lg border-t border-white/[0.08] px-4 py-3">
+        <form onSubmit={handleSendMessage} className="max-w-2xl mx-auto flex gap-2">
+          <input
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Ecris un message..."
+            maxLength={500}
+            className="flex-1 h-11 px-4 bg-pk-surface border border-white/[0.08] rounded-full text-sm text-pk-piste placeholder:text-pk-titane/40 focus:outline-none focus:border-pk-red/40 focus:ring-1 focus:ring-pk-red/15 transition-colors"
+            data-testid="message-input"
+          />
+          <button
+            type="submit"
+            disabled={!newMessage.trim() || sending}
+            className="w-11 h-11 rounded-full bg-pk-red text-white flex items-center justify-center shadow-glow-red active:scale-[0.93] transition-transform disabled:opacity-40 disabled:active:scale-100"
+            data-testid="send-btn"
+          >
+            <Send className="w-4 h-4" />
+          </button>
         </form>
-      </motion.div>
+      </div>
     </div>
   );
 }

@@ -89,14 +89,14 @@ export function useMiniGamesData() {
         is_training: isTraining,
       });
       if (!isTraining) {
-        toast.success(`Temps enregistré: ${reactionTime}ms`);
+        toast.success(`Time saved: ${reactionTime}ms`);
         invalidateCompetition();
       } else {
-        toast.success(`Temps: ${reactionTime}ms (Entraînement)`);
+        toast.success(`Temps: ${reactionTime}ms (Practice)`);
       }
     } catch (e: unknown) {
       toast.error(
-        (e as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Erreur",
+        (e as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Error",
       );
     }
   };
@@ -111,14 +111,14 @@ export function useMiniGamesData() {
         is_training: isTraining,
       });
       if (!isTraining) {
-        toast.success(`Score enregistré: ${score} cibles`);
+        toast.success(`Score saved: ${score} targets`);
         invalidateCompetition();
       } else {
-        toast.success(`Score: ${score} cibles (Entraînement)`);
+        toast.success(`Score: ${score} targets (Practice)`);
       }
     } catch (e: unknown) {
       toast.error(
-        (e as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Erreur",
+        (e as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Error",
       );
     }
   };

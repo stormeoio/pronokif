@@ -1,3 +1,7 @@
+/**
+ * FeedbackModal — User feedback submission modal.
+ * Broadcast Premium: pk-anthracite modal, pk-red CTA, native inputs.
+ */
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -11,9 +15,8 @@ import {
   Loader2,
   CheckCircle,
 } from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Textarea } from "../components/ui/textarea";
 import { api } from "@/lib/api";
+import { haptic } from "@/lib/haptics";
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -25,25 +28,25 @@ const CATEGORIES = [
     id: "bug",
     label: "Signaler un bug",
     icon: Bug,
-    color: "text-red-400",
-    bgColor: "bg-red-500/20",
-    borderColor: "border-red-500/50",
+    color: "text-pk-red",
+    bgColor: "bg-pk-red-subtle",
+    borderColor: "border-pk-red/30",
   },
   {
     id: "suggestion",
     label: "Suggestion",
     icon: Lightbulb,
-    color: "text-yellow-400",
-    bgColor: "bg-yellow-500/20",
-    borderColor: "border-yellow-500/50",
+    color: "text-pk-amber",
+    bgColor: "bg-pk-amber/[0.1]",
+    borderColor: "border-pk-amber/30",
   },
   {
     id: "feedback",
-    label: "Retour d'experience",
+    label: "Retour d'exp.",
     icon: MessageSquare,
-    color: "text-cyan-400",
-    bgColor: "bg-cyan-500/20",
-    borderColor: "border-cyan-500/50",
+    color: "text-pk-info",
+    bgColor: "bg-pk-info/[0.1]",
+    borderColor: "border-pk-info/30",
   },
 ];
 
@@ -57,16 +60,15 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     e.preventDefault();
     e.stopPropagation();
 
-    // Double-check validation
     const trimmedMessage = message.trim();
     if (!trimmedMessage || sending) return;
 
-    // Validate message length
     if (trimmedMessage.length > 2000) {
-      toast.error("Message trop long (max 2000 caractères)");
+      toast.error("Message too long (max 2000 characters)");
       return;
     }
 
+    haptic("medium");
     setSending(true);
     try {
       await api.feedback.send({
@@ -75,15 +77,14 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       });
 
       setSent(true);
-      toast.success("Message envoyé avec succès !");
+      toast.success("Message sent!");
       setTimeout(() => {
         handleClose();
       }, 2000);
     } catch (error: unknown) {
       console.error("Feedback submit error:", error);
       const err = error as { response?: { data?: { detail?: string } } };
-      const errorMessage =
-        err.response?.data?.detail || "Erreur lors de l'envoi. Veuillez réessayer.";
+      const errorMessage = err.response?.data?.detail || "Error while sending. Try again.";
       toast.error(errorMessage);
       setSending(false);
     }
@@ -101,74 +102,71 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80"
       data-testid="feedback-modal"
       onClick={(e: React.MouseEvent<HTMLDivElement>) => {
-        // Close on backdrop click
         if (e.target === e.currentTarget) handleClose();
       }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
       <motion.div
-        className="w-full max-w-lg card-arcade overflow-hidden"
+        className="w-full max-w-lg bg-pk-anthracite rounded-lg border border-white/[0.08] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 350, damping: 25 }}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-cyan-600/30 to-transparent p-4 border-b border-cyan-500/30">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-cyan-500/20 rounded-full flex items-center justify-center">
-                <HelpCircle className="w-5 h-5 text-cyan-400" />
-              </div>
-              <div>
-                <h2 className="font-heading text-lg text-white uppercase tracking-tight">
-                  Aider l'administrateur
-                </h2>
-                <p className="font-body text-xs text-gray-400">Votre avis compte !</p>
-              </div>
+        <div className="p-4 border-b border-white/[0.06] flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-pk-info/[0.1] rounded-lg flex items-center justify-center">
+              <HelpCircle className="w-5 h-5 text-pk-info" />
             </div>
-            <button
-              onClick={handleClose}
-              className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-              data-testid="close-feedback-modal"
-              type="button"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div>
+              <h2 className="font-display text-sm text-pk-info">Aider l'administrateur</h2>
+              <p className="font-data text-[0.5625rem] text-pk-titane">Votre avis compte !</p>
+            </div>
           </div>
+          <button
+            onClick={handleClose}
+            className="p-1.5 rounded-lg text-pk-titane hover:text-pk-piste hover:bg-white/[0.04] transition-colors"
+            data-testid="close-feedback-modal"
+            type="button"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {sent ? (
           /* Success State */
           <div className="p-8 text-center">
-            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-              <CheckCircle className="w-8 h-8 text-green-400" />
+            <div className="w-16 h-16 bg-pk-emerald/[0.1] rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-pk-emerald" />
             </div>
-            <h3 className="font-heading text-xl text-green-400 uppercase mb-2">Merci !</h3>
-            <p className="font-body text-gray-400">
-              Votre message a été envoyé à l'administrateur.
+            <h3 className="font-display text-lg text-pk-emerald mb-2">Merci !</h3>
+            <p className="text-sm text-pk-titane">
+              Your message has been sent to the administrator.
             </p>
           </div>
         ) : (
           /* Form */
           <div className="p-4 space-y-4">
             {/* Info Text */}
-            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
-              <p className="font-body text-sm text-gray-300">
-                Aidez-moi à améliorer l'application ! Faites-moi part de vos
-                <span className="text-cyan-400"> retours d'expérience</span>, des
-                <span className="text-red-400"> problèmes rencontrés</span> et de vos
-                <span className="text-yellow-400"> suggestions</span>.
+            <div className="bg-pk-info/[0.06] border border-pk-info/20 rounded-lg p-4">
+              <p className="text-sm text-pk-piste/80">
+                Help me improve the app! Share your
+                <span className="text-pk-info"> retours</span>, des
+                <span className="text-pk-red"> bugs</span> et des
+                <span className="text-pk-amber"> suggestions</span>.
               </p>
             </div>
 
             {/* Category Selection */}
             <div>
-              <label className="font-body text-sm text-gray-400 mb-2 block">Catégorie</label>
+              <p className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-2">
+                Category
+              </p>
               <div className="grid grid-cols-3 gap-2">
                 {CATEGORIES.map((cat) => {
                   const Icon = cat.icon;
@@ -177,19 +175,22 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                     <button
                       key={cat.id}
                       type="button"
-                      onClick={() => setCategory(cat.id)}
-                      className={`p-3 rounded-xl border-2 transition-all ${
+                      onClick={() => {
+                        haptic("light");
+                        setCategory(cat.id);
+                      }}
+                      className={`p-3 rounded-lg border transition-all ${
                         isSelected
                           ? `${cat.bgColor} ${cat.borderColor}`
-                          : "bg-white/5 border-white/10 hover:bg-white/10"
+                          : "bg-white/[0.04] border-white/[0.08] hover:border-white/[0.15]"
                       }`}
                       data-testid={`category-${cat.id}`}
                     >
                       <Icon
-                        className={`w-5 h-5 mx-auto mb-1 ${isSelected ? cat.color : "text-gray-500"}`}
+                        className={`w-5 h-5 mx-auto mb-1 ${isSelected ? cat.color : "text-pk-titane"}`}
                       />
                       <p
-                        className={`font-body text-xs ${isSelected ? cat.color : "text-gray-400"}`}
+                        className={`font-data text-[0.5625rem] text-center ${isSelected ? cat.color : "text-pk-titane"}`}
                       >
                         {cat.label}
                       </p>
@@ -201,52 +202,51 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
             {/* Message */}
             <div>
-              <label className="font-body text-sm text-gray-400 mb-2 block">Votre message</label>
-              <Textarea
+              <p className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-2">
+                Votre message
+              </p>
+              <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder={
                   category === "bug"
-                    ? "Décrivez le problème rencontré..."
+                    ? "Describe the issue you encountered..."
                     : category === "suggestion"
-                      ? "Quelle fonctionnalité aimeriez-vous voir ?"
-                      : "Partagez votre expérience..."
+                      ? "What feature would you like to see?"
+                      : "Share your experience..."
                 }
                 maxLength={2000}
                 rows={5}
-                className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500 
-                          focus:border-cyan-500 focus:ring-cyan-500/30 resize-none"
+                className="w-full bg-pk-surface border border-white/[0.08] rounded-lg px-3 py-2.5 text-sm text-pk-piste placeholder:text-pk-titane/50 focus:border-pk-info/50 focus:outline-none transition-colors resize-none"
                 data-testid="feedback-message"
               />
-              <p className="font-body text-xs text-gray-500 mt-1 text-right">
-                {message.length}/2000 caractères
+              <p className="font-data text-[0.5625rem] text-pk-titane/60 mt-1 text-right">
+                {message.length}/2000 characters
               </p>
             </div>
 
             {/* Submit Button */}
-            <Button
+            <button
               type="button"
               onClick={handleSubmit}
               disabled={!message.trim() || sending}
-              className="w-full h-12 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-heading"
+              className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               data-testid="submit-feedback"
             >
               {sending ? (
                 <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Envoi en cours...
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Sending...
                 </>
               ) : (
                 <>
-                  <Send className="w-5 h-5 mr-2" />
-                  Envoyer mon message
+                  <Send className="w-5 h-5" />
+                  Send my message
                 </>
               )}
-            </Button>
+            </button>
           </div>
         )}
-
-        <div className="h-2 bg-kerb-stripe" />
       </motion.div>
     </motion.div>
   );

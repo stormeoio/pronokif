@@ -1,6 +1,6 @@
 /**
  * SocialProofBadge — Shows how many players have predicted for a race.
- * Creates FOMO / social pressure to encourage predictions.
+ * Broadcast Premium: pk-emerald live dot, pk-titane text, font-data.
  */
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -23,18 +23,19 @@ export default function SocialProofBadge({ raceId }: SocialProofBadgeProps) {
 
   return (
     <motion.div
-      className="flex items-center gap-1.5 text-xs font-body text-gray-400"
+      className="flex items-center gap-1.5 text-xs text-pk-titane"
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
       <span className="relative flex h-2 w-2">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+        <span className="animate-live-pulse absolute inline-flex h-full w-full rounded-full bg-pk-emerald opacity-75" />
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-pk-emerald" />
       </span>
       <Users className="w-3 h-3" />
       <span>
-        <span className="text-green-400 font-data">{data.count}</span> joueurs ont deja pronostique
+        <span className="text-pk-emerald font-data">{data.count}</span> players have already
+        submitted picks
       </span>
     </motion.div>
   );

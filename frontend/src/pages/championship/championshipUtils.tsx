@@ -1,8 +1,6 @@
 /**
  * Shared utilities for Championship sub-components.
- *
- * Contains team-color mapping (keyed by Ergast constructorId slug),
- * rank styling helpers, and API base URLs.
+ * Broadcast Premium: pk-gold/silver/bronze ranks, team-color mapping.
  */
 import React from "react";
 import { Crown, Medal, Award } from "lucide-react";
@@ -28,24 +26,24 @@ const teamColors = {
 
 export function getTeamColor(constructorId: string | undefined): string {
   const id = constructorId?.toLowerCase().replace(/\s+/g, "_");
-  return (id && teamColors[id as keyof typeof teamColors]) || "#666666";
+  return (id && teamColors[id as keyof typeof teamColors]) || "#5F6673";
 }
 
 // --- Rank helpers -----------------------------------------------------------
 export function getRankStyle(position: string | number): string {
   const pos = parseInt(String(position));
-  if (pos === 1) return "bg-gradient-to-r from-yellow-500/30 to-yellow-600/10 border-yellow-500/50";
-  if (pos === 2) return "bg-gradient-to-r from-gray-400/30 to-gray-500/10 border-gray-400/50";
-  if (pos === 3) return "bg-gradient-to-r from-amber-600/30 to-amber-700/10 border-amber-600/50";
-  return "bg-gray-800/30 border-gray-700/50";
+  if (pos === 1) return "bg-pk-gold/[0.06] border-pk-gold/20";
+  if (pos === 2) return "bg-pk-silver/[0.06] border-pk-silver/20";
+  if (pos === 3) return "bg-pk-bronze/[0.06] border-pk-bronze/20";
+  return "bg-white/[0.02] border-white/[0.08]";
 }
 
 export function getRankIcon(position: string | number): React.ReactNode {
   const pos = parseInt(String(position));
-  if (pos === 1) return <Crown className="w-5 h-5 text-yellow-400" />;
-  if (pos === 2) return <Medal className="w-5 h-5 text-gray-300" />;
-  if (pos === 3) return <Award className="w-5 h-5 text-amber-600" />;
-  return <span className="font-data text-gray-500 w-5 text-center">{pos}</span>;
+  if (pos === 1) return <Crown className="w-5 h-5 text-pk-gold" />;
+  if (pos === 2) return <Medal className="w-5 h-5 text-pk-silver" />;
+  if (pos === 3) return <Award className="w-5 h-5 text-pk-bronze" />;
+  return <span className="font-data text-[0.5625rem] text-pk-titane w-5 text-center">{pos}</span>;
 }
 
 // --- Driver-ID mapping (Ergast → Pronokif internal) -------------------------
@@ -83,6 +81,6 @@ export function formatLapTime(seconds: number | null | undefined): string {
   return mins > 0 ? `${mins}:${secs.padStart(6, "0")}` : secs;
 }
 
-export function isRaceCompleted(race: { date: string }): boolean {
+export function isRaceCompleteed(race: { date: string }): boolean {
   return new Date(race.date) < new Date();
 }

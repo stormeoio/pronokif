@@ -1,7 +1,11 @@
+/**
+ * ComparisonComponents — Shared sub-components for DriverComparison.
+ * Broadcast Premium: pk-surface cards, team-color bars, pk-emerald winners.
+ */
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
-import { TEAM_COLORS } from "@/lib/constants";
+import { haptic } from "@/lib/haptics";
 
 // Map team IDs (snake_case) to team colors
 const teamIdColors: Record<string, string> = {
@@ -20,10 +24,11 @@ const teamIdColors: Record<string, string> = {
 
 export function getTeamColor(teamId: string | undefined): string {
   const id = teamId?.toLowerCase().replace(/\s+/g, "_");
-  return (id && teamIdColors[id]) || "#666666";
+  return (id && teamIdColors[id]) || "#5F6673";
 }
 
-// Driver Card Component
+/* ── Driver Card ──────────────────────────────────────── */
+
 interface DriverCardProps {
   driver: Record<string, any>;
 }
@@ -35,40 +40,46 @@ export function DriverCard({ driver }: DriverCardProps) {
 
   return (
     <motion.div
-      className="card-arcade p-3 cursor-pointer transition-transform"
-      onClick={() => navigate(`/driver/${driver.id}`)}
-      onKeyDown={(e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") navigate(`/driver/${driver.id}`); }}
+      className="bg-pk-surface border border-white/[0.08] rounded-lg p-3 cursor-pointer transition-colors hover:bg-white/[0.03]"
+      onClick={() => {
+        haptic("light");
+        navigate(`/driver/${driver.id}`);
+      }}
+      onKeyDown={(e: React.KeyboardEvent) => {
+        if (e.key === "Enter" || e.key === " ") navigate(`/driver/${driver.id}`);
+      }}
       role="button"
       tabIndex={0}
       aria-label={`Voir la fiche de ${driver.full_name}`}
-      style={{ borderColor: `${teamColor}50` }}
-      whileHover={{ scale: 1.03 }}
+      style={{ borderColor: `${teamColor}30` }}
       whileTap={{ scale: 0.97 }}
     >
       <div className="flex flex-col items-center">
         <div
-          className="w-16 h-16 rounded-full overflow-hidden border-3 mb-2"
-          style={{ borderColor: teamColor, borderWidth: "3px" }}
+          className="w-14 h-14 rounded-full overflow-hidden mb-2"
+          style={{ borderWidth: "2px", borderStyle: "solid", borderColor: teamColor }}
         >
           <img
             src={driver.photo_url}
             alt={driver.full_name}
             className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
           />
         </div>
-        <p className="font-heading text-sm text-white text-center">{driver.first_name}</p>
-        <p className="font-heading text-base text-center" style={{ color: teamColor }}>
+        <p className="font-display text-xs text-center">{driver.first_name}</p>
+        <p className="font-display text-sm text-center" style={{ color: teamColor }}>
           {driver.last_name?.toUpperCase()}
         </p>
-        <p className="font-body text-[10px] text-gray-500 mt-1">{driver.team}</p>
+        <p className="font-data text-[0.5rem] text-pk-titane mt-0.5">{driver.team}</p>
         <div className="flex gap-3 mt-2">
           <div className="text-center">
-            <p className="font-data text-sm text-yellow-400">{f1Stats.world_championships || 0}</p>
-            <p className="font-body text-[8px] text-gray-500">TITRES</p>
+            <p className="font-data text-sm text-pk-gold">{f1Stats.world_championships || 0}</p>
+            <p className="font-data text-[0.4375rem] text-pk-titane uppercase">Titres</p>
           </div>
           <div className="text-center">
-            <p className="font-data text-sm text-white">{f1Stats.wins || 0}</p>
-            <p className="font-body text-[8px] text-gray-500">VICT.</p>
+            <p className="font-data text-sm">{f1Stats.wins || 0}</p>
+            <p className="font-data text-[0.4375rem] text-pk-titane uppercase">Vict.</p>
           </div>
         </div>
       </div>
@@ -76,7 +87,8 @@ export function DriverCard({ driver }: DriverCardProps) {
   );
 }
 
-// Comparison Bar Component
+/* ── Comparison Bar ───────────────────────────────────── */
+
 interface ComparisonBarProps {
   label: string;
   icon: LucideIcon;
@@ -100,20 +112,20 @@ export function ComparisonBar({
   const winner = value1 > value2 ? 1 : value2 > value1 ? 2 : 0;
 
   return (
-    <div>
+    <motion.div variants={{ hidden: { opacity: 0, y: 6 }, visible: { opacity: 1, y: 0 } }}>
       <div className="flex items-center justify-between mb-1">
-        <span className={`font-data text-sm ${winner === 1 ? "text-white" : "text-gray-500"}`}>
+        <span className={`font-data text-sm ${winner === 1 ? "text-pk-piste" : "text-pk-titane"}`}>
           {value1}
         </span>
-        <span className="font-body text-xs text-gray-400 flex items-center gap-1">
+        <span className="font-data text-[0.5625rem] text-pk-titane flex items-center gap-1">
           <Icon className="w-3 h-3" />
           {label}
         </span>
-        <span className={`font-data text-sm ${winner === 2 ? "text-white" : "text-gray-500"}`}>
+        <span className={`font-data text-sm ${winner === 2 ? "text-pk-piste" : "text-pk-titane"}`}>
           {value2}
         </span>
       </div>
-      <div className="flex h-2 rounded-full overflow-hidden bg-gray-800">
+      <div className="flex h-1.5 rounded-full overflow-hidden bg-pk-anthracite">
         <div
           className="h-full transition-all duration-500"
           style={{ width: `${percent1}%`, backgroundColor: color1 }}
@@ -123,11 +135,12 @@ export function ComparisonBar({
           style={{ width: `${percent2}%`, backgroundColor: color2 }}
         />
       </div>
-    </div>
+    </motion.div>
   );
 }
 
-// Efficiency Card Component
+/* ── Efficiency Card ──────────────────────────────────── */
+
 interface EfficiencyCardProps {
   label: string;
   value1: number;
@@ -148,32 +161,37 @@ export function EfficiencyCard({
   const winner = value1 > value2 ? 1 : value2 > value1 ? 2 : 0;
 
   return (
-    <div className="bg-gray-800/30 rounded-lg p-3">
-      <p className="font-body text-[10px] text-gray-500 uppercase mb-2">{label}</p>
+    <div className="bg-pk-anthracite/60 border border-white/[0.06] rounded-lg p-3">
+      <p className="font-data text-[0.5rem] text-pk-titane uppercase tracking-wider mb-2">
+        {label}
+      </p>
       <div className="flex justify-between items-center">
         <div className="text-center">
-          <p className={`font-data text-lg ${winner === 1 ? "text-green-400" : "text-white"}`}>
+          <p className={`font-data text-base ${winner === 1 ? "text-pk-emerald" : ""}`}>
             {value1}
             {suffix}
           </p>
-          <p className="font-body text-[9px] text-gray-500">{driver1.code}</p>
+          <p className="font-data text-[0.4375rem] text-pk-titane">{driver1.code}</p>
         </div>
-        <div className="text-gray-600 font-body text-xs">VS</div>
+        <div className="font-data text-[0.5rem] text-pk-titane">VS</div>
         <div className="text-center">
-          <p className={`font-data text-lg ${winner === 2 ? "text-green-400" : "text-white"}`}>
+          <p className={`font-data text-base ${winner === 2 ? "text-pk-emerald" : ""}`}>
             {value2}
             {suffix}
           </p>
-          <p className="font-body text-[9px] text-gray-500">{driver2.code}</p>
+          <p className="font-data text-[0.4375rem] text-pk-titane">{driver2.code}</p>
         </div>
       </div>
     </div>
   );
 }
 
-// Generate verdict based on comparison
+/* ── Verdict Generator ────────────────────────────────── */
+
 export function getVerdict(
-  comparison: { stats_comparison: Record<string, { driver1: number; driver2: number; winner: string }> },
+  comparison: {
+    stats_comparison: Record<string, { driver1: number; driver2: number; winner: string }>;
+  },
   d1: { first_name: string; last_name: string },
   d2: { first_name: string; last_name: string },
 ): string {
@@ -187,10 +205,10 @@ export function getVerdict(
   });
 
   if (d1Wins > d2Wins) {
-    return `${d1.first_name} ${d1.last_name} domine dans ${d1Wins} categories sur 7. Son experience et ses statistiques en font le favori dans une confrontation directe.`;
+    return `${d1.first_name} ${d1.last_name} leads in ${d1Wins} categories out of 7. Their experience and stats make them the favorite in a direct matchup.`;
   } else if (d2Wins > d1Wins) {
-    return `${d2.first_name} ${d2.last_name} domine dans ${d2Wins} categories sur 7. Son profil statistique est superieur dans cette comparaison.`;
+    return `${d2.first_name} ${d2.last_name} leads in ${d2Wins} categories out of 7. Their statistical profile is stronger in this comparison.`;
   } else {
-    return `Ces deux pilotes sont tres proches ! Le resultat d'une confrontation directe dependrait du circuit et des conditions du week-end.`;
+    return `These two drivers are very close! The result of a head-to-head would depend on the circuit and weekend conditions.`;
   }
 }

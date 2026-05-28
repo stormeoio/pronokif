@@ -102,12 +102,12 @@ export default function BonusPanel({
       >
         <div className="flex items-center gap-2">
           <Timer size={16} strokeWidth={1.5} className="text-pk-amber" />
-          <span className="text-[0.8125rem]">Meilleur tour</span>
+          <span className="text-[0.8125rem]">Fastest lap</span>
         </div>
         <span className="font-mono text-[0.75rem] text-pk-red">
           {fastestLap
             ? drivers.find((d) => d.id === fastestLap)?.name || "Selectionne"
-            : "Selectionner →"}
+            : "Select →"}
         </span>
       </button>
 
@@ -122,12 +122,12 @@ export default function BonusPanel({
       >
         <div className="flex items-center gap-2">
           <Flag size={16} strokeWidth={1.5} className="text-pk-emerald" />
-          <span className="text-[0.8125rem]">Leader T1</span>
+          <span className="text-[0.8125rem]">Turn 1 leader</span>
         </div>
         <span className="font-mono text-[0.75rem] text-pk-red">
           {firstCorner
             ? drivers.find((d) => d.id === firstCorner)?.name || "Selectionne"
-            : "Selectionner →"}
+            : "Select →"}
         </span>
       </button>
 
@@ -168,7 +168,7 @@ export default function BonusPanel({
                   : "bg-white/[0.03] border border-white/[0.08] text-pk-titane hover:text-pk-piste"
               }`}
           >
-            {dnfDrivers.length > 0 ? `${dnfDrivers.length} pilote(s)` : "Selectionner →"}
+            {dnfDrivers.length > 0 ? `${dnfDrivers.length} driver(s)` : "Select →"}
           </button>
         </div>
       </div>

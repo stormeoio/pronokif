@@ -1,26 +1,33 @@
+/**
+ * Grand Prix Detail — V2 Tabbed (Countdown + tabs).
+ * Broadcast Premium theme.
+ */
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
-  ArrowLeft,
+  ChevronLeft,
   MapPin,
   Calendar,
   Clock,
   Flag,
   Zap,
-  Timer,
-  Route,
-  CornerDownRight,
   Target,
   ChevronRight,
+  Check,
+  Lock,
+  Route,
+  CornerDownRight,
 } from "lucide-react";
-import { Button } from "../components/ui/button";
 import { api } from "@/lib/api";
 import { haptic } from "@/lib/haptics";
-import { getRaceThumbnail } from "@/lib/raceThumbnails";
+import { fadeUp, staggerContainer, easing, duration, getReducedMotionProps } from "@/lib/motion";
+import { EmptyFullPage } from "@/components/EmptyState";
 
-// Circuit layout images (SVG-style track maps from Wikipedia/F1 sources)
-const CIRCUIT_IMAGES = {
+/* ── Circuit track maps ──────────────────────────────────── */
+
+const CIRCUIT_IMAGES: Record<string, string> = {
   "Albert Park":
     "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Albert_Park_Circuit_2021.svg/400px-Albert_Park_Circuit_2021.svg.png",
   Shanghai:
@@ -71,8 +78,9 @@ const CIRCUIT_IMAGES = {
     "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Madrid_Grand_Prix_circuit.svg/400px-Madrid_Grand_Prix_circuit.svg.png",
 };
 
-// Country flag emojis
-const COUNTRY_FLAGS = {
+/* ── Country flags ────────────────────────────────────────── */
+
+const COUNTRY_FLAGS: Record<string, string> = {
   Australia: "🇦🇺",
   China: "🇨🇳",
   Japan: "🇯🇵",
@@ -96,9 +104,173 @@ const COUNTRY_FLAGS = {
   UAE: "🇦🇪",
 };
 
+/* ── Types ─────────────────────────────────────────────────── */
+
+type TabKey = "info" | "programme" | "picks";
+
+const TABS: { key: TabKey; label: string }[] = [
+  { key: "info", label: "Circuit" },
+  { key: "programme", label: "Programme" },
+  { key: "picks", label: "Picks" },
+];
+
+interface ParsedSession {
+  name: string;
+  short_name: string;
+  datetime: string;
+}
+
+/* ── Session colors ──────────────────────────────────────── */
+
+const SESSION_COLOR: Record<string, { bg: string; text: string }> = {
+  FP1: { bg: "bg-pk-titane/20", text: "text-pk-titane" },
+  FP2: { bg: "bg-pk-titane/20", text: "text-pk-titane" },
+  FP3: { bg: "bg-pk-titane/20", text: "text-pk-titane" },
+  SQ: { bg: "bg-pk-amber/20", text: "text-pk-amber" },
+  SPRINT: { bg: "bg-pk-amber/20", text: "text-pk-amber" },
+  QUALI: { bg: "bg-purple-500/20", text: "text-purple-400" },
+  COURSE: { bg: "bg-pk-red/20", text: "text-pk-red" },
+};
+
+/* ── Helpers ──────────────────────────────────────────────── */
+
+function formatDate(isoString: string) {
+  return new Date(isoString).toLocaleDateString("fr-FR", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+}
+
+function formatTime(isoString: string) {
+  return new Date(isoString).toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Paris",
+  });
+}
+
+function isPast(isoString: string) {
+  return new Date(isoString) < new Date();
+}
+
+/** Parse sessions from API response (handles both array and object shapes) */
+function parseSessions(raceDetails: Record<string, unknown>): ParsedSession[] {
+  const rawSessions = raceDetails.sessions;
+
+  if (Array.isArray(rawSessions)) {
+    return rawSessions as ParsedSession[];
+  }
+
+  if (rawSessions && typeof rawSessions === "object") {
+    const labels: Record<string, { name: string; short_name: string }> = {
+      fp1: { name: "Essais Libres 1", short_name: "FP1" },
+      fp2: { name: "Essais Libres 2", short_name: "FP2" },
+      fp3: { name: "Essais Libres 3", short_name: "FP3" },
+      sprint_qualifying: { name: "Qualifications Sprint", short_name: "SQ" },
+      sprint_race: { name: "Sprint", short_name: "SPRINT" },
+      qualifying: { name: "Qualifications", short_name: "QUALI" },
+      race: { name: "Race", short_name: "COURSE" },
+    };
+
+    return Object.entries(rawSessions as Record<string, unknown>)
+      .filter(([, v]) => Boolean(v))
+      .map(([key, session]) => {
+        const s = session as { date?: string; time?: string; datetime?: string };
+        const label = labels[key] ?? { name: key, short_name: key.toUpperCase() };
+        return {
+          ...label,
+          datetime: s.datetime || `${s.date}T${s.time}:00+00:00`,
+        };
+      });
+  }
+
+  return [];
+}
+
+/* ── Countdown Hook ──────────────────────────────────────── */
+
+function useCountdown(targetDate: string | null) {
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    if (!targetDate) return;
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [targetDate]);
+
+  if (!targetDate) return null;
+
+  const diff = new Date(targetDate).getTime() - now;
+  if (diff <= 0) return null;
+
+  return {
+    days: Math.floor(diff / 86_400_000),
+    hours: Math.floor((diff % 86_400_000) / 3_600_000),
+    minutes: Math.floor((diff % 3_600_000) / 60_000),
+    seconds: Math.floor((diff % 60_000) / 1000),
+  };
+}
+
+/* ── Countdown Display ───────────────────────────────────── */
+
+function CountdownUnit({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="text-center">
+      <div className="w-14 h-14 rounded-lg bg-pk-anthracite border border-white/[0.08] flex items-center justify-center font-data text-xl font-bold text-pk-piste">
+        {String(value).padStart(2, "0")}
+      </div>
+      <p className="font-data text-[0.5rem] text-pk-titane mt-1 uppercase">{label}</p>
+    </div>
+  );
+}
+
+/* ── Shimmer Skeleton ─────────────────────────────────────── */
+
+function GrandPrixSkeleton() {
+  return (
+    <div className="min-h-screen bg-pk-carbon">
+      <div className="sticky top-0 z-50 p-4 bg-pk-carbon/85 backdrop-blur-xl border-b border-white/[0.08]">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="h-5 w-5 rounded bg-pk-anthracite animate-shimmer" />
+          <div className="h-5 w-48 rounded bg-pk-anthracite animate-shimmer" />
+        </div>
+        <div className="flex gap-1.5">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-7 flex-1 rounded-full bg-pk-anthracite animate-shimmer"
+              style={{ animationDelay: `${i * 100}ms` }}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="px-4 pt-4 space-y-3 pb-24">
+        <div className="h-20 bg-pk-surface border border-white/[0.08] rounded-lg animate-shimmer" />
+        <div className="grid grid-cols-3 gap-2">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-20 bg-pk-surface border border-white/[0.08] rounded-lg animate-shimmer"
+              style={{ animationDelay: `${i * 80}ms` }}
+            />
+          ))}
+        </div>
+        <div className="h-48 bg-pk-surface border border-white/[0.08] rounded-lg animate-shimmer" />
+      </div>
+    </div>
+  );
+}
+
+/* ── Main Component ───────────────────────────────────────── */
+
 export default function GrandPrixDetailPage() {
   const { raceId } = useParams();
   const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion() ?? false;
+  const rmProps = getReducedMotionProps(prefersReducedMotion);
+
+  const [activeTab, setActiveTab] = useState<TabKey>("info");
 
   const {
     data: raceDetails = null,
@@ -106,413 +278,452 @@ export default function GrandPrixDetailPage() {
     error: queryError,
   } = useQuery({
     queryKey: ["/races", raceId, "details"],
-    // TODO: type this — actual response shape differs from RaceDetails (circuit is object, sessions have datetime)
-    queryFn: () => api.races.details(raceId!) as unknown as Promise<Record<string, any>>,
+    queryFn: () => api.races.details(raceId!) as unknown as Promise<Record<string, unknown>>,
     enabled: !!raceId,
   });
 
-  const error = queryError ? "Impossible de charger les détails du Grand Prix" : null;
+  /* ── Derived data ── */
 
-  const formatDate = (isoString: string) => {
-    const date = new Date(isoString);
-    return date.toLocaleDateString("fr-FR", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    });
-  };
+  const circuitName = useMemo(() => {
+    if (!raceDetails) return "";
+    const c = raceDetails.circuit;
+    return typeof c === "string" ? c : (c as Record<string, string>)?.name || String(c);
+  }, [raceDetails]);
 
-  const formatTime = (isoString: string) => {
-    const date = new Date(isoString);
-    return date.toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "Europe/Paris",
-    });
-  };
+  const circuitFullName = useMemo(() => {
+    if (!raceDetails) return "";
+    return (
+      (raceDetails.circuit as Record<string, string>)?.full_name ||
+      (raceDetails.circuit_full_name as string) ||
+      circuitName
+    );
+  }, [raceDetails, circuitName]);
 
-  const getSessionColor = (shortName: string) => {
-    const colors = {
-      FP1: "from-gray-500 to-gray-600",
-      FP2: "from-gray-500 to-gray-600",
-      FP3: "from-gray-500 to-gray-600",
-      SQ: "from-orange-500 to-orange-600",
-      SPRINT: "from-yellow-500 to-yellow-600",
-      QUALI: "from-purple-500 to-purple-600",
-      COURSE: "from-red-500 to-red-600",
+  const circuitStats = useMemo(() => {
+    if (!raceDetails) return { lengthKm: null, turns: null, laps: null };
+    const c = raceDetails.circuit as Record<string, unknown> | undefined;
+    return {
+      lengthKm: (c?.length_km ?? raceDetails.circuit_length_km) as number | null,
+      turns: (c?.turns ?? raceDetails.circuit_turns) as number | null,
+      laps: (c?.laps ?? raceDetails.circuit_laps) as number | null,
     };
-    return (colors as Record<string, string>)[shortName] || "from-blue-500 to-blue-600";
-  };
+  }, [raceDetails]);
 
-  const isPastSession = (isoString: string) => {
-    return new Date(isoString) < new Date();
-  };
+  const sessions = useMemo(() => {
+    if (!raceDetails) return [];
+    return parseSessions(raceDetails);
+  }, [raceDetails]);
 
-  if (loading) {
+  const nextSession = useMemo(() => {
+    return sessions.find((s) => !isPast(s.datetime)) || null;
+  }, [sessions]);
+
+  const countdown = useCountdown(nextSession?.datetime || null);
+
+  const countryFlag = raceDetails ? COUNTRY_FLAGS[raceDetails.country as string] || "🏁" : "🏁";
+
+  const circuitImage = CIRCUIT_IMAGES[circuitName];
+
+  const isFinished = raceDetails?.status === "finished";
+  const isUpcoming = raceDetails?.status === "upcoming";
+  const canPredict = (raceDetails?.can_predict as boolean) || false;
+
+  /* ── Loading ── */
+
+  if (loading) return <GrandPrixSkeleton />;
+
+  /* ── Error ── */
+
+  if (queryError || !raceDetails) {
     return (
-      <div className="min-h-screen bg-app-main p-4 pt-6">
-        <div className="max-w-2xl mx-auto space-y-4">
-          <div className="h-12 skeleton-arcade rounded-xl w-32" />
-          <div className="h-64 skeleton-arcade rounded-xl" />
-          <div className="h-48 skeleton-arcade rounded-xl" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !raceDetails) {
-    return (
-      <div className="min-h-screen bg-app-main p-4 pt-6">
-        <div className="max-w-2xl mx-auto">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-cyan-400 mb-4"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Retour
-          </button>
-          <div className="card-arcade p-6 text-center">
-            <p className="text-red-400">{error || "Grand Prix non trouvé"}</p>
+      <div className="min-h-screen bg-pk-carbon pb-24">
+        <header className="sticky top-0 z-50 bg-pk-carbon/85 backdrop-blur-xl saturate-[1.3] border-b border-white/[0.08]">
+          <div className="px-4 py-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-1.5 -ml-1.5 rounded-lg text-pk-titane hover:text-pk-piste transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
           </div>
-        </div>
+        </header>
+        <EmptyFullPage
+          Icon={Flag}
+          title="Grand Prix introuvable"
+          description={queryError ? "Unable to load details" : "This Grand Prix does not exist"}
+          actionLabel="Back"
+          onAction={() => navigate(-1)}
+        />
       </div>
     );
   }
-
-  const circuitName =
-    typeof raceDetails.circuit === "string"
-      ? raceDetails.circuit
-      : raceDetails.circuit?.name || raceDetails.circuit;
-  const circuitFullName =
-    raceDetails.circuit?.full_name || raceDetails.circuit_full_name || circuitName;
-  const circuitLengthKm = raceDetails.circuit?.length_km ?? raceDetails.circuit_length_km;
-  const circuitTurns = raceDetails.circuit?.turns ?? raceDetails.circuit_turns;
-  const circuitLaps = raceDetails.circuit?.laps ?? raceDetails.circuit_laps;
-  const raceSessions = Array.isArray(raceDetails.sessions)
-    ? raceDetails.sessions
-    : Object.entries(raceDetails.sessions ?? {})
-        .filter(([, session]) => Boolean(session))
-        .map(([key, session]) => {
-          const typedSession = session as { date?: string; time?: string; datetime?: string };
-          const labels: Record<string, { name: string; short_name: string }> = {
-            fp1: { name: "Essais Libres 1", short_name: "FP1" },
-            fp2: { name: "Essais Libres 2", short_name: "FP2" },
-            fp3: { name: "Essais Libres 3", short_name: "FP3" },
-            sprint_qualifying: { name: "Qualifications Sprint", short_name: "SQ" },
-            sprint_race: { name: "Sprint", short_name: "SPRINT" },
-            qualifying: { name: "Qualifications", short_name: "QUALI" },
-            race: { name: "Course", short_name: "COURSE" },
-          };
-          const label = labels[key] ?? { name: key, short_name: key.toUpperCase() };
-
-          return {
-            ...label,
-            date: typedSession.date,
-            time: typedSession.time,
-            datetime: typedSession.datetime || `${typedSession.date}T${typedSession.time}:00+00:00`,
-          };
-        });
-  const circuitImage = (CIRCUIT_IMAGES as Record<string, string>)[circuitName];
-  const countryFlag = (COUNTRY_FLAGS as Record<string, string>)[raceDetails.country] || "🏁";
-  const raceThumbnail = getRaceThumbnail({
-    id: raceDetails.id || raceId,
-    name: raceDetails.name,
-    circuit: circuitName,
-  });
 
   return (
-    <div className="min-h-screen bg-app-main pb-24" data-testid="grandprix-detail-page">
-      {/* Header with back button */}
-      <div className="bg-gradient-to-b from-[#0a1628] to-transparent p-4">
-        <div className="max-w-2xl mx-auto">
-          <motion.button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors"
-            data-testid="back-btn"
-            whileHover={{ x: -3 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-body text-sm">Retour</span>
-          </motion.button>
-        </div>
-      </div>
-
-      <motion.div
-        className="max-w-2xl mx-auto px-4 space-y-4"
-        initial="hidden"
-        animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.12 } }, hidden: {} }}
-      >
-        {/* Race Header Card */}
-        <motion.div
-          className="card-arcade overflow-hidden glass-card"
-          variants={{
-            hidden: { opacity: 0, y: 25, scale: 0.97 },
-            visible: { opacity: 1, y: 0, scale: 1 },
-          }}
-          transition={{ type: "spring", stiffness: 200, damping: 20 }}
-        >
-          {raceThumbnail && (
-            <div className="relative aspect-[16/9] overflow-hidden border-b border-white/[0.08]">
-              <img
-                src={raceThumbnail}
-                alt={`Vignette ${raceDetails.name}`}
-                className="h-full w-full object-cover"
-                loading="eager"
-                decoding="async"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0a1220]/85 via-transparent to-transparent" />
-            </div>
-          )}
-
-          {/* Title Section */}
-          <div className="p-4 border-b border-blue-500/30 bg-gradient-to-r from-blue-900/30 to-transparent">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="font-body text-xs text-cyan-400 uppercase tracking-widest mb-1">
-                  Grand Prix
-                </p>
-                <h1 className="font-heading text-2xl text-white uppercase tracking-tight">
-                  {raceDetails.name.replace(" Grand Prix", "")}
-                </h1>
-                <div className="flex items-center gap-3 mt-2">
-                  <motion.span
-                    className="text-2xl"
-                    initial={{ scale: 0, rotate: -20 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{ type: "spring", stiffness: 300, delay: 0.3 }}
-                  >
-                    {countryFlag}
-                  </motion.span>
-                  <span className="font-body text-sm text-gray-300">{raceDetails.country}</span>
-                </div>
-              </div>
-              {raceDetails.is_sprint_weekend && (
-                <motion.div
-                  className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-yellow-900 font-heading text-xs px-3 py-1 rounded-full shadow"
-                  initial={{ scale: 0, rotate: 10 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: "spring", stiffness: 400, delay: 0.4 }}
-                >
-                  SPRINT
-                </motion.div>
-              )}
-            </div>
-          </div>
-
-          {/* Circuit Layout Image */}
-          <div className="p-4 bg-gradient-to-b from-[#0c1525] to-[#0a1220]">
-            <motion.div
-              className="relative rounded-xl overflow-hidden bg-white/5 border border-white/10"
-              whileHover={{ scale: 1.02 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              {circuitImage ? (
-                <img
-                  src={circuitImage}
-                  alt={`Circuit ${circuitFullName}`}
-                  className="w-full h-48 object-contain p-4 filter invert opacity-90"
-                  data-testid="circuit-image"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                    const placeholder = (e.target as HTMLImageElement).parentElement?.querySelector(
-                      ".circuit-placeholder",
-                    ) as HTMLElement | null;
-                    if (placeholder) placeholder.style.display = "flex";
-                  }}
-                />
-              ) : null}
-              <div
-                className={`circuit-placeholder w-full h-48 flex-col items-center justify-center ${circuitImage ? "hidden" : "flex"}`}
-                style={{ display: circuitImage ? "none" : "flex" }}
+    <div className="min-h-screen bg-pk-carbon pb-24" data-testid="grandprix-detail-page">
+      {/* ── Glass Header ── */}
+      <header className="sticky top-0 z-50 bg-pk-carbon/85 backdrop-blur-xl saturate-[1.3] border-b border-white/[0.08]">
+        <div className="px-4 pt-3 pb-0">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate(-1)}
+                className="p-1.5 -ml-1.5 rounded-lg text-pk-titane hover:text-pk-piste transition-colors"
+                data-testid="back-btn"
               >
-                <Route className="w-16 h-16 text-cyan-500/50 mb-2" />
-                <p className="text-gray-400 text-sm font-body">{circuitName}</p>
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-lg flex-shrink-0">{countryFlag}</span>
+                <h1 className="font-display text-lg truncate">
+                  {(raceDetails.name as string).replace(" Grand Prix", "")}
+                </h1>
               </div>
-              {/* Circuit Name Overlay */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#0c1525] to-transparent p-3">
-                <p
-                  className="font-heading text-lg text-white text-center"
-                  data-testid="circuit-name"
-                >
-                  {circuitFullName}
-                </p>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Circuit Stats */}
-          <motion.div
-            className="grid grid-cols-3 gap-2 p-4 bg-[#0a1220]"
-            initial="hidden"
-            animate="visible"
-            variants={{ visible: { transition: { staggerChildren: 0.08 } }, hidden: {} }}
-          >
-            <motion.div
-              className="text-center p-3 rounded-lg bg-white/5 border border-white/10"
-              variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}
-              whileHover={{ scale: 1.05, borderColor: "rgba(34,211,238,0.3)" }}
-            >
-              <Route className="w-5 h-5 text-cyan-400 mx-auto mb-1" />
-              <p className="font-data text-lg text-white" data-testid="circuit-length">
-                {circuitLengthKm?.toFixed(3) || "N/A"}
-              </p>
-              <p className="font-body text-[10px] text-gray-500 uppercase tracking-wider">km</p>
-            </motion.div>
-            <motion.div
-              className="text-center p-3 rounded-lg bg-white/5 border border-white/10"
-              variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}
-              whileHover={{ scale: 1.05, borderColor: "rgba(234,179,8,0.3)" }}
-            >
-              <CornerDownRight className="w-5 h-5 text-yellow-400 mx-auto mb-1" />
-              <p className="font-data text-lg text-white" data-testid="circuit-turns">
-                {circuitTurns || "N/A"}
-              </p>
-              <p className="font-body text-[10px] text-gray-500 uppercase tracking-wider">
-                virages
-              </p>
-            </motion.div>
-            <motion.div
-              className="text-center p-3 rounded-lg bg-white/5 border border-white/10"
-              variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}
-              whileHover={{ scale: 1.05, borderColor: "rgba(239,68,68,0.3)" }}
-            >
-              <Flag className="w-5 h-5 text-red-400 mx-auto mb-1" />
-              <p className="font-data text-lg text-white" data-testid="circuit-laps">
-                {circuitLaps || "N/A"}
-              </p>
-              <p className="font-body text-[10px] text-gray-500 uppercase tracking-wider">tours</p>
-            </motion.div>
-          </motion.div>
-
-          <div className="h-2 bg-kerb-stripe" />
-        </motion.div>
-
-        {/* Sessions Schedule Card */}
-        <motion.div
-          className="card-arcade overflow-hidden glass-card"
-          variants={{ hidden: { opacity: 0, y: 25 }, visible: { opacity: 1, y: 0 } }}
-          transition={{ type: "spring", stiffness: 200, damping: 20 }}
-        >
-          <div className="p-4 border-b border-blue-500/30 bg-gradient-to-r from-purple-900/20 to-transparent">
-            <h2 className="font-heading text-lg text-white uppercase flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-purple-400" />
-              Programme du Week-end
-            </h2>
-          </div>
-
-          <motion.div
-            className="p-4 space-y-2"
-            initial="hidden"
-            animate="visible"
-            variants={{ visible: { transition: { staggerChildren: 0.06 } }, hidden: {} }}
-          >
-            {raceSessions.map(
-              (
-                session: {
-                  name: string;
-                  short_name: string;
-                  date: string;
-                  time: string;
-                  datetime: string;
-                },
-                index: number,
-              ) => {
-                const isPast = isPastSession(session.datetime);
-                return (
-                  <motion.div
-                    key={index}
-                    className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
-                      isPast ? "bg-white/5 opacity-60" : "bg-white/10 border border-white/10"
-                    }`}
-                    data-testid={`session-${session.short_name.toLowerCase()}`}
-                    variants={{ hidden: { opacity: 0, x: -15 }, visible: { opacity: 1, x: 0 } }}
-                    whileHover={
-                      !isPast ? { x: 4, backgroundColor: "rgba(255,255,255,0.08)" } : undefined
-                    }
-                  >
-                    {/* Session Badge */}
-                    <div
-                      className={`w-16 h-12 rounded-lg bg-gradient-to-br ${getSessionColor(session.short_name)} flex items-center justify-center shadow-lg`}
-                    >
-                      <span className="font-heading text-xs text-white">{session.short_name}</span>
-                    </div>
-
-                    {/* Session Info */}
-                    <div className="flex-1">
-                      <p className={`font-body text-sm ${isPast ? "text-gray-500" : "text-white"}`}>
-                        {session.name}
-                      </p>
-                      <p
-                        className={`font-body text-xs ${isPast ? "text-gray-600" : "text-gray-400"}`}
-                      >
-                        {formatDate(session.datetime)}
-                      </p>
-                    </div>
-
-                    {/* Time */}
-                    <div className="text-right">
-                      <p
-                        className={`font-data text-lg ${isPast ? "text-gray-500" : "text-cyan-400"}`}
-                      >
-                        {formatTime(session.datetime)}
-                      </p>
-                      <p className="font-body text-[10px] text-gray-500 uppercase">heure FR</p>
-                    </div>
-                  </motion.div>
-                );
-              },
+            </div>
+            {Boolean(raceDetails.is_sprint_weekend) && (
+              <span className="font-data text-[0.4375rem] px-1.5 py-0.5 rounded bg-pk-amber/20 text-pk-amber uppercase flex-shrink-0">
+                Sprint
+              </span>
             )}
-          </motion.div>
+          </div>
 
-          <div className="h-2 bg-kerb-stripe" />
-        </motion.div>
-
-        {/* Predictions CTA */}
-        {raceDetails.status === "upcoming" && (
-          <motion.div
-            className="card-arcade p-4 glass-card"
-            variants={{
-              hidden: { opacity: 0, y: 20, scale: 0.95 },
-              visible: { opacity: 1, y: 0, scale: 1 },
-            }}
-          >
-            <motion.div whileTap={{ scale: 0.96 }} whileHover={{ scale: 1.02 }}>
-              <Button
+          {/* Tabs */}
+          <div className="flex gap-1.5">
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
                 onClick={() => {
                   haptic("selection");
-                  navigate(`/predictions/${raceId}`);
+                  setActiveTab(tab.key);
                 }}
-                className="btn-racing w-full h-14 text-lg animate-neon relative overflow-hidden group"
-                data-testid="make-predictions-cta"
+                className={`flex-1 py-1.5 rounded-full text-center font-data text-[0.5625rem] border transition-colors ${
+                  activeTab === tab.key
+                    ? "bg-pk-red-subtle border-pk-red/30 text-pk-red"
+                    : "bg-white/[0.04] border-white/[0.08] text-pk-titane"
+                }`}
+                data-testid={`gp-tab-${tab.key}`}
               >
-                <span className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12" />
-                <Target className="w-5 h-5 mr-2" />
-                FAIRE MES PRONOS
-              </Button>
-            </motion.div>
-          </motion.div>
-        )}
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
 
-        {raceDetails.status === "finished" && (
-          <motion.div
-            className="card-arcade p-4 glass-card"
-            variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-          >
-            <motion.div whileTap={{ scale: 0.96 }} whileHover={{ scale: 1.02 }}>
-              <Button
-                onClick={() => navigate(`/results/${raceId}`)}
-                className="btn-gold w-full h-12"
-                data-testid="view-results-cta"
+      {/* ── Content ── */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          className="px-4 pt-3"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          exit={{ opacity: 0, transition: { duration: 0.1 } }}
+          {...rmProps}
+        >
+          {/* ════════════════ INFO TAB ════════════════ */}
+          {activeTab === "info" && (
+            <>
+              {/* Countdown or status banner */}
+              {countdown && nextSession ? (
+                <motion.div
+                  variants={fadeUp}
+                  className="bg-pk-surface border border-white/[0.08] rounded-lg p-4 mb-3"
+                >
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <span className="w-1.5 h-1.5 rounded-full bg-pk-red animate-live-pulse" />
+                    <span className="font-data text-[0.5625rem] text-pk-red uppercase tracking-wider">
+                      {nextSession.name} in
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    {countdown.days > 0 && (
+                      <>
+                        <CountdownUnit value={countdown.days} label="jours" />
+                        <span className="font-data text-lg text-pk-titane self-start mt-3">:</span>
+                      </>
+                    )}
+                    <CountdownUnit value={countdown.hours} label="heures" />
+                    <span className="font-data text-lg text-pk-titane self-start mt-3">:</span>
+                    <CountdownUnit value={countdown.minutes} label="min" />
+                    <span className="font-data text-lg text-pk-titane self-start mt-3">:</span>
+                    <CountdownUnit value={countdown.seconds} label="sec" />
+                  </div>
+                </motion.div>
+              ) : isFinished ? (
+                <motion.div
+                  variants={fadeUp}
+                  className="flex items-center gap-2.5 p-3.5 bg-pk-surface border border-white/[0.08] rounded-lg mb-3"
+                >
+                  <div className="w-8 h-8 rounded-md bg-pk-anthracite flex items-center justify-center">
+                    <Check className="w-4 h-4 text-pk-titane" />
+                  </div>
+                  <p className="text-[0.8125rem] text-pk-titane">Race finished</p>
+                </motion.div>
+              ) : null}
+
+              {/* Circuit map */}
+              <motion.div
+                variants={fadeUp}
+                className="bg-pk-surface border border-white/[0.08] rounded-lg overflow-hidden mb-3"
               >
-                Voir les résultats
-                <ChevronRight className="w-5 h-5 ml-2" />
-              </Button>
-            </motion.div>
-          </motion.div>
-        )}
-      </motion.div>
+                <div className="relative h-44 bg-pk-anthracite flex items-center justify-center">
+                  {circuitImage ? (
+                    <img
+                      src={circuitImage}
+                      alt={`Circuit ${circuitFullName}`}
+                      className="w-full h-full object-contain p-6 filter invert opacity-80"
+                      data-testid="circuit-image"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <Route className="w-12 h-12 text-pk-titane/40 mb-2" />
+                      <p className="text-xs text-pk-titane">{circuitName}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-3.5">
+                  <p className="font-bold text-[0.8125rem]" data-testid="circuit-name">
+                    {circuitFullName}
+                  </p>
+                  <p className="text-[0.625rem] text-pk-titane flex items-center gap-1 mt-0.5">
+                    <MapPin className="w-3 h-3" />
+                    {raceDetails.country as string}
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Circuit stats grid */}
+              <motion.div variants={fadeUp} className="grid grid-cols-3 gap-2 mb-3">
+                <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-3 text-center">
+                  <Route className="w-4 h-4 text-pk-info mx-auto mb-1.5" />
+                  <p className="font-data text-base font-bold" data-testid="circuit-length">
+                    {circuitStats.lengthKm?.toFixed(3) || "—"}
+                  </p>
+                  <p className="font-data text-[0.5rem] text-pk-titane uppercase">km</p>
+                </div>
+                <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-3 text-center">
+                  <CornerDownRight className="w-4 h-4 text-pk-amber mx-auto mb-1.5" />
+                  <p className="font-data text-base font-bold" data-testid="circuit-turns">
+                    {circuitStats.turns || "—"}
+                  </p>
+                  <p className="font-data text-[0.5rem] text-pk-titane uppercase">virages</p>
+                </div>
+                <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-3 text-center">
+                  <Flag className="w-4 h-4 text-pk-red mx-auto mb-1.5" />
+                  <p className="font-data text-base font-bold" data-testid="circuit-laps">
+                    {circuitStats.laps || "—"}
+                  </p>
+                  <p className="font-data text-[0.5rem] text-pk-titane uppercase">tours</p>
+                </div>
+              </motion.div>
+
+              {/* Race info card */}
+              <motion.div
+                variants={fadeUp}
+                className="bg-pk-surface border border-white/[0.08] rounded-lg p-3.5"
+              >
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <Calendar className="w-3.5 h-3.5 text-pk-titane flex-shrink-0" />
+                    <span className="text-[0.8125rem] text-pk-piste">
+                      {new Date(raceDetails.date as string).toLocaleDateString("fr-FR", {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                  {Boolean(raceDetails.predictions_close_at) && (
+                    <div className="flex items-center gap-2.5">
+                      <Clock className="w-3.5 h-3.5 text-pk-titane flex-shrink-0" />
+                      <span className="text-[0.8125rem] text-pk-piste">
+                        Picks deadline :{" "}
+                        <span className="text-pk-red">
+                          {formatTime(raceDetails.predictions_close_at as string)}
+                        </span>
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </>
+          )}
+
+          {/* ════════════════ PROGRAMME TAB ════════════════ */}
+          {activeTab === "programme" && (
+            <>
+              {sessions.length === 0 ? (
+                <EmptyFullPage
+                  Icon={Calendar}
+                  title="Programme indisponible"
+                  description="Les horaires de ce Grand Prix ne sont pas encore connus."
+                />
+              ) : (
+                <motion.div
+                  className="space-y-1.5"
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  {sessions.map((session, index) => {
+                    const past = isPast(session.datetime);
+                    const isNext = nextSession?.datetime === session.datetime;
+                    const color = SESSION_COLOR[session.short_name] || SESSION_COLOR.FP1;
+
+                    return (
+                      <motion.div
+                        key={index}
+                        variants={fadeUp}
+                        className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+                          past
+                            ? "bg-pk-surface/50 border border-white/[0.04] opacity-50"
+                            : isNext
+                              ? "bg-pk-surface border border-pk-red/25 shadow-glow-red"
+                              : "bg-pk-surface border border-white/[0.08]"
+                        }`}
+                        data-testid={`session-${session.short_name.toLowerCase()}`}
+                      >
+                        {/* Session badge */}
+                        <div
+                          className={`w-14 h-10 rounded-md ${color.bg} flex items-center justify-center flex-shrink-0`}
+                        >
+                          <span className={`font-data text-[0.625rem] font-bold ${color.text}`}>
+                            {session.short_name}
+                          </span>
+                        </div>
+
+                        {/* Session info */}
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className={`text-[0.8125rem] font-semibold ${past ? "text-pk-titane" : "text-pk-piste"}`}
+                          >
+                            {session.name}
+                          </p>
+                          <p className="text-[0.625rem] text-pk-titane">
+                            {formatDate(session.datetime)}
+                          </p>
+                        </div>
+
+                        {/* Time */}
+                        <div className="text-right flex-shrink-0">
+                          <p
+                            className={`font-data text-[0.9375rem] font-bold ${
+                              past ? "text-pk-titane" : isNext ? "text-pk-red" : "text-pk-piste"
+                            }`}
+                          >
+                            {formatTime(session.datetime)}
+                          </p>
+                          <p className="font-data text-[0.4375rem] text-pk-titane uppercase">
+                            heure fr
+                          </p>
+                        </div>
+
+                        {/* Status indicator */}
+                        {past && <Check className="w-3.5 h-3.5 text-pk-titane flex-shrink-0" />}
+                        {isNext && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-pk-red animate-live-pulse flex-shrink-0" />
+                        )}
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </>
+          )}
+
+          {/* ════════════════ PRONOS TAB ════════════════ */}
+          {activeTab === "picks" && (
+            <>
+              {isUpcoming && canPredict ? (
+                <motion.div variants={fadeUp} className="space-y-3">
+                  {/* Prediction timer */}
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-pk-red-subtle border border-pk-red/[0.12]">
+                    <motion.div
+                      animate={prefersReducedMotion ? {} : { scale: [1, 1.15, 1] }}
+                      transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                    >
+                      <Clock className="w-3.5 h-3.5 text-pk-red" />
+                    </motion.div>
+                    <span className="text-[0.8125rem] text-pk-piste">
+                      Closes 15 min before {raceDetails.is_sprint_weekend ? "SQ1" : "Q1"}
+                    </span>
+                  </div>
+
+                  {/* CTA button */}
+                  <button
+                    onClick={() => {
+                      haptic("medium");
+                      navigate(`/predictions/${raceId}`);
+                    }}
+                    className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm flex items-center justify-center gap-2 shadow-glow-red active:scale-[0.97] transition-transform"
+                    data-testid="make-predictions-cta"
+                  >
+                    <Target className="w-4 h-4" />
+                    Make my picks
+                  </button>
+
+                  {Boolean(raceDetails.is_sprint_weekend) &&
+                    Boolean(raceDetails.can_predict_sprint) && (
+                      <button
+                        onClick={() => {
+                          haptic("medium");
+                          navigate(`/predictions/${raceId}?tab=sprint`);
+                        }}
+                        className="w-full h-11 rounded-lg bg-pk-amber/[0.12] border border-pk-amber/25 text-pk-amber font-display text-sm flex items-center justify-center gap-2 active:scale-[0.97] transition-transform"
+                        data-testid="make-sprint-predictions-cta"
+                      >
+                        <Zap className="w-4 h-4" />
+                        Picks Sprint
+                      </button>
+                    )}
+                </motion.div>
+              ) : isUpcoming && !canPredict ? (
+                <motion.div variants={fadeUp} className="text-center py-12">
+                  <div className="w-14 h-14 rounded-full bg-pk-anthracite flex items-center justify-center mx-auto mb-3">
+                    <Lock className="w-6 h-6 text-pk-titane" />
+                  </div>
+                  <p className="font-display text-sm text-pk-titane mb-1">Picks non disponibles</p>
+                  <p className="text-xs text-pk-titane/60">
+                    Predictions will open soon for this Grand Prix.
+                  </p>
+                </motion.div>
+              ) : isFinished ? (
+                <motion.div variants={fadeUp} className="space-y-3">
+                  <div className="flex items-center gap-2.5 p-3.5 bg-pk-surface border border-white/[0.08] rounded-lg">
+                    <div className="w-8 h-8 rounded-md bg-pk-emerald/[0.12] border border-pk-emerald/25 flex items-center justify-center">
+                      <Check className="w-4 h-4 text-pk-emerald" />
+                    </div>
+                    <p className="text-[0.8125rem] text-pk-piste">Race finished</p>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      haptic("selection");
+                      navigate(`/results/${raceId}`);
+                    }}
+                    className="w-full h-11 rounded-lg bg-pk-surface border border-white/[0.08] text-pk-piste font-display text-sm flex items-center justify-center gap-2 active:scale-[0.97] transition-transform"
+                    data-testid="view-results-cta"
+                  >
+                    View results
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </motion.div>
+              ) : (
+                <EmptyFullPage
+                  Icon={Target}
+                  title="Picks indisponibles"
+                  description="Predictions are not open yet for this Grand Prix."
+                />
+              )}
+            </>
+          )}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

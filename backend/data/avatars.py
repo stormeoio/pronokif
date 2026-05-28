@@ -30,7 +30,7 @@ TEAM_AVATARS = [
     {"id": "team_redbull", "name": "Taureau Bleu", "category": "teams", "colors": ["#3671C6", "#1E3A6E"], "team": "Red Bull Racing"},
     {"id": "team_ferrari", "name": "Cavallino", "category": "teams", "colors": ["#F91536", "#7B0A1A"], "team": "Ferrari"},
     {"id": "team_mclaren", "name": "Papaye", "category": "teams", "colors": ["#FF8000", "#47C7FC"], "team": "McLaren"},
-    {"id": "team_mercedes", "name": "Flèches d'Argent", "category": "teams", "colors": ["#27F4D2", "#000000"], "team": "Mercedes"},
+    {"id": "team_mercedes", "name": "Silver Arrows", "category": "teams", "colors": ["#27F4D2", "#000000"], "team": "Mercedes"},
     {"id": "team_astonmartin", "name": "Racing Green", "category": "teams", "colors": ["#229971", "#0D3B2D"], "team": "Aston Martin"},
     {"id": "team_alpine", "name": "Bleu Alpine", "category": "teams", "colors": ["#0093CC", "#FF69B4"], "team": "Alpine"},
     {"id": "team_williams", "name": "Grove Blue", "category": "teams", "colors": ["#64C4FF", "#00205B"], "team": "Williams"},

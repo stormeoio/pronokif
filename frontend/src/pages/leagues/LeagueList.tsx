@@ -1,9 +1,15 @@
+/**
+ * LeagueList — Broadcast Premium league cards.
+ * Shows user's leagues with active highlight, actions, and unread badges.
+ */
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Users, Copy, Share2, Check, MessageCircle, ChevronRight, Star } from "lucide-react";
-import { Button } from "../../components/ui/button";
+import { motion, useReducedMotion } from "framer-motion";
+import { Users, Copy, Share2, Check, MessageCircle, ChevronRight, Crown } from "lucide-react";
+import { haptic } from "@/lib/haptics";
+import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
+import { EmptyInline } from "@/components/EmptyState";
 
-// ------------------------------------------------------------------ types ---
+/* ── Types ─────────────────────────────────────────────── */
 
 export interface LeagueMember {
   id: string | number;
@@ -29,12 +35,39 @@ export interface LeagueListProps {
   onSelectLeague: (id: string | number) => void;
 }
 
-// ----------------------------------------------------------- component ---
+/* ── Skeleton ──────────────────────────────────────────── */
+
+function LeagueListSkeleton() {
+  return (
+    <div className="space-y-2 mb-5">
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="bg-pk-surface border border-white/[0.08] rounded-lg p-4 animate-shimmer"
+          style={{ animationDelay: `${i * 100}ms` }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-pk-anthracite" />
+            <div className="flex-1 space-y-1.5">
+              <div className="h-3.5 w-28 rounded bg-pk-anthracite" />
+              <div className="h-2.5 w-20 rounded bg-pk-anthracite" />
+            </div>
+            <div className="flex gap-1.5">
+              <div className="w-8 h-8 rounded-md bg-pk-anthracite" />
+              <div className="w-8 h-8 rounded-md bg-pk-anthracite" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Component ─────────────────────────────────────────── */
 
 export default function LeagueList({
   leagues,
   loading,
-  userId,
   currentLeagueId,
   copied,
   unreadByLeague,
@@ -43,139 +76,149 @@ export default function LeagueList({
   onSelectLeague,
 }: LeagueListProps) {
   const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion() ?? false;
+  const rmProps = getReducedMotionProps(prefersReducedMotion);
 
-  if (loading) {
-    return (
-      <div className="card-arcade p-8 text-center mb-6">
-        <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto" />
-      </div>
-    );
-  }
+  if (loading) return <LeagueListSkeleton />;
 
   if (leagues.length === 0) {
     return (
-      <div className="card-arcade p-6 text-center mb-6">
-        <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-        <p className="font-body text-gray-400">Tu n'as pas encore de ligue</p>
-        <p className="font-body text-gray-500 text-sm">Cree ou rejoins une ligue ci-dessous</p>
+      <div className="mb-5" data-testid="league-list-empty">
+        <EmptyInline icon="🏆" title="No league" description="Create or join a league ci-dessous" />
       </div>
     );
   }
 
   return (
     <motion.div
-      className="space-y-3 mb-6"
+      className="space-y-2 mb-5"
+      variants={staggerContainer}
       initial="hidden"
       animate="visible"
-      variants={{ visible: { transition: { staggerChildren: 0.06 } }, hidden: {} }}
+      data-testid="league-list"
+      {...rmProps}
     >
       {leagues.map((league) => {
         const isActive = currentLeagueId === league.id;
         const unreadCount = unreadByLeague[league.id] ?? 0;
+
         return (
           <motion.div
-            key={league.id as string}
-            className={`card-arcade p-4 transition-all ${
-              isActive ? "border-2 border-yellow-500 bg-yellow-500/10" : "hover:border-cyan-500/50"
+            key={String(league.id)}
+            variants={fadeUp}
+            className={`bg-pk-surface border rounded-lg p-4 transition-colors ${
+              isActive
+                ? "border-pk-red/30 bg-pk-red-subtle"
+                : "border-white/[0.08] hover:border-white/[0.14]"
             }`}
-            variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}
-            whileHover={{ scale: 1.01 }}
+            data-testid={`league-card-${league.id}`}
           >
             <div className="flex items-center justify-between">
+              {/* Left: icon + info */}
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    isActive ? "bg-gradient-to-br from-yellow-500 to-yellow-700" : "bg-gray-800"
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    isActive
+                      ? "bg-pk-red/[0.15] border border-pk-red/25"
+                      : "bg-white/[0.04] border border-white/[0.08]"
                   }`}
                 >
                   {isActive ? (
-                    <Star className="w-5 h-5 text-white" />
+                    <Crown className="w-4.5 h-4.5 text-pk-red" />
                   ) : (
-                    <Users className="w-5 h-5 text-gray-400" />
+                    <Users className="w-4.5 h-4.5 text-pk-titane" />
                   )}
                 </div>
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-heading text-white text-sm truncate">{league.name}</h3>
+                    <h3 className="font-display text-sm truncate">{league.name}</h3>
                     {isActive && (
-                      <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded font-heading">
-                        ACTIVE
+                      <span className="font-data text-[0.5rem] bg-pk-red/20 text-pk-red px-1.5 py-0.5 rounded uppercase tracking-wider">
+                        Active
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-gray-500">
-                    <span className="flex items-center gap-1">
+                  <div className="flex items-center gap-3 mt-0.5">
+                    <span className="flex items-center gap-1 font-data text-[0.5625rem] text-pk-titane">
                       <Users className="w-3 h-3" />
                       {league.members?.length ?? 0}
                     </span>
-                    <span className="font-data">{league.code}</span>
+                    <span className="font-data text-[0.5625rem] text-pk-titane">{league.code}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
+              {/* Right: actions */}
+              <div className="flex items-center gap-1">
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    haptic("light");
                     onShareLeague(league);
                   }}
-                  className="text-green-400 hover:text-green-300 hover:bg-green-500/10 h-8 w-8"
-                  title="Partager"
+                  className="w-8 h-8 rounded-md flex items-center justify-center text-pk-emerald hover:bg-pk-emerald/[0.08] transition-colors"
+                  title="Share"
+                  data-testid={`league-share-${league.id}`}
                 >
-                  <Share2 className="w-4 h-4" />
-                </Button>
+                  <Share2 className="w-3.5 h-3.5" />
+                </button>
 
-                <Button
-                  variant="ghost"
-                  size="icon"
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    haptic("light");
                     onCopyCode(league.code);
                   }}
-                  className="text-gray-500 hover:text-white hover:bg-white/10 h-8 w-8"
+                  className="w-8 h-8 rounded-md flex items-center justify-center text-pk-titane hover:bg-white/[0.06] transition-colors"
+                  data-testid={`league-copy-${league.id}`}
                 >
                   {copied === league.code ? (
-                    <Check className="w-4 h-4 text-green-500" />
+                    <Check className="w-3.5 h-3.5 text-pk-emerald" />
                   ) : (
-                    <Copy className="w-4 h-4" />
+                    <Copy className="w-3.5 h-3.5" />
                   )}
-                </Button>
+                </button>
 
-                <Button
-                  variant="ghost"
-                  size="icon"
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    haptic("light");
                     navigate(`/league/${league.id}/chat`);
                   }}
-                  className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 h-8 w-8 relative"
+                  className="w-8 h-8 rounded-md flex items-center justify-center text-pk-info hover:bg-pk-info/[0.08] transition-colors relative"
+                  data-testid={`league-chat-${league.id}`}
                 >
-                  <MessageCircle className="w-4 h-4" />
+                  <MessageCircle className="w-3.5 h-3.5" />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-pink-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white">
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] bg-pk-red rounded-full flex items-center justify-center font-data text-[0.5rem] text-white px-0.5">
                       {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                   )}
-                </Button>
+                </button>
 
                 {isActive ? (
-                  <Button
-                    size="sm"
-                    onClick={() => navigate(`/league/${league.id}/details`)}
-                    className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-white h-8 px-3"
+                  <button
+                    onClick={() => {
+                      haptic("medium");
+                      navigate(`/league/${league.id}/details`);
+                    }}
+                    className="h-8 px-3 rounded-md bg-pk-red text-white font-data text-[0.5625rem] font-bold flex items-center gap-1 active:scale-[0.97] transition-transform"
+                    data-testid={`league-details-${league.id}`}
                   >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
                 ) : (
-                  <Button
-                    size="sm"
-                    onClick={() => onSelectLeague(league.id)}
-                    className="bg-gray-700 hover:bg-gray-600 text-white h-8 px-3"
+                  <button
+                    onClick={() => {
+                      haptic("medium");
+                      onSelectLeague(league.id);
+                    }}
+                    className="h-8 px-3 rounded-md bg-white/[0.06] border border-white/[0.08] text-pk-piste font-data text-[0.5625rem] font-bold active:scale-[0.97] transition-transform"
+                    data-testid={`league-activate-${league.id}`}
                   >
                     Activer
-                  </Button>
+                  </button>
                 )}
               </div>
             </div>

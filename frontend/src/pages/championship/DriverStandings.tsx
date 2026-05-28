@@ -1,7 +1,14 @@
+/**
+ * DriverStandings — F1 drivers championship table.
+ * Broadcast Premium: pk-gold/silver/bronze podium, team-color left border.
+ */
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Trophy, ChevronRight } from "lucide-react";
 import { getTeamColor, getRankStyle, getRankIcon, DRIVER_ID_MAP } from "./championshipUtils";
+import { haptic } from "@/lib/haptics";
+import { staggerContainer, fadeUp } from "@/lib/motion";
+import { EmptyMinimal } from "@/components/EmptyState";
 
 interface DriverEntry {
   position: string;
@@ -27,20 +34,15 @@ export default function DriverStandings({ driversStandings }: DriverStandingsPro
   const navigate = useNavigate();
 
   if (driversStandings.length === 0) {
-    return (
-      <div className="card-arcade p-8 text-center">
-        <Trophy className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-        <p className="font-body text-gray-400">Aucune donnée disponible</p>
-      </div>
-    );
+    return <EmptyMinimal icon="🏆" message="No data available" />;
   }
 
   return (
     <motion.div
-      className="space-y-2"
+      className="space-y-1.5"
       initial="hidden"
       animate="visible"
-      variants={{ visible: { transition: { staggerChildren: 0.04 } }, hidden: {} }}
+      variants={staggerContainer}
     >
       {driversStandings.map((entry) => {
         const driver = entry.Driver;
@@ -49,56 +51,66 @@ export default function DriverStandings({ driversStandings }: DriverStandingsPro
         const mappedDriverId = DRIVER_ID_MAP[driver.driverId] || driver.familyName?.toLowerCase();
 
         return (
-          <motion.div
+          <motion.button
             key={driver.driverId}
-            onClick={() => navigate(`/driver/${mappedDriverId}`)}
-            className={`p-3 rounded-lg border transition-all cursor-pointer ${getRankStyle(entry.position)}`}
-            style={{ borderLeftWidth: "4px", borderLeftColor: teamColor }}
+            onClick={() => {
+              haptic("light");
+              navigate(`/driver/${mappedDriverId}`);
+            }}
+            className={`w-full p-3 rounded-lg border transition-colors text-left hover:bg-white/[0.02] ${getRankStyle(entry.position)}`}
+            style={{ borderLeftWidth: "3px", borderLeftColor: teamColor }}
             data-testid={`driver-row-${driver.driverId}`}
-            variants={{ hidden: { opacity: 0, x: -15 }, visible: { opacity: 1, x: 0 } }}
-            whileHover={{ x: 4, scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
+            variants={fadeUp}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 flex items-center justify-center">
+            <div className="flex items-center gap-2.5">
+              {/* Rank */}
+              <div className="w-7 h-7 flex items-center justify-center">
                 {getRankIcon(entry.position)}
               </div>
+
+              {/* Number badge */}
               <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center font-data text-lg text-white"
+                className="w-9 h-9 rounded-lg flex items-center justify-center font-data text-sm text-white flex-shrink-0"
                 style={{ backgroundColor: teamColor }}
               >
                 {driver.permanentNumber || "?"}
               </div>
+
+              {/* Info */}
               <div className="flex-1 min-w-0">
-                <p className="font-heading text-sm text-white truncate">
+                <p className="font-display text-sm truncate">
                   {driver.givenName}{" "}
-                  <span className="text-cyan-400">{driver.familyName?.toUpperCase()}</span>
+                  <span className="text-pk-red">{driver.familyName?.toUpperCase()}</span>
                 </p>
-                <p className="font-body text-xs text-gray-500 truncate">
+                <p className="font-data text-[0.5625rem] text-pk-titane truncate">
                   {constructor?.name || "Ecurie inconnue"}
                 </p>
               </div>
-              <div className="text-right flex items-center gap-2">
+
+              {/* Points */}
+              <div className="text-right flex items-center gap-1.5">
                 <div>
                   <p
-                    className={`font-data text-xl ${parseInt(entry.position) <= 3 ? "text-yellow-400" : "text-white"}`}
+                    className={`font-data text-lg font-bold ${parseInt(entry.position) <= 3 ? "text-pk-amber" : ""}`}
                   >
                     {entry.points}
                   </p>
-                  <p className="font-body text-[10px] text-gray-500 uppercase">pts</p>
+                  <p className="font-data text-[0.5rem] text-pk-titane uppercase">pts</p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-gray-600" />
+                <ChevronRight className="w-4 h-4 text-pk-titane" />
               </div>
             </div>
+
+            {/* Wins */}
             {parseInt(entry.wins) > 0 && (
-              <div className="mt-2 flex items-center gap-1">
-                <Trophy className="w-3 h-3 text-yellow-500" />
-                <span className="font-body text-[10px] text-yellow-400">
+              <div className="mt-1.5 ml-[4.25rem] flex items-center gap-1">
+                <Trophy className="w-3 h-3 text-pk-gold" />
+                <span className="font-data text-[0.5rem] text-pk-gold">
                   {entry.wins} victoire{parseInt(entry.wins) > 1 ? "s" : ""}
                 </span>
               </div>
             )}
-          </motion.div>
+          </motion.button>
         );
       })}
     </motion.div>

@@ -52,8 +52,8 @@ type PronoKifSplashScreenProps = {
 
 const DEFAULT_LOADING_LOGS = [
   "Initialisation du paddock",
-  "Chargement du calendrier 2026",
-  "Préparation des pronostics",
+  "Loading du calendrier 2026",
+  "Preparing predictions",
   "Ouverture de la grille",
 ];
 
@@ -82,9 +82,9 @@ export function BorderGlowButton({
 
 export function AppIconGlow({
   iconSrc,
-  alt = "Icône application PronoKif F1",
-  size = 174,
-  radius = 42,
+  alt = "PronoKif F1 app icon",
+  size = 72,
+  radius = 18,
   className = "",
 }: AppIconGlowProps) {
   const styleVars = {
@@ -120,7 +120,7 @@ export default function PronoKifSplashScreen({
   videoSrc = "/video/splash-trailer.mp4",
   posterSrc,
   appName = "PronoKif F1",
-  baseline = "Pronostiquez. Défiez. Vivez.",
+  baseline = "Make picks. Challenge. Feel it.",
   loadingLabel = "Synchronisation paddock",
   loadingLogs = DEFAULT_LOADING_LOGS,
   introDelayMs = 950,
@@ -133,11 +133,11 @@ export default function PronoKifSplashScreen({
   const [ready, setReady] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const [activeLogIndex, setActiveLogIndex] = useState(0);
-  const hasCompletedRef = useRef(false);
+  const hasCompleteedRef = useRef(false);
 
   const completeSplash = useCallback(() => {
-    if (hasCompletedRef.current) return;
-    hasCompletedRef.current = true;
+    if (hasCompleteedRef.current) return;
+    hasCompleteedRef.current = true;
     setIsLeaving(true);
     window.setTimeout(() => onStart?.(), 620);
   }, [onStart]);
@@ -221,9 +221,9 @@ export default function PronoKifSplashScreen({
 
       <section
         className={`pk-splash__content ${logoVisible ? "is-visible" : ""}`}
-        aria-label="Écran de lancement PronoKif F1"
+        aria-label="PronoKif F1 launch screen"
       >
-        <AppIconGlow iconSrc={iconSrc} size={178} radius={43} />
+        <AppIconGlow iconSrc={iconSrc} size={72} radius={18} />
 
         <div className="pk-splash__brandBlock">
           <h1 className="pk-splash__wordmark" aria-label={appName}>
@@ -250,7 +250,7 @@ export default function PronoKifSplashScreen({
         className={`pk-splash__loaderDock ${logoVisible ? "has-logo" : ""} ${
           ready ? "is-ready" : ""
         }`}
-        aria-label="Chargement PronoKif F1"
+        aria-label="Loading PronoKif F1"
       >
         <div className="pk-splash__actionZone">
           <div className="pk-progress" role="status" aria-live="polite">
@@ -262,7 +262,7 @@ export default function PronoKifSplashScreen({
             </div>
             <div className="pk-progress__copy">
               <span className="pk-progress__label">{loadingLabel}</span>
-              <div className="pk-progress__logs" aria-label="Étapes de chargement">
+              <div className="pk-progress__logs" aria-label="Loading steps">
                 {startupLogs.map((log, index) => (
                   <span
                     key={log}
@@ -469,7 +469,7 @@ const styles = `
   width: min(460px, 100%);
   display: grid;
   justify-items: center;
-  gap: 22px;
+  gap: 18px;
   opacity: 0;
   transform: translate3d(0, 28px, 0) scale(.94);
   filter: blur(18px);
@@ -491,7 +491,7 @@ const styles = `
 .pk-splash__brandBlock {
   display: grid;
   justify-items: center;
-  gap: 10px;
+  gap: 8px;
   text-align: center;
 }
 
@@ -573,7 +573,7 @@ const styles = `
 }
 
 .pk-splash__loaderDock.has-logo {
-  top: calc(50% + 222px);
+  top: calc(50% + 154px);
   width: min(306px, 76vw);
 }
 
@@ -836,8 +836,8 @@ const styles = `
 }
 
 .pk-appIcon {
-  --pk-icon-size: 174px;
-  --pk-radius: 42px;
+  --pk-icon-size: 72px;
+  --pk-radius: 18px;
 
   position: relative;
   width: var(--pk-icon-size);
@@ -866,9 +866,9 @@ const styles = `
     linear-gradient(145deg, #17191e 0%, #050609 58%, #101216 100%);
   box-shadow:
     inset 0 1px 1px rgba(255,255,255,.28),
-    inset 0 -28px 58px rgba(255,0,0,.11),
-    0 26px 60px rgba(0,0,0,.68),
-    0 0 44px rgba(255,0,0,.2);
+    inset 0 -14px 26px rgba(255,0,0,.11),
+    0 16px 34px rgba(0,0,0,.62),
+    0 0 28px rgba(255,0,0,.18);
   transform: translateZ(0);
 }
 
@@ -934,11 +934,11 @@ const styles = `
 
 .pk-appIcon__aura {
   position: absolute;
-  inset: -34px;
+  inset: -22px;
   z-index: 0;
-  border-radius: calc(var(--pk-radius) + 34px);
+  border-radius: calc(var(--pk-radius) + 22px);
   background: radial-gradient(circle at 50% 52%, rgba(255,0,0,.5), transparent 62%);
-  filter: blur(20px);
+  filter: blur(14px);
   animation: pkAuraBreath 2.4s ease-in-out infinite alternate;
   transform: translateZ(0);
   will-change: transform, opacity;
@@ -987,10 +987,10 @@ const styles = `
 }
 
 .pk-appIcon__glowRing--wide {
-  inset: -14px;
-  padding: 13px;
+  inset: -10px;
+  padding: 9px;
   z-index: 1;
-  filter: blur(10px);
+  filter: blur(8px);
   opacity: .86;
 }
 
@@ -1075,12 +1075,12 @@ const styles = `
 
 @media (max-height: 680px) {
   .pk-splash__content {
-    gap: 16px;
+    gap: 14px;
   }
 
   .pk-splash__content .pk-appIcon {
-    --pk-icon-size: 150px !important;
-    --pk-radius: 36px !important;
+    --pk-icon-size: 64px !important;
+    --pk-radius: 16px !important;
   }
 
   .pk-splash__wordmarkFallback {
@@ -1097,14 +1097,14 @@ const styles = `
   }
 
   .pk-splash__loaderDock.has-logo {
-    top: calc(50% + 184px);
+    top: calc(50% + 134px);
   }
 }
 
 @media (max-height: 560px) {
   .pk-splash__content .pk-appIcon {
-    --pk-icon-size: 118px !important;
-    --pk-radius: 28px !important;
+    --pk-icon-size: 56px !important;
+    --pk-radius: 14px !important;
   }
 
   .pk-splash__baseline {
@@ -1112,7 +1112,7 @@ const styles = `
   }
 
   .pk-splash__loaderDock.has-logo {
-    top: calc(50% + 132px);
+    top: calc(50% + 108px);
   }
 
   .pk-progress__logs {

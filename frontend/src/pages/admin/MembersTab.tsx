@@ -70,7 +70,7 @@ export default function MembersTab() {
       setMemberDetails(data as MemberDetails);
     } catch (error: unknown) {
       console.error(error);
-      toast.error("Erreur lors du chargement des details");
+      toast.error("Error while loading des details");
     } finally {
       setLoadingMemberDetails(false);
     }
@@ -83,7 +83,7 @@ export default function MembersTab() {
       setMemberActivity(data as unknown as MemberActivity);
     } catch (error: unknown) {
       console.error(error);
-      toast.error("Erreur lors du chargement de l'activite");
+      toast.error("Error while loading de l'activite");
     } finally {
       setLoadingActivity(false);
     }
@@ -93,7 +93,7 @@ export default function MembersTab() {
     setDeletingMember(true);
     try {
       await api.admin.deleteMember(String(memberId));
-      toast.success("Membre supprime avec succes");
+      toast.success("Member deleted successfully");
       setSelectedMember(null);
       setMemberDetails(null);
       setShowDeleteConfirm(false);
@@ -101,7 +101,7 @@ export default function MembersTab() {
     } catch (error: unknown) {
       console.error(error);
       const err = error as { response?: { data?: { detail?: string } } };
-      toast.error(err.response?.data?.detail || "Erreur lors de la suppression");
+      toast.error(err.response?.data?.detail || "Error while deleting");
     } finally {
       setDeletingMember(false);
     }
@@ -147,12 +147,16 @@ export default function MembersTab() {
         <div className="bg-gradient-to-r from-green-600/20 to-transparent px-4 py-3 border-b border-gray-700/50 flex items-center justify-between">
           <h3 className="font-heading text-sm uppercase text-green-400 flex items-center gap-2">
             <Users className="w-4 h-4" />
-            Membres inscrits
+            Members inscrits
             <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-data">
               {membersList.length}
             </span>
           </h3>
-          <button onClick={() => fetchMembers()} className="text-gray-400 hover:text-white" aria-label="Rafraîchir la liste des membres">
+          <button
+            onClick={() => fetchMembers()}
+            className="text-gray-400 hover:text-white"
+            aria-label="Refresh member list"
+          >
             <RefreshCw className={`w-4 h-4 ${loadingMembers ? "animate-spin" : ""}`} />
           </button>
         </div>
@@ -164,7 +168,7 @@ export default function MembersTab() {
         ) : membersList.length === 0 ? (
           <div className="p-8 text-center">
             <Users className="w-12 h-12 text-gray-600 mx-auto mb-2" />
-            <p className="font-body text-gray-500">Aucun membre inscrit</p>
+            <p className="font-body text-gray-500">No registered members</p>
           </div>
         ) : (
           <motion.div
@@ -189,14 +193,14 @@ export default function MembersTab() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-body text-sm text-white truncate">
-                    {member.username || "Sans pseudo"}
+                    {member.username || "No username"}
                   </p>
                   <p className="font-body text-xs text-gray-500 truncate">{member.email}</p>
                 </div>
                 <div className="text-right">
                   <p className="font-data text-sm text-cyan-400">Niv. {member.level || 1}</p>
                   <p className="font-body text-xs text-gray-500">
-                    {member.predictions_count || 0} pronos
+                    {member.predictions_count || 0} picks
                   </p>
                 </div>
               </motion.button>

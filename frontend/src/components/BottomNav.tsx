@@ -15,11 +15,11 @@ interface NavItemDef {
 // ----------------------------------------------------------- config ---
 
 const NAV_ITEMS: NavItemDef[] = [
-  { path: "/", icon: "accueil", label: "Accueil" },
-  { path: "/predictions", icon: "pronostics", label: "Pronos" },
+  { path: "/", icon: "accueil", label: "Home" },
+  { path: "/predictions", icon: "predictions", label: "Picks" },
   { path: "/live", icon: "direct", label: "Direct" },
-  { path: "/leaderboard", icon: "classements", label: "Classements" },
-  { path: "/profile", icon: "profil", label: "Profil" },
+  { path: "/leaderboard", icon: "classements", label: "Leaderboards" },
+  { path: "/profile", icon: "profil", label: "Profile" },
 ];
 
 // ----------------------------------------------------------- component ---
@@ -34,7 +34,7 @@ export default function BottomNav() {
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 max-w-[430px] mx-auto"
-      aria-label="Navigation principale"
+      aria-label="Main navigation"
       data-testid="bottom-nav"
     >
       <div
@@ -61,7 +61,7 @@ export default function BottomNav() {
                 transition-colors duration-pk-short ease-pk-enter
                 ${isActive ? "text-pk-red" : "text-pk-titane hover:text-pk-piste/70"}
               `}
-              data-testid={`nav-${item.label.toLowerCase()}`}
+              data-testid={`nav-${item.icon}`}
               whileTap={{ scale: 0.88 }}
               transition={quickEnter}
             >

@@ -1,3 +1,7 @@
+/**
+ * Shared helpers for DriverDetail sub-components.
+ * Broadcast Premium: pk-* tokens for InfoRow, StatCard.
+ */
 import type { LucideIcon } from "lucide-react";
 import {
   Trophy,
@@ -41,7 +45,7 @@ const teamColors: Record<string, TeamColors> = {
 
 export function getTeamColors(teamId: string | undefined): TeamColors {
   const id = teamId?.toLowerCase().replace(/\s+/g, "_");
-  return (id && teamColors[id]) || { primary: "#666666", secondary: "#444444" };
+  return (id && teamColors[id]) || { primary: "#5F6673", secondary: "#3A3F48" };
 }
 
 // Icon mapping for facts
@@ -73,8 +77,8 @@ interface InfoRowProps {
 export function InfoRow({ label, value }: InfoRowProps) {
   return (
     <div>
-      <p className="font-body text-[10px] text-gray-500 uppercase">{label}</p>
-      <p className="font-body text-sm text-white">{value || "-"}</p>
+      <p className="font-data text-[0.5rem] text-pk-titane uppercase tracking-wider">{label}</p>
+      <p className="text-sm">{value || "-"}</p>
     </div>
   );
 }
@@ -88,9 +92,9 @@ interface StatCardProps {
 
 export function StatCard({ value, label, color, bgColor }: StatCardProps) {
   return (
-    <div className={`p-3 rounded-lg ${bgColor} text-center`}>
-      <p className={`font-data text-2xl ${color}`}>{value}</p>
-      <p className="font-body text-[10px] text-gray-500 uppercase">{label}</p>
+    <div className={`p-3 rounded-lg border border-white/[0.06] ${bgColor} text-center`}>
+      <p className={`font-data text-xl font-bold ${color}`}>{value}</p>
+      <p className="font-data text-[0.5rem] text-pk-titane uppercase">{label}</p>
     </div>
   );
 }

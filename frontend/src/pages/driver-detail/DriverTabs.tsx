@@ -1,3 +1,7 @@
+/**
+ * DriverTabs — Profile, Palmares, Facts sub-tabs for DriverDetail.
+ * Broadcast Premium: pk-surface cards, pk-gold/silver/bronze ranks.
+ */
 import { motion } from "framer-motion";
 import {
   Trophy,
@@ -11,34 +15,34 @@ import {
   Instagram,
   Twitter,
 } from "lucide-react";
-import {
-  InfoRow,
-  StatCard,
-  formatDate,
-  factIcons,
-  getTeamColors,
-  type TeamColors,
-} from "./driverHelpers";
+import { InfoRow, StatCard, formatDate, factIcons, type TeamColors } from "./driverHelpers";
+import { staggerContainer, fadeUp } from "@/lib/motion";
 
 interface TabProps {
   driver: Record<string, any>;
   colors: TeamColors;
 }
 
+/* ── Profile Tab ──────────────────────────────────────── */
+
 export function ProfileTab({ driver, colors }: TabProps) {
   const contract = driver.contract || {};
 
   return (
     <motion.div
-      className="space-y-4"
+      className="space-y-3"
       initial="hidden"
       animate="visible"
-      variants={{ visible: { transition: { staggerChildren: 0.08 } }, hidden: {} }}
+      variants={staggerContainer}
     >
       {/* Personal Info */}
-      <motion.div className="card-arcade p-4" variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}>
-        <h3 className="font-heading text-sm text-gray-400 uppercase mb-3 flex items-center gap-2">
-          <User className="w-4 h-4" style={{ color: colors.primary }} /> Informations personnelles
+      <motion.div
+        className="bg-pk-surface border border-white/[0.08] rounded-lg p-4"
+        variants={fadeUp}
+      >
+        <h3 className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <User className="w-3.5 h-3.5" style={{ color: colors.primary }} /> Informations
+          personnelles
         </h3>
         <div className="grid grid-cols-2 gap-3">
           <InfoRow label="Nom complet" value={driver.full_name} />
@@ -51,9 +55,12 @@ export function ProfileTab({ driver, colors }: TabProps) {
       </motion.div>
 
       {/* Contract Info */}
-      <motion.div className="card-arcade p-4" variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}>
-        <h3 className="font-heading text-sm text-gray-400 uppercase mb-3 flex items-center gap-2">
-          <FileText className="w-4 h-4" style={{ color: colors.primary }} /> Contrat actuel
+      <motion.div
+        className="bg-pk-surface border border-white/[0.08] rounded-lg p-4"
+        variants={fadeUp}
+      >
+        <h3 className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <FileText className="w-3.5 h-3.5" style={{ color: colors.primary }} /> Contrat actuel
         </h3>
         <div className="grid grid-cols-2 gap-3">
           <InfoRow label="Equipe" value={driver.team} />
@@ -64,7 +71,7 @@ export function ProfileTab({ driver, colors }: TabProps) {
           <InfoRow label="Points permis" value={`${driver.license_points || 12}/12`} />
         </div>
         {contract.notes && (
-          <p className="mt-3 font-body text-xs text-gray-500 italic border-t border-gray-800 pt-3">
+          <p className="mt-3 text-xs text-pk-titane italic border-t border-white/[0.06] pt-3">
             {contract.notes}
           </p>
         )}
@@ -72,20 +79,23 @@ export function ProfileTab({ driver, colors }: TabProps) {
 
       {/* Social Media */}
       {driver.social && (
-        <motion.div className="card-arcade p-4" variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}>
-          <h3 className="font-heading text-sm text-gray-400 uppercase mb-3 flex items-center gap-2">
-            <Star className="w-4 h-4" style={{ color: colors.primary }} /> Reseaux sociaux
+        <motion.div
+          className="bg-pk-surface border border-white/[0.08] rounded-lg p-4"
+          variants={fadeUp}
+        >
+          <h3 className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <Star className="w-3.5 h-3.5" style={{ color: colors.primary }} /> Reseaux sociaux
           </h3>
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             {driver.social.instagram && (
               <a
                 href={`https://instagram.com/${driver.social.instagram.replace("@", "")}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 p-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg flex items-center justify-center gap-2 hover:border-purple-500/50 transition-colors"
+                className="flex-1 p-3 bg-purple-500/[0.06] border border-purple-500/20 rounded-lg flex items-center justify-center gap-2 hover:bg-purple-500/[0.12] transition-colors"
               >
-                <Instagram className="w-5 h-5 text-purple-400" />
-                <span className="font-body text-sm text-white">{driver.social.instagram}</span>
+                <Instagram className="w-4 h-4 text-purple-400" />
+                <span className="text-xs">{driver.social.instagram}</span>
               </a>
             )}
             {driver.social.twitter && (
@@ -93,10 +103,10 @@ export function ProfileTab({ driver, colors }: TabProps) {
                 href={`https://twitter.com/${driver.social.twitter.replace("@", "")}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 p-3 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30 rounded-lg flex items-center justify-center gap-2 hover:border-blue-500/50 transition-colors"
+                className="flex-1 p-3 bg-pk-info/[0.06] border border-pk-info/20 rounded-lg flex items-center justify-center gap-2 hover:bg-pk-info/[0.12] transition-colors"
               >
-                <Twitter className="w-5 h-5 text-blue-400" />
-                <span className="font-body text-sm text-white">{driver.social.twitter}</span>
+                <Twitter className="w-4 h-4 text-pk-info" />
+                <span className="text-xs">{driver.social.twitter}</span>
               </a>
             )}
           </div>
@@ -106,122 +116,144 @@ export function ProfileTab({ driver, colors }: TabProps) {
   );
 }
 
+/* ── Palmares Tab ─────────────────────────────────────── */
+
 export function PalmaresTab({ driver, colors }: TabProps) {
   const f1Stats = driver.palmares?.f1 || {};
   const juniorCareer = driver.palmares?.junior || [];
 
   return (
-    <div className="space-y-4">
-      <div className="card-arcade p-4">
-        <h3 className="font-heading text-sm text-gray-400 uppercase mb-3 flex items-center gap-2">
-          <Trophy className="w-4 h-4 text-yellow-500" /> Carriere F1
+    <div className="space-y-3">
+      {/* F1 Career */}
+      <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-4">
+        <h3 className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <Trophy className="w-3.5 h-3.5 text-pk-gold" /> Carriere F1
         </h3>
-        <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-3 gap-2 mb-3">
           <StatCard
             value={f1Stats.world_championships || 0}
             label="Titres"
-            color="text-yellow-400"
-            bgColor="bg-yellow-500/10"
+            color="text-pk-gold"
+            bgColor="bg-pk-gold/[0.06]"
           />
           <StatCard
             value={f1Stats.wins || 0}
             label="Victoires"
-            color="text-green-400"
-            bgColor="bg-green-500/10"
+            color="text-pk-emerald"
+            bgColor="bg-pk-emerald/[0.06]"
           />
           <StatCard
             value={f1Stats.podiums || 0}
             label="Podiums"
-            color="text-cyan-400"
-            bgColor="bg-cyan-500/10"
+            color="text-pk-info"
+            bgColor="bg-pk-info/[0.06]"
           />
           <StatCard
             value={f1Stats.poles || 0}
             label="Poles"
             color="text-purple-400"
-            bgColor="bg-purple-500/10"
+            bgColor="bg-purple-500/[0.06]"
           />
           <StatCard
             value={f1Stats.fastest_laps || 0}
             label="Meilleurs tours"
             color="text-pink-400"
-            bgColor="bg-pink-500/10"
+            bgColor="bg-pink-500/[0.06]"
           />
           <StatCard
             value={f1Stats.points || 0}
             label="Points"
-            color="text-white"
-            bgColor="bg-gray-500/10"
+            color="text-pk-piste"
+            bgColor="bg-white/[0.04]"
           />
         </div>
-        <div className="border-t border-gray-800 pt-3">
+        <div className="border-t border-white/[0.06] pt-3 space-y-2">
           <div className="flex justify-between items-center">
-            <span className="font-body text-xs text-gray-500">Saisons</span>
-            <span className="font-body text-sm text-white">{f1Stats.seasons || "-"}</span>
+            <span className="font-data text-[0.5rem] text-pk-titane uppercase">Saisons</span>
+            <span className="text-sm">{f1Stats.seasons || "-"}</span>
           </div>
-          <div className="flex justify-between items-center mt-2">
-            <span className="font-body text-xs text-gray-500">Premiere equipe</span>
-            <span className="font-body text-sm text-white">{f1Stats.first_team || "-"}</span>
+          <div className="flex justify-between items-center">
+            <span className="font-data text-[0.5rem] text-pk-titane uppercase">
+              Premiere equipe
+            </span>
+            <span className="text-sm">{f1Stats.first_team || "-"}</span>
           </div>
-          <div className="flex justify-between items-center mt-2">
-            <span className="font-body text-xs text-gray-500">Grands Prix disputes</span>
-            <span className="font-body text-sm text-white">{f1Stats.entries || 0}</span>
+          <div className="flex justify-between items-center">
+            <span className="font-data text-[0.5rem] text-pk-titane uppercase">
+              Grands Prix disputes
+            </span>
+            <span className="text-sm">{f1Stats.entries || 0}</span>
           </div>
         </div>
       </div>
 
+      {/* Junior Career */}
       {juniorCareer.length > 0 && (
-        <div className="card-arcade p-4">
-          <h3 className="font-heading text-sm text-gray-400 uppercase mb-3 flex items-center gap-2">
-            <History className="w-4 h-4 text-blue-500" /> Carriere junior
+        <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-4">
+          <h3 className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <History className="w-3.5 h-3.5 text-pk-info" /> Carriere junior
           </h3>
-          <div className="space-y-2">
-            {juniorCareer.map((season: { year: number; series: string; team: string; position: number; wins?: number; note?: string }, idx: number) => (
-              <div
-                key={idx}
-                className={`p-3 rounded-lg border ${
-                  season.position === 1
-                    ? "bg-yellow-500/10 border-yellow-500/30"
-                    : season.position === 2
-                      ? "bg-gray-400/10 border-gray-400/30"
-                      : season.position === 3
-                        ? "bg-amber-600/10 border-amber-600/30"
-                        : "bg-gray-800/30 border-gray-700/50"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`font-data text-xl ${
-                        season.position === 1
-                          ? "text-yellow-400"
-                          : season.position === 2
-                            ? "text-gray-300"
-                            : season.position === 3
-                              ? "text-amber-500"
-                              : "text-gray-500"
-                      }`}
-                    >
-                      {season.position === 1 && <Trophy className="w-5 h-5 inline" />}
-                      {season.position !== 1 && `P${season.position}`}
-                    </span>
-                    <div>
-                      <p className="font-heading text-sm text-white">{season.series}</p>
-                      <p className="font-body text-xs text-gray-500">{season.team}</p>
+          <div className="space-y-1.5">
+            {juniorCareer.map(
+              (
+                season: {
+                  year: number;
+                  series: string;
+                  team: string;
+                  position: number;
+                  wins?: number;
+                  note?: string;
+                },
+                idx: number,
+              ) => (
+                <div
+                  key={idx}
+                  className={`p-3 rounded-lg border ${
+                    season.position === 1
+                      ? "bg-pk-gold/[0.06] border-pk-gold/20"
+                      : season.position === 2
+                        ? "bg-pk-silver/[0.06] border-pk-silver/20"
+                        : season.position === 3
+                          ? "bg-pk-bronze/[0.06] border-pk-bronze/20"
+                          : "bg-white/[0.02] border-white/[0.08]"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className={`font-data text-lg ${
+                          season.position === 1
+                            ? "text-pk-gold"
+                            : season.position === 2
+                              ? "text-pk-silver"
+                              : season.position === 3
+                                ? "text-pk-bronze"
+                                : "text-pk-titane"
+                        }`}
+                      >
+                        {season.position === 1 && <Trophy className="w-5 h-5 inline" />}
+                        {season.position !== 1 && `P${season.position}`}
+                      </span>
+                      <div>
+                        <p className="font-display text-xs">{season.series}</p>
+                        <p className="font-data text-[0.5rem] text-pk-titane">{season.team}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-data text-base">{season.year}</p>
+                      {(season.wins ?? 0) > 0 && (
+                        <p className="font-data text-[0.5rem] text-pk-emerald">
+                          {season.wins} victoires
+                        </p>
+                      )}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-data text-lg text-white">{season.year}</p>
-                    {(season.wins ?? 0) > 0 && (
-                      <p className="font-body text-xs text-green-400">{season.wins} victoires</p>
-                    )}
-                  </div>
+                  {season.note && (
+                    <p className="text-xs text-pk-titane mt-2 italic">{season.note}</p>
+                  )}
                 </div>
-                {season.note && (
-                  <p className="font-body text-xs text-gray-500 mt-2 italic">{season.note}</p>
-                )}
-              </div>
-            ))}
+              ),
+            )}
           </div>
         </div>
       )}
@@ -229,47 +261,49 @@ export function PalmaresTab({ driver, colors }: TabProps) {
   );
 }
 
+/* ── Facts Tab ────────────────────────────────────────── */
+
 export function FactsTab({ driver, colors }: TabProps) {
   const facts = driver.useful_facts || [];
 
   return (
     <div className="space-y-3">
-      <div className="card-arcade p-4 mb-4">
-        <h3 className="font-heading text-sm text-white flex items-center gap-2">
-          <Lightbulb className="w-4 h-4 text-yellow-400" /> 10 infos utiles sur {driver.first_name}
+      {/* Header */}
+      <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-4">
+        <h3 className="font-display text-sm flex items-center gap-2">
+          <Lightbulb className="w-4 h-4 text-pk-amber" /> 10 infos utiles sur {driver.first_name}
         </h3>
-        <p className="font-body text-xs text-gray-500 mt-1">
-          Des faits interessants pour vos pronostics
-        </p>
+        <p className="text-xs text-pk-titane mt-1">Interesting facts for your predictions</p>
       </div>
 
+      {/* Fact cards */}
       {facts.map((fact: { icon: string; title: string; text: string }, idx: number) => {
         const IconComponent = factIcons[fact.icon] || Info;
         return (
           <div
             key={idx}
-            className="card-arcade p-4 flex items-start gap-3"
+            className="bg-pk-surface border border-white/[0.08] rounded-lg p-4 flex items-start gap-3"
             style={{ borderLeftWidth: "3px", borderLeftColor: colors.primary }}
           >
             <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: `${colors.primary}20` }}
+              className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: `${colors.primary}15` }}
             >
-              <IconComponent className="w-5 h-5" style={{ color: colors.primary }} />
+              <IconComponent className="w-4 h-4" style={{ color: colors.primary }} />
             </div>
-            <div className="flex-1">
-              <p className="font-heading text-sm text-white">{fact.title}</p>
-              <p className="font-body text-xs text-gray-400 mt-1">{fact.text}</p>
+            <div className="flex-1 min-w-0">
+              <p className="font-display text-xs">{fact.title}</p>
+              <p className="text-xs text-pk-titane mt-1">{fact.text}</p>
             </div>
-            <span className="font-data text-xs text-gray-600">#{idx + 1}</span>
+            <span className="font-data text-[0.5rem] text-pk-titane">#{idx + 1}</span>
           </div>
         );
       })}
 
       {facts.length === 0 && (
-        <div className="card-arcade p-8 text-center">
-          <Info className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-          <p className="font-body text-gray-400">Aucune information disponible</p>
+        <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-8 text-center">
+          <Info className="w-10 h-10 text-pk-titane mx-auto mb-3" />
+          <p className="text-sm text-pk-titane">No information available</p>
         </div>
       )}
     </div>

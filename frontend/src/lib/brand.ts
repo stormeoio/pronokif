@@ -86,7 +86,7 @@ export const semantic = {
 } as const;
 
 /* ------------------------------------------------
-   PODIUM — Top 3 classement
+   PODIUM — Top 3 leaderboard
    ------------------------------------------------ */
 export const podium = {
   gold: "#FFD700",
@@ -96,7 +96,7 @@ export const podium = {
 
 /* ------------------------------------------------
    F1 TEAM COLORS (2026 season)
-   Used for team-strip borders in live race & pronostics
+   Used for team-strip borders in live race & predictions
    ------------------------------------------------ */
 export const teamColors: Record<string, string> = {
   "red-bull": "#3671C6",

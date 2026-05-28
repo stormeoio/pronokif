@@ -70,7 +70,7 @@ export function PageLoader() {
       style={{ background: "linear-gradient(180deg, #0a0f1a 0%, #151c2c 50%, #0a0f1a 100%)" }}
     >
       <div className="w-14 h-14 rounded-full border-4 border-orange-500/30 border-t-orange-500 animate-spin" />
-      <p className="text-sm text-gray-500 animate-pulse">Chargement...</p>
+      <p className="text-sm text-gray-500 animate-pulse">Loading...</p>
     </div>
   );
 }

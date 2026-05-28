@@ -85,7 +85,7 @@ describe("AuthPage", () => {
     });
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith("Connexion réussie !");
+      expect(toast.success).toHaveBeenCalledWith("Signed in successfully!");
       expect(mockNavigate).toHaveBeenCalledWith("/");
     });
   });

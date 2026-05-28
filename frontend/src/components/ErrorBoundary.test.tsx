@@ -36,9 +36,9 @@ describe("ErrorBoundary", () => {
         <ThrowingComponent />
       </ErrorBoundary>,
     );
-    expect(screen.getByText(/quelque chose a plante/i)).toBeInTheDocument();
-    expect(screen.getByText(/reessayer/i)).toBeInTheDocument();
-    expect(screen.getByText(/accueil/i)).toBeInTheDocument();
+    expect(screen.getByText(/incident en piste/i)).toBeInTheDocument();
+    expect(screen.getByText(/relancer/i)).toBeInTheDocument();
+    expect(screen.getByText(/back to the paddock/i)).toBeInTheDocument();
   });
 
   it("shows error details in dev mode", () => {
@@ -85,11 +85,11 @@ describe("ErrorBoundary", () => {
       </ErrorBoundary>,
     );
 
-    expect(screen.getByText(/quelque chose a plante/i)).toBeInTheDocument();
+    expect(screen.getByText(/incident en piste/i)).toBeInTheDocument();
 
     // Fix the component before retrying
     shouldThrow = false;
-    await user.click(screen.getByText(/reessayer/i));
+    await user.click(screen.getByText(/relancer/i));
 
     // After retry, boundary re-renders children
     rerender(

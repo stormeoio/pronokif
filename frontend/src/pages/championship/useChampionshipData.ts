@@ -12,7 +12,7 @@ function useDriverStandings() {
     queryKey: ["jolpica", "driverstandings"],
     queryFn: async () => {
       const res = await fetch(`${JOLPICA_API}/current/driverstandings.json`);
-      if (!res.ok) throw new Error("Erreur API");
+      if (!res.ok) throw new Error("API error");
       const data = await res.json();
       const list = data?.MRData?.StandingsTable?.StandingsLists?.[0];
       return {
@@ -29,7 +29,7 @@ function useConstructorStandings() {
     queryKey: ["jolpica", "constructorstandings"],
     queryFn: async () => {
       const res = await fetch(`${JOLPICA_API}/current/constructorstandings.json`);
-      if (!res.ok) throw new Error("Erreur API");
+      if (!res.ok) throw new Error("API error");
       const data = await res.json();
       const list = data?.MRData?.StandingsTable?.StandingsLists?.[0];
       return list?.ConstructorStandings ?? [];
@@ -43,7 +43,7 @@ function useRaceSchedule() {
     queryKey: ["jolpica", "schedule"],
     queryFn: async () => {
       const res = await fetch(`${JOLPICA_API}/current.json`);
-      if (!res.ok) throw new Error("Erreur API");
+      if (!res.ok) throw new Error("API error");
       const data = await res.json();
       return data?.MRData?.RaceTable?.Races ?? [];
     },

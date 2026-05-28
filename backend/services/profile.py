@@ -207,7 +207,7 @@ async def claim_mission(user_id: str, mission_id: str) -> dict:
 
     await send_user_notification(
         user_id,
-        f"Mission '{mission['name']}' complétée ! +{xp_reward} XP",
+        f"Mission '{mission['name']}' completed! +{xp_reward} XP",
         "mission_complete",
     )
 

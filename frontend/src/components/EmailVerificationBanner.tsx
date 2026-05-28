@@ -19,9 +19,9 @@ export default function EmailVerificationBanner() {
     setSending(true);
     try {
       await resendVerification();
-      toast.success("Email de verification envoye !");
+      toast.success("Verification email sent!");
     } catch {
-      toast.error("Erreur lors de l'envoi");
+      toast.error("Error while sending");
     } finally {
       setSending(false);
     }
@@ -30,7 +30,7 @@ export default function EmailVerificationBanner() {
   return (
     <div className="bg-amber-500/10 border border-amber-500/30 text-amber-200 px-4 py-2 flex items-center gap-3 text-sm relative z-20">
       <Mail className="w-4 h-4 flex-shrink-0" />
-      <span className="flex-1">Verifie ton email pour securiser ton compte.</span>
+      <span className="flex-1">Verify your email to secure your account.</span>
       <button
         onClick={handleResend}
         disabled={sending}
@@ -41,7 +41,7 @@ export default function EmailVerificationBanner() {
       <button
         onClick={() => setDismissed(true)}
         className="text-amber-400/60 hover:text-amber-300 p-0.5"
-        aria-label="Fermer"
+        aria-label="Close"
       >
         <X className="w-3.5 h-3.5" />
       </button>

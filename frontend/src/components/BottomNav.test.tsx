@@ -35,7 +35,7 @@ describe("BottomNav", () => {
     renderNav();
     expect(screen.getByTestId("bottom-nav")).toBeInTheDocument();
     expect(screen.getByTestId("nav-accueil")).toBeInTheDocument();
-    expect(screen.getByTestId("nav-pronos")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-predictions")).toBeInTheDocument();
     expect(screen.getByTestId("nav-direct")).toBeInTheDocument();
     expect(screen.getByTestId("nav-classements")).toBeInTheDocument();
     expect(screen.getByTestId("nav-profil")).toBeInTheDocument();
@@ -43,14 +43,14 @@ describe("BottomNav", () => {
 
   it("marks current path as active with aria-current", () => {
     renderNav("/predictions");
-    expect(screen.getByTestId("nav-pronos")).toHaveAttribute("aria-current", "page");
+    expect(screen.getByTestId("nav-predictions")).toHaveAttribute("aria-current", "page");
     expect(screen.getByTestId("nav-accueil")).not.toHaveAttribute("aria-current");
   });
 
   it("navigates on click", async () => {
     renderNav("/");
     const user = userEvent.setup();
-    await user.click(screen.getByTestId("nav-pronos"));
+    await user.click(screen.getByTestId("nav-predictions"));
     expect(mockNavigate).toHaveBeenCalledWith("/predictions");
   });
 

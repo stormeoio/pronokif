@@ -1,6 +1,6 @@
 /**
  * Email verification landing page.
- * Users arrive here via the verification link sent by email.
+ * Broadcast Premium: centered card, pk-* tokens.
  */
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
@@ -24,7 +24,7 @@ export default function VerifyEmailPage() {
       .get(`/auth/verify-email?token=${token}`)
       .then(() => {
         setStatus("success");
-        setMessage("Ton email a ete verifie avec succes !");
+        setMessage("Your email has been verified successfully!");
       })
       .catch((err) => {
         setStatus("error");
@@ -33,39 +33,48 @@ export default function VerifyEmailPage() {
   }, [token]);
 
   return (
-    <div className="min-h-screen bg-app-main flex items-center justify-center px-4">
-      <div className="card-arcade p-8 max-w-sm w-full text-center">
+    <div
+      className="min-h-screen bg-pk-carbon flex items-center justify-center px-4"
+      data-testid="verify-email-page"
+    >
+      <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-8 max-w-sm w-full text-center">
         {status === "loading" && (
           <>
-            <Loader2 className="w-12 h-12 text-blue-400 animate-spin mx-auto mb-4" />
-            <p className="text-gray-300 font-body">Verification en cours...</p>
+            <Loader2 className="w-10 h-10 text-pk-info animate-spin mx-auto mb-4" />
+            <p className="text-sm text-pk-titane">Verification en cours...</p>
           </>
         )}
 
         {status === "success" && (
           <>
-            <CheckCircle2 className="w-12 h-12 text-green-400 mx-auto mb-4" />
-            <h2 className="font-heading text-xl text-white mb-2">Email verifie !</h2>
-            <p className="text-gray-400 font-body mb-6">{message}</p>
+            <div className="w-14 h-14 rounded-full bg-pk-emerald/[0.12] border border-pk-emerald/20 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-7 h-7 text-pk-emerald" />
+            </div>
+            <h2 className="font-display text-xl mb-1">Email verified!</h2>
+            <p className="text-xs text-pk-titane mb-6">{message}</p>
             <Link
               to="/"
-              className="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-heading uppercase tracking-wider text-sm hover:from-blue-500 hover:to-blue-600 transition-all"
+              className="inline-flex items-center justify-center h-11 px-6 rounded-lg bg-pk-red text-white font-display text-sm shadow-glow-red active:scale-[0.97] transition-transform"
+              data-testid="verify-success-link"
             >
-              Retour au dashboard
+              Back to dashboard
             </Link>
           </>
         )}
 
         {status === "error" && (
           <>
-            <XCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-            <h2 className="font-heading text-xl text-white mb-2">Erreur</h2>
-            <p className="text-gray-400 font-body mb-6">{message}</p>
+            <div className="w-14 h-14 rounded-full bg-pk-red/[0.12] border border-pk-red/20 flex items-center justify-center mx-auto mb-4">
+              <XCircle className="w-7 h-7 text-pk-red" />
+            </div>
+            <h2 className="font-display text-xl mb-1">Error</h2>
+            <p className="text-xs text-pk-titane mb-6">{message}</p>
             <Link
               to="/"
-              className="inline-block px-6 py-3 bg-gray-700 text-white rounded-lg font-heading uppercase tracking-wider text-sm hover:bg-gray-600 transition-all"
+              className="inline-flex items-center justify-center h-11 px-6 rounded-lg bg-white/[0.06] border border-white/[0.08] text-pk-piste font-display text-sm active:scale-[0.97] transition-transform"
+              data-testid="verify-error-link"
             >
-              Retour
+              Back
             </Link>
           </>
         )}

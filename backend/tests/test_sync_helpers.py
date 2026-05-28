@@ -123,12 +123,12 @@ class TestBuildSuccessItems:
         }
         items = _build_success_items(data)
         assert "Pole position" in items
-        assert "Top 10 qualifs" in items
-        assert "Vainqueur course" in items
-        assert "Top 10 course" in items
-        assert "Meilleur tour" in items
-        assert "Leader 1er virage" in items
-        assert "Vainqueur sprint" in items
+        assert "Qualifying Top 10" in items
+        assert "Race winner" in items
+        assert "Race top 10" in items
+        assert "Fastest lap" in items
+        assert "Turn 1 leader" in items
+        assert "Sprint winner" in items
         assert any("Safety Car" in i for i in items)
         assert any("DNF" in i for i in items)
 

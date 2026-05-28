@@ -505,7 +505,7 @@ function PhasesView({
   };
 
   const handleDeletePhase = (id: string) => {
-    if (!confirm("Supprimer cette phase ? Les taches associees ne seront pas supprimees.")) return;
+    if (!confirm("Delete this phase? Associated tasks will not be deleted.")) return;
     setPhases(phases.filter((p) => p.id !== id));
   };
 
@@ -514,7 +514,7 @@ function PhasesView({
       {(newPhase || editingPhase) && (
         <div className="card-arcade p-4 border border-purple-500/30 space-y-3">
           <h3 className="font-heading text-xs text-purple-400 uppercase">
-            {editingPhase ? "Modifier la phase" : "Nouvelle phase"}
+            {editingPhase ? "Edit phase" : "New phase"}
           </h3>
           <div className="grid grid-cols-2 gap-3">
             <Input
@@ -553,7 +553,7 @@ function PhasesView({
           </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={handleSavePhase} className="btn-racing text-xs">
-              <Save className="w-3.5 h-3.5 mr-1" /> Sauvegarder
+              <Save className="w-3.5 h-3.5 mr-1" /> Save
             </Button>
             <Button
               size="sm"
@@ -564,7 +564,7 @@ function PhasesView({
               }}
               className="text-gray-400 text-xs"
             >
-              Annuler
+              Cancel
             </Button>
           </div>
         </div>
@@ -581,7 +581,7 @@ function PhasesView({
           }}
           className="text-xs border-purple-500/30 text-purple-400"
         >
-          <Plus className="w-3.5 h-3.5 mr-1" /> Nouvelle phase
+          <Plus className="w-3.5 h-3.5 mr-1" /> New phase
         </Button>
       </div>
 
@@ -648,7 +648,7 @@ function PhasesView({
                 />
               </div>
               <p className="font-body text-xs text-gray-500">
-                {doneCount}/{phaseTasks.length} taches terminees
+                {doneCount}/{phaseTasks.length} tasks completed
               </p>
             </div>
           );
@@ -687,7 +687,7 @@ function TaskEditor({
     <div className="card-arcade p-4 mb-4 border border-orange-500/30 space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="font-heading text-sm text-orange-400 uppercase">
-          {task ? "Modifier la tache" : "Nouvelle tache"}
+          {task ? "Edit task" : "New task"}
         </h3>
         <button onClick={onCancel} className="p-1 text-gray-500 hover:text-white">
           <X className="w-4 h-4" />
@@ -697,7 +697,7 @@ function TaskEditor({
       <Input
         value={form.title}
         onChange={(e) => setForm({ ...form, title: e.target.value })}
-        placeholder="Titre de la tache"
+        placeholder="Task title"
         className="bg-gray-900 border-gray-700 text-white"
         autoFocus
       />
@@ -766,7 +766,7 @@ function TaskEditor({
           <Save className="w-3.5 h-3.5 mr-1" /> {task ? "Mettre a jour" : "Creer"}
         </Button>
         <Button size="sm" variant="ghost" onClick={onCancel} className="text-gray-400 text-xs">
-          Annuler
+          Cancel
         </Button>
       </div>
     </div>

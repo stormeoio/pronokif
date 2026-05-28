@@ -1,6 +1,6 @@
 /**
  * OnboardingTooltip — Contextual tooltip that appears once per step.
- * Tracks dismissals in localStorage to never show again.
+ * Broadcast Premium: pk-surface tooltip, pk-info accent, font-data.
  */
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -55,10 +55,10 @@ export default function OnboardingTooltip({
           exit={{ opacity: 0, y: position === "top" ? 8 : -8, scale: 0.9 }}
           transition={{ type: "spring", stiffness: 350, damping: 25 }}
         >
-          <div className="relative bg-gradient-to-r from-cyan-900/95 to-blue-900/95 backdrop-blur-sm border border-cyan-500/40 rounded-xl p-3 shadow-xl shadow-cyan-500/10">
+          <div className="relative bg-pk-anthracite backdrop-blur-sm border border-pk-info/30 rounded-lg p-3 shadow-xl">
             {/* Arrow */}
             <div
-              className={`absolute left-6 w-3 h-3 bg-cyan-900 border-cyan-500/40 rotate-45 ${
+              className={`absolute left-6 w-3 h-3 bg-pk-anthracite border-pk-info/30 rotate-45 ${
                 position === "top"
                   ? "bottom-[-6px] border-b border-r"
                   : "top-[-6px] border-t border-l"
@@ -67,10 +67,10 @@ export default function OnboardingTooltip({
 
             <div className="flex items-start gap-2">
               <span className="text-lg flex-shrink-0">{emoji}</span>
-              <p className="font-body text-xs text-gray-200 leading-relaxed">{message}</p>
+              <p className="text-xs text-pk-piste/80 leading-relaxed">{message}</p>
               <motion.button
                 onClick={dismiss}
-                className="flex-shrink-0 p-0.5 text-gray-400 hover:text-white rounded"
+                className="flex-shrink-0 p-0.5 text-pk-titane hover:text-pk-piste rounded"
                 whileTap={{ scale: 0.8 }}
               >
                 <X className="w-3.5 h-3.5" />

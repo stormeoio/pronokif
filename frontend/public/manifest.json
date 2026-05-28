@@ -1,7 +1,7 @@
 {
-  "name": "PronoKif - Pronostics F1",
+  "name": "PronoKif - Pickstics F1",
   "short_name": "PronoKif",
-  "description": "Jeu de pronostics Formule 1 entre amis",
+  "description": "Formula 1 prediction game with friends",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0B0D12",

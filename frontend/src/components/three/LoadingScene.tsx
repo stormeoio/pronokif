@@ -1,7 +1,6 @@
 /**
- * LoadingScene — 3D animated loader replacing the basic spinner.
- *
- * Features a spinning F1-inspired wheel with particles.
+ * LoadingScene — 3D animated loader with F1-inspired spinning wheel.
+ * Broadcast Premium: pk-red/piste colors, font-display, shadow-glow-red.
  */
 import { useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
@@ -102,7 +101,7 @@ export default function LoadingScene({ message = "Chargement..." }: { message?: 
         style={{ background: "linear-gradient(180deg, #0B0D12 0%, #07090D 100%)" }}
       >
         <div className="w-12 h-12 rounded-full border-3 border-pk-red/25 border-t-pk-red animate-spin shadow-glow-red" />
-        <p className="font-heading text-sm text-white/80 uppercase tracking-widest">{message}</p>
+        <p className="font-display text-sm text-white/80">{message}</p>
       </div>
     );
   }
@@ -127,9 +126,7 @@ export default function LoadingScene({ message = "Chargement..." }: { message?: 
       </div>
 
       <div className="text-center space-y-2">
-        <p className="font-heading text-sm text-white/80 uppercase tracking-widest animate-pulse">
-          {message}
-        </p>
+        <p className="font-display text-sm text-white/80 animate-pulse">{message}</p>
         <div className="w-32 h-0.5 mx-auto bg-pk-anthracite rounded-full overflow-hidden">
           <div className="h-full bg-gradient-to-r from-pk-red via-pk-piste to-pk-red animate-shimmer rounded-full" />
         </div>

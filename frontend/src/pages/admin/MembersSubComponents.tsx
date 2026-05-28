@@ -68,20 +68,20 @@ export function DeleteConfirmModal({
         <div className="bg-gradient-to-r from-red-600/20 to-transparent px-4 py-3 border-b border-red-500/30">
           <h3 className="font-heading text-sm uppercase text-red-400 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" />
-            Confirmer la suppression
+            Confirm deletion
           </h3>
         </div>
         <div className="p-4 space-y-4">
           <p className="font-body text-gray-300">
-            Etes-vous sur de vouloir supprimer le compte de{" "}
+            Are you sure you want to delete the account of{" "}
             <span className="text-white font-semibold">
               {memberDetails.username || memberDetails.email}
             </span>{" "}
             ?
           </p>
           <p className="font-body text-sm text-red-400 bg-red-500/10 p-3 rounded-lg">
-            {"⚠️"} Cette action est irreversible. Toutes les donnees de ce membre seront supprimees
-            : pronostics, scores, statistiques, etc.
+            {"⚠️"} This action cannot be undone. All data for this member will be deleted :
+            predictions, scores, statistiques, etc.
           </p>
           <div className="flex gap-3">
             <Button
@@ -90,7 +90,7 @@ export function DeleteConfirmModal({
               className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800"
               disabled={deletingMember}
             >
-              Annuler
+              Cancel
             </Button>
             <Button
               onClick={onConfirm}
@@ -104,7 +104,7 @@ export function DeleteConfirmModal({
                 </>
               ) : (
                 <>
-                  <Trash2 className="w-4 h-4 mr-2" /> Supprimer
+                  <Trash2 className="w-4 h-4 mr-2" /> Delete
                 </>
               )}
             </Button>
@@ -155,7 +155,7 @@ export function MemberDetailsModal({
         <div className="bg-gradient-to-r from-green-600/20 to-transparent px-4 py-3 border-b border-gray-700/50 flex items-center justify-between sticky top-0 bg-[#0c1525] z-10">
           <h3 className="font-heading text-sm uppercase text-green-400 flex items-center gap-2">
             <Users className="w-4 h-4" />
-            Details du membre
+            Member details
           </h3>
           <button onClick={onClose} className="text-gray-400 hover:text-white">
             <X className="w-5 h-5" />
@@ -177,7 +177,7 @@ export function MemberDetailsModal({
                   </div>
                   <div className="flex-1">
                     <h4 className="font-heading text-lg text-white">
-                      {memberDetails.username || "Sans pseudo"}
+                      {memberDetails.username || "No username"}
                     </h4>
                     <p className="font-body text-sm text-gray-400">{memberDetails.email}</p>
                     <p className="font-body text-xs text-gray-500">
@@ -235,7 +235,7 @@ export function MemberDetailsModal({
                     data-testid="delete-member-btn"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    Supprimer ce compte
+                    Delete this account
                   </Button>
                 </div>
               </div>
@@ -267,11 +267,11 @@ export function MemberInfoContent({ memberDetails }: MemberInfoContentProps) {
           <p className="font-data text-xl text-green-400">
             {memberDetails.stats?.predictions_count || 0}
           </p>
-          <p className="font-body text-xs text-gray-500">Pronostics</p>
+          <p className="font-body text-xs text-gray-500">Pickstics</p>
         </div>
         <div className="bg-white/5 rounded-lg p-3 text-center">
           <p className="font-data text-xl text-purple-400">{memberDetails.leagues?.length || 0}</p>
-          <p className="font-body text-xs text-gray-500">Ligues</p>
+          <p className="font-body text-xs text-gray-500">Leagues</p>
         </div>
       </div>
 
@@ -291,7 +291,7 @@ export function MemberInfoContent({ memberDetails }: MemberInfoContentProps) {
             <span className="text-white">{memberDetails.stats?.perfect_top10 || 0}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">Courses:</span>
+            <span className="text-gray-500">Races:</span>
             <span className="text-white">{memberDetails.stats?.races_participated || 0}</span>
           </div>
         </div>
@@ -299,12 +299,12 @@ export function MemberInfoContent({ memberDetails }: MemberInfoContentProps) {
 
       {(memberDetails.leagues?.length ?? 0) > 0 && (
         <div className="bg-white/5 rounded-lg p-3">
-          <h5 className="font-heading text-xs text-gray-400 uppercase mb-2">Ligues</h5>
+          <h5 className="font-heading text-xs text-gray-400 uppercase mb-2">Leagues</h5>
           <div className="space-y-1">
             {memberDetails.leagues?.map((league) => (
               <div key={league.id} className="flex justify-between text-sm">
                 <span className="text-white">{league.name}</span>
-                <span className="text-gray-500">{league.members_count} membres</span>
+                <span className="text-gray-500">{league.members_count} members</span>
               </div>
             ))}
           </div>
@@ -328,14 +328,14 @@ export function MemberActivityContent({
       {loadingActivity ? (
         <div className="p-8 text-center">
           <Loader2 className="w-6 h-6 text-cyan-500 animate-spin mx-auto" />
-          <p className="font-body text-sm text-gray-500 mt-2">Chargement de l'historique...</p>
+          <p className="font-body text-sm text-gray-500 mt-2">Loading history...</p>
         </div>
       ) : (memberActivity?.sessions?.length ?? 0) > 0 ? (
         <>
           <div className="bg-cyan-500/10 rounded-lg p-3 border border-cyan-500/30">
             <p className="font-body text-sm text-cyan-400">
               <History className="w-4 h-4 inline mr-2" />
-              {memberActivity!.sessions.length} connexion(s) enregistree(s)
+              {memberActivity!.sessions.length} sign-in(s) recorded
             </p>
           </div>
           <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -379,7 +379,7 @@ export function MemberActivityContent({
       ) : (
         <div className="p-8 text-center bg-white/5 rounded-lg">
           <History className="w-12 h-12 text-gray-600 mx-auto mb-2" />
-          <p className="font-body text-gray-500">Aucun historique de connexion</p>
+          <p className="font-body text-gray-500">No sign-in history</p>
         </div>
       )}
     </div>

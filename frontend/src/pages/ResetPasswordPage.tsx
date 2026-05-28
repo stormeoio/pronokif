@@ -20,7 +20,7 @@ interface Rule {
 
 const RULES: Rule[] = [
   { label: "8+ caracteres", test: (pw) => pw.length >= 8 },
-  { label: "1 majuscule", test: (pw) => /[A-Z]/.test(pw) },
+  { label: "1 updateduscule", test: (pw) => /[A-Z]/.test(pw) },
   { label: "1 minuscule", test: (pw) => /[a-z]/.test(pw) },
   { label: "1 chiffre", test: (pw) => /\d/.test(pw) },
 ];
@@ -66,7 +66,7 @@ export default function ResetPasswordPage() {
       return;
     }
     if (passedRules < 4) {
-      setError("Le mot de passe ne respecte pas tous les criteres");
+      setError("The password does not meet all criteria");
       return;
     }
 
@@ -82,7 +82,7 @@ export default function ResetPasswordPage() {
       haptic("error");
       const message =
         (err as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-        "Erreur lors de la reinitialisation";
+        "Error lors de la reinitialisation";
       setError(message);
       setStatus("form");
     }
@@ -93,7 +93,8 @@ export default function ResetPasswordPage() {
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-pk-red/[0.04] blur-[120px] pointer-events-none" />
 
       <motion.div
-        className="bg-pk-surface border border-white/[0.08] rounded-xl p-6 max-w-sm w-full relative z-10"
+        className="bg-pk-surface border border-white/[0.08] rounded-lg p-6 max-w-sm w-full relative z-10"
+        data-testid="reset-password-card"
         initial={{ opacity: 0, y: 20, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: duration.medium / 1000, ease: easing.enter }}
@@ -112,9 +113,9 @@ export default function ResetPasswordPage() {
             <div className="w-14 h-14 rounded-full bg-pk-emerald/[0.12] border border-pk-emerald/20 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-6 h-6 text-pk-emerald" />
             </div>
-            <h2 className="font-display text-lg mb-1">Mot de passe modifie</h2>
+            <h2 className="font-display text-lg mb-1">Password modifie</h2>
             <p className="text-xs text-pk-titane mb-5">
-              Tu peux maintenant te connecter avec ton nouveau mot de passe.
+              You can now sign in with your new password.
             </p>
             <Link
               to="/auth"
@@ -149,8 +150,8 @@ export default function ResetPasswordPage() {
               <div className="w-12 h-12 rounded-full bg-pk-red/[0.10] border border-pk-red/20 flex items-center justify-center mx-auto mb-3">
                 <Lock className="w-5 h-5 text-pk-red" />
               </div>
-              <h2 className="font-display text-lg mb-1">Nouveau mot de passe</h2>
-              <p className="text-xs text-pk-titane">Choisis un mot de passe securise.</p>
+              <h2 className="font-display text-lg mb-1">New password</h2>
+              <p className="text-xs text-pk-titane">Choose a secure password.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -161,7 +162,7 @@ export default function ResetPasswordPage() {
                     type={showPw ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Nouveau mot de passe"
+                    placeholder="New password"
                     required
                     minLength={8}
                     className="w-full h-11 px-3.5 pr-10 rounded-lg bg-pk-anthracite border border-white/[0.08] text-sm text-pk-piste placeholder:text-pk-titane/50 focus:outline-none focus:border-pk-red/40 transition-colors"
@@ -235,7 +236,7 @@ export default function ResetPasswordPage() {
                     type={showConfirm ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirmer"
+                    placeholder="Confirm"
                     required
                     minLength={8}
                     className="w-full h-11 px-3.5 pr-10 rounded-lg bg-pk-anthracite border border-white/[0.08] text-sm text-pk-piste placeholder:text-pk-titane/50 focus:outline-none focus:border-pk-red/40 transition-colors"
@@ -267,6 +268,7 @@ export default function ResetPasswordPage() {
                 type="submit"
                 disabled={status === "loading" || !passwordsMatch || passedRules < 4}
                 className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-50"
+                data-testid="reset-password-submit"
               >
                 {status === "loading" ? "Reinitialisation..." : "Reinitialiser"}
               </button>
@@ -278,7 +280,7 @@ export default function ResetPasswordPage() {
                 className="text-xs text-pk-titane hover:text-pk-piste transition-colors inline-flex items-center gap-1"
               >
                 <ArrowLeft className="w-3 h-3" />
-                Retour a la connexion
+                Back to sign in
               </Link>
             </div>
           </>

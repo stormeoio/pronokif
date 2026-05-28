@@ -140,7 +140,7 @@ async def set_official_and_score(*, race_id: str, results: dict, entered_by: str
 
         await send_user_notification(
             user_id,
-            f"Résultats {race_name}: +{points['total']} pts!",
+            f"Results {race_name}: +{points['total']} pts!",
             "results",
         )
 

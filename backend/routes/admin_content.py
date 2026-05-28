@@ -5,6 +5,7 @@ Invitations, media uploads, app settings, dashboard stats.
 
 Endpoints:
   POST   /admin-bo/invitations         - send email invitation
+  POST   /admin-bo/invitations/batch   - send multiple email invitations
   GET    /admin-bo/invitations         - list sent invitations
 
   POST   /admin-bo/media/upload        - upload media
@@ -28,7 +29,7 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import Response
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 from config import db, logger
 from routes.admin_auth import _send_invitation_email, get_current_admin
@@ -44,35 +45,113 @@ class InvitationSend(BaseModel):
     message: str | None = None
 
 
+class InvitationBatchSend(BaseModel):
+    emails: list[EmailStr] = Field(..., min_length=1, max_length=100)
+    message: str | None = None
+
+
+def _dedupe_invitation_emails(emails: list[EmailStr]) -> tuple[list[str], list[dict]]:
+    seen: set[str] = set()
+    unique: list[str] = []
+    skipped: list[dict] = []
+
+    for email in emails:
+        normalized = str(email).strip().lower()
+        if normalized in seen:
+            skipped.append({"email": normalized, "reason": "duplicate in batch"})
+            continue
+        seen.add(normalized)
+        unique.append(normalized)
+
+    return unique, skipped
+
+
+def _build_invitation_doc(email: str, message: str | None, admin_email: str) -> tuple[dict, str]:
+    invite_token = secrets.token_urlsafe(32)
+    invitation = {
+        "id": str(uuid.uuid4()),
+        "email": email,
+        "message": message,
+        "token": invite_token,
+        "sent_by": admin_email,
+        "accepted": False,
+        "created_at": datetime.now(UTC).isoformat(),
+        "expires_at": (datetime.now(UTC) + timedelta(days=7)).isoformat(),
+    }
+    return invitation, invite_token
+
+
+def _build_invitation_url(invite_token: str) -> str:
+    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+    return f"{frontend_url}/auth?invite={invite_token}"
+
+
 @router.post("/invitations")
 async def send_invitation(
     data: InvitationSend, admin: dict = Depends(get_current_admin)
 ) -> dict:
     """Send an email invitation to create an account."""
-    existing = await db.invitations.find_one({"email": data.email.lower()})
+    email = str(data.email).strip().lower()
+    existing = await db.invitations.find_one({"email": email})
     if existing and not existing.get("accepted"):
-        raise HTTPException(status_code=400, detail="Invitation deja envoyee a cette adresse")
+        raise HTTPException(status_code=400, detail="Invitation already sent to this address")
 
-    invite_token = secrets.token_urlsafe(32)
-    invitation = {
-        "id": str(uuid.uuid4()),
-        "email": data.email.lower(),
-        "message": data.message,
-        "token": invite_token,
-        "sent_by": admin["email"],
-        "accepted": False,
-        "created_at": datetime.now(UTC).isoformat(),
-        "expires_at": (datetime.now(UTC) + timedelta(days=7)).isoformat(),
-    }
+    invitation, invite_token = _build_invitation_doc(email, data.message, admin["email"])
     await db.invitations.insert_one(invitation)
 
-    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
-    invite_url = f"{frontend_url}/auth?invite={invite_token}"
+    invite_url = _build_invitation_url(invite_token)
 
-    if not await _send_invitation_email(data.email, invite_url, data.message):
-        logger.info(f"[Invitation] Link for {data.email}: {invite_url}")
+    if not await _send_invitation_email(email, invite_url, data.message):
+        logger.info(f"[Invitation] Link for {email}: {invite_url}")
 
-    return {"message": "Invitation envoyee", "id": invitation["id"]}
+    return {"message": "Invitation sent", "id": invitation["id"]}
+
+
+@router.post("/invitations/batch")
+async def send_invitations_batch(
+    data: InvitationBatchSend, admin: dict = Depends(get_current_admin)
+) -> dict:
+    """Send multiple email invitations to create accounts."""
+    emails, skipped = _dedupe_invitation_emails(data.emails)
+    created: list[dict] = []
+    failed: list[dict] = []
+
+    for email in emails:
+        existing = await db.invitations.find_one({"email": email})
+        if existing and not existing.get("accepted"):
+            skipped.append({"email": email, "reason": "invitation already pending"})
+            continue
+
+        invitation, invite_token = _build_invitation_doc(email, data.message, admin["email"])
+        await db.invitations.insert_one(invitation)
+
+        invite_url = _build_invitation_url(invite_token)
+        try:
+            email_sent = await _send_invitation_email(email, invite_url, data.message)
+        except Exception as exc:
+            logger.exception("[Invitation] Failed to email %s", email)
+            failed.append({"email": email, "reason": str(exc) or "SMTP error"})
+            continue
+
+        if not email_sent:
+            logger.info(f"[Invitation] Link for {email}: {invite_url}")
+
+        created.append(
+            {
+                "email": email,
+                "id": invitation["id"],
+                "email_sent": email_sent,
+            }
+        )
+
+    return {
+        "message": "Invitations traitees",
+        "total": len(data.emails),
+        "sent": len(created),
+        "created": created,
+        "skipped": skipped,
+        "failed": failed,
+    }
 
 
 @router.get("/invitations")
@@ -185,7 +264,7 @@ async def get_settings(admin: dict = Depends(get_current_admin)) -> dict:
     if not settings:
         settings = {
             "app_name": "Pronokif",
-            "app_description": "Jeu de pronostics F1",
+            "app_description": "F1 prediction game",
             "primary_color": "#f97316",
             "accent_color": "#06b6d4",
             "maintenance_mode": False,
@@ -205,7 +284,7 @@ async def update_settings(
     """Update app settings."""
     updates = {k: v for k, v in data.model_dump().items() if v is not None}
     if not updates:
-        raise HTTPException(status_code=400, detail="Aucune modification fournie")
+        raise HTTPException(status_code=400, detail="No changes provided")
 
     await db.app_settings.update_one(
         {"_id": "global"},

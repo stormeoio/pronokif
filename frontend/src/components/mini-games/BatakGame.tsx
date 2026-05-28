@@ -1,8 +1,11 @@
+/**
+ * BatakGame — Speed target-clicking mini-game (30s).
+ * Broadcast Premium: pk-surface card, pk-red CTA, pk-info targets, pk-emerald/amber grades.
+ */
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Timer, RotateCcw, Play, Target, Share2, X, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "../ui/button";
 import { api } from "@/lib/api";
 import { haptic } from "@/lib/haptics";
 
@@ -40,7 +43,7 @@ function HitEffect({ x, y }: { x: number; y: number }) {
       {particles.map((p) => (
         <motion.div
           key={p.id}
-          className="absolute rounded-full bg-cyan-400"
+          className="absolute rounded-full bg-pk-info"
           style={{ width: p.size, height: p.size }}
           initial={{ x: 0, y: 0, opacity: 1 }}
           animate={{
@@ -141,18 +144,53 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
   }, []);
 
   const getResultGrade = (s: number) => {
-    if (s >= 40) return { label: "INCROYABLE!", color: "text-emerald-400", bg: "from-emerald-500/30 to-emerald-700/10", grade: "S+" };
-    if (s >= 35) return { label: "Excellent!", color: "text-green-400", bg: "from-green-500/30 to-green-700/10", grade: "S" };
-    if (s >= 30) return { label: "Très bien!", color: "text-cyan-400", bg: "from-cyan-500/30 to-cyan-700/10", grade: "A" };
-    if (s >= 25) return { label: "Bien!", color: "text-blue-400", bg: "from-blue-500/30 to-blue-700/10", grade: "B" };
-    if (s >= 20) return { label: "Correct", color: "text-yellow-400", bg: "from-yellow-500/30 to-yellow-700/10", grade: "C" };
-    return { label: "À améliorer", color: "text-orange-400", bg: "from-orange-500/30 to-orange-700/10", grade: "D" };
+    if (s >= 40)
+      return {
+        label: "INCROYABLE!",
+        color: "text-pk-emerald",
+        bg: "from-pk-emerald/20 to-pk-emerald/5",
+        grade: "S+",
+      };
+    if (s >= 35)
+      return {
+        label: "Excellent!",
+        color: "text-pk-emerald",
+        bg: "from-pk-emerald/20 to-pk-emerald/5",
+        grade: "S",
+      };
+    if (s >= 30)
+      return {
+        label: "Very good!",
+        color: "text-pk-info",
+        bg: "from-pk-info/20 to-pk-info/5",
+        grade: "A",
+      };
+    if (s >= 25)
+      return {
+        label: "Bien!",
+        color: "text-pk-info",
+        bg: "from-pk-info/20 to-pk-info/5",
+        grade: "B",
+      };
+    if (s >= 20)
+      return {
+        label: "Correct",
+        color: "text-pk-amber",
+        bg: "from-pk-amber/20 to-pk-amber/5",
+        grade: "C",
+      };
+    return {
+      label: "Needs work",
+      color: "text-pk-red",
+      bg: "from-pk-red/20 to-pk-red/5",
+      grade: "D",
+    };
   };
 
   const getTimerUrgency = () => {
-    if (timeLeft <= 5) return "text-red-500";
-    if (timeLeft <= 10) return "text-orange-400";
-    return "text-cyan-400";
+    if (timeLeft <= 5) return "text-pk-red";
+    if (timeLeft <= 10) return "text-pk-amber";
+    return "text-pk-info";
   };
 
   const fetchUserLeagues = async () => {
@@ -176,12 +214,12 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
   const handleShareToLeague = async (leagueId: number, leagueName: string) => {
     setSharing(true);
     try {
-      const message = `🎯 J'ai fait ${score} cibles au Batak Pro ! ${getResultGrade(score).label} Qui peut faire mieux ?`;
+      const message = `🎯 J'ai fait ${score} targets au Batak Pro ! ${getResultGrade(score).label} Qui peut faire mieux ?`;
       await api.chat.send(String(leagueId), { content: message });
-      toast.success(`Score partagé dans ${leagueName} !`);
+      toast.success(`Score shared in ${leagueName} !`);
       setShowShareModal(false);
     } catch (error: unknown) {
-      toast.error("Erreur lors du partage");
+      toast.error("Error lors du partage");
     } finally {
       setSharing(false);
     }
@@ -189,14 +227,11 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
 
   return (
     <motion.div
-      className="relative glass-card rounded-2xl border border-white/10 overflow-hidden"
+      className="relative bg-pk-surface border border-white/[0.08] rounded-lg overflow-hidden"
       initial={{ opacity: 0, y: 20, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.5, type: "spring", stiffness: 200 }}
     >
-      {/* Ambient glow */}
-      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 pointer-events-none" />
-
       {/* Header */}
       <div className="relative p-5 pb-3">
         <div className="flex items-center justify-between">
@@ -206,28 +241,26 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
           >
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+            <div className="w-9 h-9 rounded-lg bg-pk-info flex items-center justify-center shadow-lg shadow-pk-info/20">
               <Target className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-heading text-base uppercase text-white tracking-wide">
-                Batak Pro
-              </h3>
+              <h3 className="font-display text-sm">Batak Pro</h3>
               {isTraining && (
-                <span className="font-body text-[10px] text-orange-400 uppercase tracking-wider">
-                  Entraînement
+                <span className="font-data text-[0.5625rem] text-pk-info uppercase tracking-wider">
+                  Training
                 </span>
               )}
             </div>
           </motion.div>
           {!isTraining && attemptsRemaining !== undefined && (
             <motion.div
-              className="bg-cyan-500/10 border border-cyan-500/30 px-3 py-1.5 rounded-lg"
+              className="bg-pk-red-subtle border border-pk-red/30 px-3 py-1.5 rounded-lg"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", delay: 0.2 }}
             >
-              <span className="font-data text-sm text-cyan-400">{attemptsRemaining}/3</span>
+              <span className="font-data text-sm text-pk-red">{attemptsRemaining}/3</span>
             </motion.div>
           )}
         </div>
@@ -235,7 +268,7 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
 
       {/* Timer + Score HUD */}
       <div className="px-5 pb-3">
-        <div className="flex items-center justify-between bg-white/[0.03] rounded-xl px-4 py-2.5 border border-white/5">
+        <div className="flex items-center justify-between bg-white/[0.03] rounded-lg px-4 py-2.5 border border-white/[0.06]">
           <motion.div
             className="flex items-center gap-2"
             animate={timeLeft <= 5 ? { scale: [1, 1.05, 1] } : {}}
@@ -248,12 +281,12 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
             </span>
           </motion.div>
           <div className="flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-yellow-500" />
+            <Trophy className="w-5 h-5 text-pk-amber" />
             <motion.span
               key={score}
-              className="font-data text-2xl text-yellow-500 tabular-nums"
-              initial={score > 0 ? { scale: 1.3, color: "#22d3ee" } : {}}
-              animate={{ scale: 1, color: "#eab308" }}
+              className="font-data text-2xl text-pk-amber tabular-nums"
+              initial={score > 0 ? { scale: 1.3, color: "#00D4FF" } : {}}
+              animate={{ scale: 1, color: "#FFB800" }}
               transition={{ duration: 0.3 }}
             >
               {score}
@@ -278,12 +311,12 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
                 key={i}
                 onClick={(e) => target && handleTargetClick(target.id, e)}
                 disabled={gameState !== "playing"}
-                className={`relative h-14 sm:h-16 rounded-xl transition-colors ${
+                className={`relative h-14 sm:h-16 rounded-lg transition-colors ${
                   target
-                    ? "bg-gradient-to-b from-cyan-400/90 to-cyan-600/90 border-2 border-cyan-300/80 shadow-[0_0_20px_#22d3ee50]"
+                    ? "bg-pk-info/90 border border-pk-info/80 shadow-[0_0_20px_rgba(0,212,255,0.3)]"
                     : wasHit
-                      ? "bg-cyan-500/20 border-2 border-cyan-500/30"
-                      : "bg-white/[0.03] border-2 border-white/5 hover:border-white/10"
+                      ? "bg-pk-info/20 border border-pk-info/30"
+                      : "bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12]"
                 }`}
                 animate={
                   target
@@ -298,7 +331,7 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
                 {/* Target glow ring */}
                 {target && (
                   <motion.div
-                    className="absolute inset-0 rounded-xl border-2 border-cyan-300"
+                    className="absolute inset-0 rounded-lg border border-pk-info/60"
                     animate={{ opacity: [0.5, 1, 0.5], scale: [1, 1.05, 1] }}
                     transition={{ duration: 0.8, repeat: Infinity }}
                   />
@@ -338,18 +371,17 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
             >
-              <p className="font-body text-gray-500 text-sm">
-                Clique sur les cibles le plus vite possible !
+              <p className="text-pk-titane text-sm">
+                Clique sur les targets le plus vite possible !
               </p>
-              <Button
+              <button
                 onClick={startGame}
-                className="w-full h-12 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-heading text-base rounded-xl relative overflow-hidden group"
+                className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 disabled={!isTraining && attemptsRemaining === 0}
                 data-testid="batak-start-btn"
               >
-                <span className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12" />
-                <Play className="w-5 h-5 mr-2" /> DÉMARRER (30s)
-              </Button>
+                <Play className="w-5 h-5" /> START (30s)
+              </button>
             </motion.div>
           )}
 
@@ -373,7 +405,7 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
                   initial={{ y: -10 }}
                   animate={{ y: 0 }}
                 >
-                  <span className={`font-heading text-xs uppercase ${getResultGrade(score).color}`}>
+                  <span className={`font-display text-xs ${getResultGrade(score).color}`}>
                     {getResultGrade(score).grade}
                   </span>
                 </motion.div>
@@ -384,36 +416,36 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
                   transition={{ type: "spring", stiffness: 400 }}
                 >
                   {score}
-                  <span className="text-lg ml-1 opacity-70">cibles</span>
+                  <span className="text-lg ml-1 opacity-70">targets</span>
                 </motion.p>
-                <p className="font-heading text-sm mt-1 text-white/80">
+                <p className="font-display text-sm mt-1 text-white/80">
                   {getResultGrade(score).label}
                 </p>
               </motion.div>
 
               {/* Action buttons */}
               <div className="flex gap-3">
-                <Button
+                <button
                   onClick={resetGame}
-                  className="flex-1 h-12 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-heading rounded-xl"
+                  className="flex-1 h-11 rounded-lg border border-white/[0.08] text-pk-titane font-display text-xs hover:text-pk-piste hover:border-white/[0.15] transition-colors flex items-center justify-center gap-2"
                 >
-                  <RotateCcw className="w-4 h-4 mr-2" /> Réessayer
-                </Button>
-                <Button
+                  <RotateCcw className="w-4 h-4" /> Try again
+                </button>
+                <button
                   onClick={handleSubmit}
-                  className="flex-1 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-heading rounded-xl"
+                  className="flex-1 h-11 rounded-lg bg-pk-red text-white font-display text-xs shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   disabled={!isTraining && attemptsRemaining === 0}
                 >
-                  <Trophy className="w-4 h-4 mr-2" /> Enregistrer
-                </Button>
+                  <Trophy className="w-4 h-4" /> Save
+                </button>
               </div>
-              <Button
+              <button
                 onClick={handleOpenShareModal}
-                className="w-full h-11 bg-white/5 border border-green-500/30 hover:bg-green-500/10 text-green-400 font-heading rounded-xl"
+                className="w-full h-11 rounded-lg border border-pk-emerald/30 text-pk-emerald font-display text-xs hover:bg-pk-emerald/5 transition-colors flex items-center justify-center gap-2"
                 data-testid="batak-share-btn"
               >
-                <Share2 className="w-4 h-4 mr-2" /> Partager dans une ligue
-              </Button>
+                <Share2 className="w-4 h-4" /> Share in a league
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -430,7 +462,7 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
             onClick={() => setShowShareModal(false)}
           >
             <motion.div
-              className="glass-card border border-cyan-500/20 rounded-2xl max-w-md w-full p-6 relative"
+              className="bg-pk-anthracite border border-white/[0.08] rounded-lg max-w-md w-full p-6 relative"
               initial={{ scale: 0.9, y: 20, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.9, y: 20, opacity: 0 }}
@@ -439,18 +471,19 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
             >
               <button
                 onClick={() => setShowShareModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                className="absolute top-4 right-4 text-pk-titane hover:text-pk-piste transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-pk-emerald flex items-center justify-center">
                   <Share2 className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-heading text-lg text-white">Partager mon score</h3>
-                  <p className="font-body text-xs text-gray-400">
-                    <span className="text-cyan-400 font-data">{score} cibles</span> — {getResultGrade(score).label}
+                  <h3 className="font-display text-sm text-pk-piste">Share mon score</h3>
+                  <p className="text-xs text-pk-titane">
+                    <span className="text-pk-info font-data">{score} targets</span> —{" "}
+                    {getResultGrade(score).label}
                   </p>
                 </div>
               </div>
@@ -458,16 +491,16 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
               {loadingLeagues ? (
                 <div className="text-center py-8">
                   <motion.div
-                    className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full mx-auto"
+                    className="w-8 h-8 border-2 border-pk-info border-t-transparent rounded-full mx-auto"
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                   />
-                  <p className="text-gray-500 text-sm mt-3">Chargement...</p>
+                  <p className="text-pk-titane text-sm mt-3">Loading...</p>
                 </div>
               ) : userLeagues.length === 0 ? (
                 <div className="text-center py-8">
-                  <MessageCircle className="w-10 h-10 text-gray-600 mx-auto mb-2" />
-                  <p className="text-gray-400 text-sm">Aucune ligue rejointe</p>
+                  <MessageCircle className="w-10 h-10 text-pk-titane/40 mx-auto mb-2" />
+                  <p className="text-pk-titane text-sm">No league rejointe</p>
                 </div>
               ) : (
                 <motion.div
@@ -481,7 +514,7 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
                       key={league.id}
                       onClick={() => handleShareToLeague(league.id, league.name)}
                       disabled={sharing}
-                      className="w-full p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all flex items-center justify-between group"
+                      className="w-full p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] hover:border-pk-info/40 hover:bg-pk-info/5 transition-all flex items-center justify-between group"
                       variants={{
                         hidden: { opacity: 0, x: -10 },
                         visible: { opacity: 1, x: 0 },
@@ -489,10 +522,10 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
                       whileHover={{ x: 4 }}
                       whileTap={{ scale: 0.97 }}
                     >
-                      <span className="font-heading text-sm text-white group-hover:text-cyan-400 transition-colors">
+                      <span className="font-display text-sm text-pk-piste group-hover:text-pk-info transition-colors">
                         {league.name}
                       </span>
-                      <Share2 className="w-4 h-4 text-gray-600 group-hover:text-cyan-400 transition-colors" />
+                      <Share2 className="w-4 h-4 text-pk-titane group-hover:text-pk-info transition-colors" />
                     </motion.button>
                   ))}
                 </motion.div>

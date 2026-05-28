@@ -49,8 +49,8 @@ beforeEach(() => {
     missions: [
       {
         id: "m1",
-        title: "Premier prono",
-        description: "Fais ton premier pronostic",
+        title: "First pick",
+        description: "Make your first pickstic",
         icon: "target",
         xp: 50,
         category: "assiduity",
@@ -62,7 +62,7 @@ beforeEach(() => {
       {
         id: "m2",
         title: "5 courses",
-        description: "Participe à 5 courses",
+        description: "Take part in 5 races",
         icon: "flag",
         xp: 100,
         category: "assiduity",
@@ -72,7 +72,7 @@ beforeEach(() => {
         claimed: false,
       },
     ],
-    categories: { assiduity: "Assiduité", predictions: "Pronostics" },
+    categories: { assiduity: "Consistency", predictions: "Pickstics" },
   });
   mockApi.user.stats.mockResolvedValue({ total_predictions: 12, races_participated: 3 });
 });

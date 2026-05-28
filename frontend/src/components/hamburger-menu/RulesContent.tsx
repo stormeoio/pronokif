@@ -1,3 +1,7 @@
+/**
+ * RulesContent — Game rules section for the hamburger menu.
+ * Broadcast Premium: pk-surface cards, pk-amber accents.
+ */
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { Trophy } from "lucide-react";
@@ -12,10 +16,10 @@ interface RuleSectionProps {
 function RuleSection({ title, text, children }: RuleSectionProps) {
   return (
     <motion.section
-      className="bg-gray-800/50 rounded-lg p-3 border border-orange-500/20"
+      className="bg-white/[0.04] rounded-lg p-3 border border-pk-amber/20"
       variants={{ hidden: { opacity: 0, x: -10 }, visible: { opacity: 1, x: 0 } }}
     >
-      <h4 className="font-heading text-sm text-orange-400 mb-2">{title}</h4>
+      <h4 className="font-display text-xs text-pk-amber mb-2">{title}</h4>
       {text && <p>{text}</p>}
       {children}
     </motion.section>
@@ -25,79 +29,73 @@ function RuleSection({ title, text, children }: RuleSectionProps) {
 export function RulesContent() {
   return (
     <div className="space-y-4">
-      <SectionHeader
-        icon={Trophy}
-        title="Règles du jeu"
-        subtitle="Comment ça marche"
-        color="from-orange-500 to-orange-700"
-      />
+      <SectionHeader icon={Trophy} title="Game rules" subtitle="How it works" color="bg-pk-amber" />
       <motion.div
-        className="space-y-4 font-body text-sm text-gray-300 leading-relaxed"
+        className="space-y-4 text-sm text-pk-piste/80 leading-relaxed"
         initial="hidden"
         animate="visible"
         variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
       >
         <RuleSection
-          title="Principe général"
-          text="PRONOKIF est un jeu de pronostics F1. Avant chaque Grand Prix, tu dois prédire les résultats des qualifications et de la course. Plus tes pronostics sont précis, plus tu gagnes de points !"
+          title="General principle"
+          text="PRONOKIF is an F1 prediction game. Before each Grand Prix, you predict qualifying and race results. The more accurate your predictions are, the more points you score!"
         />
         <RuleSection title="Pronostics obligatoires">
-          <ul className="space-y-2 text-gray-400">
+          <ul className="space-y-2 text-pk-titane">
             <li className="flex items-start gap-2">
-              <span className="text-orange-400">•</span>
+              <span className="text-pk-amber">&#x2022;</span>
               <span>
-                <strong className="text-white">Pole Position</strong> : Pronostique le pilote qui
-                sera en pole
+                <strong className="text-white">Pole Position</strong> : Pick the driver who will
+                take la pole
               </span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-orange-400">•</span>
+              <span className="text-pk-amber">&#x2022;</span>
               <span>
-                <strong className="text-white">Top 10 Qualifs</strong> : Pronostique les 10 premiers
-                des qualifications dans l'ordre
+                <strong className="text-white">Top 10 Qualifications</strong> : Choose the top 10
+                first qualifiers in order
               </span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-orange-400">•</span>
+              <span className="text-pk-amber">&#x2022;</span>
               <span>
-                <strong className="text-white">Vainqueur</strong> : Pronostique le vainqueur de la
-                course
+                <strong className="text-white">Winner</strong>: Pick the race winner
               </span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-orange-400">•</span>
+              <span className="text-pk-amber">&#x2022;</span>
               <span>
-                <strong className="text-white">Top 10 Course</strong> : Pronostique les 10 premiers
-                de la course dans l'ordre
+                <strong className="text-white">Top 10 Race</strong> : Choose the top 10 finishers in
+                order
               </span>
             </li>
           </ul>
         </RuleSection>
-        <RuleSection title="Pronostics bonus">
-          <ul className="space-y-2 text-gray-400">
+        <RuleSection title="Paris bonus">
+          <ul className="space-y-2 text-pk-titane">
             <li className="flex items-start gap-2">
-              <span className="text-yellow-400">⚡</span>
+              <span className="text-pk-amber">&#x26A1;</span>
               <span>
                 <strong className="text-white">Safety Car</strong> : Y aura-t-il un Safety Car
-                pendant la course ?
+                during the race?
               </span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-yellow-400">⚡</span>
+              <span className="text-pk-amber">&#x26A1;</span>
               <span>
-                <strong className="text-white">Meilleur tour</strong> : Quel pilote réalisera le
+                <strong className="text-white">Fastest lap</strong> : Which driver will set the
                 meilleur tour ?
               </span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-yellow-400">⚡</span>
+              <span className="text-pk-amber">&#x26A1;</span>
               <span>
-                <strong className="text-white">Leader T1</strong> : Qui sera en tête au premier
+                <strong className="text-white">Turn 1 leader</strong> : Who will lead at the first
                 virage ?
               </span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-yellow-400">⚡</span>
+              <span className="text-pk-amber">&#x26A1;</span>
               <span>
                 <strong className="text-white">Abandons (DNF)</strong> : Quels pilotes abandonneront
                 ? (ou "Pas de DNF")
@@ -105,29 +103,29 @@ export function RulesContent() {
             </li>
           </ul>
         </RuleSection>
-        <RuleSection title="Weekends Sprint">
-          <p className="text-gray-400">
-            Lors des weekends avec Sprint, tu as{" "}
-            <strong className="text-white">deux séries de pronostics</strong> à faire :
+        <RuleSection title="Week-ends Sprint">
+          <p className="text-pk-titane">
+            During Sprint weekends, you have{" "}
+            <strong className="text-white">two sets of predictions</strong> to make:
           </p>
-          <ul className="mt-2 space-y-1 text-gray-400">
-            <li>• Sprint : Clôture 15 min avant Sprint Qualifs (SQ1)</li>
-            <li>• Course principale : Clôture 15 min avant Qualifs (Q1)</li>
+          <ul className="mt-2 space-y-1 text-pk-titane">
+            <li>&#x2022; Sprint: closes 15 min before Sprint Qualifying (SQ1)</li>
+            <li>&#x2022; Main race: closes 15 min before Qualifying (Q1)</li>
           </ul>
         </RuleSection>
-        <RuleSection title="Dates limites">
-          <p className="text-gray-400">
-            Les pronostics doivent être enregistrés{" "}
-            <strong className="text-white">15 minutes avant le début de la première session</strong>{" "}
-            concernée (Q1 pour la course, SQ1 pour le sprint).
+        <RuleSection title="Deadlines">
+          <p className="text-pk-titane">
+            Predictions must be saved{" "}
+            <strong className="text-white">15 minutes before the start of the first session</strong>{" "}
+            concerned (Q1 for the race, SQ1 for the sprint).
           </p>
-          <p className="mt-2 text-red-400 text-xs">
-            ⚠️ Après la clôture, les pronostics ne peuvent plus être modifiés !
+          <p className="mt-2 text-pk-red text-xs">
+            After the deadline, predictions can no longer be edited!
           </p>
         </RuleSection>
         <RuleSection
           title="Ligues"
-          text="Crée ou rejoins une ligue pour défier tes amis ! Le classement de chaque ligue est indépendant. Tu peux appartenir à plusieurs ligues simultanément."
+          text="Create or join a league to challenge your friends! Each league has its own leaderboard. You can belong to several leagues at once."
         />
       </motion.div>
     </div>

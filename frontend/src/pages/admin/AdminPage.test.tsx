@@ -31,7 +31,7 @@ vi.mock("@/lib/api", () => {
         list: () => unwrap(mockApiClient.get("/drivers")),
       },
     },
-    getApiError: (e: unknown, fallback = "Erreur") => {
+    getApiError: (e: unknown, fallback = "Error") => {
       const err = e as { response?: { data?: { detail?: string } } };
       return err.response?.data?.detail || fallback;
     },
@@ -94,8 +94,8 @@ describe("AdminPage", () => {
     // All 4 tabs visible
     expect(screen.getByText("Resultats")).toBeInTheDocument();
     expect(screen.getByText("Notifs")).toBeInTheDocument();
-    expect(screen.getByText("Retours")).toBeInTheDocument();
-    expect(screen.getByText("Membres")).toBeInTheDocument();
+    expect(screen.getByText("Backs")).toBeInTheDocument();
+    expect(screen.getByText("Members")).toBeInTheDocument();
   });
 
   it("has the correct test id", async () => {

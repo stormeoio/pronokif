@@ -37,7 +37,7 @@ export default function ForgotPasswordPage() {
       setResendTimer(60);
     } catch {
       haptic("error");
-      setError("Une erreur est survenue, veuillez reessayer.");
+      setError("An error occurred. Please try again.");
       setStatus("idle");
     }
   };
@@ -61,7 +61,8 @@ export default function ForgotPasswordPage() {
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-pk-red/[0.04] blur-[120px] pointer-events-none" />
 
       <motion.div
-        className="bg-pk-surface border border-white/[0.08] rounded-xl p-6 max-w-sm w-full relative z-10"
+        className="bg-pk-surface border border-white/[0.08] rounded-lg p-6 max-w-sm w-full relative z-10"
+        data-testid="forgot-password-card"
         initial={{ opacity: 0, y: 20, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: duration.medium / 1000, ease: easing.enter }}
@@ -84,16 +85,15 @@ export default function ForgotPasswordPage() {
             <div className="w-14 h-14 rounded-full bg-pk-emerald/[0.12] border border-pk-emerald/20 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-6 h-6 text-pk-emerald" />
             </div>
-            <h2 className="font-display text-lg mb-1">Email envoye</h2>
+            <h2 className="font-display text-lg mb-1">Email sent</h2>
             <p className="text-xs text-pk-titane leading-relaxed mb-5 max-w-[260px] mx-auto">
-              Si un compte existe avec cet email, tu recevras un lien pour reinitialiser ton mot de
-              passe.
+              If an account exists for this email, you will receive a link to reset your password.
             </p>
 
             {/* Resend timer */}
             {resendTimer > 0 ? (
               <p className="font-data text-[0.5625rem] text-pk-titane mb-4">
-                Renvoyer dans {resendTimer}s
+                Resend in {resendTimer}s
               </p>
             ) : (
               <button
@@ -112,7 +112,7 @@ export default function ForgotPasswordPage() {
               className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm flex items-center justify-center gap-2 shadow-glow-red active:scale-[0.97] transition-transform mb-3"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              Ouvrir ma boite mail
+              Open my mailbox
             </button>
 
             <Link
@@ -120,7 +120,7 @@ export default function ForgotPasswordPage() {
               className="text-xs text-pk-titane hover:text-pk-piste transition-colors inline-flex items-center gap-1"
             >
               <ArrowLeft className="w-3 h-3" />
-              Retour a la connexion
+              Back to sign in
             </Link>
           </motion.div>
         ) : (
@@ -129,10 +129,8 @@ export default function ForgotPasswordPage() {
               <div className="w-12 h-12 rounded-full bg-pk-red/[0.10] border border-pk-red/20 flex items-center justify-center mx-auto mb-3">
                 <Mail className="w-5 h-5 text-pk-red" />
               </div>
-              <h2 className="font-display text-lg mb-1">Mot de passe oublie ?</h2>
-              <p className="text-xs text-pk-titane">
-                Entre ton email pour recevoir un lien de reinitialisation.
-              </p>
+              <h2 className="font-display text-lg mb-1">Forgot password?</h2>
+              <p className="text-xs text-pk-titane">Enter your email to receive a reset link.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -140,7 +138,7 @@ export default function ForgotPasswordPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="ton@email.com"
+                placeholder="you.com"
                 required
                 className="w-full h-11 px-3.5 rounded-lg bg-pk-anthracite border border-white/[0.08] text-sm text-pk-piste placeholder:text-pk-titane/50 focus:outline-none focus:border-pk-red/40 transition-colors"
               />
@@ -151,8 +149,9 @@ export default function ForgotPasswordPage() {
                 type="submit"
                 disabled={status === "loading"}
                 className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-50"
+                data-testid="forgot-password-submit"
               >
-                {status === "loading" ? "Envoi..." : "Envoyer le lien"}
+                {status === "loading" ? "Sending..." : "Send link"}
               </button>
             </form>
 
@@ -162,7 +161,7 @@ export default function ForgotPasswordPage() {
                 className="text-xs text-pk-titane hover:text-pk-piste transition-colors inline-flex items-center gap-1"
               >
                 <ArrowLeft className="w-3 h-3" />
-                Retour a la connexion
+                Back to sign in
               </Link>
             </div>
           </>

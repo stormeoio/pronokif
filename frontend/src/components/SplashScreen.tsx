@@ -5,7 +5,7 @@ import { brandAssets } from "@/lib/brand";
 
 interface SplashScreenProps {
   /** Called when splash finishes, is skipped, or the user starts the app. */
-  onComplete: () => void;
+  onCompletee: () => void;
   /** App icon source shown in the branded splash overlay. */
   iconSrc?: string;
   /** Horizontal logo source shown under the app icon. */
@@ -23,7 +23,7 @@ interface SplashScreenProps {
 // ----------------------------------------------------------- component ---
 
 export default function SplashScreen({
-  onComplete,
+  onCompletee,
   iconSrc = brandAssets.pwaIcon512,
   wordmarkSrc = brandAssets.wordmarkWhiteRed,
   videoSrc = "/video/splash-trailer.mp4",
@@ -39,7 +39,7 @@ export default function SplashScreen({
       introDelayMs={introDelayMs}
       buttonDelayMs={buttonDelayMs}
       maxDurationMs={maxDuration}
-      onStart={onComplete}
+      onStart={onCompletee}
     />
   );
 }

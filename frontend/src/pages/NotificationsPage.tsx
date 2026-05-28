@@ -11,14 +11,14 @@ import {
   Users,
   Star,
   Clock,
-  ChevronRight,
-  ArrowLeft,
+  ChevronLeft,
   type LucideIcon,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
 import { haptic } from "@/lib/haptics";
-import { fadeUp, staggerContainer, easing, duration, getReducedMotionProps } from "@/lib/motion";
+import { fadeUp, staggerContainer, duration, getReducedMotionProps } from "@/lib/motion";
+import { EmptyFullPage } from "@/components/EmptyState";
 
 /* ── Types ─────────────────────────────────────────────── */
 
@@ -35,8 +35,8 @@ type FilterKey = "all" | "races" | "leagues" | "chat" | "badges";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "all", label: "Toutes" },
-  { key: "races", label: "Courses" },
-  { key: "leagues", label: "Ligues" },
+  { key: "races", label: "Races" },
+  { key: "leagues", label: "Leagues" },
   { key: "chat", label: "Chat" },
   { key: "badges", label: "Badges" },
 ];
@@ -70,7 +70,7 @@ const CATEGORY_CONFIG: Record<NotifCategory, CategoryConfig> = {
   },
   league: {
     icon: Users,
-    label: "Ligues",
+    label: "Leagues",
     iconBg: "bg-pk-info/[0.12]",
     iconColor: "text-pk-info",
     filterKey: "leagues",
@@ -209,6 +209,7 @@ export default function NotificationsPage() {
 
   const markAsRead = async (notifId: string) => {
     try {
+      haptic("light");
       await api.notifications.markRead(notifId);
       queryClient.invalidateQueries({ queryKey: queryKeys.notifications._def });
     } catch (e) {
@@ -280,7 +281,7 @@ export default function NotificationsPage() {
                 onClick={() => navigate(-1)}
                 className="p-1.5 -ml-1.5 rounded-lg text-pk-titane hover:text-pk-piste transition-colors"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5" />
               </button>
               <h1 className="font-display text-lg">Notifications</h1>
             </div>
@@ -300,7 +301,9 @@ export default function NotificationsPage() {
                 <button
                   onClick={markAllAsRead}
                   className="p-1.5 rounded-lg text-pk-titane hover:text-pk-piste transition-colors"
-                  title="Tout marquer lu"
+                  aria-label="Mark all as read"
+                  title="Mark all as read"
+                  data-testid="mark-all-read"
                 >
                   <CheckCheck className="w-4 h-4" />
                 </button>
@@ -318,11 +321,12 @@ export default function NotificationsPage() {
                 haptic("selection");
                 setActiveFilter(f.key);
               }}
-              className={`font-data text-[0.5625rem] px-3 py-1 rounded-full whitespace-nowrap border transition-colors ${
+              className={`font-data text-[0.5625rem] px-3 py-1.5 rounded-full whitespace-nowrap border transition-colors ${
                 activeFilter === f.key
                   ? "bg-pk-red-subtle border-pk-red/30 text-pk-red"
                   : "bg-white/[0.04] border-white/[0.08] text-pk-titane"
               }`}
+              data-testid={`notif-filter-${f.key}`}
             >
               {f.label}
             </button>
@@ -361,31 +365,24 @@ export default function NotificationsPage() {
               className="w-full h-10 rounded-md bg-pk-red text-white font-display text-[0.8125rem] flex items-center justify-center gap-1.5 shadow-glow-red active:scale-[0.97] transition-transform"
             >
               <Clock className="w-3.5 h-3.5" />
-              Faire mes pronos
+              Make my picks
             </button>
           </motion.div>
         )}
 
         {/* Empty state */}
         {(notifications as Notification[]).length === 0 && (
-          <motion.div
-            variants={fadeUp}
-            className="flex flex-col items-center justify-center text-center py-16 px-6"
-          >
-            <div className="w-14 h-14 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mb-4">
-              <Bell className="w-6 h-6 text-pk-titane" />
-            </div>
-            <p className="font-display text-base text-pk-titane mb-1">Aucune notification</p>
-            <p className="text-xs text-pk-titane/60 max-w-[240px]">
-              Les resultats, messages et badges apparaitront ici.
-            </p>
-          </motion.div>
+          <EmptyFullPage
+            Icon={Bell}
+            title="No notifications"
+            description="Results, messages, and badges will appear here."
+          />
         )}
 
         {/* No results for this filter */}
         {(notifications as Notification[]).length > 0 && visibleCategories.length === 0 && (
           <motion.div variants={fadeUp} className="text-center py-12 px-6">
-            <p className="text-sm text-pk-titane">Aucune notification dans cette categorie.</p>
+            <p className="text-sm text-pk-titane">No notifications in this category.</p>
           </motion.div>
         )}
 

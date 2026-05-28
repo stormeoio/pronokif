@@ -1,3 +1,7 @@
+/**
+ * PredictionForm — Step grid, selection info, bonus panel, driver picker.
+ * Broadcast Premium: pk-* step cards, pk-red/amber/info active states.
+ */
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Check, Flag, Zap, Gamepad2, Trophy, Medal } from "lucide-react";
@@ -5,8 +9,8 @@ import DriverPicker from "./DriverPicker";
 import type { Driver } from "./DriverPicker";
 import SelectionInfo from "./SelectionInfo";
 import BonusPanel from "./BonusPanel";
-import { Button } from "@/components/ui/button";
 import { haptic } from "@/lib/haptics";
+import { staggerContainer, fadeUp } from "@/lib/motion";
 
 /**
  * Selection steps grid, selection info, bonus panel, and driver picker.
@@ -44,9 +48,9 @@ interface PredictionFormProps {
   setNoDnf: (v: boolean) => void;
   fastestLapDriver: string | null;
   firstCornerLeader: string | null;
-  isSprintBonusComplete: boolean;
-  isMainBonusComplete: boolean;
-  minigamesComplete: boolean;
+  isSprintBonusCompletee: boolean;
+  isMainBonusCompletee: boolean;
+  minigamesCompletee: boolean;
   handleDriverSelect: (driverId: string) => void;
   isDriverSelected: (driverId: string) => boolean;
 }
@@ -80,15 +84,15 @@ export default function PredictionForm({
   setNoDnf,
   fastestLapDriver,
   firstCornerLeader,
-  isSprintBonusComplete,
-  isMainBonusComplete,
-  minigamesComplete,
+  isSprintBonusCompletee,
+  isMainBonusCompletee,
+  minigamesCompletee,
   handleDriverSelect,
   isDriverSelected,
 }: PredictionFormProps) {
   const navigate = useNavigate();
 
-  // ── Steps definition ────────────────────────────────────────────────
+  // -- Steps definition ---------------------------------------------------
   const getSprintSteps = () => [
     {
       key: "sprint_quali_pole",
@@ -110,7 +114,7 @@ export default function PredictionForm({
     },
     {
       key: "sprint_race_winner",
-      label: "Vainqueur",
+      label: "Winner",
       sublabel: "Sprint",
       icon: Trophy,
       done: !!sprintRaceWinner,
@@ -131,7 +135,7 @@ export default function PredictionForm({
       label: "Bonus",
       sublabel: "Sprint",
       icon: Zap,
-      done: isSprintBonusComplete,
+      done: isSprintBonusCompletee,
       count: 0,
       max: 0,
       isBonus: true,
@@ -141,7 +145,7 @@ export default function PredictionForm({
       label: "Jeux",
       sublabel: "Mini",
       icon: Gamepad2,
-      done: minigamesComplete,
+      done: minigamesCompletee,
       count: 0,
       max: 0,
       isMinigames: true,
@@ -169,8 +173,8 @@ export default function PredictionForm({
     },
     {
       key: "race_winner",
-      label: "Vainqueur",
-      sublabel: "Course",
+      label: "Winner",
+      sublabel: "Race",
       icon: Trophy,
       done: !!raceWinner,
       count: raceWinner ? 1 : 0,
@@ -179,7 +183,7 @@ export default function PredictionForm({
     {
       key: "race_top10",
       label: "Top 10",
-      sublabel: "Course",
+      sublabel: "Race",
       icon: Medal,
       done: raceTop10.length === 10,
       count: raceTop10.length,
@@ -190,7 +194,7 @@ export default function PredictionForm({
       label: "Bonus",
       sublabel: "Paris",
       icon: Zap,
-      done: isMainBonusComplete,
+      done: isMainBonusCompletee,
       count: 0,
       max: 0,
       isBonus: true,
@@ -200,7 +204,7 @@ export default function PredictionForm({
       label: "Jeux",
       sublabel: "Mini",
       icon: Gamepad2,
-      done: minigamesComplete,
+      done: minigamesCompletee,
       count: 0,
       max: 0,
       isMinigames: true,
@@ -212,7 +216,7 @@ export default function PredictionForm({
     activeTab === "sprint" ? selectionMode === "sprint_bonus" : selectionMode === "bonus";
   const bonusModeKey = activeTab === "sprint" ? "sprint_bonus" : "bonus";
 
-  // ── Position helper for DriverPicker ────────────────────────────────
+  // -- Position helper for DriverPicker -----------------------------------
   const getPosition = (driverId: string): number | null => {
     if (activeTab === "sprint") {
       if (selectionMode === "sprint_quali_top10") {
@@ -236,17 +240,17 @@ export default function PredictionForm({
     return null;
   };
 
-  // ── Render ──────────────────────────────────────────────────────────
+  // -- Render -------------------------------------------------------------
   return (
     <>
       {/* Step Navigation Grid */}
       <motion.div
         className="grid grid-cols-3 gap-2"
         role="tablist"
-        aria-label="Etapes de pronostic"
+        aria-label="Prediction steps"
         initial="hidden"
         animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.06 } }, hidden: {} }}
+        variants={staggerContainer}
       >
         {steps.map((step) => {
           const Icon = step.icon;
@@ -263,35 +267,35 @@ export default function PredictionForm({
             }
           };
 
-          let bgClass, borderClass, iconClass, labelClass;
+          let bgClass: string, borderClass: string, iconClass: string, labelClass: string;
 
           if (step.isMinigames || step.isBonus) {
             if (step.done) {
-              bgClass = "bg-green-500/20";
-              borderClass = "border-green-500";
-              iconClass = "text-green-400";
-              labelClass = "text-green-400";
+              bgClass = "bg-pk-emerald/[0.08]";
+              borderClass = "border-pk-emerald/30";
+              iconClass = "text-pk-emerald";
+              labelClass = "text-pk-emerald";
             } else {
-              bgClass = "bg-purple-500/10";
-              borderClass = "border-purple-500/50";
-              iconClass = "text-purple-400";
-              labelClass = "text-purple-400";
+              bgClass = "bg-pk-info/[0.06]";
+              borderClass = "border-pk-info/30";
+              iconClass = "text-pk-info";
+              labelClass = "text-pk-info";
             }
           } else if (isActive) {
-            bgClass = activeTab === "sprint" ? "bg-yellow-500/20" : "bg-blue-500/20";
-            borderClass = activeTab === "sprint" ? "border-yellow-500" : "border-blue-500";
-            iconClass = activeTab === "sprint" ? "text-yellow-400" : "text-blue-400";
+            bgClass = activeTab === "sprint" ? "bg-pk-amber/[0.1]" : "bg-pk-red-subtle";
+            borderClass = activeTab === "sprint" ? "border-pk-amber/40" : "border-pk-red/30";
+            iconClass = activeTab === "sprint" ? "text-pk-amber" : "text-pk-red";
             labelClass = "text-white";
           } else if (step.done) {
-            bgClass = "bg-green-500/10";
-            borderClass = "border-green-500/50";
-            iconClass = "text-green-400";
-            labelClass = "text-green-400";
+            bgClass = "bg-pk-emerald/[0.06]";
+            borderClass = "border-pk-emerald/20";
+            iconClass = "text-pk-emerald";
+            labelClass = "text-pk-emerald";
           } else {
-            bgClass = "bg-white/5";
-            borderClass = "border-gray-700";
-            iconClass = "text-gray-500";
-            labelClass = "text-gray-500";
+            bgClass = "bg-white/[0.04]";
+            borderClass = "border-white/[0.08]";
+            iconClass = "text-pk-titane";
+            labelClass = "text-pk-titane";
           }
 
           return (
@@ -301,27 +305,26 @@ export default function PredictionForm({
               aria-selected={isActive}
               aria-label={`${step.label} ${step.sublabel}`}
               onClick={handleStepClick}
-              className={`flex flex-col items-center p-2 rounded-xl transition-all border-2 ${bgClass} ${borderClass}`}
+              className={`flex flex-col items-center p-2 rounded-lg transition-all border ${bgClass} ${borderClass}`}
               data-testid={`step-${step.key}`}
-              variants={{ hidden: { opacity: 0, scale: 0.8 }, visible: { opacity: 1, scale: 1 } }}
-              whileHover={{ scale: 1.05 }}
+              variants={fadeUp}
               whileTap={{ scale: 0.92 }}
             >
               <Icon className={`w-5 h-5 mb-1 ${iconClass}`} />
-              <span className={`font-heading text-[10px] ${labelClass}`}>{step.label}</span>
-              <span className="font-body text-[8px] text-gray-500">{step.sublabel}</span>
+              <span className={`font-display text-[0.5625rem] ${labelClass}`}>{step.label}</span>
+              <span className="font-data text-[0.5rem] text-pk-titane">{step.sublabel}</span>
               {!step.isBonus && !step.isMinigames && (
                 <span
-                  className={`font-data text-xs mt-1 ${step.done ? "text-green-400" : "text-gray-400"}`}
+                  className={`font-data text-xs mt-1 ${step.done ? "text-pk-emerald" : "text-pk-titane"}`}
                 >
                   {step.count}/{step.max}
                 </span>
               )}
               {(step.isBonus || step.isMinigames) && (
                 <span
-                  className={`font-data text-[9px] mt-1 ${step.done ? "text-green-400" : "text-purple-400"}`}
+                  className={`font-data text-[0.5625rem] mt-1 ${step.done ? "text-pk-emerald" : "text-pk-info"}`}
                 >
-                  {step.done ? "✓" : "→"}
+                  {step.done ? <Check className="w-3 h-3" /> : "->"}
                 </span>
               )}
             </motion.button>
@@ -368,13 +371,14 @@ export default function PredictionForm({
       {/* Back to Bonus from DNF selection */}
       {(selectionMode === "dnf_select" || selectionMode === "sprint_dnf_select") && (
         <div className="mt-4">
-          <Button
+          <button
             onClick={() => setSelectionMode(bonusModeKey)}
-            className="w-full h-12 bg-cyan-500/20 border-2 border-cyan-500 text-cyan-400 hover:bg-cyan-500/30 font-heading"
+            className="w-full h-11 rounded-lg bg-pk-info/[0.1] border border-pk-info/30 text-pk-info font-display text-sm hover:bg-pk-info/[0.15] transition-colors flex items-center justify-center gap-2 active:scale-[0.97]"
+            data-testid="back-to-bonus-btn"
           >
-            <Check className="w-5 h-5 mr-2" />
-            Valider et retour aux bonus
-          </Button>
+            <Check className="w-4 h-4" />
+            Submit and back to bonuses
+          </button>
         </div>
       )}
     </>

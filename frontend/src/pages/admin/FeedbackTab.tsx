@@ -43,9 +43,13 @@ export default function FeedbackTab() {
         <div className="bg-gradient-to-r from-yellow-600/20 to-transparent px-4 py-3 border-b border-gray-700/50 flex items-center justify-between">
           <h3 className="font-heading text-sm uppercase text-yellow-400 flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
-            Messages des utilisateurs
+            Messages des users
           </h3>
-          <button onClick={() => fetchFeedback()} className="text-gray-400 hover:text-white" aria-label="Rafraîchir les feedbacks">
+          <button
+            onClick={() => fetchFeedback()}
+            className="text-gray-400 hover:text-white"
+            aria-label="Refresh feedback"
+          >
             <RefreshCw className={`w-4 h-4 ${loadingFeedback ? "animate-spin" : ""}`} />
           </button>
         </div>
@@ -57,7 +61,7 @@ export default function FeedbackTab() {
         ) : feedbackList.length === 0 ? (
           <div className="p-8 text-center">
             <MessageSquare className="w-12 h-12 text-gray-600 mx-auto mb-2" />
-            <p className="font-body text-gray-500">Aucun feedback pour le moment</p>
+            <p className="font-body text-gray-500">No feedback yet</p>
           </div>
         ) : (
           <motion.div
@@ -82,7 +86,7 @@ export default function FeedbackTab() {
                   icon: MessageSquare,
                   color: "text-cyan-400",
                   bg: "bg-cyan-500/20",
-                  label: "Retour",
+                  label: "Back",
                 },
               };
               const config = (categoryConfig[feedback.category] || categoryConfig.feedback)!;

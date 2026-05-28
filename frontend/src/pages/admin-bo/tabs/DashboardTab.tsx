@@ -3,6 +3,7 @@
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  ArrowRight,
   Database,
   Flag,
   Loader2,
@@ -17,7 +18,46 @@ import { toast } from "sonner";
 import { adminApi } from "../adminApi";
 import { Button } from "@/components/ui/button";
 
-export default function DashboardTab() {
+type AdminTabKey = "users" | "predictions" | "leagues" | "races" | "feedbacks" | "invitations";
+
+type DashboardTabProps = {
+  onNavigate?: (tab: AdminTabKey) => void;
+};
+
+const cardStyles = {
+  cyan: {
+    border: "border-cyan-500",
+    icon: "text-cyan-400",
+    hover: "hover:border-cyan-400/80 hover:shadow-cyan-500/10",
+  },
+  orange: {
+    border: "border-orange-500",
+    icon: "text-orange-400",
+    hover: "hover:border-orange-400/80 hover:shadow-orange-500/10",
+  },
+  purple: {
+    border: "border-purple-500",
+    icon: "text-purple-400",
+    hover: "hover:border-purple-400/80 hover:shadow-purple-500/10",
+  },
+  green: {
+    border: "border-green-500",
+    icon: "text-green-400",
+    hover: "hover:border-green-400/80 hover:shadow-green-500/10",
+  },
+  yellow: {
+    border: "border-yellow-500",
+    icon: "text-yellow-400",
+    hover: "hover:border-yellow-400/80 hover:shadow-yellow-500/10",
+  },
+  red: {
+    border: "border-red-500",
+    icon: "text-red-400",
+    hover: "hover:border-red-400/80 hover:shadow-red-500/10",
+  },
+} as const;
+
+export default function DashboardTab({ onNavigate }: DashboardTabProps) {
   const queryClient = useQueryClient();
   const { data: stats, isLoading } = useQuery({
     queryKey: ["admin-bo", "stats"],
@@ -29,7 +69,7 @@ export default function DashboardTab() {
     mutationFn: () => adminApi.demo.seed(),
     onSuccess: (data) => {
       toast.success(
-        `Demo synchronisee: ${data.summary?.users ?? 0} utilisateurs, ${data.summary?.predictions ?? 0} pronostics`,
+        `Demo synced: ${data.summary?.users ?? 0} users, ${data.summary?.predictions ?? 0} predictions`,
       );
       queryClient.invalidateQueries({ queryKey: ["admin-bo"] });
     },
@@ -37,39 +77,64 @@ export default function DashboardTab() {
   });
 
   const handleSeedDemo = () => {
-    if (!confirm("Synchroniser le jeu de données demo complet ?")) return;
+    if (!confirm("Sync the full demo dataset?")) return;
     seedDemoMutation.mutate();
   };
 
-  const cards = [
-    { label: "Utilisateurs", value: stats?.total_users ?? "—", icon: Users, color: "cyan" },
+  const cards: Array<{
+    label: string;
+    value: number | string;
+    icon: typeof Users;
+    color: keyof typeof cardStyles;
+    target: AdminTabKey;
+  }> = [
     {
-      label: "Pronostics",
+      label: "Users",
+      value: stats?.total_users ?? "—",
+      icon: Users,
+      color: "cyan",
+      target: "users",
+    },
+    {
+      label: "Pickstics",
       value: stats?.total_predictions ?? "—",
       icon: TrendingUp,
       color: "orange",
+      target: "predictions",
     },
-    { label: "Ligues", value: stats?.total_leagues ?? "—", icon: Trophy, color: "purple" },
-    { label: "Courses", value: stats?.total_races ?? "—", icon: Flag, color: "green" },
+    {
+      label: "Leagues",
+      value: stats?.total_leagues ?? "—",
+      icon: Trophy,
+      color: "purple",
+      target: "leagues",
+    },
+    {
+      label: "Races",
+      value: stats?.total_races ?? "—",
+      icon: Flag,
+      color: "green",
+      target: "races",
+    },
     {
       label: "Feedbacks non lus",
       value: stats?.unread_feedbacks ?? "—",
       icon: MessageSquare,
       color: "yellow",
+      target: "feedbacks",
     },
     {
       label: "Invitations en attente",
       value: stats?.pending_invitations ?? "—",
       icon: Mail,
       color: "red",
+      target: "invitations",
     },
   ];
 
   return (
     <div>
-      <h2 className="font-heading text-2xl text-white uppercase tracking-tight mb-6">
-        Tableau de bord
-      </h2>
+      <h2 className="font-heading text-2xl text-white uppercase tracking-tight mb-6">Dashboard</h2>
 
       {isLoading ? (
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -80,25 +145,32 @@ export default function DashboardTab() {
       ) : (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            {cards.map(({ label, value, icon: Icon, color }) => (
-              <div key={label} className={`card-arcade p-4 border-l-4 border-${color}-500`}>
-                <div className="flex items-center justify-between mb-2">
-                  <Icon className={`w-5 h-5 text-${color}-400`} />
-                </div>
-                <p className="font-data text-2xl text-white">{value}</p>
-                <p className="font-body text-xs text-gray-500">{label}</p>
-              </div>
-            ))}
+            {cards.map(({ label, value, icon: Icon, color, target }) => {
+              const styles = cardStyles[color];
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => onNavigate?.(target)}
+                  className={`card-arcade group p-4 border-l-4 ${styles.border} text-left transition-all hover:-translate-y-0.5 hover:shadow-lg ${styles.hover}`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <Icon className={`w-5 h-5 ${styles.icon}`} />
+                    <ArrowRight className="h-4 w-4 text-gray-600 transition-transform group-hover:translate-x-0.5 group-hover:text-gray-300" />
+                  </div>
+                  <p className="font-data text-2xl text-white">{value}</p>
+                  <p className="font-body text-xs text-gray-500">{label}</p>
+                </button>
+              );
+            })}
           </div>
 
           {stats?.new_users_week !== undefined && (
             <div className="card-arcade p-4">
-              <h3 className="font-heading text-sm text-gray-400 uppercase mb-2">
-                Activité récente
-              </h3>
+              <h3 className="font-heading text-sm text-gray-400 uppercase mb-2">Recent activity</h3>
               <p className="font-body text-gray-300">
-                <span className="text-cyan-400 font-data text-lg">{stats.new_users_week}</span>{" "}
-                nouveaux utilisateurs cette semaine
+                <span className="text-cyan-400 font-data text-lg">{stats.new_users_week}</span> new
+                users this week
               </p>
             </div>
           )}
@@ -110,9 +182,9 @@ export default function DashboardTab() {
                   <Database className="h-5 w-5 text-pk-red" />
                 </div>
                 <div>
-                  <h3 className="font-heading text-sm text-white uppercase">Données demo</h3>
+                  <h3 className="font-heading text-sm text-white uppercase">Demo data</h3>
                   <p className="font-body text-xs text-gray-500">
-                    Calendrier, résultats, ligues, pronostics, médias et compteurs.
+                    Calendar, results, leagues, predictions, media, and counters.
                   </p>
                 </div>
               </div>

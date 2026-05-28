@@ -96,7 +96,7 @@ def calculate_points(prediction: dict, results: dict) -> dict:
     if pred_fl is not None and actual_fl is not None and pred_fl == actual_fl:
         points["bonus"] += SCORING_RULES["fastest_lap_correct"]
         points["xp_earned"] += XP_REWARDS_SCORING["bonus_correct"]
-        points["details"].append("Meilleur tour exact: +5 pts")
+        points["details"].append("Fastest lap exact: +5 pts")
 
     # First Corner Leader
     pred_fcl = pred_bonus.get("first_corner_leader")

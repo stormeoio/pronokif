@@ -236,7 +236,7 @@ async def send_magic_link(data: MagicLinkRequest) -> dict:
     """Send a magic link to the admin email."""
     email = data.email.strip().lower()
     if email not in ADMIN_EMAILS:
-        return {"message": "Si cette adresse est autorisee, un lien de connexion a ete envoye."}
+        return {"message": "If this address is authorized, a sign-in link has been sent."}
 
     token = _create_magic_token(email)
 
@@ -253,7 +253,7 @@ async def send_magic_link(data: MagicLinkRequest) -> dict:
     if not await _send_magic_link_email(email, magic_url):
         logger.info(f"[Admin Auth] Magic link for {email}: {magic_url}")
 
-    return {"message": "Si cette adresse est autorisee, un lien de connexion a ete envoye."}
+    return {"message": "If this address is authorized, a sign-in link has been sent."}
 
 
 @router.post("/auth/verify")
@@ -318,7 +318,7 @@ async def verify_2fa_setup(data: TotpVerifyRequest, admin: dict = Depends(get_cu
     """Verify TOTP code to enable 2FA."""
     account = await db.admin_accounts.find_one({"email": admin["email"]})
     if not account or not account.get("totp_pending_secret"):
-        raise HTTPException(status_code=400, detail="Aucune configuration 2FA en attente")
+        raise HTTPException(status_code=400, detail="No pending 2FA setup")
 
     if not _verify_totp(account["totp_pending_secret"], data.code):
         raise HTTPException(status_code=400, detail="Code invalide")
@@ -329,7 +329,7 @@ async def verify_2fa_setup(data: TotpVerifyRequest, admin: dict = Depends(get_cu
          "$unset": {"totp_pending_secret": ""}},
     )
 
-    return {"message": "2FA active avec succes"}
+    return {"message": "2FA enabled successfully"}
 
 
 @router.post("/auth/2fa/validate")
@@ -341,7 +341,7 @@ async def validate_2fa_login(data: TotpVerifyRequest, request: Request, response
     try:
         payload = jwt.decode(auth[7:], JWT_SECRET, algorithms=[JWT_ALGORITHM])
         if payload.get("type") != "admin_session" or not payload.get("require_2fa"):
-            raise HTTPException(status_code=400, detail="Token invalide pour cette etape")
+            raise HTTPException(status_code=400, detail="Invalid token for this step")
 
         email = payload["sub"].lower()
         account = await db.admin_accounts.find_one({"email": email})

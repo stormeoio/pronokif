@@ -77,7 +77,7 @@ const BottomSheetHeader = React.forwardRef<HTMLDivElement, BottomSheetHeaderProp
       {showClose && (
         <DrawerPrimitive.Close className="w-7 h-7 rounded-full bg-white/[0.06] flex items-center justify-center text-pk-titane hover:text-pk-piste transition-colors flex-shrink-0">
           <X className="w-3.5 h-3.5" />
-          <span className="sr-only">Fermer</span>
+          <span className="sr-only">Close</span>
         </DrawerPrimitive.Close>
       )}
     </div>

@@ -69,7 +69,7 @@ async def test_send_magic_login_email_uses_frontend_magic_link(monkeypatch):
     assert len(calls) == 1
     to_email, subject, text_body, html_body = calls[0]
     assert to_email == "pilot@example.com"
-    assert subject == "Ton pass paddock PronoKif"
+    assert subject == "Your PronoKif paddock pass"
     assert "https://app.example.com/auth?magic_token=token-abc" in text_body
     assert html_body is not None
     assert "https://app.example.com/auth?magic_token=token-abc" in html_body

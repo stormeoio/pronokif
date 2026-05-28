@@ -42,10 +42,10 @@ export default function AdminPage() {
             <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h2 className="font-heading text-2xl uppercase text-white mb-2">Acces Refuse</h2>
             <p className="font-body text-gray-400 mb-6">
-              Seuls les createurs de ligue peuvent acceder a cette page.
+              Only league creators can access this page.
             </p>
             <Button onClick={() => navigate("/")} className="btn-racing">
-              Retour a l'accueil
+              Back to home
             </Button>
           </div>
         </div>
@@ -56,8 +56,8 @@ export default function AdminPage() {
   const tabs = [
     { key: "results", label: "Resultats", icon: Trophy, activeColor: "red" },
     { key: "notifications", label: "Notifs", icon: Bell, activeColor: "cyan" },
-    { key: "feedback", label: "Retours", icon: MessageSquare, activeColor: "yellow" },
-    { key: "members", label: "Membres", icon: Users, activeColor: "green" },
+    { key: "feedback", label: "Backs", icon: MessageSquare, activeColor: "yellow" },
+    { key: "members", label: "Members", icon: Users, activeColor: "green" },
   ];
 
   return (
@@ -79,7 +79,7 @@ export default function AdminPage() {
                 <Shield className="w-5 h-5 text-red-500" />
                 Administration
               </h1>
-              <p className="font-body text-xs text-gray-400">Entrer les resultats officiels</p>
+              <p className="font-body text-xs text-gray-400">Enter official results</p>
             </div>
           </div>
         </div>
@@ -98,7 +98,10 @@ export default function AdminPage() {
             return (
               <motion.button
                 key={key}
-                onClick={() => { haptic("selection"); setAdminTab(key); }}
+                onClick={() => {
+                  haptic("selection");
+                  setAdminTab(key);
+                }}
                 className={`p-3 rounded-xl font-heading text-xs uppercase transition-all ${
                   isActive
                     ? `bg-${activeColor}-500/20 border-2 border-${activeColor}-500 text-${activeColor}-400`

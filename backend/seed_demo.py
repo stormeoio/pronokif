@@ -73,21 +73,21 @@ DEMO_LEAGUES = [
         "id": "demo-league-paddock-elite",
         "name": "Paddock Elite",
         "code": "PADK26",
-        "description": "Le championnat demo principal pour suivre les pronos, le chat et les rappels.",
+        "description": "Main demo championship for tracking picks, chat, and reminders.",
         "member_keys": ["host", "patou", "maxou", "loulou", "enzo", "mika", "nina", "jules"],
     },
     {
         "id": "demo-league-scuderia-night",
         "name": "Scuderia Night",
         "code": "SCUD26",
-        "description": "Une ligue plus compacte avec mini-jeux et pronos personnalises.",
+        "description": "A more compact league with mini-games and custom picks.",
         "member_keys": ["host", "raph", "sam", "alex", "cam", "zoe", "patou"],
     },
     {
         "id": "demo-league-turbo-family",
         "name": "Turbo Family",
         "code": "TURB26",
-        "description": "Ligue familiale demo avec quelques retardataires pour tester les relances.",
+        "description": "Family demo league with a few late users to test reminders.",
         "member_keys": ["host", "loulou", "mika", "raph", "nina", "enzo"],
     },
 ]
@@ -255,7 +255,7 @@ async def _seed_championships() -> None:
             "id": "championship-sprint-2026",
             "name": "Sprint Masters 2026",
             "season": 2026,
-            "description": "Challenge demo pour les week-ends sprint et les mini-jeux.",
+            "description": "Demo challenge for sprint weekends and mini-games.",
             "thumbnail_url": "/images/races/austin-2026.webp",
             "is_active": True,
         },
@@ -563,11 +563,11 @@ async def _seed_leaderboards(
 async def _seed_chat(leagues: list[dict], users_by_id: dict[str, dict], host_users: list[dict]) -> None:
     host_id = host_users[0]["id"]
     templates = [
-        "Monaco approche, verrouillez vos top 10 avant la qualif.",
+        "Monaco is approaching, lock your Top 10 before qualifying.",
         "Je garde Norris devant Leclerc ce week-end.",
         "La meteo peut tout changer, safety car probable.",
-        "Qui tente le pari Hadjar dans les points ?",
-        "Debrief Canada: gros ecart au classement, ca se resserre.",
+        "Who is betting on Hadjar in the points?",
+        "Canada debrief: big leaderboard gap, now closing up.",
     ]
 
     for league_index, league in enumerate(leagues):
@@ -606,7 +606,7 @@ async def _seed_custom_predictions(leagues: list[dict], races: list[dict], users
     next_race = next(race for race in races if race["id"] == "monaco-2026")
     canada = next(race for race in races if race["id"] == "canada-2026")
     questions = [
-        (next_race, "Quel pilote sera le plus gros remonteur ?", "drivers", False),
+        (next_race, "Which driver will gain the most positions?", "drivers", False),
         (next_race, "Y aura-t-il une safety car a Monaco ?", "custom", False),
         (canada, "Quel rookie a le plus surpris au Canada ?", "drivers", False),
     ]
@@ -726,20 +726,20 @@ async def _seed_notifications(host_users: list[dict]) -> None:
     notifications = [
         {
             "id": _stable_id("notification", "welcome"),
-            "title": "Bienvenue dans le paddock",
-            "message": "Les donnees demo sont chargees: ligues, pronos, resultats et mini-jeux.",
+            "title": "Welcome to the paddock",
+            "message": "Demo data loaded: leagues, picks, results, and mini-games.",
             "type": "info",
         },
         {
             "id": _stable_id("notification", "monaco-lock"),
             "title": "Monaco arrive",
-            "message": "Verrouillage des pronostics avant les qualifications de Monaco.",
+            "message": "Predictions lock before Monaco qualifying.",
             "type": "important",
         },
         {
             "id": _stable_id("notification", "canada-results"),
             "title": "Resultats Canada publies",
-            "message": "Le classement demo a ete recalcule apres Montreal.",
+            "message": "The demo leaderboard was recalculated after Montreal.",
             "type": "success",
         },
     ]
@@ -764,9 +764,9 @@ async def _seed_notifications(host_users: list[dict]) -> None:
 async def _seed_feedback_and_media(host_users: list[dict]) -> None:
     host = host_users[0]
     feedbacks = [
-        ("suggestion", "Ajouter un filtre par ligue dans la vue pronostics du BO."),
-        ("bug", "Sur mobile, le bouton de rappel doit rester visible dans la liste des courses."),
-        ("feedback", "Le theme v2 avec glow donne une vraie identite paddock futuriste."),
+        ("suggestion", "Add a league filter in the back-office predictions view."),
+        ("bug", "On mobile, the reminder button must stay visible in the race list."),
+        ("feedback", "The v2 glow theme gives a real futuristic paddock identity."),
     ]
     for index, (category, message) in enumerate(feedbacks):
         await db.feedback.insert_one(
@@ -834,7 +834,7 @@ async def _seed_settings() -> None:
         {
             "$set": {
                 "app_name": "Pronokif",
-                "app_description": "Jeu de pronostics F1 premium et competitif",
+                "app_description": "Premium competitive F1 prediction game",
                 "primary_color": "#E10600",
                 "accent_color": "#4CD4FF",
                 "logo_url": "/images/branding/pronokif-logo11.png",

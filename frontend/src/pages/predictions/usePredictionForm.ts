@@ -25,9 +25,7 @@ export function usePredictionForm({
   fetchedPrediction,
 }: UsePredictionFormParams) {
   const [saving, setSaving] = useState(false);
-  const [existingPrediction, setExistingPrediction] = useState<Prediction | null>(
-    null,
-  );
+  const [existingPrediction, setExistingPrediction] = useState<Prediction | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationXp, setCelebrationXp] = useState(0);
 
@@ -89,9 +87,7 @@ export function usePredictionForm({
       setSprintQualiTop10((pred.sprint_quali_top10 as string[]) || []);
       setSprintRaceWinner((pred.sprint_race_winner as string) || null);
       setSprintRaceTop10((pred.sprint_race_top10 as string[]) || []);
-      const sprintBonus = pred.sprint_bonus_bets as
-        | Record<string, unknown>
-        | undefined;
+      const sprintBonus = pred.sprint_bonus_bets as Record<string, unknown> | undefined;
       if (sprintBonus) {
         setSprintSafetyCar((sprintBonus.safety_car as boolean) ?? null);
         setSprintDnfDrivers((sprintBonus.dnf_drivers as string[]) || []);
@@ -114,26 +110,26 @@ export function usePredictionForm({
     setSelectionMode(activeTab === "sprint" ? "sprint_quali_pole" : "quali_pole");
   }, [activeTab]);
 
-  // ── Completion checks ──────────────────────────────────────────────
-  const isSprintComplete = !!(
+  // ── Completeion checks ──────────────────────────────────────────────
+  const isSprintCompletee = !!(
     sprintQualiPole &&
     sprintQualiTop10.length === 10 &&
     sprintRaceWinner &&
     sprintRaceTop10.length === 10
   );
-  const isMainComplete = !!(
+  const isMainCompletee = !!(
     qualiPole &&
     qualiTop10.length === 10 &&
     raceWinner &&
     raceTop10.length === 10
   );
-  const isSprintBonusComplete = !!(
+  const isSprintBonusCompletee = !!(
     sprintSafetyCar !== null &&
     sprintFastestLap &&
     sprintFirstCorner &&
     (sprintNoDnf || sprintDnfDrivers.length > 0)
   );
-  const isMainBonusComplete = !!(
+  const isMainBonusCompletee = !!(
     safetyCar !== null &&
     fastestLapDriver &&
     firstCornerLeader &&
@@ -145,7 +141,7 @@ export function usePredictionForm({
     setDeleting(true);
     try {
       await api.predictions.delete(raceId!);
-      toast.success("Pronostics supprimés !");
+      toast.success("Predictions deleted!");
       setExistingPrediction(null);
       setQualiPole(null);
       setQualiTop10([]);
@@ -165,13 +161,11 @@ export function usePredictionForm({
       setSprintNoDnf(false);
       setSprintFastestLap(null);
       setSprintFirstCorner(null);
-      setSelectionMode(
-        race?.is_sprint_weekend ? "sprint_quali_pole" : "quali_pole",
-      );
+      setSelectionMode(race?.is_sprint_weekend ? "sprint_quali_pole" : "quali_pole");
       setShowDeleteConfirm(false);
     } catch (error: unknown) {
       const e = error as { response?: { data?: { detail?: string } } };
-      toast.error(e.response?.data?.detail || "Erreur lors de la suppression");
+      toast.error(e.response?.data?.detail || "Error while deleting");
     } finally {
       setDeleting(false);
     }
@@ -180,11 +174,9 @@ export function usePredictionForm({
   // ── Save handler ───────────────────────────────────────────────────
   const handleSave = async () => {
     const isSprint = activeTab === "sprint";
-    const complete = isSprint ? isSprintComplete : isMainComplete;
+    const complete = isSprint ? isSprintCompletee : isMainCompletee;
     if (!complete) {
-      toast.error(
-        isSprint ? "Complete tous les pronostics sprint" : "Complete tous les pronostics course",
-      );
+      toast.error(isSprint ? "Completee all sprint predictions" : "Completee all race predictions");
       return;
     }
     setSaving(true);
@@ -228,7 +220,7 @@ export function usePredictionForm({
       }
     } catch (error: unknown) {
       const e = error as { response?: { data?: { detail?: string } } };
-      toast.error(e.response?.data?.detail || "Erreur lors de l'enregistrement");
+      toast.error(e.response?.data?.detail || "Error while saving");
     } finally {
       setSaving(false);
     }
@@ -285,11 +277,11 @@ export function usePredictionForm({
     setFastestLapDriver,
     firstCornerLeader,
     setFirstCornerLeader,
-    // Completion
-    isSprintComplete,
-    isMainComplete,
-    isSprintBonusComplete,
-    isMainBonusComplete,
+    // Completeion
+    isSprintCompletee,
+    isMainCompletee,
+    isSprintBonusCompletee,
+    isMainBonusCompletee,
     // Actions
     handleSave,
     handleDeletePredictions,

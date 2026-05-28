@@ -40,7 +40,7 @@ export function LeaguesList({ userLeagues, user, unreadChatByLeague }: LeaguesLi
       >
         <h3 className="font-display text-[0.875rem] uppercase flex items-center gap-2">
           <Users size={16} strokeWidth={1.5} className="text-pk-red" />
-          Mes Ligues
+          My Leagues
         </h3>
         <button
           onClick={() => navigate("/league")}
@@ -105,7 +105,7 @@ export function LeaguesList({ userLeagues, user, unreadChatByLeague }: LeaguesLi
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-[0.8125rem] truncate">{league.name}</p>
                 <p className="font-mono text-[0.625rem] text-pk-titane">
-                  {league.member_count || (league.members as unknown[])?.length || 0} membres
+                  {league.member_count || (league.members as unknown[])?.length || 0} members
                 </p>
               </div>
               <div className="flex items-center gap-0.5">
@@ -166,7 +166,7 @@ export function NoLeagueCTA() {
       </div>
       <h3 className="font-display text-[1.25rem] uppercase mb-1">Rejoins une Ligue !</h3>
       <p className="text-[0.8125rem] text-pk-titane mb-5">
-        Cree ou rejoins une ligue pour jouer avec tes amis
+        Create or join a league to play with your friends
       </p>
       <button onClick={() => navigate("/league")} className="btn-pk px-8">
         <Plus {...iconSmall} size={14} strokeWidth={2} />
@@ -201,9 +201,7 @@ export function HelpAdminCard({ onClick }: HelpAdminCardProps) {
         </div>
         <div className="flex-1">
           <p className="font-medium text-[0.8125rem]">Aider l'administrateur</p>
-          <p className="text-[0.6875rem] text-pk-titane mt-0.5">
-            Signalez un bug ou partagez votre avis
-          </p>
+          <p className="text-[0.6875rem] text-pk-titane mt-0.5">Report a bug or share feedback</p>
         </div>
         <ChevronRight size={16} strokeWidth={1.5} className="text-pk-titane" />
       </div>

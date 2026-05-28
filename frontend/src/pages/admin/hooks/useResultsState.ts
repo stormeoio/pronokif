@@ -84,7 +84,7 @@ interface UseResultsStateReturn {
   handleDriverSelect: (driverId: string) => void;
   isDriverSelected: (driverId: string) => boolean;
   getDriverPosition: (driverId: string) => number | null;
-  isComplete: boolean | string | null;
+  isCompletee: boolean | string | null;
   handleSubmit: () => Promise<void>;
   handleSyncOpenF1: () => Promise<void>;
 }
@@ -243,22 +243,22 @@ export function useResultsState({ setRaces }: UseResultsStateParams): UseResults
     return null;
   };
 
-  const isSprintComplete =
+  const isSprintCompletee =
     !selectedRace?.is_sprint ||
     (sprintQualiPole &&
       sprintQualiTop10.length === 10 &&
       sprintRaceWinner &&
       sprintRaceTop10.length === 10);
-  const isComplete =
+  const isCompletee =
     qualiPole &&
     qualiTop10.length === 10 &&
     raceWinner &&
     raceTop10.length === 10 &&
-    isSprintComplete;
+    isSprintCompletee;
 
   const handleSubmit = async (): Promise<void> => {
-    if (!isComplete) {
-      toast.error("Complete tous les resultats obligatoires");
+    if (!isCompletee) {
+      toast.error("Completee all required results");
       return;
     }
     setSaving(true);
@@ -285,7 +285,7 @@ export function useResultsState({ setRaces }: UseResultsStateParams): UseResults
       setRaces(racesData as unknown as Race[]);
     } catch (error: unknown) {
       const axiosError = error as { response?: { data?: { detail?: string } } };
-      toast.error(axiosError.response?.data?.detail ?? "Erreur lors de l'enregistrement");
+      toast.error(axiosError.response?.data?.detail ?? "Error while saving");
     } finally {
       setSaving(false);
     }
@@ -321,17 +321,17 @@ export function useResultsState({ setRaces }: UseResultsStateParams): UseResults
         }
         const items = resData.success_items ?? [];
         if (items.length > 0)
-          toast.success(`Donnees recuperees automatiquement !\n${items.join(", ")}`, {
+          toast.success(`Data fetched automatically!\n${items.join(", ")}`, {
             duration: 5000,
           });
-        else toast.warning("Aucune donnee disponible via l'API. Saisie manuelle requise.");
+        else toast.warning("No data available via l'API. Saisie manuelle requise.");
         if ((resData.errors?.length ?? 0) > 0) console.warn("Sync errors:", resData.errors);
       } else {
-        toast.warning(resData.message ?? "Donnees non disponibles, saisie manuelle requise.");
+        toast.warning(resData.message ?? "Data unavailable, manual entry required.");
       }
     } catch (error) {
       console.error("Sync error:", error);
-      toast.error("Erreur lors de la synchronisation avec les APIs");
+      toast.error("Error while syncing with APIs");
     } finally {
       setSyncing(false);
     }
@@ -361,7 +361,7 @@ export function useResultsState({ setRaces }: UseResultsStateParams): UseResults
     handleDriverSelect,
     isDriverSelected,
     getDriverPosition,
-    isComplete,
+    isCompletee,
     handleSubmit,
     handleSyncOpenF1,
   };

@@ -56,6 +56,59 @@ def test_completion_rate_is_capped_for_legacy_predictions():
     assert admin_data_routes._completion_rate(submitted=0, total=0) == 0
 
 
+def test_race_editorial_payload_summarizes_cancelled_race():
+    payload = admin_data_routes._race_editorial_payload(
+        {
+            "id": "bahrain-2026",
+            "name": "Bahrain Grand Prix",
+            "circuit": "Sakhir",
+            "country": "Bahrain",
+            "is_cancelled": True,
+            "is_sprint": False,
+        },
+        None,
+    )
+
+    assert payload["cancellation_reason"] == "Official reason to specify in the back office."
+    assert payload["results_digest"] is None
+    assert "scoring" in payload["admin_summary"].lower()
+    assert payload["user_content_idea"]
+
+
+def test_race_editorial_payload_uses_result_digest():
+    payload = admin_data_routes._race_editorial_payload(
+        {
+            "id": "australia-2026",
+            "name": "Grand Prix d'Australie",
+            "circuit": "Albert Park",
+            "country": "Australie",
+            "is_cancelled": False,
+            "is_sprint": False,
+            "date": "2026-03-08",
+            "race_time": "15:00",
+            "timezone": "Australia/Melbourne",
+        },
+        {
+            "entered_at": "2026-03-08T08:00:00+00:00",
+            "results": {
+                "quali_pole": "VER",
+                "quali_top10": ["VER", "NOR", "LEC"],
+                "race_winner": "NOR",
+                "race_top10": ["NOR", "VER", "LEC"],
+                "bonus": {"safety_car": True, "dnf_drivers": ["HAM"], "fastest_lap": "PIA"},
+            },
+        },
+        submitted=9,
+        missing=1,
+        total_users=10,
+    )
+
+    assert payload["content_status"] == "published"
+    assert payload["results_digest"]["race_winner"]
+    assert payload["prediction_digest"]["completion_rate"] == 90
+    assert "9/10" in payload["public_recap"]
+
+
 @pytest.mark.asyncio
 async def test_delete_user_rejects_admin_accounts(monkeypatch):
     fake_db = FakeDb({"id": "user-1", "email": "fred@stormeo.io"})
@@ -79,7 +132,7 @@ async def test_delete_user_removes_regular_user_data(monkeypatch):
 
     response = await admin_data_routes.delete_user("user-1", admin={"email": "fred@stormeo.io"})
 
-    assert response == {"message": "Utilisateur et donnees supprimes"}
+    assert response == {"message": "User and data deleted"}
     assert fake_db.users.deleted is True
     assert fake_db.predictions.deleted is True
     assert fake_db.notifications.deleted is True

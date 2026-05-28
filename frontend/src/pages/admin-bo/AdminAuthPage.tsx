@@ -48,7 +48,7 @@ export default function AdminAuthPage() {
         }
       } catch (err: unknown) {
         const e = err as { response?: { data?: { detail?: string } } };
-        setError(e.response?.data?.detail || "Lien invalide ou expiré");
+        setError(e.response?.data?.detail || "Invalid or expired link");
       } finally {
         setVerifying(false);
       }
@@ -73,7 +73,7 @@ export default function AdminAuthPage() {
       setSent(true);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
-      setError(e.response?.data?.detail || "Erreur lors de l'envoi");
+      setError(e.response?.data?.detail || "Error while sending");
     } finally {
       setSending(false);
     }
@@ -111,23 +111,15 @@ export default function AdminAuthPage() {
         <div className="card-arcade overflow-hidden border-white/[0.1]">
           {/* Header */}
           <div className="border-b border-pk-red/25 bg-gradient-to-r from-pk-red/12 to-transparent p-6">
-            <div className="flex items-center gap-3">
+            <div>
+              <h1 className="sr-only">Administration PronoKif</h1>
               <img
-                src={brandAssets.icon}
-                alt=""
-                className="h-12 w-12 rounded-xl object-cover"
+                src={brandAssets.wordmarkWhiteRed}
+                alt="PronoKif"
+                className="mb-2 h-8 w-auto max-w-[210px] object-contain"
                 draggable={false}
               />
-              <div>
-                <h1 className="sr-only">Administration PronoKif</h1>
-                <img
-                  src={brandAssets.wordmarkWhiteRed}
-                  alt="PronoKif"
-                  className="mb-1 h-6 w-auto max-w-[168px] object-contain"
-                  draggable={false}
-                />
-                <p className="font-body text-xs text-pk-titane">Back-office sécurisé</p>
-              </div>
+              <p className="font-body text-xs text-pk-titane">Secure back office</p>
             </div>
           </div>
 
@@ -136,16 +128,16 @@ export default function AdminAuthPage() {
               /* Verifying magic link */
               <div className="text-center py-8">
                 <Loader2 className="w-8 h-8 text-pk-red animate-spin mx-auto mb-4" />
-                <p className="font-body text-pk-titane">Vérification du lien...</p>
+                <p className="font-body text-pk-titane">Verifying link...</p>
               </div>
             ) : requires2fa ? (
               /* 2FA verification */
               <form onSubmit={handleVerify2fa} className="space-y-4">
                 <div className="text-center mb-4">
                   <KeyRound className="w-10 h-10 text-pk-red mx-auto mb-2" />
-                  <h2 className="font-heading text-lg text-pk-piste">Vérification 2FA</h2>
+                  <h2 className="font-heading text-lg text-pk-piste">2FA verification</h2>
                   <p className="font-body text-sm text-pk-titane">
-                    Entrez le code de votre application d'authentification
+                    Enter the code from your authenticator app
                   </p>
                 </div>
                 <Input
@@ -169,21 +161,19 @@ export default function AdminAuthPage() {
                   disabled={totpCode.length !== 6 || verifying}
                   className="w-full h-12 font-heading"
                 >
-                  {verifying ? <Loader2 className="w-5 h-5 animate-spin" /> : "Vérifier"}
+                  {verifying ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify"}
                 </BorderGlowButton>
               </form>
             ) : sent ? (
               /* Email sent confirmation */
               <div className="text-center py-8">
                 <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-4" />
-                <h2 className="font-heading text-lg text-pk-emerald mb-2">Lien envoyé !</h2>
+                <h2 className="font-heading text-lg text-pk-emerald mb-2">Link sent!</h2>
                 <p className="font-body text-sm text-pk-titane mb-4">
-                  Un lien de connexion a été envoyé à{" "}
-                  <strong className="text-pk-piste">{email}</strong>
+                  A sign-in link has been sent to <strong className="text-pk-piste">{email}</strong>
                 </p>
                 <p className="font-body text-xs text-pk-titane/80">
-                  Vérifiez votre boîte mail et cliquez sur le lien pour vous connecter. Le lien
-                  expire dans 15 minutes.
+                  Check your inbox and click the link to sign in. The link expires in 15 minutes.
                 </p>
                 <Button
                   variant="ghost"
@@ -198,9 +188,9 @@ export default function AdminAuthPage() {
               <form onSubmit={handleSendMagicLink} className="space-y-4">
                 <div className="text-center mb-4">
                   <Mail className="w-10 h-10 text-pk-red mx-auto mb-2" />
-                  <h2 className="font-heading text-lg text-pk-piste">Connexion par email</h2>
+                  <h2 className="font-heading text-lg text-pk-piste">Sign in by email</h2>
                   <p className="font-body text-sm text-pk-titane">
-                    Entrez votre adresse administrateur pour recevoir un lien de connexion
+                    Enter your admin address to receive a sign-in link
                   </p>
                 </div>
                 <Input
@@ -228,7 +218,7 @@ export default function AdminAuthPage() {
                   ) : (
                     <>
                       <Mail className="w-5 h-5 mr-2" />
-                      Envoyer le lien magique
+                      Send link magique
                     </>
                   )}
                 </BorderGlowButton>

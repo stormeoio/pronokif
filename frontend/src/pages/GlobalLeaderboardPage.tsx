@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "framer-motion";
-import { ChevronLeft, Crown, Users, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { ChevronLeft, Crown, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { AvatarDisplay } from "../components/AvatarDisplay";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -24,7 +24,7 @@ interface LeaderboardEntry {
 type FilterKey = "season" | "month" | "gp";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "season", label: "Saison" },
+  { key: "season", label: "Season" },
   { key: "month", label: "Ce mois" },
   { key: "gp", label: "Dernier GP" },
 ];
@@ -148,10 +148,13 @@ export default function GlobalLeaderboardPage() {
   const myPosition: number | null = lbData?.my_position || null;
   const totalPlayers: number = lbData?.total_players || 0;
 
-  const getAvatarById = (avatarId: string | null | undefined) => {
-    if (!avatarId) return null;
-    return avatars?.all?.find((a: { id: string }) => a.id === avatarId) || null;
-  };
+  const getAvatarById = useCallback(
+    (avatarId: string | null | undefined) => {
+      if (!avatarId) return null;
+      return avatars?.all?.find((a: { id: string }) => a.id === avatarId) || null;
+    },
+    [avatars],
+  );
 
   if (loading) return <LeaderboardSkeleton />;
 
@@ -171,9 +174,9 @@ export default function GlobalLeaderboardPage() {
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <h1 className="font-display text-lg">Classement</h1>
+              <h1 className="font-display text-lg">Leaderboard</h1>
             </div>
-            <span className="font-data text-[0.5rem] text-pk-titane">{totalPlayers} joueurs</span>
+            <span className="font-data text-[0.5rem] text-pk-titane">{totalPlayers} players</span>
           </div>
 
           {/* Filter chips */}
@@ -190,6 +193,7 @@ export default function GlobalLeaderboardPage() {
                     ? "bg-pk-red-subtle border-pk-red/30 text-pk-red"
                     : "bg-white/[0.04] border-white/[0.08] text-pk-titane"
                 }`}
+                data-testid={`lb-filter-${f.key}`}
               >
                 {f.label}
               </button>
@@ -292,7 +296,7 @@ export default function GlobalLeaderboardPage() {
           className="bg-pk-surface border border-white/[0.08] rounded-lg overflow-hidden"
         >
           {rest.length === 0 ? (
-            <p className="text-sm text-pk-titane text-center py-8">Pas assez de joueurs.</p>
+            <p className="text-sm text-pk-titane text-center py-8">Not enough players.</p>
           ) : (
             rest.map((entry) => {
               const isMe = entry.user_id === user?.id;

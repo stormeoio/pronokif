@@ -68,7 +68,7 @@ export function BonusPanel({
             <Users
               className={`w-6 h-6 ${dnfDrivers.length > 0 ? "text-red-400" : "text-gray-500"}`}
             />
-            <span className="font-heading text-white text-sm uppercase">DNF Pilotes</span>
+            <span className="font-heading text-white text-sm uppercase">DNF Drivers</span>
           </div>
           <p
             className={`font-data text-xs mt-2 ${dnfDrivers.length > 0 ? "text-red-400" : "text-gray-500"}`}
@@ -91,7 +91,7 @@ export function BonusPanel({
           onClick={() => setSelectionMode("fastest_lap")}
           className={`w-full h-12 text-base ${fastestLap ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white" : "bg-purple-500/20 border-2 border-purple-500 text-purple-300 hover:bg-purple-500/30"}`}
         >
-          {fastestLap ? drivers.find((d) => d.id === fastestLap)?.name : "→ Choisir un pilote"}
+          {fastestLap ? drivers.find((d) => d.id === fastestLap)?.name : "→ Choose a driver"}
         </Button>
       </div>
 
@@ -110,7 +110,7 @@ export function BonusPanel({
         >
           {firstCornerLeader
             ? drivers.find((d) => d.id === firstCornerLeader)?.name
-            : "→ Choisir un pilote"}
+            : "→ Choose a driver"}
         </Button>
       </div>
     </div>
@@ -130,11 +130,9 @@ export function DnfPanel({ dnfDrivers, setDnfDrivers, drivers, setSelectionMode 
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="font-heading text-lg uppercase text-red-500 flex items-center gap-2">
-            <Users className="w-5 h-5" /> Pilotes DNF
+            <Users className="w-5 h-5" /> Drivers DNF
           </h3>
-          <p className="font-body text-xs text-gray-400">
-            Selectionne les pilotes qui ont abandonne
-          </p>
+          <p className="font-body text-xs text-gray-400">Select the drivers who retired</p>
         </div>
         <Button
           onClick={() => setSelectionMode("bonus")}
@@ -142,7 +140,7 @@ export function DnfPanel({ dnfDrivers, setDnfDrivers, drivers, setSelectionMode 
           size="sm"
           className="border-gray-600"
         >
-          Retour
+          Back
         </Button>
       </div>
 

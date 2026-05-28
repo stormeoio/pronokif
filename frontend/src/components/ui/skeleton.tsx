@@ -12,7 +12,7 @@ function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>)
 /* ── Preset skeletons ────────────────────────────────── */
 
 /** Full-page spinner with loading text */
-function SkeletonSpinner({ text = "Chargement..." }: { text?: string }) {
+function SkeletonSpinner({ text = "Loading..." }: { text?: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="w-10 h-10 border-[3px] border-white/[0.08] border-t-pk-red rounded-full animate-spin mb-3" />

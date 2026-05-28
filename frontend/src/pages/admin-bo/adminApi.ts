@@ -76,6 +76,12 @@ export const adminApi = {
       api.get("/predictions", { params }).then((r) => r.data),
   },
 
+  // Leagues
+  leagues: {
+    list: (params?: { skip?: number; limit?: number; search?: string }) =>
+      api.get("/leagues", { params }).then((r) => r.data),
+  },
+
   // Feedbacks
   feedbacks: {
     list: (params?: { skip?: number; limit?: number; unread_only?: boolean }) =>
@@ -89,6 +95,8 @@ export const adminApi = {
     list: () => api.get("/invitations").then((r) => r.data),
     send: (data: { email: string; message?: string }) =>
       api.post("/invitations", data).then((r) => r.data),
+    sendBatch: (data: { emails: string[]; message?: string }) =>
+      api.post("/invitations/batch", data).then((r) => r.data),
   },
 
   // Media

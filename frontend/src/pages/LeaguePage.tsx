@@ -1,20 +1,28 @@
+/**
+ * LeaguePage — My Leagues hub.
+ * Broadcast Premium theme: glass header, league list, create/join chips + forms.
+ */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
-import { Users, Plus, LogIn, Trophy } from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Trophy, Plus, LogIn, ChevronLeft } from "lucide-react";
 import LeagueCreatedScreen from "./leagues/LeagueCreatedScreen";
 import LeagueList from "./leagues/LeagueList";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { haptic } from "@/lib/haptics";
+import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
+
+/* ── Types ─────────────────────────────────────────────── */
+
+type TabKey = "join" | "create";
+
+/* ── Component ─────────────────────────────────────────── */
 
 export default function LeaguePage() {
+  const [activeTab, setActiveTab] = useState<TabKey>("join");
   const [isLoading, setIsLoading] = useState(false);
   const [createdLeague, setCreatedLeague] = useState<{
     name: string;
@@ -22,11 +30,15 @@ export default function LeaguePage() {
     id: string;
   } | null>(null);
   const [copied, setCopied] = useState<string | false>(false);
+
   const { updateUser, user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const prefersReducedMotion = useReducedMotion() ?? false;
+  const rmProps = getReducedMotionProps(prefersReducedMotion);
 
-  // ── Data queries ──────────────────────────────────────────
+  /* ── Data queries ────────────────────────────────────── */
+
   const { data: myLeagues = [], isLoading: loadingLeagues } = useQuery({
     queryKey: ["/leagues/my"],
     queryFn: () => api.leagues.my(),
@@ -45,7 +57,8 @@ export default function LeaguePage() {
     queryClient.invalidateQueries({ queryKey: ["/leagues/unread-messages"] });
   };
 
-  // ── Actions ───────────────────────────────────────────────
+  /* ── Actions ─────────────────────────────────────────── */
+
   const handleJoin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
@@ -55,7 +68,7 @@ export default function LeaguePage() {
     try {
       const res = await api.leagues.join({ code });
       updateUser({ ...user, current_league_id: res.id });
-      toast.success(`Tu as rejoint "${res.name}" !`);
+      toast.success(`You joined "${res.name}" !`);
       invalidateLeagues();
       (e.target as HTMLFormElement).reset();
     } catch (error: unknown) {
@@ -83,7 +96,7 @@ export default function LeaguePage() {
     } catch (error: unknown) {
       toast.error(
         (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-          "Erreur lors de la creation",
+          "Error while creating",
       );
     } finally {
       setIsLoading(false);
@@ -103,7 +116,7 @@ export default function LeaguePage() {
 
   const shareLeague = async (league: { name: string; code: string }) => {
     const shareUrl = `${window.location.origin}/join/${league.code}`;
-    const shareText = `Rejoins ma ligue F1 "${league.name}" sur PRONOKIF !`;
+    const shareText = `Join my F1 league "${league.name}" sur PRONOKIF !`;
 
     if (navigator.share) {
       try {
@@ -126,7 +139,8 @@ export default function LeaguePage() {
     toast.success("Ligue selectionnee !");
   };
 
-  // ── Created league success screen ────────────────────────
+  /* ── Created league success screen ──────────────────── */
+
   if (createdLeague) {
     return (
       <LeagueCreatedScreen
@@ -142,38 +156,39 @@ export default function LeaguePage() {
     );
   }
 
-  // ── Main page ────────────────────────────────────────────
-  return (
-    <div className="min-h-screen bg-app-main pb-24">
-      <div className="absolute top-20 right-10 w-32 h-32 bg-cyan-500/15 rounded-full blur-[100px]" />
-      <div className="absolute bottom-20 left-10 w-48 h-48 bg-yellow-500/10 rounded-full blur-[80px]" />
+  /* ── Main page ──────────────────────────────────────── */
 
+  return (
+    <div className="min-h-screen bg-pk-carbon pb-24" data-testid="league-page">
+      {/* Glass Header */}
+      <header className="sticky top-0 z-50 bg-pk-carbon/85 backdrop-blur-xl saturate-[1.3] border-b border-white/[0.08]">
+        <div className="px-4 pt-3 pb-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-1.5 -ml-1.5 rounded-lg text-pk-titane hover:text-pk-piste transition-colors"
+              data-testid="league-back"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-2">
+              <Trophy className="w-4.5 h-4.5 text-pk-red" />
+              <h1 className="font-display text-lg">My Leagues</h1>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Content */}
       <motion.div
-        className="relative z-10 max-w-md mx-auto p-4"
+        className="max-w-md mx-auto px-4 pt-4"
+        variants={staggerContainer}
         initial="hidden"
         animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.1 } }, hidden: {} }}
+        {...rmProps}
       >
-        {/* Header */}
-        <motion.div
-          className="text-center py-6"
-          variants={{ hidden: { opacity: 0, y: -20 }, visible: { opacity: 1, y: 0 } }}
-        >
-          <motion.div
-            className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-700 border-2 border-yellow-400/50 mb-4 shadow-xl"
-            initial={{ scale: 0, rotate: -20 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.1 }}
-          >
-            <Trophy className="w-8 h-8 text-white" strokeWidth={1.5} />
-          </motion.div>
-          <h1 className="font-heading text-2xl uppercase tracking-wider text-white">Mes Ligues</h1>
-        </motion.div>
-
-        {/* My Leagues List */}
-        <motion.div
-          variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}
-        >
+        {/* League List */}
+        <motion.div variants={fadeUp}>
           <LeagueList
             leagues={myLeagues}
             loading={loadingLeagues}
@@ -187,138 +202,151 @@ export default function LeaguePage() {
           />
         </motion.div>
 
-        {/* Create / Join Tabs */}
+        {/* Create / Join Card */}
         <motion.div
-          className="card-arcade overflow-hidden glass-card"
-          variants={{ hidden: { opacity: 0, y: 25, scale: 0.97 }, visible: { opacity: 1, y: 0, scale: 1 } }}
-          transition={{ type: "spring", stiffness: 200 }}
+          variants={fadeUp}
+          className="bg-pk-surface border border-white/[0.08] rounded-lg overflow-hidden"
         >
-          <Tabs defaultValue="join" className="w-full">
-            <div className="p-1 bg-gradient-to-r from-yellow-600/20 to-transparent">
-              <TabsList className="grid w-full grid-cols-2 bg-transparent gap-1">
-                <TabsTrigger
-                  value="join"
-                  onClick={() => haptic("light")}
-                  className="font-heading uppercase tracking-wider text-sm text-gray-400
-                            data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-yellow-700
-                            data-[state=active]:text-white data-[state=active]:shadow-lg
-                            rounded-lg py-2.5 transition-all"
-                  data-testid="tab-join"
-                >
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Rejoindre
-                </TabsTrigger>
-                <TabsTrigger
-                  value="create"
-                  onClick={() => haptic("light")}
-                  className="font-heading uppercase tracking-wider text-sm text-gray-400
-                            data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-700
-                            data-[state=active]:text-white data-[state=active]:shadow-lg
-                            rounded-lg py-2.5 transition-all"
-                  data-testid="tab-create"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Creer
-                </TabsTrigger>
-              </TabsList>
-            </div>
+          {/* Tab Chips */}
+          <div className="flex gap-1.5 p-3 border-b border-white/[0.08]">
+            <button
+              onClick={() => {
+                haptic("selection");
+                setActiveTab("join");
+              }}
+              className={`flex-1 h-9 rounded-full font-display text-sm flex items-center justify-center gap-1.5 border transition-colors ${
+                activeTab === "join"
+                  ? "bg-pk-red-subtle border-pk-red/30 text-pk-red"
+                  : "bg-white/[0.04] border-white/[0.08] text-pk-titane"
+              }`}
+              data-testid="tab-join"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              Join
+            </button>
+            <button
+              onClick={() => {
+                haptic("selection");
+                setActiveTab("create");
+              }}
+              className={`flex-1 h-9 rounded-full font-display text-sm flex items-center justify-center gap-1.5 border transition-colors ${
+                activeTab === "create"
+                  ? "bg-pk-red-subtle border-pk-red/30 text-pk-red"
+                  : "bg-white/[0.04] border-white/[0.08] text-pk-titane"
+              }`}
+              data-testid="tab-create"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Creer
+            </button>
+          </div>
 
-            <TabsContent value="join" className="p-6 space-y-4">
-              <div className="text-center mb-4">
-                <p className="font-body text-gray-400 text-sm">
-                  Entre le code de la ligue que tu veux rejoindre
+          {/* Tab Content */}
+          <AnimatePresence mode="wait">
+            {activeTab === "join" ? (
+              <motion.div
+                key="join"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                className="p-5"
+              >
+                <p className="text-xs text-pk-titane text-center mb-4">
+                  Enter the code for the league you want to join
                 </p>
-              </div>
-              <form onSubmit={handleJoin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="code"
-                    className="font-heading text-xs uppercase tracking-wider text-gray-400"
-                  >
-                    Code d'invitation
-                  </Label>
-                  <Input
-                    id="code"
-                    name="code"
-                    required
-                    className="h-14 text-center font-data text-2xl text-white uppercase tracking-[0.3em] bg-gray-900/60 border-gray-700
-                             placeholder:text-gray-500 focus:border-yellow-500 focus:ring-yellow-500/20"
-                    maxLength={6}
-                    data-testid="join-code-input"
-                  />
-                </div>
-                <motion.div whileTap={{ scale: 0.96 }} whileHover={{ scale: 1.02 }}>
-                  <Button
+
+                <form onSubmit={handleJoin} className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="code"
+                      className="block font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-1.5"
+                    >
+                      Code d'invitation
+                    </label>
+                    <input
+                      id="code"
+                      name="code"
+                      required
+                      maxLength={6}
+                      className="w-full h-14 text-center font-data text-2xl uppercase tracking-[0.3em] bg-pk-anthracite border border-white/[0.08] rounded-lg text-pk-piste placeholder:text-pk-titane/40 focus:outline-none focus:border-pk-red/50 focus:ring-1 focus:ring-pk-red/20 transition-colors"
+                      data-testid="join-code-input"
+                    />
+                  </div>
+
+                  <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full h-14 btn-racing font-heading uppercase tracking-wider relative overflow-hidden group"
+                    className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm flex items-center justify-center gap-2 shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-50 disabled:active:scale-100"
                     data-testid="join-btn"
                   >
-                    <span className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12" />
                     {isLoading ? (
-                      <span className="flex items-center gap-2">
-                        <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Connexion...
-                      </span>
+                      <>
+                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Signing in...
+                      </>
                     ) : (
                       <>
-                        <LogIn className="w-5 h-5 mr-2" />
-                        Rejoindre la ligue
+                        <LogIn className="w-4 h-4" />
+                        Join league
                       </>
                     )}
-                  </Button>
-                </motion.div>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="create" className="p-6 space-y-4">
-              <div className="text-center mb-4">
-                <p className="font-body text-gray-400 text-sm">
-                  Cree ta propre ligue et invite tes amis
+                  </button>
+                </form>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="create"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                className="p-5"
+              >
+                <p className="text-xs text-pk-titane text-center mb-4">
+                  Create your own league and invite your friends
                 </p>
-              </div>
-              <form onSubmit={handleCreate} className="space-y-4">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="name"
-                    className="font-heading text-xs uppercase tracking-wider text-gray-400"
-                  >
-                    Nom de la ligue
-                  </Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    required
-                    className="h-12 bg-gray-900/60 border-gray-700 font-body text-white
-                             placeholder:text-gray-500 focus:border-cyan-500 focus:ring-cyan-500/20"
-                    placeholder="Ex: Les Champions F1"
-                    data-testid="league-name-input"
-                  />
-                </div>
-                <motion.div whileTap={{ scale: 0.96 }} whileHover={{ scale: 1.02 }}>
-                  <Button
+
+                <form onSubmit={handleCreate} className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="name"
+                      className="block font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-1.5"
+                    >
+                      League name
+                    </label>
+                    <input
+                      id="name"
+                      name="name"
+                      required
+                      placeholder="Ex: Les Champions F1"
+                      className="w-full h-11 px-4 bg-pk-anthracite border border-white/[0.08] rounded-lg text-sm text-pk-piste placeholder:text-pk-titane/40 focus:outline-none focus:border-pk-red/50 focus:ring-1 focus:ring-pk-red/20 transition-colors"
+                      data-testid="league-name-input"
+                    />
+                  </div>
+
+                  <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full h-14 btn-neon font-heading uppercase tracking-wider relative overflow-hidden group"
+                    className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm flex items-center justify-center gap-2 shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-50 disabled:active:scale-100"
                     data-testid="create-btn"
                   >
-                    <span className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12" />
                     {isLoading ? (
-                      <span className="flex items-center gap-2">
-                        <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <>
+                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         Creation...
-                      </span>
+                      </>
                     ) : (
                       <>
-                        <Plus className="w-5 h-5 mr-2" />
-                        Creer ma ligue
+                        <Plus className="w-4 h-4" />
+                        Create my league
                       </>
                     )}
-                  </Button>
-                </motion.div>
-              </form>
-            </TabsContent>
-          </Tabs>
+                  </button>
+                </form>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       </motion.div>
     </div>

@@ -1,20 +1,50 @@
 /**
  * Admin Users management tab.
  */
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Trash2, Edit2, Ban, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Search,
+  Trash2,
+  Edit2,
+  Ban,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  MailPlus,
+} from "lucide-react";
 import { toast } from "sonner";
 import { adminApi } from "../adminApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+
+const EMAIL_SPLIT_PATTERN = /[\s,;]+/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function parseInviteEmails(input: string) {
+  const entries = input
+    .split(EMAIL_SPLIT_PATTERN)
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+  const unique = Array.from(new Set(entries));
+
+  return {
+    valid: unique.filter((email) => EMAIL_PATTERN.test(email)),
+    invalid: unique.filter((email) => !EMAIL_PATTERN.test(email)),
+  };
+}
 
 export default function UsersTab() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [editingUser, setEditingUser] = useState<Record<string, unknown> | null>(null);
+  const [inviteInput, setInviteInput] = useState("");
+  const [inviteMessage, setInviteMessage] = useState("");
   const limit = 20;
+
+  const inviteEmails = useMemo(() => parseInviteEmails(inviteInput), [inviteInput]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-bo", "users", search, page],
@@ -24,24 +54,67 @@ export default function UsersTab() {
   const users = data?.users ?? [];
   const total = data?.total ?? 0;
 
+  const batchInviteMutation = useMutation({
+    mutationFn: () =>
+      adminApi.invitations.sendBatch({
+        emails: inviteEmails.valid,
+        message: inviteMessage.trim() || undefined,
+      }),
+    onSuccess: (result) => {
+      const sent = result.sent ?? result.created?.length ?? 0;
+      const skipped = result.skipped?.length ?? 0;
+      const failed = result.failed?.length ?? 0;
+
+      if (sent > 0) {
+        toast.success(`${sent} invitation${sent > 1 ? "s" : ""} sent`);
+        setInviteInput("");
+        setInviteMessage("");
+      }
+
+      if (skipped > 0 || failed > 0) {
+        toast.warning(`${skipped} skipped, ${failed} failed`);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "invitations"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "stats"] });
+    },
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { detail?: string } } };
+      toast.error(e.response?.data?.detail || "Unable to send invitations");
+    },
+  });
+
+  const handleBatchInvite = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inviteEmails.invalid.length > 0) {
+      toast.error(`${inviteEmails.invalid.length} invalid email address(es)`);
+      return;
+    }
+    if (inviteEmails.valid.length === 0) {
+      toast.error("Add at least one email address");
+      return;
+    }
+    batchInviteMutation.mutate();
+  };
+
   const handleDelete = async (userId: string, username: string) => {
-    if (!confirm(`Supprimer l'utilisateur "${username}" et toutes ses données ?`)) return;
+    if (!confirm(`Delete user "${username}" and all their data ?`)) return;
     try {
       await adminApi.users.delete(userId);
-      toast.success("Utilisateur supprimé");
+      toast.success("User deleted");
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "users"] });
     } catch {
-      toast.error("Erreur lors de la suppression");
+      toast.error("Error while deleting");
     }
   };
 
   const handleBan = async (userId: string, currentlyBanned: boolean) => {
     try {
       await adminApi.users.update(userId, { is_banned: !currentlyBanned });
-      toast.success(currentlyBanned ? "Utilisateur débanni" : "Utilisateur banni");
+      toast.success(currentlyBanned ? "User unbanned" : "User banned");
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "users"] });
     } catch {
-      toast.error("Erreur");
+      toast.error("Error");
     }
   };
 
@@ -52,20 +125,72 @@ export default function UsersTab() {
         username: editingUser.username,
         email: editingUser.email,
       });
-      toast.success("Utilisateur mis à jour");
+      toast.success("User updated");
       setEditingUser(null);
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "users"] });
     } catch {
-      toast.error("Erreur lors de la mise à jour");
+      toast.error("Error while updating");
     }
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="font-heading text-2xl text-white uppercase tracking-tight">Utilisateurs</h2>
+        <h2 className="font-heading text-2xl text-white uppercase tracking-tight">Users</h2>
         <span className="font-data text-sm text-gray-500">{total} au total</span>
       </div>
+
+      {/* Batch invitations */}
+      <form onSubmit={handleBatchInvite} className="card-arcade mb-4 border border-cyan-500/25 p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="font-heading text-sm uppercase text-cyan-400">Inviter des testeurs</h3>
+            <p className="font-body text-xs text-gray-500">
+              Paste multiple addresses separated by a comma, a space, or a new line.
+            </p>
+          </div>
+          <span className="font-data text-xs text-gray-500">
+            {inviteEmails.valid.length} valide{inviteEmails.valid.length > 1 ? "s" : ""}
+          </span>
+        </div>
+        <div className="grid gap-3 lg:grid-cols-[1fr_260px]">
+          <Textarea
+            value={inviteInput}
+            onChange={(e) => setInviteInput(e.target.value)}
+            placeholder="driver.com, paddock.com"
+            rows={3}
+            className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
+          />
+          <div className="grid gap-3">
+            <Textarea
+              value={inviteMessage}
+              onChange={(e) => setInviteMessage(e.target.value)}
+              placeholder="Message optionnel"
+              rows={3}
+              className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
+            />
+            <Button
+              type="submit"
+              disabled={inviteEmails.valid.length === 0 || batchInviteMutation.isPending}
+              size="sm"
+              className="btn-racing text-xs"
+            >
+              {batchInviteMutation.isPending ? (
+                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+              ) : (
+                <MailPlus className="mr-1 h-4 w-4" />
+              )}
+              Send invitations
+            </Button>
+          </div>
+        </div>
+        {inviteEmails.invalid.length > 0 && (
+          <p className="mt-2 font-body text-xs text-red-400">
+            Adresses invalides : {inviteEmails.invalid.slice(0, 4).join(", ")}
+            {inviteEmails.invalid.length > 4 ? "..." : ""}
+          </p>
+        )}
+      </form>
 
       {/* Search */}
       <div className="relative mb-4">
@@ -84,9 +209,7 @@ export default function UsersTab() {
       {/* Edit Modal */}
       {editingUser && (
         <div className="card-arcade p-4 mb-4 border border-orange-500/30">
-          <h3 className="font-heading text-sm text-orange-400 uppercase mb-3">
-            Modifier l'utilisateur
-          </h3>
+          <h3 className="font-heading text-sm text-orange-400 uppercase mb-3">Edit user</h3>
           <div className="grid grid-cols-2 gap-3 mb-3">
             <Input
               value={(editingUser.username as string) || ""}
@@ -103,7 +226,7 @@ export default function UsersTab() {
           </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={handleSaveEdit} className="btn-racing text-xs">
-              Sauvegarder
+              Save
             </Button>
             <Button
               size="sm"
@@ -111,7 +234,7 @@ export default function UsersTab() {
               onClick={() => setEditingUser(null)}
               className="text-gray-400 text-xs"
             >
-              Annuler
+              Cancel
             </Button>
           </div>
         </div>
@@ -146,7 +269,7 @@ export default function UsersTab() {
                       {user.username ? (
                         String(user.username)
                       ) : (
-                        <span className="text-gray-600 italic">non défini</span>
+                        <span className="text-gray-600 italic">not set</span>
                       )}
                       {!!user.is_banned && (
                         <span className="ml-2 text-xs text-red-400 bg-red-500/20 px-1 rounded">
@@ -167,14 +290,14 @@ export default function UsersTab() {
                         <button
                           onClick={() => setEditingUser(user)}
                           className="p-1.5 text-gray-400 hover:text-cyan-400 rounded"
-                          title="Modifier"
+                          title="Edit"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleBan(user.id as string, !!user.is_banned)}
                           className={`p-1.5 rounded ${user.is_banned ? "text-green-400 hover:text-green-300" : "text-yellow-400 hover:text-yellow-300"}`}
-                          title={user.is_banned ? "Débannir" : "Bannir"}
+                          title={user.is_banned ? "Unban" : "Ban"}
                         >
                           <Ban className="w-3.5 h-3.5" />
                         </button>
@@ -186,7 +309,7 @@ export default function UsersTab() {
                             )
                           }
                           className="p-1.5 text-gray-400 hover:text-red-400 rounded"
-                          title="Supprimer"
+                          title="Delete"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -197,7 +320,7 @@ export default function UsersTab() {
                 {users.length === 0 && (
                   <tr>
                     <td colSpan={6} className="p-8 text-center text-gray-500 font-body">
-                      Aucun utilisateur trouvé
+                      No user found
                     </td>
                   </tr>
                 )}

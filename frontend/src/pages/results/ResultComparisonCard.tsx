@@ -1,9 +1,13 @@
+/**
+ * ResultComparisonCard — Quali/Course result vs prediction.
+ * Broadcast Premium: pk-surface card, pk-emerald/pk-red match indicators.
+ */
 import { motion } from "framer-motion";
 import { Check, X } from "lucide-react";
 import type { ReactNode } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { staggerContainer } from "@/lib/motion";
 
-// ------------------------------------------------------------------ types ---
+/* ── Types ─────────────────────────────────────────────── */
 
 export interface ResultComparisonCardProps {
   title: string;
@@ -16,12 +20,8 @@ export interface ResultComparisonCardProps {
   getDriverName: (id: string | number) => string;
 }
 
-// ----------------------------------------------------------- component ---
+/* ── Component ─────────────────────────────────────────── */
 
-/**
- * Renders a comparison card for either Qualifications or Course results.
- * Shows the official result alongside the user's prediction.
- */
 export default function ResultComparisonCard({
   title,
   icon,
@@ -33,35 +33,37 @@ export default function ResultComparisonCard({
   getDriverName,
 }: ResultComparisonCardProps) {
   return (
-    <Card className="bg-card border-white/10 glass-card">
-      <CardHeader>
-        <CardTitle className="font-heading text-lg uppercase tracking-tight flex items-center gap-2">
-          {icon}
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="bg-pk-surface border border-white/[0.08] rounded-lg overflow-hidden">
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-white/[0.08] flex items-center gap-2">
+        {icon}
+        <h3 className="font-display text-sm">{title}</h3>
+      </div>
+
+      <div className="p-4 space-y-3">
         {/* Winner / Pole */}
-        <div className="p-3 rounded-sm bg-zinc-900/50 border border-zinc-800">
-          <p className="font-body text-xs text-zinc-400 uppercase mb-2">{winnerLabel}</p>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="font-heading text-white">{getDriverName(winnerId)}</span>
-              <span className="font-body text-xs text-zinc-500">(Reel)</span>
+        <div className="bg-pk-anthracite/60 border border-white/[0.06] rounded-md p-3">
+          <p className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-2">
+            {winnerLabel}
+          </p>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="font-display text-sm">{getDriverName(winnerId)}</span>
+              <span className="font-data text-[0.5rem] text-pk-titane">(Reel)</span>
             </div>
             {predictionWinnerId !== undefined && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <span
-                  className={`font-body text-sm ${
-                    predictionWinnerId === winnerId ? "text-emerald-500" : "text-zinc-400"
+                  className={`font-data text-[0.5625rem] ${
+                    predictionWinnerId === winnerId ? "text-pk-emerald" : "text-pk-titane"
                   }`}
                 >
-                  Ton choix: {getDriverName(predictionWinnerId)}
+                  Your pick: {getDriverName(predictionWinnerId)}
                 </span>
                 {predictionWinnerId === winnerId ? (
-                  <Check className="w-5 h-5 text-emerald-500" />
+                  <Check className="w-4 h-4 text-pk-emerald" />
                 ) : (
-                  <X className="w-5 h-5 text-red-500" />
+                  <X className="w-4 h-4 text-pk-red" />
                 )}
               </div>
             )}
@@ -70,57 +72,62 @@ export default function ResultComparisonCard({
 
         {/* Top 3 */}
         {top3 && (
-          <div className="p-3 rounded-sm bg-zinc-900/50 border border-zinc-800">
-            <p className="font-body text-xs text-zinc-400 uppercase mb-2">Top 3</p>
+          <div className="bg-pk-anthracite/60 border border-white/[0.06] rounded-md p-3">
+            <p className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-2">
+              Top 3
+            </p>
             <motion.div
-              className="space-y-2"
+              className="space-y-1.5"
+              variants={staggerContainer}
               initial="hidden"
               animate="visible"
-              variants={{ visible: { transition: { staggerChildren: 0.08 } }, hidden: {} }}
             >
               {top3.map((driverId, i) => (
                 <motion.div
                   key={i}
                   className="flex items-center justify-between"
-                  variants={{ hidden: { opacity: 0, x: -8 }, visible: { opacity: 1, x: 0 } }}
+                  variants={{
+                    hidden: { opacity: 0, x: -6 },
+                    visible: { opacity: 1, x: 0 },
+                  }}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <span
-                      className={`w-6 h-6 rounded-sm flex items-center justify-center font-heading text-xs ${
+                      className={`w-6 h-6 rounded-md flex items-center justify-center font-data text-[0.5625rem] font-bold ${
                         i === 0
-                          ? "bg-amber-500 text-black"
+                          ? "bg-pk-gold/[0.2] text-pk-gold"
                           : i === 1
-                            ? "bg-zinc-300 text-black"
-                            : "bg-amber-700 text-white"
+                            ? "bg-pk-silver/[0.2] text-pk-silver"
+                            : "bg-pk-bronze/[0.2] text-pk-bronze"
                       }`}
                     >
                       {i + 1}
                     </span>
-                    <span className="font-body text-white">{getDriverName(driverId)}</span>
+                    <span className="text-sm">{getDriverName(driverId)}</span>
                   </div>
                   {predictionTop3 && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       {(() => {
                         const pred = predictionTop3[i];
                         return (
                           <>
                             <span
-                              className={`font-body text-sm ${
+                              className={`font-data text-[0.5625rem] ${
                                 pred === driverId
-                                  ? "text-emerald-500"
+                                  ? "text-pk-emerald"
                                   : predictionTop3.includes(driverId)
-                                    ? "text-amber-500"
-                                    : "text-zinc-400"
+                                    ? "text-pk-amber"
+                                    : "text-pk-titane"
                               }`}
                             >
                               {pred !== undefined ? getDriverName(pred) : "—"}
                             </span>
                             {pred === driverId ? (
-                              <Check className="w-5 h-5 text-emerald-500" />
+                              <Check className="w-3.5 h-3.5 text-pk-emerald" />
                             ) : predictionTop3.includes(driverId) ? (
-                              <span className="text-amber-500 text-xs">~</span>
+                              <span className="text-pk-amber font-data text-[0.5625rem]">~</span>
                             ) : (
-                              <X className="w-5 h-5 text-red-500" />
+                              <X className="w-3.5 h-3.5 text-pk-red" />
                             )}
                           </>
                         );
@@ -132,7 +139,7 @@ export default function ResultComparisonCard({
             </motion.div>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

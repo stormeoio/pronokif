@@ -74,7 +74,7 @@ async def create_prediction(data: PredictionCreate, user: dict = Depends(get_cur
 
     predictions_close = get_predictions_close_time(race)
     if datetime.now(UTC) > predictions_close:
-        raise HTTPException(status_code=400, detail="Les pronostics sont fermés (15 min avant les FP1)")
+        raise HTTPException(status_code=400, detail="Predictions are closed (15 min before FP1)")
 
     if len(data.quali_top10) != 10 or len(data.race_top10) != 10:
         raise HTTPException(status_code=400, detail="Top 10 must have exactly 10 drivers")
@@ -136,18 +136,18 @@ async def delete_my_prediction(race_id: str, user: dict = Depends(get_current_us
     """Delete user's prediction for a specific race"""
     race = await _get_race(race_id)
     if not race:
-        raise HTTPException(status_code=404, detail="Course non trouvée")
+        raise HTTPException(status_code=404, detail="Race not found")
 
     close_time = get_predictions_close_time(race)
     if datetime.now(UTC) >= close_time:
-        raise HTTPException(status_code=400, detail="Les pronostics sont clôturés, suppression impossible")
+        raise HTTPException(status_code=400, detail="Predictions are closed, deletion is unavailable")
 
     result = await db.predictions.delete_one({"user_id": user["id"], "race_id": race_id})
 
     if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Aucun pronostic trouvé pour cette course")
+        raise HTTPException(status_code=404, detail="No prediction found for this race")
 
-    return {"message": "Pronostics supprimés avec succès"}
+    return {"message": "Predictions deleted successfully"}
 
 
 @router.get("/history")
@@ -204,8 +204,8 @@ async def get_points_history(user: dict = Depends(get_current_user)) -> dict:
                 "points_breakdown": {
                     "quali_pole": {"points": points["quali_pole"], "label": "Pole Position"},
                     "quali_top10": {"points": points["quali_top10"], "label": "Top 10 Qualifications"},
-                    "race_winner": {"points": points["race_winner"], "label": "Vainqueur Course"},
-                    "race_top10": {"points": points["race_top10"], "label": "Top 10 Course"},
+                    "race_winner": {"points": points["race_winner"], "label": "Race Winner"},
+                    "race_top10": {"points": points["race_top10"], "label": "Race Top 10"},
                     "bonus": {"points": points["bonus"], "label": "Bonus (SC, DNF, Meilleur tour, Leader T1)"},
                 },
                 "sprint_breakdown": None,
@@ -217,7 +217,7 @@ async def get_points_history(user: dict = Depends(get_current_user)) -> dict:
             if race.get("is_sprint"):
                 history_entry["sprint_breakdown"] = {
                     "sprint_quali_top10": {"points": points["sprint_quali_top10"], "label": "Top 10 Qualif Sprint"},
-                    "sprint_race_top10": {"points": points["sprint_race_top10"], "label": "Top 10 Course Sprint"},
+                    "sprint_race_top10": {"points": points["sprint_race_top10"], "label": "Sprint Race Top 10"},
                 }
 
             history.append(history_entry)
@@ -233,7 +233,7 @@ async def get_points_history(user: dict = Depends(get_current_user)) -> dict:
                     "sprint_breakdown": None,
                     "total_points": 0,
                     "xp_earned": 0,
-                    "details": ["En attente des résultats"],
+                    "details": ["Waiting for results"],
                 }
             )
 
@@ -268,7 +268,7 @@ async def save_sprint_prediction(data: SprintPredictionCreate, user: dict = Depe
 
     sprint_predictions_close = get_sprint_predictions_close_time(race)
     if datetime.now(UTC) > sprint_predictions_close:
-        raise HTTPException(status_code=400, detail="Les pronostics sprint sont fermés (15 min avant SQ1)")
+        raise HTTPException(status_code=400, detail="Sprint predictions are closed (15 min before SQ1)")
 
     if len(data.sprint_quali_top10) != 10 or len(data.sprint_race_top10) != 10:
         raise HTTPException(status_code=400, detail="Sprint Top 10 must have exactly 10 drivers")
@@ -312,7 +312,7 @@ async def save_main_prediction(data: MainPredictionCreate, user: dict = Depends(
 
     predictions_close = get_predictions_close_time(race)
     if datetime.now(UTC) > predictions_close:
-        raise HTTPException(status_code=400, detail="Les pronostics sont fermés (15 min avant Q1)")
+        raise HTTPException(status_code=400, detail="Predictions are closed (15 min before Q1)")
 
     if len(data.quali_top10) != 10 or len(data.race_top10) != 10:
         raise HTTPException(status_code=400, detail="Top 10 must have exactly 10 drivers")

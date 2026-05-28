@@ -348,15 +348,15 @@ def _build_success_items(fetched_data: dict) -> list[str]:
     if fetched_data.get("quali_pole"):
         items.append("Pole position")
     if len(fetched_data.get("quali_top10", [])) == 10:
-        items.append("Top 10 qualifs")
+        items.append("Qualifying Top 10")
     if fetched_data.get("race_winner"):
-        items.append("Vainqueur course")
+        items.append("Race winner")
     if len(fetched_data.get("race_top10", [])) == 10:
-        items.append("Top 10 course")
+        items.append("Race top 10")
 
     bonus = fetched_data.get("bonus", {})
     if bonus.get("fastest_lap"):
-        items.append("Meilleur tour")
+        items.append("Fastest lap")
     if bonus.get("safety_car") is not None:
         items.append(
             f"Safety Car: {'OUI' if bonus['safety_car'] else 'NON'}"
@@ -364,9 +364,9 @@ def _build_success_items(fetched_data: dict) -> list[str]:
     if bonus.get("dnf_drivers"):
         items.append(f"DNF: {len(bonus['dnf_drivers'])} pilotes")
     if bonus.get("first_corner_leader"):
-        items.append("Leader 1er virage")
+        items.append("Turn 1 leader")
     if fetched_data.get("sprint_race_winner"):
-        items.append("Vainqueur sprint")
+        items.append("Sprint winner")
     return items
 
 
@@ -472,7 +472,7 @@ async def sync_one_race(race_id: str, user_id: str) -> dict:
         "fetched_data": fetched_data,
         "success_items": success_items,
         "errors": errors,
-        "message": f"Recupere: {', '.join(success_items) if success_items else 'Aucune donnee'}",
+        "message": f"Retrieved: {', '.join(success_items) if success_items else 'No data'}",
     }
 
 
@@ -617,7 +617,7 @@ async def auto_sync_and_save(race_id: str, user_id: str) -> dict:
             "status": "success",
             "message": (
                 f"Resultats synchronises et sauvegardes! "
-                f"{points_calculated} pronostics calcules."
+                f"{points_calculated} predictions calculated."
             ),
             "fetched_data": fetched_data,
             "success_items": success_items,

@@ -1,3 +1,7 @@
+/**
+ * AvatarDisplay — Avatar rendering and selector for profile.
+ * Broadcast Premium: pk-surface cards, pk-red accents, native inputs.
+ */
 import { useState } from "react";
 import {
   Bird,
@@ -16,6 +20,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ChangeEvent } from "react";
+import { haptic } from "@/lib/haptics";
 
 // ------------------------------------------------------------------ types ---
 
@@ -97,8 +102,8 @@ export function AvatarDisplay({ avatar, size = "md", customUrl = null }: AvatarD
   // Custom uploaded photo
   if (customUrl) {
     return (
-      <div className={`${sizeClasses[size]} rounded-lg overflow-hidden border-2 border-orange-500`}>
-        <img src={customUrl} alt="Avatar personnalisé" className="w-full h-full object-cover" />
+      <div className={`${sizeClasses[size]} rounded-lg overflow-hidden border-2 border-pk-red`}>
+        <img src={customUrl} alt="Custom avatar" className="w-full h-full object-cover" />
       </div>
     );
   }
@@ -107,7 +112,7 @@ export function AvatarDisplay({ avatar, size = "md", customUrl = null }: AvatarD
   if (!avatar) {
     return (
       <div
-        className={`${sizeClasses[size]} rounded-lg bg-gradient-to-b from-orange-500 to-orange-700 border-2 border-orange-400 flex items-center justify-center`}
+        className={`${sizeClasses[size]} rounded-lg bg-pk-red border-2 border-pk-red/60 flex items-center justify-center`}
       >
         <User className={`${iconSizes[size]} text-white`} />
       </div>
@@ -149,7 +154,7 @@ export function AvatarDisplay({ avatar, size = "md", customUrl = null }: AvatarD
             <rect x="30" y="65" width="40" height="20" rx="5" fill="white" />
           </svg>
         </div>
-        <span className={`font-heading ${textSizes[size]} text-white drop-shadow-lg z-10`}>
+        <span className={`font-display ${textSizes[size]} text-white drop-shadow-lg z-10`}>
           {avatar.number}
         </span>
       </div>
@@ -160,9 +165,9 @@ export function AvatarDisplay({ avatar, size = "md", customUrl = null }: AvatarD
   const Icon: LucideIcon = (avatar.icon ? ICON_MAP[avatar.icon] : undefined) ?? Star;
   return (
     <div
-      className={`${sizeClasses[size]} rounded-lg bg-gradient-to-b from-gray-700 to-gray-900 border-2 border-gray-600 flex items-center justify-center`}
+      className={`${sizeClasses[size]} rounded-lg bg-pk-surface border-2 border-white/[0.12] flex items-center justify-center`}
     >
-      <Icon className={`${iconSizes[size]} text-orange-500`} />
+      <Icon className={`${iconSizes[size]} text-pk-red`} />
     </div>
   );
 }
@@ -185,9 +190,9 @@ export function AvatarSelector({
   const [uploading, setUploading] = useState(false);
 
   const categories: Category[] = [
-    { id: "default", label: "Classiques" },
-    { id: "teams", label: "Écuries" },
-    { id: "drivers", label: "Pilotes" },
+    { id: "default", label: "Classics" },
+    { id: "teams", label: "Teams" },
+    { id: "drivers", label: "Drivers" },
     { id: "custom", label: "Photo" },
   ];
 
@@ -203,7 +208,7 @@ export function AvatarSelector({
     if (!file) return;
 
     if (file.size > 500000) {
-      alert("Image trop grande (max 500KB)");
+      alert("Image too large (max 500KB)");
       return;
     }
 
@@ -222,11 +227,14 @@ export function AvatarSelector({
         {categories.map((cat) => (
           <button
             key={cat.id}
-            onClick={() => setCategory(cat.id)}
-            className={`px-4 py-2 rounded-lg font-heading text-sm uppercase whitespace-nowrap transition-all ${
+            onClick={() => {
+              haptic("light");
+              setCategory(cat.id);
+            }}
+            className={`px-4 py-2 rounded-lg font-display text-xs whitespace-nowrap transition-all ${
               category === cat.id
-                ? "bg-orange-500 text-white"
-                : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                ? "bg-pk-red text-white"
+                : "bg-white/[0.04] text-pk-titane hover:text-pk-piste hover:bg-white/[0.06]"
             }`}
           >
             {cat.label}
@@ -237,25 +245,25 @@ export function AvatarSelector({
       {/* Avatar grid or upload */}
       {category === "custom" ? (
         <div className="space-y-4">
-          <div className="flex items-center justify-center p-8 border-2 border-dashed border-gray-600 rounded-lg">
+          <div className="flex items-center justify-center p-8 border-2 border-dashed border-white/[0.12] rounded-lg">
             <label className="cursor-pointer text-center">
               <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
               <div className="space-y-2">
-                <div className="w-16 h-16 mx-auto rounded-lg bg-gray-800 flex items-center justify-center">
+                <div className="w-16 h-16 mx-auto rounded-lg bg-pk-surface flex items-center justify-center">
                   {customUrl ? (
                     <img
                       src={customUrl}
-                      alt="Avatar actuel"
+                      alt="Current avatar"
                       className="w-full h-full object-cover rounded-lg"
                     />
                   ) : (
-                    <User className="w-8 h-8 text-gray-500" />
+                    <User className="w-8 h-8 text-pk-titane" />
                   )}
                 </div>
-                <p className="font-body text-gray-400 text-sm">
-                  {uploading ? "Envoi en cours..." : "Cliquer pour importer une photo"}
+                <p className="text-sm text-pk-titane">
+                  {uploading ? "Uploading..." : "Click to upload a photo"}
                 </p>
-                <p className="font-body text-gray-500 text-xs">Max 500KB, JPG/PNG</p>
+                <p className="font-data text-[0.5625rem] text-pk-titane/60">Max 500KB, JPG/PNG</p>
               </div>
             </label>
           </div>
@@ -265,15 +273,20 @@ export function AvatarSelector({
           {filteredAvatars.map((avatar) => (
             <button
               key={avatar.id}
-              onClick={() => onSelect(avatar.id)}
+              onClick={() => {
+                haptic("light");
+                onSelect(avatar.id);
+              }}
               className={`p-2 rounded-lg border-2 transition-all ${
                 selectedId === avatar.id
-                  ? "border-orange-500 bg-orange-500/20"
-                  : "border-gray-700 hover:border-gray-500"
+                  ? "border-pk-red bg-pk-red-subtle"
+                  : "border-white/[0.08] hover:border-white/[0.15]"
               }`}
             >
               <AvatarDisplay avatar={avatar} size="md" />
-              <p className="font-body text-xs text-gray-400 mt-1 truncate">{avatar.name}</p>
+              <p className="font-data text-[0.5625rem] text-pk-titane mt-1 truncate">
+                {avatar.name}
+              </p>
             </button>
           ))}
         </div>

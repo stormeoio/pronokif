@@ -60,7 +60,7 @@ interface CardCTAEmptyProps {
 
 /**
  * Prominent empty state with CTA button — red-subtle background.
- * For urgent actions (submit pronos, join league).
+ * For urgent actions (submit picks, join league).
  */
 export function EmptyCardCTA({
   icon,

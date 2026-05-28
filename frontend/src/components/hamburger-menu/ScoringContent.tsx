@@ -1,3 +1,7 @@
+/**
+ * ScoringContent — Points system breakdown in the hamburger menu.
+ * Broadcast Premium: pk-surface cards, pk-info/amber/emerald accents.
+ */
 import { motion } from "framer-motion";
 import { Calculator } from "lucide-react";
 import { SectionHeader } from "./MenuHelpers";
@@ -8,39 +12,39 @@ export function ScoringContent() {
       category: "Qualifications",
       items: [
         { label: "Pole Position exacte", points: "+5 pts" },
-        { label: "Pilote dans le Top 10 (bonne position)", points: "+3 pts" },
-        { label: "Pilote dans le Top 10 (mauvaise position)", points: "+1 pt" },
+        { label: "Driver in the Top 10 (correct position)", points: "+3 pts" },
+        { label: "Driver in the Top 10 (wrong position)", points: "+1 pt" },
       ],
     },
     {
-      category: "Course",
+      category: "Race",
       items: [
-        { label: "Vainqueur exact", points: "+5 pts" },
-        { label: "Pilote dans le Top 10 (bonne position)", points: "+3 pts" },
-        { label: "Pilote dans le Top 10 (mauvaise position)", points: "+1 pt" },
+        { label: "Exact winner", points: "+5 pts" },
+        { label: "Driver in the Top 10 (correct position)", points: "+3 pts" },
+        { label: "Driver in the Top 10 (wrong position)", points: "+1 pt" },
       ],
     },
   ];
   const bonusScoring = [
-    { label: "Safety Car (bonne réponse)", points: "+3 pts" },
+    { label: "Safety Car (correct answer)", points: "+3 pts" },
     { label: "Meilleur tour exact", points: "+5 pts" },
     { label: "Leader 1er virage exact", points: "+5 pts" },
-    { label: "Abandon correct (par pilote)", points: "+3 pts" },
+    { label: "Correct retirement (per driver)", points: "+3 pts" },
     { label: '"Pas de DNF" correct', points: "+5 pts" },
   ];
   const specialScoring = [
-    { label: "Top 10 Qualifs parfait (10/10 bonnes positions)", points: "+10 pts BONUS" },
-    { label: "Top 10 Course parfait (10/10 bonnes positions)", points: "+10 pts BONUS" },
-    { label: "Meilleur score mini-jeu de la ligue", points: "+2 pts" },
+    { label: "Top 10 qualif parfait (10/10 bonnes positions)", points: "+10 pts BONUS" },
+    { label: "Perfect race Top 10 (10/10 correct positions)", points: "+10 pts BONUS" },
+    { label: "Best league mini-game score", points: "+2 pts" },
   ];
 
   return (
     <div className="space-y-4">
       <SectionHeader
         icon={Calculator}
-        title="Barème des points"
-        subtitle="Comment sont calculés les points"
-        color="from-purple-500 to-purple-700"
+        title="Points system"
+        subtitle="How points are calculated"
+        color="bg-pk-info"
       />
       <motion.div
         className="space-y-4"
@@ -51,15 +55,15 @@ export function ScoringContent() {
         {mainScoring.map((section, idx) => (
           <motion.div
             key={idx}
-            className="bg-gray-800/50 rounded-lg p-3 border border-purple-500/20"
+            className="bg-white/[0.04] rounded-lg p-3 border border-pk-info/20"
             variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
           >
-            <h4 className="font-heading text-sm text-purple-400 mb-3">{section.category}</h4>
+            <h4 className="font-display text-xs text-pk-info mb-3">{section.category}</h4>
             <div className="space-y-2">
               {section.items.map((item, i) => (
                 <div key={i} className="flex items-center justify-between">
-                  <span className="font-body text-xs text-gray-300">{item.label}</span>
-                  <span className="font-data text-sm text-cyan-400 font-semibold">
+                  <span className="text-xs text-pk-piste/80">{item.label}</span>
+                  <span className="font-data text-sm text-pk-info font-semibold">
                     {item.points}
                   </span>
                 </div>
@@ -68,31 +72,29 @@ export function ScoringContent() {
           </motion.div>
         ))}
         <motion.div
-          className="bg-gray-800/50 rounded-lg p-3 border border-yellow-500/20"
+          className="bg-white/[0.04] rounded-lg p-3 border border-pk-amber/20"
           variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
         >
-          <h4 className="font-heading text-sm text-yellow-400 mb-3">Paris Bonus</h4>
+          <h4 className="font-display text-xs text-pk-amber mb-3">Paris bonus</h4>
           <div className="space-y-2">
             {bonusScoring.map((item, i) => (
               <div key={i} className="flex items-center justify-between">
-                <span className="font-body text-xs text-gray-300">{item.label}</span>
-                <span className="font-data text-sm text-yellow-400 font-semibold">
-                  {item.points}
-                </span>
+                <span className="text-xs text-pk-piste/80">{item.label}</span>
+                <span className="font-data text-sm text-pk-amber font-semibold">{item.points}</span>
               </div>
             ))}
           </div>
         </motion.div>
         <motion.div
-          className="bg-gradient-to-br from-cyan-900/30 to-purple-900/30 rounded-lg p-3 border border-cyan-500/30"
+          className="bg-pk-emerald/[0.06] rounded-lg p-3 border border-pk-emerald/20"
           variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
         >
-          <h4 className="font-heading text-sm text-cyan-400 mb-3">Bonus Spéciaux</h4>
+          <h4 className="font-display text-xs text-pk-emerald mb-3">Special bonuses</h4>
           <div className="space-y-2">
             {specialScoring.map((item, i) => (
               <div key={i} className="flex items-center justify-between">
-                <span className="font-body text-xs text-gray-300">{item.label}</span>
-                <span className="font-data text-sm text-green-400 font-semibold">
+                <span className="text-xs text-pk-piste/80">{item.label}</span>
+                <span className="font-data text-sm text-pk-emerald font-semibold">
                   {item.points}
                 </span>
               </div>
@@ -100,32 +102,33 @@ export function ScoringContent() {
           </div>
         </motion.div>
         <motion.div
-          className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/30"
+          className="bg-white/[0.04] rounded-lg p-3 border border-white/[0.08]"
           variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
         >
-          <p className="font-body text-xs text-gray-400">
-            <span className="text-orange-400 font-semibold">Weekend Sprint :</span> Le même barème
-            s'applique pour les pronostics Sprint (Sprint Qualifs + Sprint Race + Bonus Sprint).
+          <p className="text-xs text-pk-titane">
+            <span className="text-pk-amber font-semibold">Sprint weekend:</span> The same scoring
+            system points s'applique aux predictions Sprint (Sprint Qualifying + Sprint Race +
+            Sprint Bonus).
           </p>
         </motion.div>
         <motion.div
-          className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 rounded-lg p-3 border border-yellow-500/30"
+          className="bg-pk-amber/[0.06] rounded-lg p-3 border border-pk-amber/20"
           variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
         >
-          <h4 className="font-heading text-sm text-yellow-400 mb-2">
-            Points maximum par GP (course classique)
+          <h4 className="font-display text-xs text-pk-amber mb-2">
+            Maximum points per GP (classic race)
           </h4>
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="text-gray-400">Qualifs (Pole + Top 10 parfait)</div>
-            <div className="text-right text-cyan-400 font-semibold">45 pts</div>
-            <div className="text-gray-400">Course (Winner + Top 10 parfait)</div>
-            <div className="text-right text-cyan-400 font-semibold">45 pts</div>
-            <div className="text-gray-400">Bonus (SC + FL + T1 + DNF)</div>
-            <div className="text-right text-yellow-400 font-semibold">~20 pts</div>
-            <div className="text-gray-400 font-semibold border-t border-gray-700 pt-1">
+            <div className="text-pk-titane">Qualif (Pole + Top 10 parfait)</div>
+            <div className="text-right text-pk-info font-semibold">45 pts</div>
+            <div className="text-pk-titane">Race (Winner + perfect Top 10)</div>
+            <div className="text-right text-pk-info font-semibold">45 pts</div>
+            <div className="text-pk-titane">Bonus (SC + FL + T1 + DNF)</div>
+            <div className="text-right text-pk-amber font-semibold">~20 pts</div>
+            <div className="text-pk-piste font-semibold border-t border-white/[0.08] pt-1">
               Total possible
             </div>
-            <div className="text-right text-green-400 font-bold border-t border-gray-700 pt-1">
+            <div className="text-right text-pk-emerald font-bold border-t border-white/[0.08] pt-1">
               ~110 pts
             </div>
           </div>

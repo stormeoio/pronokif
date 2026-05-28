@@ -24,11 +24,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": None,
             "salary_estimate": "35M USD/an",
             "verified": False,
-            "notes": "Contrat longue durée signé en 2024",
+            "notes": "Long-term contract signed in 2024",
         },
         "palmares": {
             "f1": {
-                "seasons": "2019-présent",
+                "seasons": "2019-present",
                 "first_team": "McLaren",
                 "world_championships": 1,
                 "wins": 12,
@@ -76,11 +76,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": None,
             "salary_estimate": "18M USD/an",
             "verified": False,
-            "notes": "Extension jusqu'en 2028 signée fin 2024",
+            "notes": "Extension through 2028 signed in late 2024",
         },
         "palmares": {
             "f1": {
-                "seasons": "2023-présent",
+                "seasons": "2023-present",
                 "first_team": "McLaren",
                 "world_championships": 0,
                 "wins": 5,
@@ -127,11 +127,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 1,
             "salary_estimate": "15M USD/an",
             "verified": False,
-            "notes": "Extension multi-année signée début 2024",
+            "notes": "Multi-year extension signed in early 2024",
         },
         "palmares": {
             "f1": {
-                "seasons": "2019-présent",
+                "seasons": "2019-present",
                 "first_team": "Williams",
                 "world_championships": 0,
                 "wins": 5,
@@ -185,11 +185,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 2,
             "salary_estimate": "3M USD/an",
             "verified": False,
-            "notes": "Premier contrat F1, membre du programme junior Mercedes",
+            "notes": "First F1 contract, Mercedes junior programme member",
         },
         "palmares": {
             "f1": {
-                "seasons": "2025-présent",
+                "seasons": "2025-present",
                 "first_team": "Mercedes",
                 "world_championships": 0,
                 "wins": 0,
@@ -250,11 +250,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": None,
             "salary_estimate": "25M USD/an",
             "verified": False,
-            "notes": "Contrat longue durée, pilier de l'équipe Ferrari",
+            "notes": "Long-term contract, Ferrari team pillar",
         },
         "palmares": {
             "f1": {
-                "seasons": "2018-présent",
+                "seasons": "2018-present",
                 "first_team": "Sauber",
                 "world_championships": 0,
                 "wins": 10,
@@ -312,7 +312,7 @@ F1_DRIVERS_DETAILED_2026 = {
         },
         "palmares": {
             "f1": {
-                "seasons": "2007-présent",
+                "seasons": "2007-present",
                 "first_team": "McLaren",
                 "world_championships": 7,
                 "wins": 105,
@@ -329,7 +329,7 @@ F1_DRIVERS_DETAILED_2026 = {
                     "team": "ART Grand Prix",
                     "position": 1,
                     "wins": 5,
-                    "note": "Champion, 1ère année",
+                    "note": "Champion, first year",
                 },
                 {
                     "year": 2005,
@@ -377,7 +377,7 @@ F1_DRIVERS_DETAILED_2026 = {
         },
         "palmares": {
             "f1": {
-                "seasons": "2015-présent",
+                "seasons": "2015-present",
                 "first_team": "Toro Rosso",
                 "world_championships": 4,
                 "wins": 65,
@@ -394,7 +394,7 @@ F1_DRIVERS_DETAILED_2026 = {
                     "team": "Van Amersfoort Racing",
                     "position": 3,
                     "wins": 10,
-                    "note": "Promu directement en F1 à 17 ans",
+                    "note": "Promoted directly to F1 at age 17",
                 },
                 {
                     "year": 2013,
@@ -430,11 +430,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 1,
             "salary_estimate": "2M USD/an",
             "verified": False,
-            "notes": "Promu de la Red Bull Academy, premier pilote français chez Red Bull",
+            "notes": "Promoted from the Red Bull Academy, first French driver at Red Bull",
         },
         "palmares": {
             "f1": {
-                "seasons": "2026-présent",
+                "seasons": "2026-present",
                 "first_team": "Red Bull Racing",
                 "world_championships": 0,
                 "wins": 0,
@@ -454,7 +454,7 @@ F1_DRIVERS_DETAILED_2026 = {
                     "wins": 3,
                     "note": "Vice-champion",
                 },
-                {"year": 2023, "series": "F3", "team": "Hitech GP", "position": 3, "wins": 2, "note": "3ème"},
+                {"year": 2023, "series": "F3", "team": "Hitech GP", "position": 3, "wins": 2, "note": "3rd"},
                 {
                     "year": 2022,
                     "series": "Formula Regional Middle East",
@@ -489,11 +489,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 1,
             "salary_estimate": "12M USD/an",
             "verified": False,
-            "notes": "A quitté Ferrari pour Williams, contrat multi-année",
+            "notes": "Left Ferrari for Williams, multi-year contract",
         },
         "palmares": {
             "f1": {
-                "seasons": "2015-présent",
+                "seasons": "2015-present",
                 "first_team": "Toro Rosso",
                 "world_championships": 0,
                 "wins": 4,
@@ -535,7 +535,7 @@ F1_DRIVERS_DETAILED_2026 = {
         "team": "Williams",
         "team_id": "williams",
         "country": "THA",
-        "country_name": "Thaïlande",
+        "country_name": "Thailand",
         "date_of_birth": "1996-03-23",
         "place_of_birth": "Londres, Angleterre",
         "height_cm": 186,
@@ -547,11 +547,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 1,
             "salary_estimate": "5M USD/an",
             "verified": False,
-            "notes": "Revenu en F1 après une année en DTM",
+            "notes": "Returned to F1 after a year in DTM",
         },
         "palmares": {
             "f1": {
-                "seasons": "2019-2020, 2022-présent",
+                "seasons": "2019-2020, 2022-present",
                 "first_team": "Toro Rosso",
                 "world_championships": 0,
                 "wins": 0,
@@ -562,7 +562,7 @@ F1_DRIVERS_DETAILED_2026 = {
                 "entries": 120,
             },
             "junior": [
-                {"year": 2018, "series": "F2", "team": "DAMS", "position": 3, "wins": 4, "note": "3ème"},
+                {"year": 2018, "series": "F2", "team": "DAMS", "position": 3, "wins": 4, "note": "3rd"},
                 {"year": 2017, "series": "F2", "team": "ART Grand Prix", "position": 10, "wins": 0, "note": "Rookie"},
                 {
                     "year": 2016,
@@ -586,9 +586,9 @@ F1_DRIVERS_DETAILED_2026 = {
         "team": "Racing Bulls",
         "team_id": "rb",
         "country": "NZL",
-        "country_name": "Nouvelle-Zélande",
+        "country_name": "New Zealand",
         "date_of_birth": "2002-02-11",
-        "place_of_birth": "Hastings, Nouvelle-Zélande",
+        "place_of_birth": "Hastings, New Zealand",
         "height_cm": 178,
         "weight_kg": 69,
         "license_points": 10,
@@ -598,11 +598,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 2,
             "salary_estimate": "2M USD/an",
             "verified": False,
-            "notes": "Promu après ses remplacements réussis en 2023",
+            "notes": "Promoted after successful stand-in drives in 2023",
         },
         "palmares": {
             "f1": {
-                "seasons": "2024-présent",
+                "seasons": "2024-present",
                 "first_team": "Racing Bulls",
                 "world_championships": 0,
                 "wins": 0,
@@ -619,9 +619,9 @@ F1_DRIVERS_DETAILED_2026 = {
                     "team": "Carlin",
                     "position": 3,
                     "wins": 2,
-                    "note": "3ème + remplacements F1",
+                    "note": "3rd + F1 stand-ins",
                 },
-                {"year": 2022, "series": "F2", "team": "Carlin", "position": 3, "wins": 2, "note": "3ème"},
+                {"year": 2022, "series": "F2", "team": "Carlin", "position": 3, "wins": 2, "note": "3rd"},
                 {
                     "year": 2021,
                     "series": "DTM",
@@ -656,11 +656,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 2,
             "salary_estimate": "1.5M USD/an",
             "verified": False,
-            "notes": "Plus jeune pilote de la grille 2026, produit Red Bull Academy",
+            "notes": "Youngest driver on the 2026 grid, Red Bull Academy product",
         },
         "palmares": {
             "f1": {
-                "seasons": "2026-présent",
+                "seasons": "2026-present",
                 "first_team": "Racing Bulls",
                 "world_championships": 0,
                 "wins": 0,
@@ -714,11 +714,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 1,
             "salary_estimate": "20M USD/an",
             "verified": False,
-            "notes": "Pilote le plus expérimenté de la grille, contrat multi-année",
+            "notes": "Most experienced driver on the grid, multi-year contract",
         },
         "palmares": {
             "f1": {
-                "seasons": "2001-2018, 2021-présent",
+                "seasons": "2001-2018, 2021-present",
                 "first_team": "Minardi",
                 "world_championships": 2,
                 "wins": 32,
@@ -771,11 +771,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": None,
             "salary_estimate": "10M USD/an",
             "verified": False,
-            "notes": "Fils du propriétaire Lawrence Stroll, contrat longue durée",
+            "notes": "Son of owner Lawrence Stroll, long-term contract",
         },
         "palmares": {
             "f1": {
-                "seasons": "2017-présent",
+                "seasons": "2017-present",
                 "first_team": "Williams",
                 "world_championships": 0,
                 "wins": 0,
@@ -828,11 +828,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 1,
             "salary_estimate": "6M USD/an",
             "verified": False,
-            "notes": "A quitté Alpine pour Haas, nouveau défi",
+            "notes": "Left Alpine for Haas, new challenge",
         },
         "palmares": {
             "f1": {
-                "seasons": "2016-2018, 2020-présent",
+                "seasons": "2016-2018, 2020-present",
                 "first_team": "Manor",
                 "world_championships": 0,
                 "wins": 1,
@@ -885,11 +885,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 2,
             "salary_estimate": "2M USD/an",
             "verified": False,
-            "notes": "Membre Ferrari Driver Academy, prêté à Haas",
+            "notes": "Ferrari Driver Academy member, loaned to Haas",
         },
         "palmares": {
             "f1": {
-                "seasons": "2025-présent",
+                "seasons": "2025-present",
                 "first_team": "Haas",
                 "world_championships": 0,
                 "wins": 0,
@@ -906,9 +906,9 @@ F1_DRIVERS_DETAILED_2026 = {
                     "team": "Prema Racing",
                     "position": 3,
                     "wins": 2,
-                    "note": "3ème + remplacements F1",
+                    "note": "3rd + F1 stand-ins",
                 },
-                {"year": 2023, "series": "F3", "team": "Prema Racing", "position": 3, "wins": 2, "note": "3ème"},
+                {"year": 2023, "series": "F3", "team": "Prema Racing", "position": 3, "wins": 2, "note": "3rd"},
                 {
                     "year": 2022,
                     "series": "Formula Regional Europe",
@@ -943,11 +943,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": None,
             "salary_estimate": "10M USD/an",
             "verified": False,
-            "notes": "Pilote leader chez Alpine, contrat longue durée",
+            "notes": "Lead driver at Alpine, long-term contract",
         },
         "palmares": {
             "f1": {
-                "seasons": "2017-présent",
+                "seasons": "2017-present",
                 "first_team": "Toro Rosso",
                 "world_championships": 0,
                 "wins": 1,
@@ -1000,11 +1000,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 2,
             "salary_estimate": "2M USD/an",
             "verified": False,
-            "notes": "Premier pilote argentin en F1 depuis plus de 20 ans",
+            "notes": "First Argentine F1 driver in over 20 years",
         },
         "palmares": {
             "f1": {
-                "seasons": "2024-présent",
+                "seasons": "2024-present",
                 "first_team": "Williams",
                 "world_championships": 0,
                 "wins": 0,
@@ -1058,11 +1058,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": None,
             "salary_estimate": "8M USD/an",
             "verified": False,
-            "notes": "Pilote leader du projet Audi F1, recrue clé",
+            "notes": "Lead driver for the Audi F1 project, key signing",
         },
         "palmares": {
             "f1": {
-                "seasons": "2010-2019, 2023-présent",
+                "seasons": "2010-2019, 2023-present",
                 "first_team": "Williams",
                 "world_championships": 0,
                 "wins": 0,
@@ -1104,9 +1104,9 @@ F1_DRIVERS_DETAILED_2026 = {
         "team": "Audi",
         "team_id": "sauber",
         "country": "BRA",
-        "country_name": "Brésil",
+        "country_name": "Brazil",
         "date_of_birth": "2004-10-14",
-        "place_of_birth": "São Paulo, Brésil",
+        "place_of_birth": "São Paulo, Brazil",
         "height_cm": 173,
         "weight_kg": 65,
         "license_points": 12,
@@ -1116,11 +1116,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": None,
             "salary_estimate": "2M USD/an",
             "verified": False,
-            "notes": "Membre McLaren Driver Development, prêté à Audi/Sauber",
+            "notes": "McLaren Driver Development member, loaned to Audi/Sauber",
         },
         "palmares": {
             "f1": {
-                "seasons": "2025-présent",
+                "seasons": "2025-present",
                 "first_team": "Sauber/Audi",
                 "world_championships": 0,
                 "wins": 0,
@@ -1174,11 +1174,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": None,
             "salary_estimate": "10M USD/an",
             "verified": False,
-            "notes": "Pilote d'expérience pour la nouvelle équipe Cadillac F1",
+            "notes": "Experienced driver for the new Cadillac F1 team",
         },
         "palmares": {
             "f1": {
-                "seasons": "2011-présent",
+                "seasons": "2011-present",
                 "first_team": "Sauber",
                 "world_championships": 0,
                 "wins": 6,
@@ -1225,11 +1225,11 @@ F1_DRIVERS_DETAILED_2026 = {
             "option_years": 1,
             "salary_estimate": "8M USD/an",
             "verified": False,
-            "notes": "Rejoint la nouvelle équipe Cadillac après Sauber",
+            "notes": "Joins the new Cadillac team after Sauber",
         },
         "palmares": {
             "f1": {
-                "seasons": "2013-présent",
+                "seasons": "2013-present",
                 "first_team": "Williams",
                 "world_championships": 0,
                 "wins": 10,

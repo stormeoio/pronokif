@@ -27,7 +27,7 @@ export default function PredictionTimer({ activeTab }: PredictionTimerProps) {
         <Clock size={14} strokeWidth={1.5} className="text-pk-red" />
       </motion.div>
       <span className="text-[0.8125rem] text-pk-piste">
-        {activeTab === "sprint" ? "Cloture 15 min avant SQ1" : "Cloture 15 min avant Q1"}
+        {activeTab === "sprint" ? "Closes 15 min before SQ1" : "Closes 15 min before Q1"}
       </span>
     </motion.div>
   );

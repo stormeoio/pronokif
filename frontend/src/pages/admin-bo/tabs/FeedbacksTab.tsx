@@ -31,18 +31,18 @@ export default function FeedbacksTab() {
       await adminApi.feedbacks.markRead(id);
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "feedbacks"] });
     } catch {
-      toast.error("Erreur");
+      toast.error("Error");
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Supprimer ce feedback ?")) return;
+    if (!confirm("Delete ce feedback ?")) return;
     try {
       await adminApi.feedbacks.delete(id);
-      toast.success("Feedback supprimé");
+      toast.success("Feedback deleted");
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "feedbacks"] });
     } catch {
-      toast.error("Erreur");
+      toast.error("Error");
     }
   };
 
@@ -64,7 +64,7 @@ export default function FeedbacksTab() {
       case "suggestion":
         return "Suggestion";
       default:
-        return "Retour";
+        return "Back";
     }
   };
 
@@ -82,7 +82,7 @@ export default function FeedbacksTab() {
       ) : feedbacks.length === 0 ? (
         <div className="card-arcade p-8 text-center">
           <MessageSquare className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-          <p className="font-body text-gray-500">Aucun feedback</p>
+          <p className="font-body text-gray-500">No feedback</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -128,7 +128,7 @@ export default function FeedbacksTab() {
                   <button
                     onClick={() => handleDelete(fb.id)}
                     className="p-1.5 text-gray-400 hover:text-red-400 rounded"
-                    title="Supprimer"
+                    title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

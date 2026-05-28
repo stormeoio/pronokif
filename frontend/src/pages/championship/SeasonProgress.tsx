@@ -1,8 +1,12 @@
+/**
+ * SeasonProgress — Race selector + detailed results for each GP.
+ * Broadcast Premium: pk-surface cards, chip tabs, shimmer loading.
+ */
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, ChevronRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { JOLPICA_API, OPENF1_API, isRaceCompleted } from "./championshipUtils";
+import { JOLPICA_API, OPENF1_API, isRaceCompleteed } from "./championshipUtils";
 import {
   RaceResultsList,
   QualifyingResultsList,
@@ -15,6 +19,8 @@ import {
   type RaceResultsData,
 } from "./RaceResultPanels";
 import { getRaceThumbnail } from "@/lib/raceThumbnails";
+import { haptic } from "@/lib/haptics";
+import { fadeUp, staggerContainer } from "@/lib/motion";
 
 interface Race {
   round: string;
@@ -188,7 +194,7 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
       });
     } catch (e: unknown) {
       console.error("Error fetching race results:", e);
-      toast.error("Erreur lors du chargement des résultats");
+      toast.error("Error while loading results");
     } finally {
       setLoadingResults(false);
     }
@@ -201,74 +207,80 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
   }, [selectedRace, fetchRaceResults]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Race Selector */}
-      <div className="card-arcade p-4 glass-card">
-        <h3 className="font-heading text-sm text-gray-400 uppercase mb-3 flex items-center gap-2">
-          <Calendar className="w-4 h-4" />
-          Sélectionner un Grand Prix
+      <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-4">
+        <h3 className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <Calendar className="w-3.5 h-3.5" />
+          Selectionner un Grand Prix
         </h3>
         <motion.div
-          className="space-y-2 max-h-64 overflow-y-auto"
+          className="space-y-1.5 max-h-64 overflow-y-auto scrollbar-none"
           initial="hidden"
           animate="visible"
-          variants={{ visible: { transition: { staggerChildren: 0.03 } }, hidden: {} }}
+          variants={staggerContainer}
         >
           {raceSchedule.map((race) => {
-            const completed = isRaceCompleted(race);
+            const completed = isRaceCompleteed(race);
             const isSelected = selectedRace?.round === race.round;
             const raceThumbnail = getRaceThumbnail(race);
 
             return (
               <motion.button
                 key={race.round}
-                onClick={() => completed && setSelectedRace(race)}
+                onClick={() => {
+                  if (completed) {
+                    haptic("light");
+                    setSelectedRace(race);
+                  }
+                }}
                 disabled={!completed}
-                className={`w-full p-3 rounded-lg border transition-all text-left flex items-center justify-between ${
+                className={`w-full p-2.5 rounded-lg border transition-colors text-left flex items-center justify-between ${
                   isSelected
-                    ? "bg-green-500/20 border-green-500/50"
+                    ? "bg-pk-red-subtle border-pk-red/30"
                     : completed
-                      ? "bg-gray-800/30 border-gray-700/50 hover:border-cyan-500/50 hover:bg-cyan-500/5"
-                      : "bg-gray-800/10 border-gray-800/30 opacity-50 cursor-not-allowed"
+                      ? "bg-white/[0.02] border-white/[0.08] hover:bg-white/[0.04]"
+                      : "bg-white/[0.01] border-white/[0.04] opacity-40 cursor-not-allowed"
                 }`}
-                variants={{ hidden: { opacity: 0, x: -8 }, visible: { opacity: 1, x: 0 } }}
-                whileHover={completed ? { x: 3 } : undefined}
-                whileTap={completed ? { scale: 0.98 } : undefined}
+                variants={fadeUp}
+                data-testid={`season-race-${race.round}`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                   {raceThumbnail ? (
-                    <div className="relative h-12 w-[76px] flex-shrink-0 overflow-hidden rounded-md border border-white/10 bg-black/30">
+                    <div className="relative h-10 w-16 flex-shrink-0 overflow-hidden rounded-md border border-white/[0.08] bg-pk-anthracite">
                       <img
                         src={raceThumbnail}
-                        alt={`Vignette ${race.raceName}`}
-                        className={`h-full w-full object-cover ${completed ? "" : "opacity-45 saturate-[0.7]"}`}
+                        alt={`${race.raceName}`}
+                        className={`h-full w-full object-cover ${completed ? "" : "opacity-40 saturate-50"}`}
                         loading="lazy"
                         decoding="async"
                       />
-                      <span className="absolute left-1 top-1 rounded-sm bg-black/70 px-1.5 py-0.5 font-data text-[0.625rem] text-white">
+                      <span className="absolute left-0.5 top-0.5 rounded-sm bg-black/70 px-1 py-0.5 font-data text-[0.5rem] text-white">
                         {race.round}
                       </span>
                     </div>
                   ) : (
-                    <span className="font-data text-lg text-gray-500 w-8">{race.round}</span>
+                    <span className="font-data text-sm text-pk-titane w-6 text-center">
+                      {race.round}
+                    </span>
                   )}
                   <div>
-                    <p className="font-heading text-sm text-white">{race.raceName}</p>
-                    <p className="font-body text-xs text-gray-500">
+                    <p className="font-display text-xs">{race.raceName}</p>
+                    <p className="font-data text-[0.5rem] text-pk-titane">
                       {new Date(race.date).toLocaleDateString("fr-FR", {
                         day: "numeric",
                         month: "short",
                       })}
-                      {!!race.Sprint && <span className="ml-2 text-purple-400">Sprint</span>}
+                      {!!race.Sprint && <span className="ml-1.5 text-purple-400">Sprint</span>}
                     </p>
                   </div>
                 </div>
                 {completed ? (
                   <ChevronRight
-                    className={`w-5 h-5 ${isSelected ? "text-green-400" : "text-gray-500"}`}
+                    className={`w-4 h-4 ${isSelected ? "text-pk-red" : "text-pk-titane"}`}
                   />
                 ) : (
-                  <span className="font-body text-xs text-gray-600">À venir</span>
+                  <span className="font-data text-[0.5rem] text-pk-titane">Upcoming</span>
                 )}
               </motion.button>
             );
@@ -277,62 +289,84 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
       </div>
 
       {/* Selected Race Results */}
-      {selectedRace && (
-        <div className="card-arcade p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-heading text-base text-white">{selectedRace.raceName}</h3>
-            {loadingResults && <Loader2 className="w-5 h-5 text-cyan-500 animate-spin" />}
-          </div>
-
-          {loadingResults ? (
-            <div className="py-8 text-center">
-              <Loader2 className="w-8 h-8 text-cyan-500 animate-spin mx-auto mb-2" />
-              <p className="font-body text-sm text-gray-400">Chargement des résultats...</p>
+      <AnimatePresence mode="wait">
+        {selectedRace && (
+          <motion.div
+            key={selectedRace.round}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="bg-pk-surface border border-white/[0.08] rounded-lg p-4"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display text-sm">{selectedRace.raceName}</h3>
+              {loadingResults && <Loader2 className="w-4 h-4 text-pk-red animate-spin" />}
             </div>
-          ) : raceResults ? (
-            <>
-              {/* Results Sub-tabs */}
-              <div className="flex flex-wrap gap-1 mb-4">
-                {[
-                  { key: "race", label: "Course", color: "red" },
-                  { key: "qualifying", label: "Qualifications", color: "yellow" },
-                  ...(raceResults.hasSprint
-                    ? [{ key: "sprint", label: "Sprint", color: "purple" }]
-                    : []),
-                  { key: "practice", label: "Essais", color: "cyan" },
-                  { key: "extras", label: "Bonus", color: "green" },
-                ].map(({ key, label, color }) => (
-                  <button
-                    key={key}
-                    onClick={() => setResultsTab(key)}
-                    className={`px-3 py-1.5 rounded-lg font-body text-xs transition-all ${
-                      resultsTab === key
-                        ? `bg-${color}-500 text-white`
-                        : "bg-gray-700/50 text-gray-400 hover:bg-gray-700"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
 
-              {resultsTab === "race" && <RaceResultsList results={raceResults.race} />}
-              {resultsTab === "qualifying" && (
-                <QualifyingResultsList results={raceResults.qualifying} />
-              )}
-              {resultsTab === "sprint" && raceResults.hasSprint && (
-                <SprintResultsList results={raceResults.sprint} />
-              )}
-              {resultsTab === "practice" && <PracticeResultsList practice={raceResults.practice} />}
-              {resultsTab === "extras" && <ExtrasPanel raceResults={raceResults} />}
-            </>
-          ) : (
-            <p className="font-body text-sm text-gray-500 text-center py-4">
-              Sélectionnez un Grand Prix terminé pour voir les résultats
-            </p>
-          )}
-        </div>
-      )}
+            {loadingResults ? (
+              <div className="py-8 text-center">
+                <Loader2 className="w-8 h-8 text-pk-red animate-spin mx-auto mb-2" />
+                <p className="text-xs text-pk-titane">Loading results...</p>
+              </div>
+            ) : raceResults ? (
+              <>
+                {/* Results Sub-tabs */}
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                  {[
+                    { key: "race", label: "Race" },
+                    { key: "qualifying", label: "Qualifs" },
+                    ...(raceResults.hasSprint ? [{ key: "sprint", label: "Sprint" }] : []),
+                    { key: "practice", label: "Essais" },
+                    { key: "extras", label: "Bonus" },
+                  ].map(({ key, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => {
+                        haptic("light");
+                        setResultsTab(key);
+                      }}
+                      className={`font-data text-[0.5625rem] px-3 py-1.5 rounded-full border transition-colors ${
+                        resultsTab === key
+                          ? "bg-pk-red-subtle border-pk-red/30 text-pk-red"
+                          : "bg-white/[0.04] border-white/[0.08] text-pk-titane hover:text-pk-piste"
+                      }`}
+                      data-testid={`results-subtab-${key}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={resultsTab}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    {resultsTab === "race" && <RaceResultsList results={raceResults.race} />}
+                    {resultsTab === "qualifying" && (
+                      <QualifyingResultsList results={raceResults.qualifying} />
+                    )}
+                    {resultsTab === "sprint" && raceResults.hasSprint && (
+                      <SprintResultsList results={raceResults.sprint} />
+                    )}
+                    {resultsTab === "practice" && (
+                      <PracticeResultsList practice={raceResults.practice} />
+                    )}
+                    {resultsTab === "extras" && <ExtrasPanel raceResults={raceResults} />}
+                  </motion.div>
+                </AnimatePresence>
+              </>
+            ) : (
+              <p className="text-xs text-pk-titane text-center py-4">
+                Select a finished Grand Prix to view results
+              </p>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

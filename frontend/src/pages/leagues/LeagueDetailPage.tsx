@@ -1,6 +1,10 @@
+/**
+ * LeagueDetailPage — League detail with tabs, edit mode, share.
+ * Broadcast Premium: glass header, pk-* cards, chip tabs.
+ */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import {
   ChevronLeft,
@@ -14,9 +18,8 @@ import {
   FileText,
   Share2,
   MessageCircle,
+  Loader2,
 } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
 import LeagueLeaderboard from "./LeagueLeaderboard";
 import LeagueMembers from "./LeagueMembers";
 import LeagueSettings from "./LeagueSettings";
@@ -24,11 +27,54 @@ import { useLeagueDetailData } from "./useLeagueDetailData";
 import { api, getApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { haptic } from "@/lib/haptics";
+import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
+import type { LeagueMember as LeagueMemberType } from "@/types/api";
+
+/* ── Skeleton ─────────────────────────────────────────── */
+
+function LeagueDetailSkeleton() {
+  return (
+    <div className="min-h-screen bg-pk-carbon">
+      <div className="sticky top-0 z-50 bg-pk-carbon/85 backdrop-blur-xl border-b border-white/[0.08] px-4 pt-3 pb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-pk-anthracite animate-shimmer" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-5 w-40 rounded bg-pk-anthracite animate-shimmer" />
+            <div
+              className="h-3 w-24 rounded bg-pk-anthracite animate-shimmer"
+              style={{ animationDelay: "80ms" }}
+            />
+          </div>
+        </div>
+      </div>
+      <div className="px-4 pt-4 space-y-3 pb-24">
+        <div className="flex gap-2">
+          <div className="h-10 flex-1 rounded-lg bg-pk-anthracite animate-shimmer" />
+          <div
+            className="h-10 flex-1 rounded-lg bg-pk-anthracite animate-shimmer"
+            style={{ animationDelay: "80ms" }}
+          />
+        </div>
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="h-16 rounded-lg bg-pk-surface border border-white/[0.08] animate-shimmer"
+            style={{ animationDelay: `${i * 80}ms` }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Component ─────────────────────────────────────────── */
 
 export default function LeagueDetailPage() {
   const { leagueId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const prefersReducedMotion = useReducedMotion() ?? false;
+  const rmProps = getReducedMotionProps(prefersReducedMotion);
 
   const { loading, error, league, members, leaderboard, avatars, refetch } =
     useLeagueDetailData(leagueId);
@@ -45,17 +91,18 @@ export default function LeagueDetailPage() {
   // Navigate away on error
   useEffect(() => {
     if (error) {
-      toast.error("Erreur lors du chargement");
+      toast.error("Error while loading");
       navigate("/league");
     }
   }, [error, navigate]);
 
   const copyCode = async () => {
     if (!league) return;
+    haptic("light");
     try {
       await navigator.clipboard.writeText(league.code);
       setCopied(true);
-      toast.success("Code copié !");
+      toast.success("Code copie !");
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("Impossible de copier");
@@ -66,9 +113,10 @@ export default function LeagueDetailPage() {
 
   const shareLeague = async () => {
     if (!league) return;
+    haptic("medium");
 
     const shareUrl = `${window.location.origin}/join/${league?.code}`;
-    const shareText = `Rejoins ma ligue F1 "${league.name}" sur PRONOKIF !`;
+    const shareText = `Join my F1 league "${league.name}" sur PRONOKIF !`;
 
     if (navigator.share) {
       try {
@@ -100,7 +148,7 @@ export default function LeagueDetailPage() {
 
   const saveChanges = async () => {
     if (!editName.trim()) {
-      toast.error("Le nom ne peut pas être vide");
+      toast.error("Le nom ne peut pas etre vide");
       return;
     }
     setSaving(true);
@@ -111,221 +159,234 @@ export default function LeagueDetailPage() {
       });
       refetch();
       setIsEditing(false);
-      toast.success("Ligue mise à jour !");
+      toast.success("League updated!");
     } catch (e: unknown) {
-      toast.error(getApiError(e, "Erreur lors de la mise à jour"));
+      toast.error(getApiError(e, "Error while updating"));
     } finally {
       setSaving(false);
     }
   };
 
-  const getAvatar = (member: Record<string, unknown>): string | null => {
-    if (member.custom_avatar_url) return member.custom_avatar_url as string;
+  const getAvatar = (member: LeagueMemberType): string | null => {
+    if (member.custom_avatar_url) return member.custom_avatar_url;
     return null;
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-app-main flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (loading) return <LeagueDetailSkeleton />;
 
   if (!league) {
     return (
-      <div className="min-h-screen bg-app-main flex items-center justify-center">
-        <p className="text-gray-400">Ligue non trouvée</p>
+      <div className="min-h-screen bg-pk-carbon flex items-center justify-center">
+        <p className="text-sm text-pk-titane">Ligue non trouvee</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-app-main pb-24">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-[#050a14]/95 backdrop-blur-md border-b border-yellow-500/30">
-        <div className="max-w-2xl mx-auto p-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
+    <div className="min-h-screen bg-pk-carbon pb-24" data-testid="league-detail-page">
+      {/* Glass Header */}
+      <header className="sticky top-0 z-50 bg-pk-carbon/85 backdrop-blur-xl saturate-[1.3] border-b border-white/[0.08]">
+        <div className="max-w-2xl mx-auto px-4 pt-3 pb-3">
+          <div className="flex items-center gap-3">
+            {/* Back */}
+            <button
               onClick={() => navigate("/league")}
-              className="text-gray-400 hover:text-white hover:bg-white/10"
+              className="p-1.5 -ml-1.5 rounded-lg text-pk-titane hover:text-pk-piste transition-colors"
+              data-testid="league-detail-back"
             >
-              <ChevronLeft className="w-6 h-6" />
-            </Button>
-            <div className="flex-1">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            {/* Title / Edit */}
+            <div className="flex-1 min-w-0">
               {isEditing ? (
-                <Input
+                <input
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="font-heading text-xl bg-gray-800 border-yellow-500 h-9"
-                  placeholder="Nom de la ligue"
+                  className="w-full font-display text-lg bg-pk-anthracite border border-white/[0.08] rounded-lg px-3 py-1.5 text-pk-piste placeholder:text-pk-titane focus:border-pk-red/40 focus:outline-none focus:ring-1 focus:ring-pk-red/20 transition-colors"
+                  placeholder="League name"
+                  data-testid="league-edit-name"
                 />
               ) : (
-                <h1 className="font-heading text-xl uppercase tracking-tight text-white flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-yellow-500" />
-                  {league.name}
-                  {isOwner && !isEditing && (
+                <h1 className="font-display text-lg truncate flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-pk-amber flex-shrink-0" />
+                  <span className="truncate">{league.name}</span>
+                  {isOwner && (
                     <button
                       onClick={startEditing}
-                      className="ml-2 p-1 text-gray-500 hover:text-yellow-400 transition-colors"
-                      title="Modifier la ligue"
+                      className="p-1 text-pk-titane hover:text-pk-amber transition-colors flex-shrink-0"
+                      title="Edit league"
+                      data-testid="league-edit-btn"
                     >
-                      <Edit2 className="w-4 h-4" />
+                      <Edit2 className="w-3.5 h-3.5" />
                     </button>
                   )}
                 </h1>
               )}
-              <div className="flex items-center gap-3 mt-1">
-                <span className="font-body text-xs text-gray-400 flex items-center gap-1">
+              <div className="flex items-center gap-3 mt-0.5">
+                <span className="font-data text-[0.5625rem] text-pk-titane flex items-center gap-1">
                   <Users className="w-3 h-3" />
-                  {members.length} membres
+                  {members.length} members
                 </span>
                 <button
                   onClick={copyCode}
-                  className="font-data text-xs text-yellow-400 hover:text-yellow-300 flex items-center gap-1"
+                  className="font-data text-[0.5625rem] text-pk-amber hover:text-pk-amber/80 flex items-center gap-1 transition-colors"
+                  data-testid="league-copy-code"
                 >
                   {league.code}
-                  {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                  {copied ? (
+                    <Check className="w-3 h-3 text-pk-emerald" />
+                  ) : (
+                    <Copy className="w-3 h-3" />
+                  )}
                 </button>
               </div>
             </div>
+
+            {/* Actions */}
             {isEditing ? (
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
+              <div className="flex gap-1.5">
+                <button
                   onClick={cancelEditing}
-                  className="bg-gray-700 hover:bg-gray-600 text-white"
                   disabled={saving}
+                  className="p-2 rounded-lg bg-white/[0.06] border border-white/[0.08] text-pk-titane hover:text-pk-piste transition-colors disabled:opacity-50"
+                  data-testid="league-edit-cancel"
                 >
                   <X className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
+                </button>
+                <button
                   onClick={saveChanges}
-                  className="bg-green-600 hover:bg-green-500 text-white"
                   disabled={saving}
+                  className="p-2 rounded-lg bg-pk-emerald/[0.15] border border-pk-emerald/20 text-pk-emerald hover:bg-pk-emerald/[0.25] transition-colors disabled:opacity-50"
+                  data-testid="league-edit-save"
                 >
                   {saving ? (
-                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <Save className="w-4 h-4" />
                   )}
-                </Button>
+                </button>
               </div>
             ) : (
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
+              <div className="flex gap-1.5">
+                <button
                   onClick={shareLeague}
-                  className="bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30"
-                  title="Partager"
+                  className="p-2 rounded-lg bg-pk-emerald/[0.1] border border-pk-emerald/20 text-pk-emerald hover:bg-pk-emerald/[0.2] transition-colors"
+                  title="Share"
+                  data-testid="league-share-btn"
                 >
                   <Share2 className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => navigate(`/league/${leagueId}/chat`)}
-                  className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30"
+                </button>
+                <button
+                  onClick={() => {
+                    haptic("light");
+                    navigate(`/league/${leagueId}/chat`);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-pk-info/[0.1] border border-pk-info/20 text-pk-info hover:bg-pk-info/[0.2] transition-colors font-data text-[0.5625rem]"
+                  data-testid="league-chat-btn"
                 >
-                  <MessageCircle className="w-4 h-4 mr-1" />
+                  <MessageCircle className="w-4 h-4" />
                   Chat
-                </Button>
+                </button>
               </div>
             )}
           </div>
         </div>
-      </div>
-
-      {/* Description */}
-      <div className="max-w-2xl mx-auto px-4 pt-4">
-        {isEditing ? (
-          <div className="card-arcade p-4 mb-4">
-            <label className="font-heading text-xs text-gray-400 uppercase mb-2 block flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Description de la ligue
-            </label>
-            <textarea
-              value={editDescription}
-              onChange={(e) => setEditDescription(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white font-body text-sm resize-none focus:border-yellow-500 focus:outline-none"
-              rows={3}
-              placeholder="Décris ta ligue en quelques mots... (optionnel)"
-              maxLength={500}
-            />
-            <p className="text-right text-xs text-gray-500 mt-1">{editDescription.length}/500</p>
-          </div>
-        ) : league.description ? (
-          <div className="card-arcade p-4 mb-4 border-l-4 border-yellow-500/50">
-            <p className="font-body text-sm text-gray-300 leading-relaxed">{league.description}</p>
-          </div>
-        ) : isOwner ? (
-          <button
-            onClick={startEditing}
-            className="w-full card-arcade p-4 mb-4 border-dashed border-2 border-gray-700 hover:border-yellow-500/50 transition-colors text-center group"
-          >
-            <FileText className="w-6 h-6 text-gray-600 group-hover:text-yellow-500 mx-auto mb-2 transition-colors" />
-            <p className="font-body text-sm text-gray-500 group-hover:text-gray-400 transition-colors">
-              Ajouter une description à ta ligue
-            </p>
-          </button>
-        ) : null}
-
-        {/* Tab Toggle */}
-        <div className="flex gap-2 p-1 bg-gray-800/50 rounded-xl backdrop-blur-sm">
-          <motion.button
-            onClick={() => {
-              haptic("light");
-              setActiveTab("leaderboard");
-            }}
-            className={`flex-1 py-2 px-4 rounded-lg font-heading text-sm uppercase transition-all flex items-center justify-center gap-2 relative ${activeTab === "leaderboard" ? "text-white shadow-lg" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
-            whileTap={{ scale: 0.95 }}
-          >
-            {activeTab === "leaderboard" && (
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg"
-                layoutId="leagueTab"
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              />
-            )}
-            <span className="relative z-10 flex items-center gap-2">
-              <Trophy className="w-4 h-4" />
-              Classement
-            </span>
-          </motion.button>
-          <motion.button
-            onClick={() => {
-              haptic("light");
-              setActiveTab("members");
-            }}
-            className={`flex-1 py-2 px-4 rounded-lg font-heading text-sm uppercase transition-all flex items-center justify-center gap-2 relative ${activeTab === "members" ? "text-white shadow-lg" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
-            whileTap={{ scale: 0.95 }}
-          >
-            {activeTab === "members" && (
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-lg"
-                layoutId="leagueTab"
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              />
-            )}
-            <span className="relative z-10 flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Membres
-            </span>
-          </motion.button>
-        </div>
-      </div>
+      </header>
 
       {/* Content */}
-      <div className="max-w-2xl mx-auto p-4">
+      <motion.div
+        className="max-w-2xl mx-auto px-4 pt-4 space-y-3"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        {...rmProps}
+      >
+        {/* Description */}
+        <AnimatePresence mode="wait">
+          {isEditing ? (
+            <motion.div
+              key="edit-desc"
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              exit={{ opacity: 0, y: -6 }}
+              className="bg-pk-surface border border-white/[0.08] rounded-lg p-4"
+            >
+              <label className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5" />
+                League description
+              </label>
+              <textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                className="w-full bg-pk-anthracite border border-white/[0.08] rounded-lg p-3 text-pk-piste text-sm resize-none focus:border-pk-red/40 focus:outline-none focus:ring-1 focus:ring-pk-red/20 transition-colors placeholder:text-pk-titane"
+                rows={3}
+                placeholder="Describe your league in a few words... (optional)"
+                maxLength={500}
+                data-testid="league-edit-description"
+              />
+              <p className="text-right font-data text-[0.5rem] text-pk-titane mt-1">
+                {editDescription.length}/500
+              </p>
+            </motion.div>
+          ) : league.description ? (
+            <motion.div
+              key="show-desc"
+              variants={fadeUp}
+              className="bg-pk-surface border border-white/[0.08] rounded-lg p-4 border-l-2 border-l-pk-amber/40"
+            >
+              <p className="text-sm text-pk-piste/80 leading-relaxed">{league.description}</p>
+            </motion.div>
+          ) : isOwner ? (
+            <motion.button
+              key="add-desc"
+              variants={fadeUp}
+              onClick={startEditing}
+              className="w-full bg-pk-surface border border-dashed border-white/[0.12] rounded-lg p-4 text-center group hover:border-pk-amber/30 transition-colors"
+              data-testid="league-add-description"
+            >
+              <FileText className="w-5 h-5 text-pk-titane group-hover:text-pk-amber mx-auto mb-1.5 transition-colors" />
+              <p className="text-xs text-pk-titane group-hover:text-pk-piste/70 transition-colors">
+                Add a description to your league
+              </p>
+            </motion.button>
+          ) : null}
+        </AnimatePresence>
+
+        {/* Tab Toggle */}
+        <motion.div variants={fadeUp} className="flex gap-1.5">
+          {[
+            { id: "leaderboard", label: "Leaderboard", Icon: Trophy },
+            { id: "members", label: "Members", Icon: Users },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                haptic("light");
+                setActiveTab(tab.id);
+              }}
+              className={`flex-1 py-2.5 rounded-lg font-display text-sm transition-colors flex items-center justify-center gap-2 ${
+                activeTab === tab.id
+                  ? "bg-pk-red-subtle border border-pk-red/30 text-pk-red"
+                  : "bg-white/[0.04] border border-white/[0.08] text-pk-titane hover:text-pk-piste"
+              }`}
+              data-testid={`league-tab-${tab.id}`}
+            >
+              <tab.Icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          ))}
+        </motion.div>
+
+        {/* Tab Content */}
         <AnimatePresence mode="wait">
           {activeTab === "leaderboard" ? (
             <motion.div
               key="leaderboard"
-              initial={{ opacity: 0, x: -15 }}
+              initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 15 }}
+              exit={{ opacity: 0, x: 10 }}
               transition={{ duration: 0.2 }}
             >
               <LeagueLeaderboard
@@ -338,9 +399,9 @@ export default function LeagueDetailPage() {
           ) : (
             <motion.div
               key="members"
-              initial={{ opacity: 0, x: 15 }}
+              initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -15 }}
+              exit={{ opacity: 0, x: -10 }}
               transition={{ duration: 0.2 }}
             >
               <LeagueMembers
@@ -354,6 +415,7 @@ export default function LeagueDetailPage() {
           )}
         </AnimatePresence>
 
+        {/* Settings */}
         <LeagueSettings
           league={league}
           leagueId={leagueId}
@@ -363,7 +425,7 @@ export default function LeagueDetailPage() {
           isOwner={isOwner}
           onRefresh={refetch}
         />
-      </div>
+      </motion.div>
     </div>
   );
 }

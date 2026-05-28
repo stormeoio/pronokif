@@ -40,10 +40,10 @@ export default function MediaTab() {
       for (const file of Array.from(files)) {
         await adminApi.media.upload(file, entityType);
       }
-      toast.success(`${files.length} fichier(s) envoyé(s)`);
+      toast.success(`${files.length} file(s) uploaded`);
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "media"] });
     } catch {
-      toast.error("Erreur lors de l'upload");
+      toast.error("Error while uploading");
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -51,13 +51,13 @@ export default function MediaTab() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Supprimer ce fichier ?")) return;
+    if (!confirm("Delete ce fichier ?")) return;
     try {
       await adminApi.media.delete(id);
-      toast.success("Fichier supprimé");
+      toast.success("File deleted");
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "media"] });
     } catch {
-      toast.error("Erreur");
+      toast.error("Error");
     }
   };
 
@@ -70,7 +70,7 @@ export default function MediaTab() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="font-heading text-2xl text-white uppercase tracking-tight">Médias</h2>
+        <h2 className="font-heading text-2xl text-white uppercase tracking-tight">Media</h2>
         <span className="font-data text-sm text-gray-500">{mediaList.length} fichiers</span>
       </div>
 
@@ -79,7 +79,7 @@ export default function MediaTab() {
         <div className="flex items-center gap-4">
           <div className="flex-1">
             <p className="font-body text-sm text-gray-300 mb-2">
-              Envoyez des images pour vos championnats, courses et événements
+              Upload images for your championships, races, and events
             </p>
             <div className="flex items-center gap-3">
               <select
@@ -87,11 +87,11 @@ export default function MediaTab() {
                 onChange={(e) => setEntityType(e.target.value)}
                 className="bg-gray-900 border border-gray-700 text-gray-300 text-xs rounded-lg px-3 py-1.5"
               >
-                <option value="general">Général</option>
+                <option value="general">General</option>
                 <option value="championship">Championnat</option>
-                <option value="race">Course</option>
-                <option value="driver">Pilote</option>
-                <option value="team">Écurie</option>
+                <option value="race">Race</option>
+                <option value="driver">Driver</option>
+                <option value="team">Team</option>
               </select>
               <Button
                 onClick={() => fileRef.current?.click()}
@@ -127,7 +127,7 @@ export default function MediaTab() {
       ) : mediaList.length === 0 ? (
         <div className="card-arcade p-8 text-center">
           <Image className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-          <p className="font-body text-gray-500">Aucun fichier. Commencez par en ajouter !</p>
+          <p className="font-body text-gray-500">No files yet. Start by adding one!</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

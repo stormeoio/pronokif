@@ -1,8 +1,11 @@
+/**
+ * SetCorrectAnswerModal — Modal for setting correct answer on custom prediction.
+ * Broadcast Premium: pk-surface modal, pk-emerald theme, native inputs.
+ */
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
+import { CheckCircle, X } from "lucide-react";
+import { haptic } from "@/lib/haptics";
 
 interface Choice {
   text: string;
@@ -32,6 +35,7 @@ export default function SetCorrectAnswerModal({
   const [selectedChoices, setSelectedChoices] = useState<string[]>([]);
 
   const handleSubmit = () => {
+    haptic("medium");
     if (prediction.answer_type === "choice") {
       onSubmit(
         prediction.id,
@@ -43,6 +47,7 @@ export default function SetCorrectAnswerModal({
   };
 
   const toggleChoice = (choiceText: string) => {
+    haptic("light");
     if (prediction.multiple_choice) {
       if (selectedChoices.includes(choiceText)) {
         setSelectedChoices(selectedChoices.filter((c) => c !== choiceText));
@@ -62,64 +67,75 @@ export default function SetCorrectAnswerModal({
       animate={{ opacity: 1 }}
     >
       <motion.div
-        className="bg-gray-900 rounded-lg border border-green-500/30 w-full max-w-md"
+        className="bg-pk-anthracite rounded-lg border border-pk-emerald/20 w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 350, damping: 25 }}
       >
-        <div className="p-4 border-b border-gray-800">
-          <h2 className="font-heading text-lg uppercase text-green-400">
-            Définir la bonne réponse
-          </h2>
+        {/* Header */}
+        <div className="p-4 border-b border-white/[0.06] flex items-center justify-between">
+          <h2 className="font-display text-sm text-pk-emerald">Set correct answer</h2>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-pk-titane hover:text-pk-piste hover:bg-white/[0.04] transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
         <div className="p-4 space-y-4">
-          <p className="font-body text-gray-300">{prediction.question}</p>
+          <p className="text-sm text-pk-piste/80">{prediction.question}</p>
 
           {prediction.answer_type === "yes_no" && (
             <div className="flex gap-2">
-              <Button
+              <button
                 onClick={() => setCorrectAnswer("Oui")}
-                variant={correctAnswer === "Oui" ? "default" : "outline"}
-                className={`flex-1 ${correctAnswer === "Oui" ? "btn-gaming" : ""}`}
+                className={`flex-1 py-2.5 rounded-lg font-display text-sm transition-all ${
+                  correctAnswer === "Oui"
+                    ? "bg-pk-emerald/20 border border-pk-emerald/30 text-pk-emerald"
+                    : "bg-white/[0.04] border border-white/[0.08] text-pk-titane hover:text-pk-piste"
+                }`}
               >
                 Oui
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={() => setCorrectAnswer("Non")}
-                variant={correctAnswer === "Non" ? "default" : "outline"}
-                className={`flex-1 ${correctAnswer === "Non" ? "btn-gaming" : ""}`}
+                className={`flex-1 py-2.5 rounded-lg font-display text-sm transition-all ${
+                  correctAnswer === "Non"
+                    ? "bg-pk-red-subtle border border-pk-red/20 text-pk-red"
+                    : "bg-white/[0.04] border border-white/[0.08] text-pk-titane hover:text-pk-piste"
+                }`}
               >
                 Non
-              </Button>
+              </button>
             </div>
           )}
 
           {prediction.answer_type === "text" && (
-            <Input
+            <input
               value={correctAnswer}
               onChange={(e) => setCorrectAnswer(e.target.value)}
-              placeholder="La bonne réponse..."
-              className="bg-gray-800 border-gray-700"
+              placeholder="The correct answer..."
+              className="w-full bg-pk-surface border border-white/[0.08] rounded-lg px-3 py-2.5 text-sm text-pk-piste placeholder:text-pk-titane/50 focus:border-pk-emerald/50 focus:outline-none transition-colors"
             />
           )}
 
           {prediction.answer_type === "choice" && prediction.choices && (
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {prediction.choices.map((choice, i) => (
                 <button
                   key={i}
                   onClick={() => toggleChoice(choice.text)}
-                  className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
+                  className={`w-full p-3 rounded-lg border text-left transition-all ${
                     selectedChoices.includes(choice.text)
-                      ? "border-green-500 bg-green-500/20"
-                      : "border-gray-700 bg-gray-800"
+                      ? "border-pk-emerald/30 bg-pk-emerald/[0.08]"
+                      : "border-white/[0.08] bg-pk-surface hover:border-white/[0.15]"
                   }`}
                 >
                   <span
-                    className={`font-body text-sm ${
-                      selectedChoices.includes(choice.text) ? "text-white" : "text-gray-400"
+                    className={`text-sm ${
+                      selectedChoices.includes(choice.text) ? "text-white" : "text-pk-titane"
                     }`}
                   >
                     {choice.text}
@@ -130,20 +146,24 @@ export default function SetCorrectAnswerModal({
           )}
 
           <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">
-              Annuler
-            </Button>
-            <Button
+            <button
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-lg border border-white/[0.08] text-pk-titane font-display text-xs hover:text-pk-piste hover:border-white/[0.15] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
               onClick={handleSubmit}
               disabled={
                 (prediction.answer_type === "choice" && selectedChoices.length === 0) ||
                 (prediction.answer_type !== "choice" && !correctAnswer)
               }
-              className="flex-1 btn-gaming"
+              className="flex-1 py-2.5 rounded-lg bg-pk-emerald text-white font-display text-xs active:scale-[0.97] transition-transform flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+              data-testid="confirm-correct-answer-btn"
             >
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Valider
-            </Button>
+              <CheckCircle className="w-4 h-4" />
+              Submit
+            </button>
           </div>
         </div>
       </motion.div>

@@ -1,7 +1,10 @@
+/**
+ * ReactionGame — F1 starting lights reaction time mini-game.
+ * Broadcast Premium: pk-surface card, pk-red CTA, pk-emerald/amber states.
+ */
 import { useState, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap, Trophy, RotateCcw, Play } from "lucide-react";
-import { Button } from "../ui/button";
 import { haptic } from "@/lib/haptics";
 
 type ReactionGameState = "idle" | "waiting" | "ready" | "go" | "result" | "false_start";
@@ -31,7 +34,7 @@ function ParticleBurst() {
       {particles.map((p) => (
         <motion.div
           key={p.id}
-          className="absolute top-1/2 left-1/2 rounded-full bg-green-400"
+          className="absolute top-1/2 left-1/2 rounded-full bg-pk-emerald"
           style={{ width: p.size, height: p.size }}
           initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
           animate={{
@@ -120,24 +123,56 @@ export function ReactionGame({
   };
 
   const getResultGrade = (time: number) => {
-    if (time < 150) return { label: "INCROYABLE!", color: "text-emerald-400", bg: "from-emerald-500/30 to-emerald-700/10", grade: "S+" };
-    if (time < 200) return { label: "Excellent!", color: "text-green-400", bg: "from-green-500/30 to-green-700/10", grade: "S" };
-    if (time < 250) return { label: "Très bien!", color: "text-cyan-400", bg: "from-cyan-500/30 to-cyan-700/10", grade: "A" };
-    if (time < 300) return { label: "Bien!", color: "text-blue-400", bg: "from-blue-500/30 to-blue-700/10", grade: "B" };
-    if (time < 400) return { label: "Correct", color: "text-yellow-400", bg: "from-yellow-500/30 to-yellow-700/10", grade: "C" };
-    return { label: "À améliorer", color: "text-orange-400", bg: "from-orange-500/30 to-orange-700/10", grade: "D" };
+    if (time < 150)
+      return {
+        label: "INCROYABLE!",
+        color: "text-pk-emerald",
+        bg: "from-pk-emerald/20 to-pk-emerald/5",
+        grade: "S+",
+      };
+    if (time < 200)
+      return {
+        label: "Excellent!",
+        color: "text-pk-emerald",
+        bg: "from-pk-emerald/20 to-pk-emerald/5",
+        grade: "S",
+      };
+    if (time < 250)
+      return {
+        label: "Very good!",
+        color: "text-pk-info",
+        bg: "from-pk-info/20 to-pk-info/5",
+        grade: "A",
+      };
+    if (time < 300)
+      return {
+        label: "Bien!",
+        color: "text-pk-info",
+        bg: "from-pk-info/20 to-pk-info/5",
+        grade: "B",
+      };
+    if (time < 400)
+      return {
+        label: "Correct",
+        color: "text-pk-amber",
+        bg: "from-pk-amber/20 to-pk-amber/5",
+        grade: "C",
+      };
+    return {
+      label: "Needs work",
+      color: "text-pk-red",
+      bg: "from-pk-red/20 to-pk-red/5",
+      grade: "D",
+    };
   };
 
   return (
     <motion.div
-      className="relative glass-card rounded-2xl border border-white/10 overflow-hidden"
+      className="relative bg-pk-surface border border-white/[0.08] rounded-lg overflow-hidden"
       initial={{ opacity: 0, y: 20, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.5, type: "spring", stiffness: 200 }}
     >
-      {/* Ambient glow */}
-      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-red-500/5 pointer-events-none" />
-
       {/* Header */}
       <div className="relative p-5 pb-3">
         <div className="flex items-center justify-between">
@@ -147,28 +182,26 @@ export function ReactionGame({
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
           >
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
+            <div className="w-9 h-9 rounded-lg bg-pk-red flex items-center justify-center shadow-glow-red">
               <Zap className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-heading text-base uppercase text-white tracking-wide">
-                Reaction Time
-              </h3>
+              <h3 className="font-display text-sm">Reaction time</h3>
               {isTraining && (
-                <span className="font-body text-[10px] text-cyan-400 uppercase tracking-wider">
-                  Entraînement
+                <span className="font-data text-[0.5625rem] text-pk-info uppercase tracking-wider">
+                  Training
                 </span>
               )}
             </div>
           </motion.div>
           {!isTraining && attemptsRemaining !== undefined && (
             <motion.div
-              className="bg-orange-500/10 border border-orange-500/30 px-3 py-1.5 rounded-lg"
+              className="bg-pk-red-subtle border border-pk-red/30 px-3 py-1.5 rounded-lg"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", delay: 0.2 }}
             >
-              <span className="font-data text-sm text-orange-400">{attemptsRemaining}/3</span>
+              <span className="font-data text-sm text-pk-red">{attemptsRemaining}/3</span>
             </motion.div>
           )}
         </div>
@@ -186,11 +219,11 @@ export function ReactionGame({
               transition={{ duration: 0.3 }}
             >
               {/* Light housing */}
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-900 border-2 border-gray-600 flex items-center justify-center shadow-inner">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-pk-carbon border-2 border-white/[0.15] flex items-center justify-center shadow-inner">
                 <motion.div
                   className="w-8 h-8 sm:w-10 sm:h-10 rounded-full"
                   animate={{
-                    backgroundColor: lit ? "#ef4444" : "#1f2937",
+                    backgroundColor: lit ? "#ef4444" : "#121418",
                     boxShadow: lit
                       ? "0 0 30px #ef4444, 0 0 60px #ef444480, inset 0 -2px 4px #dc2626"
                       : "inset 0 2px 4px #000",
@@ -214,12 +247,12 @@ export function ReactionGame({
       {/* Click Zone */}
       <div className="px-5 pb-2">
         <motion.div
-          className={`relative h-36 rounded-xl flex items-center justify-center cursor-pointer overflow-hidden transition-colors ${
+          className={`relative h-36 rounded-lg flex items-center justify-center cursor-pointer overflow-hidden transition-colors ${
             gameState === "go"
-              ? "bg-green-500/10 border-2 border-green-500/60"
+              ? "bg-pk-emerald/[0.08] border-2 border-pk-emerald/40"
               : gameState === "false_start"
-                ? "bg-red-500/10 border-2 border-red-500/60"
-                : "bg-white/[0.03] border-2 border-white/10"
+                ? "bg-pk-red-subtle border-2 border-pk-red/40"
+                : "bg-white/[0.03] border-2 border-white/[0.08]"
           }`}
           onClick={handleClick}
           whileTap={gameState === "go" ? { scale: 0.97 } : {}}
@@ -227,33 +260,31 @@ export function ReactionGame({
           {/* Background pulse for GO */}
           {gameState === "go" && (
             <motion.div
-              className="absolute inset-0 bg-green-500/20"
+              className="absolute inset-0 bg-pk-emerald/10"
               animate={{ opacity: [0.2, 0.4, 0.2] }}
               transition={{ duration: 0.6, repeat: Infinity }}
             />
           )}
 
           {/* Particle burst on GO */}
-          <AnimatePresence>
-            {gameState === "go" && <ParticleBurst />}
-          </AnimatePresence>
+          <AnimatePresence>{gameState === "go" && <ParticleBurst />}</AnimatePresence>
 
           <AnimatePresence mode="wait">
             {gameState === "idle" && (
               <motion.p
                 key="idle"
-                className="font-body text-gray-500 text-sm text-center px-4"
+                className="text-sm text-pk-titane text-center px-4"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                Appuie sur DÉMARRER pour lancer la séquence
+                Press START to launch the sequence
               </motion.p>
             )}
             {gameState === "waiting" && (
               <motion.p
                 key="waiting"
-                className="font-heading text-yellow-500 text-center"
+                className="font-display text-sm text-pk-amber text-center"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: [0.5, 1, 0.5], scale: 1 }}
                 exit={{ opacity: 0 }}
@@ -271,13 +302,13 @@ export function ReactionGame({
                 exit={{ opacity: 0 }}
               >
                 <motion.p
-                  className="font-heading text-red-500 text-lg"
+                  className="font-display text-lg text-pk-red"
                   animate={{ scale: [1, 1.05, 1] }}
                   transition={{ duration: 0.8, repeat: Infinity }}
                 >
-                  PRÊT...
+                  READY...
                 </motion.p>
-                <p className="font-body text-xs text-gray-500 mt-1">Attendez l'extinction !</p>
+                <p className="text-xs text-pk-titane mt-1">Attendez l'extinction !</p>
               </motion.div>
             )}
             {gameState === "go" && (
@@ -288,8 +319,8 @@ export function ReactionGame({
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: "spring", stiffness: 500, damping: 15 }}
               >
-                <p className="font-heading text-4xl text-green-400 text-glow-cyan">GO!</p>
-                <p className="font-body text-xs text-green-300/70 mt-1">CLIQUEZ MAINTENANT</p>
+                <p className="font-display text-4xl text-pk-emerald">GO!</p>
+                <p className="text-xs text-pk-emerald/70 mt-1">CLIQUEZ MAINTENANT</p>
               </motion.div>
             )}
             {gameState === "false_start" && (
@@ -302,13 +333,13 @@ export function ReactionGame({
                 transition={{ type: "spring" }}
               >
                 <motion.p
-                  className="font-heading text-2xl text-red-500"
+                  className="font-display text-2xl text-pk-red"
                   animate={{ x: [-3, 3, -3, 3, 0] }}
                   transition={{ duration: 0.4 }}
                 >
-                  FAUX DÉPART!
+                  FALSE START!
                 </motion.p>
-                <p className="font-body text-gray-500 text-xs mt-2">Trop tôt !</p>
+                <p className="text-xs text-pk-titane mt-2">Too early!</p>
               </motion.div>
             )}
             {gameState === "result" && reactionTime !== null && (
@@ -324,7 +355,7 @@ export function ReactionGame({
                   initial={{ y: -10 }}
                   animate={{ y: 0 }}
                 >
-                  <span className={`font-heading text-xs uppercase ${getResultGrade(reactionTime).color}`}>
+                  <span className={`font-display text-xs ${getResultGrade(reactionTime).color}`}>
                     {getResultGrade(reactionTime).grade}
                   </span>
                 </motion.div>
@@ -337,7 +368,7 @@ export function ReactionGame({
                   {reactionTime}
                   <span className="text-lg ml-1 opacity-70">ms</span>
                 </motion.p>
-                <p className="font-heading text-sm mt-1 text-white/80">
+                <p className="font-display text-sm mt-1 text-white/80">
                   {getResultGrade(reactionTime).label}
                 </p>
               </motion.div>
@@ -356,15 +387,14 @@ export function ReactionGame({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
             >
-              <Button
+              <button
                 onClick={startSequence}
-                className="w-full h-12 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white font-heading text-base rounded-xl relative overflow-hidden group"
+                className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 disabled={!isTraining && attemptsRemaining === 0}
                 data-testid="reaction-start-btn"
               >
-                <span className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12" />
-                <Play className="w-5 h-5 mr-2" /> DÉMARRER
-              </Button>
+                <Play className="w-5 h-5" /> START
+              </button>
             </motion.div>
           )}
           {(gameState === "false_start" || gameState === "result") && (
@@ -375,20 +405,20 @@ export function ReactionGame({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
             >
-              <Button
+              <button
                 onClick={resetGame}
-                className="flex-1 h-12 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-heading rounded-xl"
+                className="flex-1 h-11 rounded-lg border border-white/[0.08] text-pk-titane font-display text-xs hover:text-pk-piste hover:border-white/[0.15] transition-colors flex items-center justify-center gap-2"
               >
-                <RotateCcw className="w-4 h-4 mr-2" /> Réessayer
-              </Button>
+                <RotateCcw className="w-4 h-4" /> Try again
+              </button>
               {gameState === "result" && (
-                <Button
+                <button
                   onClick={handleSubmit}
-                  className="flex-1 h-12 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white font-heading rounded-xl"
+                  className="flex-1 h-11 rounded-lg bg-pk-red text-white font-display text-xs shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   disabled={!isTraining && attemptsRemaining === 0}
                 >
-                  <Trophy className="w-4 h-4 mr-2" /> Enregistrer
-                </Button>
+                  <Trophy className="w-4 h-4" /> Save
+                </button>
               )}
             </motion.div>
           )}

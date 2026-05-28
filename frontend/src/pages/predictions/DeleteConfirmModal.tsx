@@ -28,15 +28,15 @@ export function DeleteConfirmModal({
     <BottomSheet open onOpenChange={(open) => !open && onCancel()}>
       <BottomSheetContent>
         <BottomSheetHeader>
-          <BottomSheetTitle>Supprimer les pronos</BottomSheetTitle>
+          <BottomSheetTitle>Delete picks</BottomSheetTitle>
         </BottomSheetHeader>
 
         <BottomSheetBody>
           <BottomSheetCallout variant="danger">
             <AlertTriangle className="w-4 h-4 text-pk-red flex-shrink-0 mt-0.5" />
             <span className="text-[0.6875rem] text-pk-titane leading-snug">
-              Tes pronostics pour <strong className="text-pk-piste">{raceName}</strong> seront
-              definitivement effaces. Cette action est irreversible.
+              Your predictions for <strong className="text-pk-piste">{raceName}</strong> will be
+              permanently deleted. This action cannot be undone.
             </span>
           </BottomSheetCallout>
 
@@ -50,7 +50,7 @@ export function DeleteConfirmModal({
               disabled={deleting}
             >
               <Trash2 className="w-4 h-4" />
-              {deleting ? "Suppression..." : "Supprimer"}
+              {deleting ? "Suppression..." : "Delete"}
             </BottomSheetButton>
             <BottomSheetButton
               variant="ghost"
@@ -60,7 +60,7 @@ export function DeleteConfirmModal({
               }}
               disabled={deleting}
             >
-              Annuler
+              Cancel
             </BottomSheetButton>
           </BottomSheetActions>
         </BottomSheetBody>

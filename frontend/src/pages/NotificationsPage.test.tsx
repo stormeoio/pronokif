@@ -29,7 +29,7 @@ vi.mock("@/lib/api", () => {
         markAllRead: () => unwrap(mockApiClient.put("/notifications/read-all")),
       },
     },
-    getApiError: (e: unknown, fallback = "Erreur") => {
+    getApiError: (e: unknown, fallback = "Error") => {
       const err = e as { response?: { data?: { detail?: string } } };
       return err.response?.data?.detail || fallback;
     },
@@ -60,16 +60,16 @@ describe("NotificationsPage", () => {
       {
         id: "n1",
         type: "info",
-        title: "Bienvenue sur PRONOKIF",
-        message: "Bonne course !",
+        title: "Welcome to PRONOKIF",
+        message: "Have a good race!",
         is_read: false,
         created_at: "2026-05-10T12:00:00Z",
       },
       {
         id: "n2",
         type: "update",
-        title: "Résultats disponibles",
-        message: "GP Monaco terminé",
+        title: "Results available",
+        message: "Monaco GP finished",
         is_read: true,
         created_at: "2026-05-09T10:00:00Z",
       },
@@ -84,8 +84,8 @@ describe("NotificationsPage", () => {
     renderWithProviders(<NotificationsPage />, { user: mockUser });
 
     await waitFor(() => {
-      expect(screen.getByText("Bienvenue sur PRONOKIF")).toBeInTheDocument();
-      expect(screen.getByText("Résultats disponibles")).toBeInTheDocument();
+      expect(screen.getByText("Welcome to PRONOKIF")).toBeInTheDocument();
+      expect(screen.getByText("Results available")).toBeInTheDocument();
     });
   });
 
@@ -99,7 +99,7 @@ describe("NotificationsPage", () => {
     renderWithProviders(<NotificationsPage />, { user: mockUser });
 
     await waitFor(() => {
-      expect(screen.getByText("Aucune notification")).toBeInTheDocument();
+      expect(screen.getByText("No notifications")).toBeInTheDocument();
     });
   });
 
@@ -125,11 +125,11 @@ describe("NotificationsPage", () => {
     renderWithProviders(<NotificationsPage />, { user: mockUser });
 
     await waitFor(() => {
-      expect(screen.getByText("Tout marquer lu")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Mark all as read" })).toBeInTheDocument();
     });
 
     const user = userEvent.setup();
-    await user.click(screen.getByText("Tout marquer lu"));
+    await user.click(screen.getByRole("button", { name: "Mark all as read" }));
 
     await waitFor(() => {
       expect(mockApiClient.put).toHaveBeenCalledWith("/notifications/read-all");

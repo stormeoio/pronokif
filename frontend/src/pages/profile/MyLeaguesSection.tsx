@@ -1,13 +1,19 @@
+/**
+ * MyLeaguesSection — Profile sub-section showing user's leagues.
+ * Broadcast Premium: pk-surface cards, pk-red active highlight.
+ */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Users, Plus, Copy, Share2, Check, Star } from "lucide-react";
+import { Users, Plus, Copy, Share2, Check, Crown } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "../../components/ui/button";
 import { api } from "@/lib/api";
+import type { League } from "@/types/api";
+import { haptic } from "@/lib/haptics";
+import { fadeUp, staggerContainer } from "@/lib/motion";
 
 interface MyLeaguesSectionProps {
-  leagues: Record<string, any>[];
+  leagues: League[];
   currentLeagueId: string | null;
 }
 
@@ -17,18 +23,19 @@ export function MyLeaguesSection({ leagues, currentLeagueId }: MyLeaguesSectionP
 
   const copyCode = async (code: string) => {
     try {
+      haptic("light");
       await navigator.clipboard.writeText(code);
       setCopied(code);
-      toast.success("Code copié !");
+      toast.success("Code copie !");
       setTimeout(() => setCopied(null), 2000);
     } catch {
       toast.error("Impossible de copier");
     }
   };
 
-  const shareLeague = async (league: Record<string, any>) => {
+  const shareLeague = async (league: League) => {
     const shareUrl = `${window.location.origin}/join/${league.code}`;
-    const shareText = `Rejoins ma ligue F1 "${league.name}" sur PRONOKIF !`;
+    const shareText = `Join my F1 league "${league.name}" sur PRONOKIF !`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -49,103 +56,113 @@ export function MyLeaguesSection({ leagues, currentLeagueId }: MyLeaguesSectionP
 
   const selectLeague = async (leagueId: string) => {
     try {
+      haptic("medium");
       await api.leagues.select(leagueId);
-      toast.success("Ligue sélectionnée !");
+      toast.success("Ligue selectionnee !");
       window.location.reload();
     } catch {
-      toast.error("Erreur");
+      toast.error("Error");
     }
   };
 
   return (
-    <div className="card-arcade overflow-hidden">
-      <div className="h-2 bg-kerb-stripe" />
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-heading text-lg text-white uppercase flex items-center gap-2">
-            <Users className="w-5 h-5 text-blue-400" /> Mes ligues
-          </h3>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/league")}
-            className="text-cyan-400 font-body text-sm hover:bg-cyan-500/10"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Ajouter
-          </Button>
+    <div className="bg-pk-surface border border-white/[0.08] rounded-lg overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08]">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-md bg-pk-info/[0.12] flex items-center justify-center">
+            <Users className="w-3.5 h-3.5 text-pk-info" />
+          </div>
+          <span className="font-display text-sm">My leagues</span>
         </div>
-        <motion.div
-          className="space-y-2"
-          initial="hidden"
-          animate="visible"
-          variants={{ visible: { transition: { staggerChildren: 0.06 } }, hidden: {} }}
+        <button
+          onClick={() => navigate("/league")}
+          className="flex items-center gap-1 font-data text-[0.5625rem] text-pk-red font-semibold"
+          data-testid="profile-add-league"
         >
-          {leagues.map((league) => (
-            <motion.div
-              key={league.id}
-              className={`p-3 rounded-lg ${league.id === currentLeagueId ? "bg-blue-500/20 border border-blue-500/50" : "bg-white/5"}`}
-              variants={{ hidden: { opacity: 0, x: -12 }, visible: { opacity: 1, x: 0 } }}
-              whileHover={{ x: 4 }}
+          <Plus className="w-3 h-3" />
+          Ajouter
+        </button>
+      </div>
+
+      <div className="p-3">
+        {leagues.length === 0 ? (
+          <div className="text-center py-6">
+            <Users className="w-8 h-8 text-pk-titane mx-auto mb-2 opacity-40" />
+            <p className="text-xs text-pk-titane mb-3">No league</p>
+            <button
+              onClick={() => navigate("/league")}
+              className="h-9 px-4 rounded-lg bg-pk-red text-white font-display text-sm shadow-glow-red active:scale-[0.97] transition-transform"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p
-                    className={`font-heading text-sm uppercase ${league.id === currentLeagueId ? "text-blue-400" : "text-gray-300"}`}
-                  >
-                    {league.name}
-                    {league.id === currentLeagueId && (
-                      <Star className="w-3 h-3 inline ml-1 text-yellow-500 fill-yellow-500" />
-                    )}
-                  </p>
-                  <p className="font-body text-xs text-gray-400">
-                    {league.members.length} membres • Code:{" "}
-                    <span className="font-data text-cyan-400">{league.code}</span>
-                  </p>
-                </div>
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => copyCode(league.code)}
-                    className="text-gray-500 hover:text-white hover:bg-white/10 h-8 w-8"
-                  >
-                    {copied === league.code ? (
-                      <Check className="w-4 h-4 text-green-500" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => shareLeague(league)}
-                    className="text-gray-500 hover:text-white hover:bg-white/10 h-8 w-8"
-                  >
-                    <Share2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-              {league.id !== currentLeagueId && (
-                <Button
-                  onClick={() => selectLeague(league.id)}
-                  className="w-full mt-2 btn-neon text-xs h-8"
+              Creer / Join
+            </button>
+          </div>
+        ) : (
+          <motion.div
+            className="space-y-1.5"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {leagues.map((league) => {
+              const isActive = league.id === currentLeagueId;
+
+              return (
+                <motion.div
+                  key={league.id}
+                  variants={fadeUp}
+                  className={`p-3 rounded-md transition-colors ${
+                    isActive
+                      ? "bg-pk-red-subtle border border-pk-red/20"
+                      : "bg-white/[0.02] hover:bg-white/[0.04]"
+                  }`}
                 >
-                  Sélectionner
-                </Button>
-              )}
-            </motion.div>
-          ))}
-          {leagues.length === 0 && (
-            <div className="text-center py-6">
-              <Users className="w-10 h-10 text-gray-600 mx-auto mb-2" />
-              <p className="font-body text-gray-400 text-sm">Aucune ligue</p>
-              <Button onClick={() => navigate("/league")} className="mt-3 btn-racing" size="sm">
-                Créer / Rejoindre
-              </Button>
-            </div>
-          )}
-        </motion.div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p
+                          className={`font-display text-sm truncate ${isActive ? "text-pk-red" : ""}`}
+                        >
+                          {league.name}
+                        </p>
+                        {isActive && <Crown className="w-3 h-3 text-pk-red flex-shrink-0" />}
+                      </div>
+                      <p className="font-data text-[0.5625rem] text-pk-titane mt-0.5">
+                        {league.members?.length ?? 0} members ·{" "}
+                        <span className="text-pk-info">{league.code}</span>
+                      </p>
+                    </div>
+                    <div className="flex gap-0.5">
+                      <button
+                        onClick={() => copyCode(league.code)}
+                        className="w-7 h-7 rounded-md flex items-center justify-center text-pk-titane hover:bg-white/[0.06] transition-colors"
+                      >
+                        {copied === league.code ? (
+                          <Check className="w-3 h-3 text-pk-emerald" />
+                        ) : (
+                          <Copy className="w-3 h-3" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => shareLeague(league)}
+                        className="w-7 h-7 rounded-md flex items-center justify-center text-pk-titane hover:bg-white/[0.06] transition-colors"
+                      >
+                        <Share2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                  {!isActive && (
+                    <button
+                      onClick={() => selectLeague(league.id)}
+                      className="w-full mt-2 h-8 rounded-md bg-white/[0.04] border border-white/[0.08] text-pk-piste font-data text-[0.5625rem] font-bold active:scale-[0.97] transition-transform"
+                    >
+                      Selectionner
+                    </button>
+                  )}
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        )}
       </div>
     </div>
   );

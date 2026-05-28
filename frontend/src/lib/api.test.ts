@@ -6,23 +6,23 @@ import { getApiError, getApiStatus } from "./api";
 
 describe("getApiError", () => {
   it("returns detail from axios error response", () => {
-    const error = { response: { data: { detail: "Email déjà utilisé" }, status: 409 } };
-    expect(getApiError(error)).toBe("Email déjà utilisé");
+    const error = { response: { data: { detail: "Email already in use" }, status: 409 } };
+    expect(getApiError(error)).toBe("Email already in use");
   });
 
   it("returns default fallback when no detail", () => {
     const error = { response: { data: {} } };
-    expect(getApiError(error)).toBe("Erreur");
+    expect(getApiError(error)).toBe("Error");
   });
 
   it("returns custom fallback string", () => {
     const error = { message: "Network Error" };
-    expect(getApiError(error, "Connexion impossible")).toBe("Connexion impossible");
+    expect(getApiError(error, "Sign in impossible")).toBe("Sign in impossible");
   });
 
   it("returns fallback for plain error objects", () => {
-    expect(getApiError(new Error("network"))).toBe("Erreur");
-    expect(getApiError({})).toBe("Erreur");
+    expect(getApiError(new Error("network"))).toBe("Error");
+    expect(getApiError({})).toBe("Error");
   });
 });
 

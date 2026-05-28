@@ -1,4 +1,4 @@
-import { useState, useCallback, lazy, Suspense, useMemo } from "react";
+import { useState, useCallback, useEffect, lazy, Suspense, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -8,9 +8,7 @@ import {
   Trophy,
   Target,
   Users,
-  Gamepad2,
   Check,
-  Star,
   Crown,
   Medal,
   Zap,
@@ -24,7 +22,8 @@ import RewardCelebration from "../components/RewardCelebration";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { haptic } from "@/lib/haptics";
-import { fadeUp, staggerContainer, easing, duration, getReducedMotionProps } from "@/lib/motion";
+import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
+import { EmptyMinimal } from "@/components/EmptyState";
 
 const VictoryExplosion = lazy(() => import("../components/three/VictoryExplosion"));
 
@@ -47,8 +46,8 @@ type TabKey = "active" | "complete" | "season";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "active", label: "Actives" },
-  { key: "complete", label: "Completes" },
-  { key: "season", label: "Saison" },
+  { key: "complete", label: "Completees" },
+  { key: "season", label: "Season" },
 ];
 
 /* ── Rarity colors ─────────────────────────────────────── */
@@ -88,6 +87,12 @@ const ICON_MAP: Record<string, LucideIcon> = {
 };
 
 /* ── Helpers ───────────────────────────────────────────── */
+
+function MissionIcon({ icon }: { icon: string }) {
+  const LucideIcon = ICON_MAP[icon.toLowerCase()];
+  if (LucideIcon) return <LucideIcon className="w-6 h-6 text-pk-piste" />;
+  return <span>{icon}</span>;
+}
 
 function inferRarity(mission: MissionItem): string {
   if (mission.rarity) return mission.rarity;
@@ -147,6 +152,13 @@ export default function MissionsPage() {
   const { user, updateUser } = useAuth();
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
+
+  useEffect(() => {
+    const id = requestIdleCallback(() => {
+      import("../components/three/VictoryExplosion");
+    });
+    return () => cancelIdleCallback(id);
+  }, []);
 
   const [activeTab, setActiveTab] = useState<TabKey>("active");
   const [claiming, setClaiming] = useState<string | null>(null);
@@ -221,7 +233,7 @@ export default function MissionsPage() {
     } catch (e: unknown) {
       haptic("error");
       toast.error(
-        (e as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Erreur",
+        (e as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Error",
       );
     } finally {
       setClaiming(null);
@@ -278,8 +290,8 @@ export default function MissionsPage() {
               )}
           </div>
 
-          {/* Tabs */}
-          <div className="flex">
+          {/* Filter chips */}
+          <div className="flex gap-1.5">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
@@ -287,11 +299,12 @@ export default function MissionsPage() {
                   haptic("selection");
                   setActiveTab(tab.key);
                 }}
-                className={`flex-1 py-2 text-center font-data text-[0.5625rem] uppercase tracking-wider border-b-2 transition-colors ${
+                className={`flex-1 py-1.5 rounded-full text-center font-data text-[0.5625rem] border transition-colors ${
                   activeTab === tab.key
-                    ? "text-pk-red border-pk-red"
-                    : "text-pk-titane border-transparent"
+                    ? "bg-pk-red-subtle border-pk-red/30 text-pk-red"
+                    : "bg-white/[0.04] border-white/[0.08] text-pk-titane"
                 }`}
+                data-testid={`missions-tab-${tab.key}`}
               >
                 {tab.label}
                 {tab.key === "active" && claimableCount > 0 && (
@@ -366,7 +379,9 @@ export default function MissionsPage() {
                   <div className={`absolute top-0 left-0 right-0 h-0.5 ${RARITY_STRIPE[rarity]}`} />
 
                   {/* Icon */}
-                  <div className="text-2xl mb-2">{mission.icon}</div>
+                  <div className="text-2xl mb-2">
+                    <MissionIcon icon={mission.icon} />
+                  </div>
 
                   {/* Title + desc */}
                   <p className="font-bold text-[0.8125rem] mb-0.5 leading-tight">{mission.name}</p>
@@ -405,6 +420,7 @@ export default function MissionsPage() {
                         onClick={() => handleClaimMission(mission.mission_id)}
                         disabled={isClaiming}
                         className="px-4 py-1.5 rounded-md bg-pk-emerald text-white font-data text-[0.625rem] font-bold active:scale-[0.95] transition-transform disabled:opacity-50"
+                        data-testid={`claim-mission-${mission.mission_id}`}
                       >
                         {isClaiming ? "..." : "Reclamer"}
                       </button>
@@ -425,14 +441,14 @@ export default function MissionsPage() {
 
         {/* Empty state */}
         {displayedMissions.length === 0 && (
-          <motion.div variants={fadeUp} className="text-center py-12">
-            <div className="text-3xl mb-2 opacity-60">{activeTab === "complete" ? "🏅" : "🎯"}</div>
-            <p className="text-sm text-pk-titane">
-              {activeTab === "complete"
-                ? "Aucune mission completee pour l'instant."
-                : "Toutes les missions sont terminees !"}
-            </p>
-          </motion.div>
+          <EmptyMinimal
+            icon={activeTab === "complete" ? "🏅" : "🎯"}
+            message={
+              activeTab === "complete"
+                ? "No mission completed yet."
+                : "Toutes les missions sont terminees !"
+            }
+          />
         )}
       </motion.div>
     </div>

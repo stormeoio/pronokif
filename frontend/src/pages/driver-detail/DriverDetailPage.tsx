@@ -1,44 +1,63 @@
+/**
+ * DriverDetailPage — Individual driver profile with tabs.
+ * Broadcast Premium: team-color hero gradient, glass tabs, pk-* cards.
+ */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
-import { ArrowLeft, User, History, Lightbulb, Loader2, GitCompare } from "lucide-react";
+import { ChevronLeft, User, History, Lightbulb, Loader2, GitCompare } from "lucide-react";
 import { getTeamColors } from "./driverHelpers";
 import { ProfileTab, PalmaresTab, FactsTab } from "./DriverTabs";
 import { useDriverDetailData } from "./useDriverDetailData";
 import { haptic } from "@/lib/haptics";
+import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
+
+/* ── Skeleton ─────────────────────────────────────────── */
+
+function DriverDetailSkeleton() {
+  return (
+    <div className="min-h-screen bg-pk-carbon">
+      <div className="h-72 bg-pk-surface animate-shimmer" />
+      <div className="px-4 pt-4 space-y-3 pb-24">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-24 rounded-lg bg-pk-surface border border-white/[0.08] animate-shimmer"
+            style={{ animationDelay: `${i * 80}ms` }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Component ─────────────────────────────────────────── */
 
 export default function DriverDetailPage() {
   const { driverId } = useParams();
   const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion() ?? false;
+  const rmProps = getReducedMotionProps(prefersReducedMotion);
   const [activeTab, setActiveTab] = useState("profile");
 
   const { loading, driver, error } = useDriverDetailData(driverId);
 
   useEffect(() => {
     if (error) {
-      toast.error("Impossible de charger les informations du pilote");
+      toast.error("Unable to load driver information");
       navigate("/championship");
     }
   }, [error, navigate]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-app-main flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-cyan-500 animate-spin mx-auto mb-4" />
-          <p className="font-body text-gray-400">Chargement du pilote...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <DriverDetailSkeleton />;
 
   if (!driver) {
     return (
-      <div className="min-h-screen bg-app-main flex items-center justify-center">
+      <div className="min-h-screen bg-pk-carbon flex items-center justify-center">
         <div className="text-center">
-          <User className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-          <p className="font-body text-gray-400">Pilote non trouvé</p>
+          <User className="w-10 h-10 text-pk-titane mx-auto mb-3" />
+          <p className="text-sm text-pk-titane">Driver not found</p>
         </div>
       </div>
     );
@@ -48,41 +67,45 @@ export default function DriverDetailPage() {
   const f1Stats = driver.palmares?.f1 || {};
 
   return (
-    <div className="min-h-screen bg-app-main pb-24">
-      {/* Header with driver photo */}
+    <div className="min-h-screen bg-pk-carbon pb-24" data-testid="driver-detail-page">
+      {/* Hero Header with driver photo */}
       <motion.div
         className="relative overflow-hidden"
         style={{
-          background: `linear-gradient(135deg, ${colors.primary}20 0%, ${colors.secondary}10 50%, #050a14 100%)`,
+          background: `linear-gradient(135deg, ${colors.primary}15 0%, ${colors.secondary}08 50%, #0B0D12 100%)`,
         }}
+        {...rmProps}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
       >
-        <motion.button
+        {/* Top actions */}
+        <button
           onClick={() => navigate("/championship")}
-          className="absolute top-4 left-4 z-20 p-2 bg-black/50 backdrop-blur-sm rounded-full text-white hover:bg-black/70 transition-colors"
-          aria-label="Retour au championnat"
-          data-testid="back-button"
-          whileHover={{ x: -2 }}
-          whileTap={{ scale: 0.9 }}
+          className="absolute top-4 left-4 z-20 p-2 bg-pk-carbon/60 backdrop-blur-sm rounded-lg text-pk-piste hover:text-white transition-colors"
+          aria-label="Back to championship"
+          data-testid="driver-back"
         >
-          <ArrowLeft className="w-5 h-5" />
-        </motion.button>
-        <motion.button
-          onClick={() => navigate(`/compare?d1=${driver.id}`)}
-          className="absolute top-4 left-16 z-20 p-2 bg-cyan-500/80 backdrop-blur-sm rounded-full text-white hover:bg-cyan-600 transition-colors"
-          aria-label="Comparer avec un autre pilote"
-          data-testid="compare-button"
-          title="Comparer avec un autre pilote"
-          whileTap={{ scale: 0.9 }}
-          whileHover={{ scale: 1.1 }}
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <button
+          onClick={() => {
+            haptic("light");
+            navigate(`/compare?d1=${driver.id}`);
+          }}
+          className="absolute top-4 left-14 z-20 p-2 bg-pk-info/80 backdrop-blur-sm rounded-lg text-white hover:bg-pk-info transition-colors"
+          aria-label="Compare with another driver"
+          data-testid="driver-compare"
+          title="Comparer"
         >
           <GitCompare className="w-5 h-5" />
-        </motion.button>
+        </button>
+
+        {/* Number badge */}
         <motion.div
-          className="absolute top-4 right-4 z-20 px-4 py-2 rounded-lg font-data text-3xl text-white"
+          className="absolute top-4 right-4 z-20 px-3 py-1.5 rounded-lg font-data text-2xl font-bold text-white"
           style={{ backgroundColor: colors.primary }}
+          {...rmProps}
           initial={{ scale: 0, rotate: 10 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
@@ -90,15 +113,17 @@ export default function DriverDetailPage() {
           #{driver.number}
         </motion.div>
 
+        {/* Photo */}
         <div className="pt-16 pb-6 px-4 flex justify-center">
           <motion.div
             className="relative"
+            {...rmProps}
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
           >
             <div
-              className="w-48 h-48 rounded-full border-4 overflow-hidden bg-gray-800"
+              className="w-40 h-40 rounded-full border-[3px] overflow-hidden bg-pk-anthracite"
               style={{ borderColor: colors.primary }}
             >
               <img
@@ -112,103 +137,103 @@ export default function DriverDetailPage() {
               />
             </div>
             <motion.div
-              className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 bg-gray-900 border border-gray-700 rounded-full"
+              className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-pk-carbon/90 border border-white/[0.08] rounded-full"
+              {...rmProps}
               initial={{ y: 10, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
-              <span className="font-body text-xs text-gray-300">{driver.country_name}</span>
+              <span className="font-data text-[0.5625rem] text-pk-titane">
+                {driver.country_name}
+              </span>
             </motion.div>
           </motion.div>
         </div>
 
+        {/* Name + quick stats */}
         <motion.div
           className="text-center pb-6 px-4"
+          {...rmProps}
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <h1 className="font-heading text-2xl text-white">
+          <h1 className="font-display text-xl">
             {driver.first_name}{" "}
             <span style={{ color: colors.primary }}>{driver.last_name?.toUpperCase()}</span>
           </h1>
-          <p className="font-body text-sm text-gray-400 mt-1">{driver.team}</p>
+          <p className="font-data text-[0.5625rem] text-pk-titane mt-1">{driver.team}</p>
+
           <motion.div
             className="flex justify-center gap-6 mt-4"
             initial="hidden"
             animate="visible"
-            variants={{ visible: { transition: { staggerChildren: 0.08 } }, hidden: {} }}
+            variants={staggerContainer}
           >
             {f1Stats.world_championships > 0 && (
-              <motion.div
-                className="text-center"
-                variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
-              >
-                <p className="font-data text-xl text-yellow-400">{f1Stats.world_championships}</p>
-                <p className="font-body text-[10px] text-gray-500 uppercase">Titres</p>
+              <motion.div className="text-center" variants={fadeUp}>
+                <p className="font-data text-lg text-pk-gold">{f1Stats.world_championships}</p>
+                <p className="font-data text-[0.5rem] text-pk-titane uppercase">Titres</p>
               </motion.div>
             )}
-            <motion.div
-              className="text-center"
-              variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
-            >
-              <p className="font-data text-xl text-white">{f1Stats.wins || 0}</p>
-              <p className="font-body text-[10px] text-gray-500 uppercase">Victoires</p>
+            <motion.div className="text-center" variants={fadeUp}>
+              <p className="font-data text-lg">{f1Stats.wins || 0}</p>
+              <p className="font-data text-[0.5rem] text-pk-titane uppercase">Victoires</p>
             </motion.div>
-            <motion.div
-              className="text-center"
-              variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
-            >
-              <p className="font-data text-xl text-white">{f1Stats.podiums || 0}</p>
-              <p className="font-body text-[10px] text-gray-500 uppercase">Podiums</p>
+            <motion.div className="text-center" variants={fadeUp}>
+              <p className="font-data text-lg">{f1Stats.podiums || 0}</p>
+              <p className="font-data text-[0.5rem] text-pk-titane uppercase">Podiums</p>
             </motion.div>
-            <motion.div
-              className="text-center"
-              variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
-            >
-              <p className="font-data text-xl text-white">{f1Stats.poles || 0}</p>
-              <p className="font-body text-[10px] text-gray-500 uppercase">Poles</p>
+            <motion.div className="text-center" variants={fadeUp}>
+              <p className="font-data text-lg">{f1Stats.poles || 0}</p>
+              <p className="font-data text-[0.5rem] text-pk-titane uppercase">Poles</p>
             </motion.div>
           </motion.div>
         </motion.div>
       </motion.div>
 
       {/* Tab Navigation */}
-      <div className="sticky top-0 z-30 bg-[#050a14]/95 backdrop-blur-md border-b border-gray-800">
+      <div className="sticky top-0 z-30 bg-pk-carbon/85 backdrop-blur-xl saturate-[1.3] border-b border-white/[0.08]">
         <div className="max-w-2xl mx-auto px-4 py-2">
-          <div className="flex gap-1 p-1 bg-gray-800/50 rounded-lg relative">
+          <div className="flex gap-1.5">
             {[
-              { id: "profile", icon: User, label: "Pilote" },
-              { id: "palmares", icon: History, label: "Palmares" },
-              { id: "facts", icon: Lightbulb, label: "Infos" },
+              { id: "profile", Icon: User, label: "Driver" },
+              { id: "palmares", Icon: History, label: "Palmares" },
+              { id: "facts", Icon: Lightbulb, label: "Infos" },
             ].map((tab) => (
-              <motion.button
+              <button
                 key={tab.id}
-                onClick={() => { haptic("light"); setActiveTab(tab.id); }}
-                className={`flex-1 py-2.5 px-2 rounded-lg font-heading text-xs uppercase transition-all flex items-center justify-center gap-1.5 relative ${
+                onClick={() => {
+                  haptic("light");
+                  setActiveTab(tab.id);
+                }}
+                className={`flex-1 py-2.5 rounded-lg font-display text-xs transition-colors flex items-center justify-center gap-1.5 ${
                   activeTab === tab.id
-                    ? "text-white shadow-lg"
-                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                    ? "text-white"
+                    : "bg-white/[0.04] border border-white/[0.08] text-pk-titane hover:text-pk-piste"
                 }`}
-                style={activeTab === tab.id ? { backgroundColor: colors.primary } : {}}
+                style={
+                  activeTab === tab.id
+                    ? { backgroundColor: colors.primary, border: `1px solid ${colors.primary}40` }
+                    : {}
+                }
                 data-testid={`tab-${tab.id}`}
-                whileTap={{ scale: 0.95 }}
               >
-                <tab.icon className="w-3.5 h-3.5" /> {tab.label}
-              </motion.button>
+                <tab.Icon className="w-3.5 h-3.5" /> {tab.label}
+              </button>
             ))}
           </div>
         </div>
       </div>
 
       {/* Tab Content */}
-      <div className="max-w-2xl mx-auto px-4 py-4">
+      <div className="max-w-2xl mx-auto px-4 pt-4">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
           >
             {activeTab === "profile" && <ProfileTab driver={driver} colors={colors} />}

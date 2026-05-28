@@ -53,7 +53,7 @@ const toastInfo = (title: string, description?: string) => toast.info(title, { d
 const toastUndo = (title: string, onUndo: () => void) =>
   toast(title, {
     action: {
-      label: "Annuler",
+      label: "Cancel",
       onClick: onUndo,
     },
   });

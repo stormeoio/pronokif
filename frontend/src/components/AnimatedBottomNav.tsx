@@ -1,13 +1,7 @@
 /**
  * AnimatedBottomNav — Premium bottom navigation with liquid indicator,
  * micro-animations, and haptic feedback.
- *
- * Features:
- * - Morphing active indicator (animated blob)
- * - Icon scale + color transitions
- * - Haptic on tap
- * - Glow effect on active item
- * - Unread badge with pulse
+ * Broadcast Premium: pk-carbon/red/piste/titane, no kerb stripe.
  */
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,7 +12,7 @@ import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { haptic } from "@/lib/haptics";
 
-// Prefetch map: path → dynamic import (matches routes.tsx lazy imports)
+// Prefetch map: path -> dynamic import (matches routes.tsx lazy imports)
 const PREFETCH_MAP: Record<string, () => Promise<unknown>> = {
   "/": () => import("@/pages/dashboard/DashboardPage"),
   "/predictions": () => import("@/pages/RaceCalendarPage"),
@@ -34,8 +28,8 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { path: "/", icon: Home, label: "Accueil" },
-  { path: "/predictions", icon: Target, label: "Pronos" },
+  { path: "/", icon: Home, label: "Home" },
+  { path: "/predictions", icon: Target, label: "Picks" },
   { path: "/championship", icon: Flag, label: "Champ." },
   { path: "/league", icon: Users, label: "Ligues" },
   { path: "/profile", icon: User, label: "Profil" },
@@ -93,9 +87,6 @@ export default function AnimatedBottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50" aria-label="Navigation principale">
-      {/* Top racing kerb stripe */}
-      <div className="h-[3px] bg-kerb-stripe opacity-75" />
-
       {/* Glass nav bar */}
       <div className="relative h-[72px] bg-pk-carbon/95 backdrop-blur-xl border-t border-white/[0.06]">
         {/* Animated glow indicator */}
@@ -157,7 +148,7 @@ export default function AnimatedBottomNav() {
                   {/* Unread badge */}
                   {showBadge && (
                     <motion.div
-                      className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-gradient-to-br from-pink-500 to-red-500 rounded-full flex items-center justify-center shadow-lg"
+                      className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-pk-red rounded-full flex items-center justify-center shadow-lg"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 500 }}
@@ -170,7 +161,7 @@ export default function AnimatedBottomNav() {
                 {/* Label */}
                 <AnimatePresence>
                   <motion.span
-                    className="text-[9px] mt-1 font-body font-semibold uppercase tracking-wider"
+                    className="text-[9px] mt-1 font-data font-semibold uppercase tracking-wider"
                     animate={{
                       color: isActive ? BRAND_PISTE : BRAND_TITANE,
                       opacity: isActive ? 1 : 0.7,

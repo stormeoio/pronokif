@@ -1,5 +1,6 @@
 /**
  * RewardCelebration — Full-screen celebration overlay with confetti + XP animation.
+ * Broadcast Premium: pk-amber/gold XP display, pk-red level-up badge.
  *
  * Triggers on prediction save, mission claim, or level-up.
  * Auto-dismisses after 3s or on tap.
@@ -26,19 +27,19 @@ interface RewardCelebrationProps {
   onDone: () => void;
   /** XP earned (shown animated) */
   xpEarned?: number;
-  /** Optional message (e.g. "Pronostics enregistres !") */
+  /** Optional message (e.g. "Pickstics saved!") */
   message?: string;
   /** Level up notification */
   levelUp?: { from: number; to: number } | null;
 }
 
 const CONFETTI_COLORS = [
+  "#E10600", // pk-red
+  "#00D4FF", // pk-info
+  "#FFB800", // pk-amber
+  "#22C55E", // pk-emerald
   "#FFD700", // gold
-  "#00D4FF", // cyan
-  "#FF6B35", // orange
-  "#22C55E", // green
-  "#A855F7", // purple
-  "#F43F5E", // red
+  "#F4F4F4", // pk-piste
   "#3B82F6", // blue
   "#FBBF24", // amber
 ];
@@ -54,7 +55,7 @@ export default function RewardCelebration({
   const particlesRef = useRef<Particle[]>([]);
   const animFrameRef = useRef<number>(0);
   const [displayXp, setDisplayXp] = useState(0);
-  const [phase, setPhase] = useState<"enter" | "hold" | "exit">("enter");
+  const [, setPhase] = useState<"enter" | "hold" | "exit">("enter");
 
   // Auto-dismiss after 3s
   useEffect(() => {
@@ -82,7 +83,6 @@ export default function RewardCelebration({
     const tick = () => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       setDisplayXp(Math.round(eased * xpEarned));
       if (progress < 1) requestAnimationFrame(tick);
@@ -133,7 +133,7 @@ export default function RewardCelebration({
 
       for (const p of particlesRef.current) {
         p.x += p.vx;
-        p.vy += 0.15; // gravity
+        p.vy += 0.15;
         p.y += p.vy;
         p.rotation += p.rotationSpeed;
         p.opacity = Math.max(0, p.opacity - 0.003);
@@ -177,7 +177,11 @@ export default function RewardCelebration({
           />
 
           {/* Confetti canvas (decorative) */}
-          <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" aria-hidden="true" />
+          <canvas
+            ref={canvasRef}
+            className="absolute inset-0 pointer-events-none"
+            aria-hidden="true"
+          />
 
           {/* Content */}
           <motion.div
@@ -196,7 +200,7 @@ export default function RewardCelebration({
                 transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.3 }}
               >
                 <motion.div
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-amber-600 text-white px-4 py-2 rounded-full font-heading text-sm uppercase tracking-wider shadow-lg shadow-yellow-500/30"
+                  className="inline-flex items-center gap-2 bg-pk-red text-white px-4 py-2 rounded-full font-display text-sm shadow-glow-red"
                   animate={{ y: [0, -6, 0] }}
                   transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                 >
@@ -214,19 +218,17 @@ export default function RewardCelebration({
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ type: "spring", stiffness: 350, damping: 18, delay: 0.2 }}
               >
-                <span className="font-data text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-yellow-600 drop-shadow-lg">
+                <span className="font-data text-5xl font-bold text-pk-amber drop-shadow-lg">
                   +{displayXp}
                 </span>
-                <p className="font-heading text-sm text-yellow-400/80 uppercase tracking-widest mt-1">
-                  XP
-                </p>
+                <p className="font-display text-sm text-pk-amber/80 mt-1">XP</p>
               </motion.div>
             )}
 
             {/* Message */}
             {message && (
               <motion.p
-                className="font-heading text-lg text-white uppercase tracking-wide mt-3 drop-shadow-md"
+                className="font-display text-lg text-white mt-3 drop-shadow-md"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.5, duration: 0.4 }}
@@ -237,12 +239,12 @@ export default function RewardCelebration({
 
             {/* Tap to dismiss hint */}
             <motion.p
-              className="font-body text-xs text-gray-400 mt-6"
+              className="font-data text-[0.5625rem] text-pk-titane mt-6"
               initial={{ opacity: 0 }}
               animate={{ opacity: [0, 1, 0.5, 1] }}
               transition={{ delay: 1, duration: 2, repeat: Infinity }}
             >
-              Touche pour continuer
+              Tap to continue
             </motion.p>
           </motion.div>
         </motion.div>

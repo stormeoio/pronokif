@@ -157,7 +157,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   {
     id: "a3",
     title: "Haptic feedback complet",
-    description: "Retour haptique sur toutes les interactions",
+    description: "Back haptique sur toutes les interactions",
     status: "done",
     priority: "medium",
     category: "ux",
@@ -212,7 +212,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   {
     id: "r2",
     title: "Type safety API responses",
-    description: "Typer toutes les reponses API avec Zod",
+    description: "Type all API responses with Zod",
     status: "todo",
     priority: "high",
     category: "refactor",
@@ -304,7 +304,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   {
     id: "p2",
     title: "Service Worker cache strategie",
-    description: "Stale-while-revalidate pour API",
+    description: "API stale-while-revalidate",
     status: "todo",
     priority: "high",
     category: "perf",
@@ -335,7 +335,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   {
     id: "f2",
     title: "Mode sombre/clair",
-    description: "Theme toggle avec persistence",
+    description: "Theme toggle with persistence",
     status: "todo",
     priority: "low",
     category: "feature",
@@ -344,7 +344,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   },
   {
     id: "f3",
-    title: "Export PDF classement",
+    title: "Leaderboard PDF export",
     description: "Generer un PDF du leaderboard",
     status: "todo",
     priority: "low",

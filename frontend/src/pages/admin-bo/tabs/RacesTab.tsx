@@ -1,26 +1,41 @@
 /**
  * Admin Races operations tab.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  AlertTriangle,
   Bell,
+  CalendarClock,
   CheckCircle2,
+  ClipboardList,
   Edit2,
   Eye,
+  FileText,
+  Filter,
   Flag,
   Loader2,
   Mail,
+  MapPin,
   Plus,
+  Radio,
   RefreshCw,
+  Search,
+  Sparkles,
+  Timer,
   Trash2,
+  Trophy,
   Users,
+  XCircle,
   Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { adminApi } from "../adminApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+
+type RaceContentStatus = "draft" | "ready" | "published";
 
 interface Race {
   id: string;
@@ -47,6 +62,16 @@ interface Race {
   submitted_predictions?: number;
   missing_predictions?: number;
   completion_rate?: number;
+  content_status?: RaceContentStatus;
+  track_profile?: string;
+  story_angle?: string;
+  key_info?: string[];
+  public_recap?: string;
+  admin_summary?: string;
+  cancellation_reason?: string | null;
+  cancellation_impact?: string | null;
+  user_content_idea?: string;
+  editorial?: RaceEditorial;
 }
 
 interface AdminUserSummary {
@@ -72,6 +97,7 @@ interface PredictionEntry {
 
 interface RaceOverview {
   race: Race;
+  editorial?: RaceEditorial;
   total_users: number;
   submitted_count: number;
   complete_count: number;
@@ -80,6 +106,34 @@ interface RaceOverview {
   predictions_close_at?: string | null;
   predictions: PredictionEntry[];
   missing_users: AdminUserSummary[];
+}
+
+interface RaceEditorial {
+  content_status: RaceContentStatus;
+  track_profile: string;
+  story_angle: string;
+  key_info: string[];
+  public_recap: string;
+  admin_summary: string;
+  cancellation_reason?: string | null;
+  cancellation_impact?: string | null;
+  user_content_idea?: string;
+  results_digest?: {
+    quali_pole?: string | null;
+    quali_top3?: string[];
+    race_winner?: string | null;
+    race_top3?: string[];
+    fastest_lap?: string | null;
+    dnf_count?: number;
+    safety_car?: boolean;
+    entered_at?: string | null;
+  } | null;
+  prediction_digest: {
+    submitted: number;
+    missing: number;
+    total_users: number;
+    completion_rate: number;
+  };
 }
 
 const emptyForm = {
@@ -98,6 +152,15 @@ const emptyForm = {
   round_number: 1,
   season: 2026,
   thumbnail_url: "",
+  content_status: "draft" as RaceContentStatus,
+  track_profile: "",
+  story_angle: "",
+  key_info: "",
+  public_recap: "",
+  admin_summary: "",
+  cancellation_reason: "",
+  cancellation_impact: "",
+  user_content_idea: "",
 };
 
 const timezoneOptions = [
@@ -118,7 +181,7 @@ const timezoneOptions = [
 ];
 
 function formatDate(value?: string | null, timeZone?: string | null) {
-  if (!value) return "Non planifie";
+  if (!value) return "Not scheduled";
   return new Date(value.includes("T") ? value : `${value}T12:00:00`).toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "short",
@@ -128,7 +191,7 @@ function formatDate(value?: string | null, timeZone?: string | null) {
 }
 
 function formatDateTime(value?: string | null, timeZone?: string | null) {
-  if (!value) return "Non configuree";
+  if (!value) return "Not configured";
   return new Date(value).toLocaleString("fr-FR", {
     day: "numeric",
     month: "short",
@@ -147,7 +210,7 @@ function formatRaceWindow(race: Race) {
 }
 
 function podium(values: string[]) {
-  return values.length ? values.slice(0, 3).join(" / ") : "Non renseigne";
+  return values.length ? values.slice(0, 3).join(" / ") : "Not provided";
 }
 
 function toDateInput(date: Date) {
@@ -162,10 +225,10 @@ function toTimeInput(date: Date) {
 }
 
 function statusLabel(status?: Race["status"]) {
-  if (status === "in_progress") return "Course en cours";
-  if (status === "finished") return "Course terminée";
-  if (status === "cancelled") return "Annulée";
-  return "À venir";
+  if (status === "in_progress") return "Race in progress";
+  if (status === "finished") return "Race finished";
+  if (status === "cancelled") return "Cancelled";
+  return "Upcoming";
 }
 
 function statusClass(status?: Race["status"]) {
@@ -175,11 +238,42 @@ function statusClass(status?: Race["status"]) {
   return "text-cyan-300 bg-cyan-500/15";
 }
 
+function contentStatusLabel(status?: RaceEditorial["content_status"]) {
+  if (status === "published") return "Published";
+  if (status === "ready") return "Ready";
+  return "Draft";
+}
+
+function contentStatusClass(status?: RaceEditorial["content_status"]) {
+  if (status === "published") return "bg-green-500/15 text-green-300";
+  if (status === "ready") return "bg-cyan-500/15 text-cyan-300";
+  return "bg-yellow-500/15 text-yellow-300";
+}
+
+function splitLines(value: string) {
+  return value
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function joinedLines(values?: string[]) {
+  return (values || []).join("\n");
+}
+
+function driverList(values?: string[]) {
+  return values?.length ? values.join(" / ") : "TBC";
+}
+
 export default function RacesTab() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Race | null>(null);
   const [selectedRaceId, setSelectedRaceId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "upcoming" | "finished" | "cancelled" | "in_progress"
+  >("all");
+  const [search, setSearch] = useState("");
   const [form, setForm] = useState(emptyForm);
 
   const { data: races = [], isLoading } = useQuery({
@@ -187,11 +281,52 @@ export default function RacesTab() {
     queryFn: () => adminApi.races.list(),
   });
 
+  const raceList = useMemo(() => (Array.isArray(races) ? races : []), [races]);
+
   useEffect(() => {
-    if (!selectedRaceId && races.length > 0) {
-      setSelectedRaceId(races[0].id);
+    if (!selectedRaceId && raceList.length > 0) {
+      setSelectedRaceId(raceList[0].id);
     }
-  }, [races, selectedRaceId]);
+  }, [raceList, selectedRaceId]);
+
+  const seasonStats = useMemo(() => {
+    const total = raceList.length;
+    const cancelled = raceList.filter((race: Race) => race.is_cancelled).length;
+    const finished = raceList.filter((race: Race) => race.status === "finished").length;
+    const live = raceList.filter((race: Race) => race.status === "in_progress").length;
+    const upcoming = Math.max(total - cancelled - finished - live, 0);
+    const coverageValues = raceList
+      .filter((race: Race) => !race.is_cancelled)
+      .map((race: Race) => race.completion_rate ?? 0);
+    const averageCoverage = coverageValues.length
+      ? Math.round(
+          coverageValues.reduce((sum: number, value: number) => sum + value, 0) /
+            coverageValues.length,
+        )
+      : 0;
+    const nextRace = raceList.find(
+      (race: Race) => !race.is_cancelled && race.status !== "finished",
+    );
+
+    return { total, cancelled, finished, live, upcoming, averageCoverage, nextRace };
+  }, [raceList]);
+
+  const filteredRaces = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    return raceList.filter((race: Race) => {
+      const matchesFilter =
+        statusFilter === "all" ||
+        (statusFilter === "cancelled" && race.is_cancelled) ||
+        (!race.is_cancelled && race.status === statusFilter);
+      const matchesSearch =
+        !normalizedSearch ||
+        [race.name, race.circuit, race.country]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(normalizedSearch));
+
+      return matchesFilter && matchesSearch;
+    });
+  }, [raceList, search, statusFilter]);
 
   const overviewQuery = useQuery<RaceOverview>({
     queryKey: ["admin-bo", "races", selectedRaceId, "predictions-overview"],
@@ -203,23 +338,21 @@ export default function RacesTab() {
   const seedMutation = useMutation({
     mutationFn: () => adminApi.races.seed2026(),
     onSuccess: (data) => {
-      toast.success(`${data.inserted} course(s) ajoutee(s), ${data.existing} deja presentes`);
+      toast.success(`${data.inserted} race(s) added, ${data.existing} already present`);
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "races"] });
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "stats"] });
     },
-    onError: () => toast.error("Seed calendrier impossible"),
+    onError: () => toast.error("Unable to seed calendar"),
   });
 
   const reminderMutation = useMutation({
     mutationFn: () =>
       adminApi.races.sendReminders(selectedRaceId!, { send_email: true, send_notification: true }),
     onSuccess: (data) => {
-      toast.success(
-        `${data.targeted} joueur(s) relance(s), ${data.emails_sent} email(s) envoye(s)`,
-      );
+      toast.success(`${data.targeted} player(s) reminded, ${data.emails_sent} email(s) sent`);
       overviewQuery.refetch();
     },
-    onError: () => toast.error("Impossible d'envoyer les rappels"),
+    onError: () => toast.error("Unable to send reminders"),
   });
 
   const resetForm = () => {
@@ -242,7 +375,7 @@ export default function RacesTab() {
     setEditing(null);
     setForm({
       ...emptyForm,
-      name: `Course test ${statusLabel(phase).toLowerCase()}`,
+      name: `Race test ${statusLabel(phase).toLowerCase()}`,
       circuit: "Circuit de test",
       country: "Test",
       date: toDateInput(start),
@@ -270,19 +403,27 @@ export default function RacesTab() {
         timezone: form.timezone || "Europe/Paris",
         race_duration_minutes: Number(form.race_duration_minutes),
         thumbnail_url: form.thumbnail_url || undefined,
+        track_profile: form.track_profile || undefined,
+        story_angle: form.story_angle || undefined,
+        key_info: splitLines(form.key_info),
+        public_recap: form.public_recap || undefined,
+        admin_summary: form.admin_summary || undefined,
+        cancellation_reason: form.cancellation_reason || undefined,
+        cancellation_impact: form.cancellation_impact || undefined,
+        user_content_idea: form.user_content_idea || undefined,
       };
       if (editing) {
         await adminApi.races.update(editing.id, payload);
-        toast.success("Course mise à jour");
+        toast.success("Race updated");
       } else {
         await adminApi.races.create(payload);
-        toast.success("Course créée");
+        toast.success("Race created");
       }
       setShowForm(false);
       resetForm();
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "races"] });
     } catch {
-      toast.error("Erreur");
+      toast.error("Error");
     }
   };
 
@@ -304,6 +445,15 @@ export default function RacesTab() {
       round_number: race.round_number || 1,
       season: race.season,
       thumbnail_url: race.thumbnail_url || "",
+      content_status: race.content_status || race.editorial?.content_status || "draft",
+      track_profile: race.track_profile || race.editorial?.track_profile || "",
+      story_angle: race.story_angle || race.editorial?.story_angle || "",
+      key_info: joinedLines(race.key_info || race.editorial?.key_info),
+      public_recap: race.public_recap || race.editorial?.public_recap || "",
+      admin_summary: race.admin_summary || race.editorial?.admin_summary || "",
+      cancellation_reason: race.cancellation_reason || race.editorial?.cancellation_reason || "",
+      cancellation_impact: race.cancellation_impact || race.editorial?.cancellation_impact || "",
+      user_content_idea: race.user_content_idea || race.editorial?.user_content_idea || "",
     });
     setShowForm(true);
   };
@@ -312,24 +462,25 @@ export default function RacesTab() {
     if (!confirm(`Supprimer la course "${name}" ?`)) return;
     try {
       await adminApi.races.delete(id);
-      toast.success("Course supprimée");
+      toast.success("Race deleted");
       if (selectedRaceId === id) setSelectedRaceId(null);
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "races"] });
     } catch {
-      toast.error("Erreur");
+      toast.error("Error");
     }
   };
 
-  const selectedRace = races.find((race: Race) => race.id === selectedRaceId);
+  const selectedRace = raceList.find((race: Race) => race.id === selectedRaceId);
   const overview = overviewQuery.data;
+  const editorial = overview?.editorial || selectedRace?.editorial;
 
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
-          <h2 className="font-heading text-2xl text-white uppercase tracking-tight">Courses</h2>
+          <h2 className="font-heading text-2xl text-white uppercase tracking-tight">Races</h2>
           <p className="font-body text-xs text-gray-500">
-            Calendrier éditable, suivi des pronostics et relances joueurs.
+            Editorial calendar, prediction tracking, and player reminders.
           </p>
         </div>
         <div className="flex gap-2">
@@ -339,7 +490,7 @@ export default function RacesTab() {
             className="text-cyan-400 hover:text-cyan-300 text-xs"
             size="sm"
           >
-            Test à venir
+            Upcoming test
           </Button>
           <Button
             onClick={() => fillTestRace("in_progress")}
@@ -355,7 +506,7 @@ export default function RacesTab() {
             className="text-green-300 hover:text-green-200 text-xs"
             size="sm"
           >
-            Test fini
+            Finished test
           </Button>
           <Button
             onClick={() => seedMutation.mutate()}
@@ -380,8 +531,87 @@ export default function RacesTab() {
             size="sm"
           >
             <Plus className="w-4 h-4 mr-1" />
-            Nouvelle course
+            New race
           </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 mb-4 lg:grid-cols-5">
+        <div className="card-arcade border-l-4 border-pk-red p-3">
+          <Trophy className="mb-2 h-4 w-4 text-pk-red" />
+          <p className="font-data text-2xl text-white">{seasonStats.total}</p>
+          <p className="font-body text-[10px] uppercase text-gray-500">Races 2026</p>
+        </div>
+        <div className="card-arcade border-l-4 border-green-500 p-3">
+          <CheckCircle2 className="mb-2 h-4 w-4 text-green-400" />
+          <p className="font-data text-2xl text-white">{seasonStats.finished}</p>
+          <p className="font-body text-[10px] uppercase text-gray-500">Expected recaps</p>
+        </div>
+        <div className="card-arcade border-l-4 border-cyan-500 p-3">
+          <CalendarClock className="mb-2 h-4 w-4 text-cyan-400" />
+          <p className="font-data text-2xl text-white">{seasonStats.upcoming}</p>
+          <p className="font-body text-[10px] uppercase text-gray-500">Upcoming</p>
+        </div>
+        <div className="card-arcade border-l-4 border-red-500 p-3">
+          <XCircle className="mb-2 h-4 w-4 text-red-400" />
+          <p className="font-data text-2xl text-white">{seasonStats.cancelled}</p>
+          <p className="font-body text-[10px] uppercase text-gray-500">Cancelled</p>
+        </div>
+        <div className="card-arcade border-l-4 border-orange-500 p-3">
+          <Users className="mb-2 h-4 w-4 text-orange-400" />
+          <p className="font-data text-2xl text-white">{seasonStats.averageCoverage}%</p>
+          <p className="font-body text-[10px] uppercase text-gray-500">Avg. coverage</p>
+        </div>
+      </div>
+
+      <div className="card-arcade mb-4 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-red">
+              Championship summary
+            </p>
+            <p className="font-body text-sm text-gray-300">
+              {seasonStats.nextRace
+                ? `Next event : ${seasonStats.nextRace.name}, ${formatRaceWindow(seasonStats.nextRace)}.`
+                : "All active weekends have been handled."}
+            </p>
+          </div>
+          <div className="flex min-w-[260px] items-center gap-2">
+            <Search className="h-4 w-4 text-gray-500" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Filter by GP, circuit, country..."
+              className="border-gray-700 bg-gray-900 text-white"
+            />
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[
+            ["all", "All"],
+            ["upcoming", "Upcoming"],
+            ["in_progress", "Live"],
+            ["finished", "Finished"],
+            ["cancelled", "Cancelled"],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() =>
+                setStatusFilter(
+                  key as "all" | "upcoming" | "finished" | "cancelled" | "in_progress",
+                )
+              }
+              className={`min-h-9 rounded-md border px-3 font-body text-xs transition ${
+                statusFilter === key
+                  ? "border-pk-red bg-pk-red/15 text-white"
+                  : "border-white/10 text-gray-500 hover:border-white/20 hover:text-white"
+              }`}
+            >
+              <Filter className="mr-1 inline h-3 w-3" />
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -397,7 +627,7 @@ export default function RacesTab() {
             <Input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Nom"
+              placeholder="Name"
               className="bg-gray-900 border-gray-700 text-white"
               required
             />
@@ -410,7 +640,7 @@ export default function RacesTab() {
             <Input
               value={form.country}
               onChange={(e) => setForm({ ...form, country: e.target.value })}
-              placeholder="Pays"
+              placeholder="Country"
               className="bg-gray-900 border-gray-700 text-white"
             />
             <Input
@@ -429,20 +659,20 @@ export default function RacesTab() {
             <Input
               value={form.quali_time}
               onChange={(e) => setForm({ ...form, quali_time: e.target.value })}
-              placeholder="Heure qualif"
+              placeholder="Qualifying time"
               className="bg-gray-900 border-gray-700 text-white"
             />
             <Input
               value={form.race_time}
               onChange={(e) => setForm({ ...form, race_time: e.target.value })}
-              placeholder="Heure course"
+              placeholder="Race time"
               className="bg-gray-900 border-gray-700 text-white"
             />
             <select
               value={form.timezone}
               onChange={(e) => setForm({ ...form, timezone: e.target.value })}
               className="h-10 rounded-md border border-gray-700 bg-gray-900 px-3 text-sm text-white"
-              aria-label="Fuseau horaire du circuit"
+              aria-label="Circuit timezone"
             >
               {timezoneOptions.map((timezone) => (
                 <option key={timezone} value={timezone}>
@@ -456,7 +686,7 @@ export default function RacesTab() {
               max={1440}
               value={form.race_duration_minutes}
               onChange={(e) => setForm({ ...form, race_duration_minutes: Number(e.target.value) })}
-              placeholder="Durée course (min)"
+              placeholder="Race duration (min)"
               className="bg-gray-900 border-gray-700 text-white"
             />
             <Input
@@ -470,13 +700,13 @@ export default function RacesTab() {
               type="number"
               value={form.season}
               onChange={(e) => setForm({ ...form, season: Number(e.target.value) })}
-              placeholder="Saison"
+              placeholder="Season"
               className="bg-gray-900 border-gray-700 text-white"
             />
             <Input
               value={form.thumbnail_url}
               onChange={(e) => setForm({ ...form, thumbnail_url: e.target.value })}
-              placeholder="Vignette"
+              placeholder="Thumbnail"
               className="bg-gray-900 border-gray-700 text-white md:col-span-2"
             />
           </div>
@@ -487,7 +717,7 @@ export default function RacesTab() {
               onChange={(e) => setForm({ ...form, is_sprint: e.target.checked })}
               className="rounded border-gray-700"
             />
-            Week-end Sprint
+            Sprint weekend
           </label>
           <label className="flex items-center gap-2 text-sm text-gray-400">
             <input
@@ -496,7 +726,7 @@ export default function RacesTab() {
               onChange={(e) => setForm({ ...form, is_test_race: e.target.checked })}
               className="rounded border-gray-700"
             />
-            Course de test
+            Test race
           </label>
           <label className="flex items-center gap-2 text-sm text-gray-400">
             <input
@@ -505,11 +735,90 @@ export default function RacesTab() {
               onChange={(e) => setForm({ ...form, is_cancelled: e.target.checked })}
               className="rounded border-gray-700"
             />
-            Course annulée
+            Race cancelled
           </label>
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+            <label className="grid gap-1 text-xs text-gray-500">
+              Content status
+              <select
+                value={form.content_status}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    content_status: e.target.value as "draft" | "ready" | "published",
+                  })
+                }
+                className="h-10 rounded-md border border-gray-700 bg-gray-900 px-3 text-sm text-white"
+              >
+                <option value="draft">Draft</option>
+                <option value="ready">Ready to publish</option>
+                <option value="published">Published</option>
+              </select>
+            </label>
+            <Textarea
+              value={form.story_angle}
+              onChange={(e) => setForm({ ...form, story_angle: e.target.value })}
+              placeholder="Weekend editorial angle"
+              rows={3}
+              className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
+            />
+            <Textarea
+              value={form.track_profile}
+              onChange={(e) => setForm({ ...form, track_profile: e.target.value })}
+              placeholder="Track profile"
+              rows={3}
+              className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
+            />
+            <Textarea
+              value={form.key_info}
+              onChange={(e) => setForm({ ...form, key_info: e.target.value })}
+              placeholder="Key info, one per line"
+              rows={4}
+              className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
+            />
+            <Textarea
+              value={form.public_recap}
+              onChange={(e) => setForm({ ...form, public_recap: e.target.value })}
+              placeholder="Public recap / previous race summary"
+              rows={4}
+              className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
+            />
+            <Textarea
+              value={form.admin_summary}
+              onChange={(e) => setForm({ ...form, admin_summary: e.target.value })}
+              placeholder="Admin summary"
+              rows={4}
+              className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
+            />
+            {form.is_cancelled && (
+              <>
+                <Textarea
+                  value={form.cancellation_reason}
+                  onChange={(e) => setForm({ ...form, cancellation_reason: e.target.value })}
+                  placeholder="Reason / official cancellation status"
+                  rows={3}
+                  className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
+                />
+                <Textarea
+                  value={form.cancellation_impact}
+                  onChange={(e) => setForm({ ...form, cancellation_impact: e.target.value })}
+                  placeholder="User impact: scoring, reminders, replacement content"
+                  rows={3}
+                  className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
+                />
+                <Textarea
+                  value={form.user_content_idea}
+                  onChange={(e) => setForm({ ...form, user_content_idea: e.target.value })}
+                  placeholder="Content idea to keep players engaged"
+                  rows={3}
+                  className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
+                />
+              </>
+            )}
+          </div>
           <div className="flex gap-2">
             <Button type="submit" size="sm" className="btn-racing text-xs">
-              {editing ? "Mettre à jour" : "Créer"}
+              {editing ? "Update" : "Create"}
             </Button>
             <Button
               type="button"
@@ -521,7 +830,7 @@ export default function RacesTab() {
               }}
               className="text-gray-400 text-xs"
             >
-              Annuler
+              Cancel
             </Button>
           </div>
         </form>
@@ -533,14 +842,19 @@ export default function RacesTab() {
             <div className="flex justify-center py-12">
               <Loader2 className="w-6 h-6 text-orange-500 animate-spin" />
             </div>
-          ) : races.length === 0 ? (
+          ) : filteredRaces.length === 0 ? (
             <div className="card-arcade p-8 text-center">
               <Flag className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <p className="font-body text-gray-500">Aucune course. Lancez le seed 2026.</p>
+              <p className="font-body text-gray-500">
+                {raceList.length === 0
+                  ? "No race yet. Run the 2026 seed."
+                  : "No race matches this filter."}
+              </p>
             </div>
           ) : (
-            races.map((race: Race) => {
+            filteredRaces.map((race: Race) => {
               const isSelected = race.id === selectedRaceId;
+              const raceEditorial = race.editorial;
               return (
                 <div
                   key={race.id}
@@ -583,17 +897,26 @@ export default function RacesTab() {
                               Test
                             </span>
                           )}
+                          {raceEditorial && (
+                            <span
+                              className={`text-[10px] px-1 rounded ${contentStatusClass(
+                                raceEditorial.content_status,
+                              )}`}
+                            >
+                              {contentStatusLabel(raceEditorial.content_status)}
+                            </span>
+                          )}
                           <span className={`text-[10px] px-1 rounded ${statusClass(race.status)}`}>
                             {statusLabel(race.status)}
                           </span>
                           {race.is_cancelled && (
                             <span className="text-[10px] text-red-300 bg-red-500/15 px-1 rounded">
-                              Annulée
+                              Cancelled
                             </span>
                           )}
                           {race.has_results && (
                             <span className="text-[10px] text-green-400 bg-green-500/20 px-1 rounded">
-                              Résultats
+                              Results
                             </span>
                           )}
                         </p>
@@ -601,9 +924,14 @@ export default function RacesTab() {
                           {race.circuit && `${race.circuit} • `}
                           {formatRaceWindow(race)}
                         </p>
+                        {raceEditorial?.story_angle && (
+                          <p className="mt-1 line-clamp-2 font-body text-[11px] text-gray-500">
+                            {raceEditorial.story_angle}
+                          </p>
+                        )}
                         <div className="mt-2 flex items-center gap-2 text-[10px] font-data text-gray-500">
                           {race.is_cancelled ? (
-                            <span className="text-red-300">relances désactivées</span>
+                            <span className="text-red-300">reminders disabled</span>
                           ) : (
                             <>
                               <span className="text-cyan-400">
@@ -614,7 +942,7 @@ export default function RacesTab() {
                                 {(race.submitted_predictions ?? 0) +
                                   (race.missing_predictions ?? 0)}
                               </span>
-                              <span>pronos</span>
+                              <span>picks</span>
                               <span className="text-orange-400">{race.completion_rate ?? 0}%</span>
                             </>
                           )}
@@ -625,21 +953,21 @@ export default function RacesTab() {
                       <button
                         onClick={() => setSelectedRaceId(race.id)}
                         className="p-2 text-gray-400 hover:text-white rounded"
-                        title="Voir les pronostics"
+                        title="View predictions"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleEdit(race)}
                         className="p-2 text-gray-400 hover:text-cyan-400 rounded"
-                        title="Modifier"
+                        title="Edit"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(race.id, race.name)}
                         className="p-2 text-gray-400 hover:text-red-400 rounded"
-                        title="Supprimer"
+                        title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -654,7 +982,7 @@ export default function RacesTab() {
         <section className="card-arcade p-4 min-h-[520px]">
           {!selectedRace ? (
             <div className="h-full flex items-center justify-center text-center text-gray-500 font-body">
-              Sélectionnez une course.
+              Select a race.
             </div>
           ) : overviewQuery.isLoading ? (
             <div className="h-full flex items-center justify-center">
@@ -666,12 +994,12 @@ export default function RacesTab() {
                 <div>
                   <p className="font-data text-[10px] uppercase tracking-[0.16em] text-orange-400">
                     Round {selectedRace.round_number}
-                    {selectedRace.is_cancelled ? " • annulée" : ""}
+                    {selectedRace.is_cancelled ? " • cancelled" : ""}
                     {selectedRace.is_test_race ? " • test" : ""}
                   </p>
                   <h3 className="font-heading text-xl uppercase text-white">{selectedRace.name}</h3>
                   <p className="font-body text-xs text-gray-500">
-                    {selectedRace.circuit} • clôture{" "}
+                    {selectedRace.circuit} • closes{" "}
                     {formatDateTime(overview?.predictions_close_at, selectedRace.timezone)}
                   </p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -688,7 +1016,7 @@ export default function RacesTab() {
                     </span>
                     {selectedRace.race_end_at && (
                       <span className="font-data text-[10px] uppercase px-2 py-1 rounded bg-white/5 text-gray-400">
-                        fin {formatDateTime(selectedRace.race_end_at, selectedRace.timezone)}
+                        ends {formatDateTime(selectedRace.race_end_at, selectedRace.timezone)}
                       </span>
                     )}
                   </div>
@@ -708,35 +1036,211 @@ export default function RacesTab() {
                   ) : (
                     <Mail className="w-4 h-4 mr-1" />
                   )}
-                  Relancer
+                  Send reminder
                 </Button>
               </div>
+
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+                <div className="overflow-hidden rounded-md border border-white/10 bg-black/30">
+                  {selectedRace.thumbnail_url ? (
+                    <div
+                      className="min-h-[160px] bg-cover bg-center"
+                      style={{
+                        backgroundImage: `linear-gradient(90deg, rgba(11,13,18,.92), rgba(11,13,18,.34)), url(${selectedRace.thumbnail_url})`,
+                      }}
+                    />
+                  ) : (
+                    <div className="flex min-h-[160px] items-center justify-center bg-pk-red/10">
+                      <Flag className="h-10 w-10 text-pk-red" />
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                      <span
+                        className={`rounded px-2 py-1 font-data text-[10px] uppercase ${contentStatusClass(
+                          editorial?.content_status,
+                        )}`}
+                      >
+                        Content {contentStatusLabel(editorial?.content_status)}
+                      </span>
+                      {selectedRace.is_sprint && (
+                        <span className="rounded bg-purple-500/15 px-2 py-1 font-data text-[10px] uppercase text-purple-300">
+                          Sprint
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="mb-2 font-heading text-sm uppercase text-white">
+                      Editorial angle
+                    </h4>
+                    <p className="font-body text-sm leading-6 text-gray-300">
+                      {editorial?.story_angle || "Editorial angle to define for this race."}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid gap-3">
+                  <div className="rounded-md border border-white/10 bg-black/30 p-3">
+                    <MapPin className="mb-2 h-4 w-4 text-cyan-400" />
+                    <p className="font-body text-sm text-white">
+                      {selectedRace.circuit || "Circuit"}
+                    </p>
+                    <p className="font-body text-xs text-gray-500">
+                      {selectedRace.country || "Country"}
+                    </p>
+                  </div>
+                  <div className="rounded-md border border-white/10 bg-black/30 p-3">
+                    <Timer className="mb-2 h-4 w-4 text-orange-400" />
+                    <p className="font-body text-sm text-white">
+                      Race {formatDateTime(selectedRace.race_start_at, selectedRace.timezone)}
+                    </p>
+                    <p className="font-body text-xs text-gray-500">
+                      Qualifying {formatDate(selectedRace.quali_date, selectedRace.timezone)}{" "}
+                      {selectedRace.quali_time || ""}
+                    </p>
+                  </div>
+                  <div className="rounded-md border border-white/10 bg-black/30 p-3">
+                    <Radio className="mb-2 h-4 w-4 text-green-400" />
+                    <p className="font-body text-sm text-white">
+                      {editorial?.track_profile || "Track profile to document."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-3 lg:grid-cols-3">
+                <div className="rounded-md border border-white/10 bg-black/30 p-3 lg:col-span-2">
+                  <div className="mb-2 flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-pk-red" />
+                    <h4 className="font-heading text-sm uppercase text-white">
+                      Public recap / summary
+                    </h4>
+                  </div>
+                  <p className="font-body text-sm leading-6 text-gray-300">
+                    {editorial?.public_recap || "No public recap defined."}
+                  </p>
+                </div>
+                <div className="rounded-md border border-white/10 bg-black/30 p-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <ClipboardList className="h-4 w-4 text-cyan-400" />
+                    <h4 className="font-heading text-sm uppercase text-white">Key info</h4>
+                  </div>
+                  <ul className="space-y-1 font-body text-xs text-gray-400">
+                    {(editorial?.key_info?.length ? editorial.key_info : ["Info to complete"]).map(
+                      (info: string) => (
+                        <li key={info} className="flex gap-2">
+                          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-pk-red" />
+                          <span>{info}</span>
+                        </li>
+                      ),
+                    )}
+                  </ul>
+                </div>
+              </div>
+
+              {selectedRace.is_cancelled && (
+                <div className="rounded-md border border-red-500/25 bg-red-500/10 p-4">
+                  <div className="mb-2 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-red-300" />
+                    <h4 className="font-heading text-sm uppercase text-white">
+                      Race cancelled : replacement content
+                    </h4>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <p className="font-body text-sm leading-6 text-red-100/90">
+                      <span className="block font-data text-[10px] uppercase text-red-300">
+                        Reason
+                      </span>
+                      {editorial?.cancellation_reason || "To specify"}
+                    </p>
+                    <p className="font-body text-sm leading-6 text-red-100/90">
+                      <span className="block font-data text-[10px] uppercase text-red-300">
+                        Impact
+                      </span>
+                      {editorial?.cancellation_impact || "No scoring for this round."}
+                    </p>
+                    <p className="font-body text-sm leading-6 text-red-100/90">
+                      <span className="block font-data text-[10px] uppercase text-red-300">
+                        To publish
+                      </span>
+                      {editorial?.user_content_idea || "Community poll or quiz."}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {editorial?.results_digest && (
+                <div className="rounded-md border border-green-500/20 bg-green-500/10 p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-green-300" />
+                    <h4 className="font-heading text-sm uppercase text-white">
+                      Results and story points
+                    </h4>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-4">
+                    <div>
+                      <p className="font-data text-[10px] uppercase text-green-300">Pole</p>
+                      <p className="font-body text-sm text-white">
+                        {editorial.results_digest.quali_pole || "TBC"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-data text-[10px] uppercase text-green-300">Winner</p>
+                      <p className="font-body text-sm text-white">
+                        {editorial.results_digest.race_winner || "TBC"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-data text-[10px] uppercase text-green-300">Podium</p>
+                      <p className="font-body text-sm text-white">
+                        {driverList(editorial.results_digest.race_top3)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-data text-[10px] uppercase text-green-300">Story bonus</p>
+                      <p className="font-body text-sm text-white">
+                        {editorial.results_digest.safety_car ? "Safety car" : "Clean race"} •{" "}
+                        {editorial.results_digest.dnf_count ?? 0} DNF
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-black/30 border border-white/10 rounded-md p-3">
                   <Users className="w-4 h-4 text-cyan-400 mb-2" />
                   <p className="font-data text-xl text-white">{overview?.submitted_count ?? 0}</p>
-                  <p className="font-body text-[10px] text-gray-500">Soumis</p>
+                  <p className="font-body text-[10px] text-gray-500">Submitted</p>
                 </div>
                 <div className="bg-black/30 border border-white/10 rounded-md p-3">
                   <Bell className="w-4 h-4 text-orange-400 mb-2" />
                   <p className="font-data text-xl text-white">{overview?.missing_count ?? 0}</p>
-                  <p className="font-body text-[10px] text-gray-500">À relancer</p>
+                  <p className="font-body text-[10px] text-gray-500">To remind</p>
                 </div>
                 <div className="bg-black/30 border border-white/10 rounded-md p-3">
                   <CheckCircle2 className="w-4 h-4 text-green-400 mb-2" />
                   <p className="font-data text-xl text-white">{overview?.completion_rate ?? 0}%</p>
-                  <p className="font-body text-[10px] text-gray-500">Couverture</p>
+                  <p className="font-body text-[10px] text-gray-500">Coverage</p>
                 </div>
+              </div>
+
+              <div className="rounded-md border border-white/10 bg-black/30 p-3">
+                <div className="mb-2 flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4 text-orange-400" />
+                  <h4 className="font-heading text-sm uppercase text-white">Admin summary</h4>
+                </div>
+                <p className="font-body text-sm leading-6 text-gray-300">
+                  {editorial?.admin_summary || "Operational summary to complete."}
+                </p>
               </div>
 
               <div>
                 <h4 className="font-heading text-sm uppercase text-white mb-2">
-                  Joueurs sans prono
+                  Players without picks
                 </h4>
                 {selectedRace.is_cancelled ? (
                   <p className="font-body text-sm text-red-300">
-                    Course annulée : relances désactivées pour ce week-end.
+                    Race cancelled : reminders disabled for this weekend.
                   </p>
                 ) : overview?.missing_users.length ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -746,7 +1250,7 @@ export default function RacesTab() {
                         className="border border-white/10 rounded-md p-2 bg-black/20"
                       >
                         <p className="font-body text-sm text-white truncate">
-                          {user.username || "Pseudo non défini"}
+                          {user.username || "Username not set"}
                         </p>
                         <p className="font-body text-[11px] text-gray-500 truncate">{user.email}</p>
                       </div>
@@ -754,15 +1258,13 @@ export default function RacesTab() {
                   </div>
                 ) : (
                   <p className="font-body text-sm text-green-400">
-                    Tous les joueurs actifs ont pronostiqué.
+                    All active players have submitted picks.
                   </p>
                 )}
               </div>
 
               <div>
-                <h4 className="font-heading text-sm uppercase text-white mb-2">
-                  Pronostics soumis
-                </h4>
+                <h4 className="font-heading text-sm uppercase text-white mb-2">Submitted picks</h4>
                 {overview?.predictions.length ? (
                   <div className="space-y-2">
                     {overview.predictions.map((prediction) => (
@@ -776,7 +1278,7 @@ export default function RacesTab() {
                               {prediction.user.username || prediction.user.email}
                             </p>
                             <p className="font-body text-[11px] text-gray-500">
-                              {prediction.is_complete ? "Complet" : "Partiel"} • maj{" "}
+                              {prediction.is_complete ? "Complete" : "Partial"} • maj{" "}
                               {formatDateTime(prediction.updated_at)}
                             </p>
                           </div>
@@ -787,7 +1289,7 @@ export default function RacesTab() {
                                 : "bg-yellow-500/15 text-yellow-400"
                             }`}
                           >
-                            {prediction.is_complete ? "OK" : "Partiel"}
+                            {prediction.is_complete ? "OK" : "Partial"}
                           </span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
@@ -796,21 +1298,21 @@ export default function RacesTab() {
                             <span className="text-white">{prediction.quali_pole || "—"}</span>
                           </p>
                           <p className="font-body text-gray-400">
-                            Vainqueur :{" "}
+                            Winner :{" "}
                             <span className="text-white">{prediction.race_winner || "—"}</span>
                           </p>
                           <p className="font-body text-gray-400 md:col-span-2">
-                            Top 3 qualif :{" "}
+                            Top 3 qualifying :{" "}
                             <span className="text-white">{podium(prediction.quali_top10)}</span>
                           </p>
                           <p className="font-body text-gray-400 md:col-span-2">
-                            Top 3 course :{" "}
+                            Top 3 race :{" "}
                             <span className="text-white">{podium(prediction.race_top10)}</span>
                           </p>
                           {selectedRace.is_sprint && (
                             <>
                               <p className="font-body text-gray-400 md:col-span-2">
-                                Top 3 sprint qualif :{" "}
+                                Top 3 sprint qualifying :{" "}
                                 <span className="text-white">
                                   {podium(prediction.sprint_quali_top10)}
                                 </span>
@@ -829,7 +1331,7 @@ export default function RacesTab() {
                   </div>
                 ) : (
                   <p className="font-body text-sm text-gray-500">
-                    Aucun pronostic soumis pour cette course.
+                    No picks submitted for this race.
                   </p>
                 )}
               </div>

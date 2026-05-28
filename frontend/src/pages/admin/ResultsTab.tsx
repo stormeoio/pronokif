@@ -53,7 +53,7 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
     handleDriverSelect,
     isDriverSelected,
     getDriverPosition,
-    isComplete,
+    isCompletee,
     handleSubmit,
     handleSyncOpenF1,
   } = useResultsState({ setRaces });
@@ -120,7 +120,7 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
       },
       {
         key: "race_winner",
-        label: "Vainqueur",
+        label: "Winner",
         icon: Trophy,
         done: !!raceWinner,
         count: raceWinner ? 1 : 0,
@@ -151,7 +151,7 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
         <div className="bg-gradient-to-r from-cyan-600/20 to-transparent px-4 py-3 border-b border-gray-700/50">
           <h3 className="font-heading text-sm uppercase text-cyan-400 flex items-center gap-2">
             <Calendar className="w-4 h-4" />
-            Selectionner une course
+            Select a race
           </h3>
         </div>
         <div className="p-3">
@@ -246,7 +246,10 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
                         ? "border-green-500/50 bg-green-500/10"
                         : "border-gray-700 bg-gray-900/50"
                   }`}
-                  variants={{ hidden: { opacity: 0, scale: 0.8 }, visible: { opacity: 1, scale: 1 } }}
+                  variants={{
+                    hidden: { opacity: 0, scale: 0.8 },
+                    visible: { opacity: 1, scale: 1 },
+                  }}
                   whileTap={{ scale: 0.85 }}
                 >
                   <Icon
@@ -303,22 +306,20 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
             <Card className="game-card mb-4">
               <CardContent className="p-4">
                 <p className="font-body text-gray-300">
-                  {selectionMode === "quali_pole" && "Selectionne le pilote en pole position"}
+                  {selectionMode === "quali_pole" && "Select the pole sitter"}
                   {selectionMode === "quali_top10" &&
                     `Selectionne le Top 10 des qualifications (${qualiTop10.length}/10)`}
                   {selectionMode === "sprint_quali_pole" &&
-                    "Selectionne le pilote en pole position des qualifs sprint"}
+                    "Select the pole sitter des qualifs sprint"}
                   {selectionMode === "sprint_quali_top10" &&
                     `Selectionne le Top 10 des qualifs sprint (${sprintQualiTop10.length}/10)`}
-                  {selectionMode === "sprint_race_winner" &&
-                    "Selectionne le vainqueur de la course sprint"}
+                  {selectionMode === "sprint_race_winner" && "Select the Sprint Race winner"}
                   {selectionMode === "sprint_race_top10" &&
-                    `Selectionne le Top 10 de la course sprint (${sprintRaceTop10.length}/10)`}
-                  {selectionMode === "race_winner" && "Selectionne le vainqueur de la course"}
+                    `Select the Sprint Race Top 10 (${sprintRaceTop10.length}/10)`}
+                  {selectionMode === "race_winner" && "Select the race winner"}
                   {selectionMode === "race_top10" &&
-                    `Selectionne le Top 10 de la course (${raceTop10.length}/10)`}
-                  {selectionMode === "fastest_lap" &&
-                    "Selectionne le pilote qui a fait le meilleur tour"}
+                    `Select the race Top 10 (${raceTop10.length}/10)`}
+                  {selectionMode === "fastest_lap" && "Select the driver who set the fastest lap"}
                   {selectionMode === "first_corner" && "Selectionne le leader au premier virage"}
                 </p>
               </CardContent>
@@ -341,21 +342,21 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
           <div className="max-w-2xl mx-auto">
             <Button
               onClick={handleSubmit}
-              disabled={!isComplete || saving}
+              disabled={!isCompletee || saving}
               className={`w-full h-14 font-heading uppercase tracking-wider transition-all ${
-                isComplete ? "btn-gaming" : "bg-gray-800 text-gray-500 border-2 border-gray-700"
+                isCompletee ? "btn-gaming" : "bg-gray-800 text-gray-500 border-2 border-gray-700"
               }`}
               data-testid="submit-results-btn"
             >
               {saving ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Enregistrement...
+                  Saving...
                 </>
               ) : (
                 <>
                   <Save className="w-5 h-5 mr-2" />
-                  Enregistrer les resultats
+                  Save results
                 </>
               )}
             </Button>

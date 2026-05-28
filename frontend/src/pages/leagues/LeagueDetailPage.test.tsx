@@ -35,7 +35,7 @@ vi.mock("@/lib/api", () => {
         list: () => unwrap(mockApiClient.get("/avatars")),
       },
     },
-    getApiError: (e: unknown, fallback = "Erreur") => {
+    getApiError: (e: unknown, fallback = "Error") => {
       const err = e as { response?: { data?: { detail?: string } } };
       return err.response?.data?.detail || fallback;
     },
@@ -53,7 +53,7 @@ const mockedApi = mockApiClient;
 const mockLeague = {
   id: "league-1",
   name: "Les Experts F1",
-  description: "Ligue de pronostics entre amis",
+  description: "Friendly prediction league",
   code: "ABC123",
   created_by: "user-1",
   member_count: 5,
@@ -138,7 +138,7 @@ describe("LeagueDetailPage", () => {
     renderLeagueDetail();
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Erreur lors du chargement");
+      expect(toast.error).toHaveBeenCalledWith("Error while loading");
     });
   });
 });

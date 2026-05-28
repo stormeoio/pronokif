@@ -1,3 +1,7 @@
+/**
+ * CustomPredictionsPage — League custom predictions hub.
+ * Broadcast Premium: glass header, pk-surface cards, stagger animations.
+ */
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,15 +15,14 @@ import {
   CheckCircle,
   Edit3,
 } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Card, CardContent } from "../../components/ui/card";
-import { Label } from "../../components/ui/label";
 import PredictionCard from "./PredictionCard";
 import SetCorrectAnswerModal from "./SetCorrectAnswerModal";
 import { CreatePredictionModal } from "./CreatePredictionModal";
 import { useCustomPredictionsData } from "./useCustomPredictionsData";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { haptic } from "@/lib/haptics";
+import { staggerContainer, fadeUp } from "@/lib/motion";
 
 interface League {
   id: string;
@@ -45,6 +48,27 @@ interface Prediction {
   has_answered?: boolean;
 }
 
+/* -- Skeleton ----------------------------------------------------------- */
+
+function CustomPredictionsSkeleton() {
+  return (
+    <div className="min-h-screen bg-pk-carbon">
+      <div className="h-14 bg-pk-surface animate-shimmer" />
+      <div className="max-w-2xl mx-auto px-4 pt-4 space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-24 rounded-lg bg-pk-surface border border-white/[0.08] animate-shimmer"
+            style={{ animationDelay: `${i * 80}ms` }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* -- Component ---------------------------------------------------------- */
+
 export default function CustomPredictionsPage() {
   const { leagueId } = useParams();
   const navigate = useNavigate();
@@ -55,11 +79,9 @@ export default function CustomPredictionsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedPrediction, setSelectedPrediction] = useState<Prediction | null>(null);
 
-  // ── Data fetching (TanStack Query) ──────────────────────────────────
   const { loading, allRaces, defaultLeague, predictions, refetchPredictions } =
     useCustomPredictionsData(leagueId, league, selectedRace);
 
-  // Hydrate league and selectedRace from query data once
   const hydratedRef = useRef(false);
   useEffect(() => {
     if (loading || hydratedRef.current) return;
@@ -71,82 +93,79 @@ export default function CustomPredictionsPage() {
   const handleAnswer = async (predictionId: string, answer: string | string[]) => {
     try {
       await api.customPredictions.answer(predictionId, answer);
-      toast.success("Réponse enregistrée !");
+      toast.success("Answer saved!");
       refetchPredictions();
     } catch {
-      toast.error("Erreur");
+      toast.error("Error");
     }
   };
 
   const handleSetCorrectAnswer = async (predictionId: string, correctAnswer: string | string[]) => {
     try {
       await api.customPredictions.setCorrect(predictionId, { correct_answer: correctAnswer });
-      toast.success("Réponse correcte définie ! Points attribués.");
+      toast.success("Correct answer set! Points awarded.");
       setSelectedPrediction(null);
       refetchPredictions();
     } catch (e: unknown) {
       const err = e as { response?: { data?: { detail?: string } } };
-      toast.error(err.response?.data?.detail || "Erreur");
+      toast.error(err.response?.data?.detail || "Error");
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-app-main p-4 pt-6">
-        <div className="max-w-2xl mx-auto space-y-4">
-          <div className="h-8 w-48 skeleton-arcade rounded" />
-          <div className="h-32 skeleton-arcade rounded-md" />
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <CustomPredictionsSkeleton />;
 
   const myPredictions = predictions.filter((p: Prediction) => p.created_by === user?.id);
   const otherPredictions = predictions.filter((p: Prediction) => p.created_by !== user?.id);
 
   return (
-    <div className="min-h-screen bg-app-main pb-24" data-testid="custom-predictions-page">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-[#050a14]/95 backdrop-blur-md border-b border-pink-500/30">
-        <div className="max-w-2xl mx-auto p-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
+    <div className="min-h-screen bg-pk-carbon pb-24" data-testid="custom-predictions-page">
+      {/* Glass Header */}
+      <div className="sticky top-0 z-40 bg-pk-carbon/85 backdrop-blur-xl saturate-[1.3] border-b border-white/[0.08]">
+        <div className="max-w-2xl mx-auto px-4 py-3">
+          <div className="flex items-center gap-3">
+            <button
               onClick={() => navigate(-1)}
-              className="text-gray-400 hover:text-white hover:bg-white/10"
+              className="p-1.5 -ml-1.5 rounded-lg text-pk-titane hover:text-pk-piste transition-colors"
+              data-testid="custom-predictions-back"
             >
-              <ChevronLeft className="w-6 h-6" />
-            </Button>
+              <ChevronLeft className="w-5 h-5" />
+            </button>
             <div className="flex-1">
-              <h1 className="font-heading text-xl uppercase tracking-tight text-white flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-pink-500" />
-                Pronos Perso
+              <h1 className="font-display text-lg flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-pk-info" />
+                Picks Perso
               </h1>
-              {league && <p className="font-body text-xs text-gray-400">{league.name}</p>}
+              {league && <p className="font-data text-[0.5625rem] text-pk-titane">{league.name}</p>}
             </div>
-            <motion.div whileTap={{ scale: 0.9 }} whileHover={{ scale: 1.05 }}>
-              <Button onClick={() => setShowCreateModal(true)} className="btn-racing" size="sm">
-                <Plus className="w-4 h-4 mr-1" /> Créer
-              </Button>
-            </motion.div>
+            <button
+              onClick={() => {
+                haptic("light");
+                setShowCreateModal(true);
+              }}
+              className="px-3 py-1.5 rounded-lg bg-pk-red text-white font-display text-xs shadow-glow-red active:scale-[0.97] transition-transform flex items-center gap-1"
+              data-testid="create-prediction-btn"
+            >
+              <Plus className="w-4 h-4" /> Create
+            </button>
           </div>
 
           {allRaces.length > 0 && (
             <div className="mt-3">
-              <Label className="text-xs text-gray-400 uppercase font-heading mb-1 block">
+              <p className="font-data text-[0.5rem] text-pk-titane uppercase tracking-wider mb-1">
                 Grand Prix
-              </Label>
+              </p>
               <select
                 value={selectedRace?.id || ""}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   setSelectedRace(allRaces.find((r: Race) => r.id === e.target.value) ?? null)
                 }
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-white font-body focus:border-pink-500 focus:outline-none"
+                className="w-full bg-pk-surface border border-white/[0.08] rounded-lg p-2 text-pk-piste font-data text-sm focus:border-pk-info/50 focus:outline-none transition-colors"
+                data-testid="race-selector"
               >
                 {allRaces.map((race) => (
                   <option key={race.id} value={race.id}>
-                    {race.name.replace(" Grand Prix", "")} {race.is_sprint_weekend ? "🏃" : ""}
+                    {race.name.replace(" Grand Prix", "")}{" "}
+                    {race.is_sprint_weekend ? "(Sprint)" : ""}
                   </option>
                 ))}
               </select>
@@ -156,98 +175,73 @@ export default function CustomPredictionsPage() {
       </div>
 
       <motion.div
-        className="max-w-2xl mx-auto p-4 space-y-6"
+        className="max-w-2xl mx-auto px-4 pt-4 space-y-4"
         initial="hidden"
         animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.08 } }, hidden: {} }}
+        variants={staggerContainer}
       >
         {/* Info Card */}
         <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 20, scale: 0.97 },
-            visible: { opacity: 1, y: 0, scale: 1 },
-          }}
+          variants={fadeUp}
+          className="bg-pk-info/[0.06] border border-pk-info/20 rounded-lg p-4"
         >
-          <Card className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border-purple-500/30 glass-card">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <HelpCircle className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-body text-sm text-gray-300">
-                    Crée des pronostics fun pour ta ligue ! Le créateur définit la bonne réponse après
-                    la course.
-                  </p>
-                  <p className="font-body text-xs text-gray-500 mt-1">
-                    +2 points pour chaque bonne réponse
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex items-start gap-3">
+            <HelpCircle className="w-5 h-5 text-pk-info flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm text-pk-piste/80">
+                Create fun predictions for your league! The creator sets the correct answer after
+                the race.
+              </p>
+              <p className="font-data text-[0.5625rem] text-pk-titane mt-1">
+                +2 points for each correct answer
+              </p>
+            </div>
+          </div>
         </motion.div>
 
         {/* My Created Predictions */}
         <AnimatePresence>
           {myPredictions.length > 0 && (
-            <motion.div
-              variants={{
-                hidden: { opacity: 0, y: 15 },
-                visible: { opacity: 1, y: 0 },
-              }}
-            >
-              <h2 className="font-heading text-sm uppercase text-cyan-400 mb-3 flex items-center gap-2">
-                <Edit3 className="w-4 h-4" /> Mes pronostics créés
+            <motion.div variants={fadeUp}>
+              <h2 className="font-display text-xs flex items-center gap-2 mb-3">
+                <Edit3 className="w-4 h-4 text-pk-info" /> My created predictions
               </h2>
               <motion.div
-                className="space-y-3"
+                className="space-y-2"
                 initial="hidden"
                 animate="visible"
-                variants={{ visible: { transition: { staggerChildren: 0.06 } }, hidden: {} }}
+                variants={staggerContainer}
               >
                 {myPredictions.map((pred: Prediction) => (
-                  <motion.div
-                    key={pred.id}
-                    variants={{
-                      hidden: { opacity: 0, x: -15 },
-                      visible: { opacity: 1, x: 0 },
-                    }}
-                    whileHover={{ scale: 1.01, x: 4 }}
-                  >
-                    <Card className="game-card glass-card">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1">
-                            <p className="font-body text-white">{pred.question}</p>
-                            <p className="font-body text-xs text-gray-500 mt-1">
-                              {pred.answer_type === "yes_no"
-                                ? "Oui/Non"
-                                : pred.answer_type === "choice"
-                                  ? "Choix multiple"
-                                  : "Texte libre"}
-                            </p>
-                          </div>
-                          {pred.correct_answer ? (
-                            <motion.div
-                              className="flex items-center gap-1 text-green-400"
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              transition={{ type: "spring" }}
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                              <span className="font-body text-xs">Terminé</span>
-                            </motion.div>
-                          ) : (
-                            <Button
-                              onClick={() => setSelectedPrediction(pred)}
-                              size="sm"
-                              className="btn-gaming-blue"
-                            >
-                              Définir réponse
-                            </Button>
-                          )}
+                  <motion.div key={pred.id} variants={fadeUp}>
+                    <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <p className="text-sm text-pk-piste">{pred.question}</p>
+                          <p className="font-data text-[0.5625rem] text-pk-titane mt-1">
+                            {pred.answer_type === "yes_no"
+                              ? "Oui/Non"
+                              : pred.answer_type === "choice"
+                                ? "Choix multiple"
+                                : "Texte libre"}
+                          </p>
                         </div>
-                      </CardContent>
-                    </Card>
+                        {pred.correct_answer ? (
+                          <div className="flex items-center gap-1 text-pk-emerald">
+                            <CheckCircle className="w-4 h-4" />
+                            <span className="font-data text-[0.5625rem]">Finished</span>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setSelectedPrediction(pred)}
+                            className="px-3 py-1.5 rounded-lg bg-pk-info/[0.1] border border-pk-info/30 text-pk-info font-display text-xs active:scale-[0.97] transition-transform"
+                            data-testid={`set-answer-${pred.id}`}
+                          >
+                            Set answer
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </motion.div>
                 ))}
               </motion.div>
@@ -256,52 +250,28 @@ export default function CustomPredictionsPage() {
         </AnimatePresence>
 
         {/* Predictions to Answer */}
-        <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 15 },
-            visible: { opacity: 1, y: 0 },
-          }}
-        >
-          <h2 className="font-heading text-sm uppercase text-yellow-400 mb-3 flex items-center gap-2">
-            <Users className="w-4 h-4" /> Pronostics de la ligue ({otherPredictions.length})
+        <motion.div variants={fadeUp}>
+          <h2 className="font-display text-xs flex items-center gap-2 mb-3">
+            <Users className="w-4 h-4 text-pk-amber" /> League pickstics ({otherPredictions.length})
           </h2>
           {otherPredictions.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: "spring" }}
-            >
-              <Card className="game-card glass-card">
-                <CardContent className="p-8 text-center">
-                  <MessageSquare className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                  <p className="font-body text-gray-400">Aucun pronostic pour le moment</p>
-                  <p className="font-body text-xs text-gray-500 mt-1">
-                    Sois le premier à créer un prono pour ta ligue !
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
+            <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-8 text-center">
+              <MessageSquare className="w-10 h-10 text-pk-titane mx-auto mb-3" />
+              <p className="text-sm text-pk-titane">No prediction yet</p>
+              <p className="font-data text-[0.5625rem] text-pk-titane mt-1">
+                Be the first to create a prediction for your league!
+              </p>
+            </div>
           ) : (
             <motion.div
-              className="space-y-3"
+              className="space-y-2"
               initial="hidden"
               animate="visible"
-              variants={{ visible: { transition: { staggerChildren: 0.06 } }, hidden: {} }}
+              variants={staggerContainer}
             >
               {otherPredictions.map((pred: Prediction) => (
-                <motion.div
-                  key={pred.id}
-                  variants={{
-                    hidden: { opacity: 0, y: 15 },
-                    visible: { opacity: 1, y: 0 },
-                  }}
-                  whileHover={{ scale: 1.01 }}
-                >
-                  <PredictionCard
-                    prediction={pred}
-                    onAnswer={handleAnswer}
-                    userId={user?.id}
-                  />
+                <motion.div key={pred.id} variants={fadeUp}>
+                  <PredictionCard prediction={pred} onAnswer={handleAnswer} userId={user?.id} />
                 </motion.div>
               ))}
             </motion.div>

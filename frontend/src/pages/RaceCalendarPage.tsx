@@ -6,22 +6,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import {
-  Calendar,
-  MapPin,
-  Flag,
-  Clock,
-  Check,
-  Lock,
-  Target,
-  ChevronRight,
-  Zap,
-} from "lucide-react";
+import { Calendar, MapPin, Clock, Check, Lock, Target } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { haptic } from "@/lib/haptics";
-import { getRaceThumbnail } from "@/lib/raceThumbnails";
-import { fadeUp, staggerContainer, easing, duration, getReducedMotionProps } from "@/lib/motion";
+import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
+import { EmptyFullPage } from "@/components/EmptyState";
 import type { Race } from "@/types/api";
 
 /* ── Country flags ─────────────────────────────────────── */
@@ -53,7 +43,7 @@ const COUNTRY_FLAGS: Record<string, string> = {
 type FilterKey = "upcoming" | "completed" | "all";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "upcoming", label: "A venir" },
+  { key: "upcoming", label: "Upcoming" },
   { key: "completed", label: "Termines" },
   { key: "all", label: "Tous" },
 ];
@@ -157,9 +147,9 @@ export default function RaceCalendarPage() {
         <div className="px-4 pt-3 pb-3">
           <h1 className="font-display text-lg flex items-center gap-2 mb-0.5">
             <Calendar className="w-4 h-4 text-pk-red" />
-            Calendrier 2026
+            2026 Calendar
           </h1>
-          <p className="text-[0.625rem] text-pk-titane mb-2.5">Cloture 15min avant FP1</p>
+          <p className="text-[0.625rem] text-pk-titane mb-2.5">Closes 15 min before FP1</p>
 
           {/* Filter chips */}
           <div className="flex gap-1.5">
@@ -182,6 +172,7 @@ export default function RaceCalendarPage() {
                       ? "bg-pk-red-subtle border-pk-red/30 text-pk-red"
                       : "bg-white/[0.04] border-white/[0.08] text-pk-titane"
                   }`}
+                  data-testid={`calendar-filter-${f.key}`}
                 >
                   {f.label} ({count})
                 </button>
@@ -203,13 +194,11 @@ export default function RaceCalendarPage() {
           {...rmProps}
         >
           {filteredRaces.length === 0 ? (
-            <motion.div variants={fadeUp} className="text-center py-16">
-              <Calendar className="w-10 h-10 text-pk-titane mx-auto mb-3 opacity-40" />
-              <p className="font-display text-sm text-pk-titane">Aucune course</p>
-              <p className="text-xs text-pk-titane/60 mt-1">
-                {filter === "upcoming" ? "Saison terminee" : "Aucune course terminee"}
-              </p>
-            </motion.div>
+            <EmptyFullPage
+              Icon={Calendar}
+              title="No races"
+              description={filter === "upcoming" ? "Season finished" : "No finished races"}
+            />
           ) : (
             filteredRaces.map((race: Race, index: number) => {
               const hasPrediction = !!myPredictions[race.id];

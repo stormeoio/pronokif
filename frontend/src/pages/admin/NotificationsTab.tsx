@@ -29,13 +29,13 @@ export default function NotificationsTab() {
         type: notifType,
       });
       haptic("success");
-      toast.success("Notification envoyee a tous les membres !");
+      toast.success("Notification sent to all members!");
       setNotifTitle("");
       setNotifMessage("");
     } catch (error: unknown) {
       haptic("error");
       const err = error as { response?: { data?: { detail?: string } } };
-      toast.error(err.response?.data?.detail || "Erreur lors de l'envoi");
+      toast.error(err.response?.data?.detail || "Error while sending");
     } finally {
       setSendingNotif(false);
     }
@@ -47,7 +47,7 @@ export default function NotificationsTab() {
         <div className="bg-gradient-to-r from-cyan-600/20 to-transparent px-4 py-3 border-b border-gray-700/50">
           <h3 className="font-heading text-sm uppercase text-cyan-400 flex items-center gap-2">
             <Bell className="w-4 h-4" />
-            Envoyer une notification
+            Send a notification
           </h3>
         </div>
         <div className="p-4 space-y-4">
@@ -71,7 +71,10 @@ export default function NotificationsTab() {
                   <motion.button
                     key={type.id}
                     onClick={() => setNotifType(type.id)}
-                    variants={{ hidden: { opacity: 0, scale: 0.85 }, visible: { opacity: 1, scale: 1 } }}
+                    variants={{
+                      hidden: { opacity: 0, scale: 0.85 },
+                      visible: { opacity: 1, scale: 1 },
+                    }}
                     whileTap={{ scale: 0.9 }}
                     className={`p-3 rounded-xl border-2 transition-all ${
                       isSelected
@@ -118,12 +121,14 @@ export default function NotificationsTab() {
 
           {/* Title */}
           <div>
-            <Label htmlFor="notif-title" className="font-body text-sm text-gray-400 mb-2 block">Titre</Label>
+            <Label htmlFor="notif-title" className="font-body text-sm text-gray-400 mb-2 block">
+              Titre
+            </Label>
             <Input
               id="notif-title"
               value={notifTitle}
               onChange={(e) => setNotifTitle(e.target.value)}
-              placeholder="Ex: Nouvelle fonctionnalite disponible !"
+              placeholder="Example: New feature available!"
               maxLength={100}
               className="bg-gray-900 border-gray-700 text-white"
             />
@@ -139,7 +144,7 @@ export default function NotificationsTab() {
               id="notif-message"
               value={notifMessage}
               onChange={(e) => setNotifMessage(e.target.value)}
-              placeholder="Detaillez votre message..."
+              placeholder="Describe your message..."
               rows={8}
               maxLength={5000}
               className="bg-gray-900 border-gray-700 text-white resize-none"
@@ -154,11 +159,11 @@ export default function NotificationsTab() {
           >
             {sendingNotif ? (
               <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Envoi en cours...
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Uploading...
               </>
             ) : (
               <>
-                <Send className="w-5 h-5 mr-2" /> Envoyer a tous les membres
+                <Send className="w-5 h-5 mr-2" /> Send to all members
               </>
             )}
           </Button>

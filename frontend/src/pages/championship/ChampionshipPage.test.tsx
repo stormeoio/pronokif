@@ -104,7 +104,7 @@ describe("ChampionshipPage", () => {
     mockFetch.mockReturnValue(new Promise(() => {}));
     renderWithProviders(<ChampionshipPage />);
     expect(document.querySelector(".animate-spin")).toBeInTheDocument();
-    expect(screen.getByText(/chargement des classements/i)).toBeInTheDocument();
+    expect(screen.getByText(/loading standings/i)).toBeInTheDocument();
   });
 
   it("renders header with season after load", async () => {
@@ -116,7 +116,7 @@ describe("ChampionshipPage", () => {
     expect(screen.getByText(/saison 2026/i)).toBeInTheDocument();
   });
 
-  it("shows 3 tabs: Pilotes, Ecuries, Resultats", async () => {
+  it("shows 3 tabs: Drivers, Ecuries, Resultats", async () => {
     renderWithProviders(<ChampionshipPage />);
 
     await waitFor(() => {

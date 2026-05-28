@@ -46,10 +46,10 @@ export default function PreviewPanel({ open, onClose }: PreviewPanelProps) {
   const quickLinks = [
     { path: "/", label: "Dashboard" },
     { path: "/auth", label: "Auth" },
-    { path: "/predictions", label: "Pronostics" },
-    { path: "/leaderboard", label: "Classement" },
+    { path: "/predictions", label: "Pickstics" },
+    { path: "/leaderboard", label: "Leaderboard" },
     { path: "/championship", label: "Championnat" },
-    { path: "/profile", label: "Profil" },
+    { path: "/profile", label: "Profile" },
   ];
 
   return (
@@ -97,7 +97,7 @@ export default function PreviewPanel({ open, onClose }: PreviewPanelProps) {
               <button
                 onClick={handleRefresh}
                 className="p-1.5 text-gray-500 hover:text-white rounded"
-                title="Rafraîchir"
+                title="Refresh"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
@@ -106,14 +106,14 @@ export default function PreviewPanel({ open, onClose }: PreviewPanelProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-1.5 text-gray-500 hover:text-white rounded"
-                title="Ouvrir dans un nouvel onglet"
+                title="Open in a new tab"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
               <button
                 onClick={onClose}
                 className="p-1.5 text-gray-500 hover:text-red-400 rounded"
-                title="Fermer"
+                title="Close"
               >
                 <X className="w-3.5 h-3.5" />
               </button>

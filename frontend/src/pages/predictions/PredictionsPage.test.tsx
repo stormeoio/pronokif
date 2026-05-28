@@ -38,7 +38,7 @@ vi.mock("@/lib/api", () => {
         delete: (raceId: string) => unwrap(mockApiClient.delete(`/predictions/race/${raceId}`)),
       },
     },
-    getApiError: (e: unknown, fallback = "Erreur") => {
+    getApiError: (e: unknown, fallback = "Error") => {
       const err = e as { response?: { data?: { detail?: string } } };
       return err.response?.data?.detail || fallback;
     },

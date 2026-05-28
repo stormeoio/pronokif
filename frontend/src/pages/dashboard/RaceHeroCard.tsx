@@ -127,7 +127,7 @@ export default function RaceHeroCard({
           type="button"
           onClick={onViewDetails}
           className="relative block w-full aspect-[16/9] overflow-hidden border-b border-white/[0.08]"
-          aria-label={`Voir les détails de ${race.name}`}
+          aria-label={`View details for ${race.name}`}
         >
           <img
             src={thumbnailUrl}
@@ -224,12 +224,12 @@ export default function RaceHeroCard({
                   isLive ? "text-pk-red" : "text-pk-piste"
                 }`}
               >
-                {isCancelled ? "Course annulée" : isLive ? "Course en cours" : "Course terminée"}
+                {isCancelled ? "Race cancelled" : isLive ? "Race in progress" : "Race finished"}
               </span>
             </div>
             {isLive && raceEndLabel && (
               <p className="mt-1 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-pk-titane">
-                Fin estimée {raceEndLabel} locale
+                Estimated finish {raceEndLabel} locale
               </p>
             )}
           </div>
@@ -241,7 +241,7 @@ export default function RaceHeroCard({
             {hasPrediction ? (
               <button onClick={onPredict} className="btn-pk-outline text-[0.8125rem] px-4">
                 <Clock {...iconSmall} size={14} strokeWidth={2} />
-                Modifier mes pronos
+                Edit my predictions
               </button>
             ) : (
               <BorderGlowButton
@@ -250,7 +250,7 @@ export default function RaceHeroCard({
                 data-testid="make-predictions-btn"
               >
                 <ArrowRight {...iconSmall} size={14} strokeWidth={2} />
-                Pronostiquer
+                Pickstiquer
               </BorderGlowButton>
             )}
             <button onClick={onViewDetails} className="btn-pk-outline text-[0.75rem] px-3">
@@ -260,7 +260,7 @@ export default function RaceHeroCard({
         )}
         {race.can_predict === false && (
           <p className="font-mono text-[0.6875rem] text-pk-titane text-center">
-            Les pronostics sont fermes pour cette course
+            Predictions are closed for this race
           </p>
         )}
       </div>

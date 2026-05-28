@@ -1,5 +1,12 @@
+/**
+ * PointsHistory — Expandable race-by-race points breakdown.
+ * Broadcast Premium: pk-surface cards, pk-emerald for positive points.
+ */
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, History, Trophy } from "lucide-react";
+import { ChevronRight, History } from "lucide-react";
+import { haptic } from "@/lib/haptics";
+
+/* ── Types ─────────────────────────────────────────────── */
 
 interface RaceHistoryEntry {
   race_id: string;
@@ -32,93 +39,100 @@ interface PointsHistoryProps {
   setShowHistory: (show: boolean) => void;
 }
 
+/* ── Component ─────────────────────────────────────────── */
+
 export default function PointsHistory({
   pointsHistory,
   showHistory,
   setShowHistory,
 }: PointsHistoryProps) {
   return (
-    <div className="card-arcade overflow-hidden">
+    <div className="bg-pk-surface border border-white/[0.08] rounded-lg overflow-hidden">
       <button
-        onClick={() => setShowHistory(!showHistory)}
-        className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors"
+        onClick={() => {
+          haptic("light");
+          setShowHistory(!showHistory);
+        }}
+        className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors"
         data-testid="toggle-points-history"
       >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-green-700 flex items-center justify-center">
-            <History className="w-5 h-5 text-white" />
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-md bg-pk-emerald/[0.12] flex items-center justify-center">
+            <History className="w-4 h-4 text-pk-emerald" />
           </div>
           <div className="text-left">
-            <span className="font-body text-white font-semibold block">Historique des points</span>
-            <span className="font-body text-xs text-gray-400">
-              {pointsHistory.summary?.races_with_results || 0} courses avec résultats
+            <span className="font-display text-sm block">Historique des points</span>
+            <span className="font-data text-[0.5625rem] text-pk-titane">
+              {pointsHistory.summary?.races_with_results || 0} races with results
             </span>
           </div>
         </div>
         <ChevronRight
-          className={`w-5 h-5 text-gray-500 transition-transform ${showHistory ? "rotate-90" : ""}`}
+          className={`w-4 h-4 text-pk-titane transition-transform duration-200 ${showHistory ? "rotate-90" : ""}`}
         />
       </button>
 
       <AnimatePresence>
-      {showHistory && (
-        <motion.div
-          className="border-t border-gray-700/50"
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          {pointsHistory.history?.length === 0 ? (
-            <div className="p-6 text-center">
-              <History className="w-10 h-10 text-gray-600 mx-auto mb-2" />
-              <p className="font-body text-gray-400 text-sm">Aucun historique disponible</p>
-              <p className="font-body text-gray-500 text-xs">
-                Fais des pronostics pour voir ton historique
-              </p>
-            </div>
-          ) : (
-            <motion.div
-              className="divide-y divide-gray-700/30 max-h-96 overflow-y-auto"
-              initial="hidden"
-              animate="visible"
-              variants={{ visible: { transition: { staggerChildren: 0.05 } }, hidden: {} }}
-            >
-              {pointsHistory.history?.map((race) => (
-                <RaceHistoryItem key={race.race_id} race={race} />
-              ))}
-            </motion.div>
-          )}
-        </motion.div>
-      )}
+        {showHistory && (
+          <motion.div
+            className="border-t border-white/[0.08]"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            {pointsHistory.history?.length === 0 ? (
+              <div className="p-6 text-center">
+                <History className="w-8 h-8 text-pk-titane mx-auto mb-2 opacity-40" />
+                <p className="text-xs text-pk-titane">No history available</p>
+                <p className="font-data text-[0.5625rem] text-pk-titane/60 mt-0.5">
+                  Make predictions to see your history
+                </p>
+              </div>
+            ) : (
+              <motion.div
+                className="divide-y divide-white/[0.06] max-h-96 overflow-y-auto"
+                initial="hidden"
+                animate="visible"
+                variants={{ visible: { transition: { staggerChildren: 0.04 } }, hidden: {} }}
+              >
+                {pointsHistory.history?.map((race) => (
+                  <RaceHistoryItem key={race.race_id} race={race} />
+                ))}
+              </motion.div>
+            )}
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );
 }
 
+/* ── Race Item ─────────────────────────────────────────── */
+
 function RaceHistoryItem({ race }: { race: RaceHistoryEntry }) {
   return (
     <motion.div
       className="p-4"
-      variants={{ hidden: { opacity: 0, x: -10 }, visible: { opacity: 1, x: 0 } }}
+      variants={{ hidden: { opacity: 0, x: -8 }, visible: { opacity: 1, x: 0 } }}
     >
       {/* Race Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2.5">
         <div>
-          <h4 className="font-heading text-sm text-white uppercase">
-            {race.race_name?.replace(" Grand Prix", "")}
-          </h4>
+          <h4 className="font-display text-sm">{race.race_name?.replace(" Grand Prix", "")}</h4>
           {race.is_sprint_weekend && (
-            <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded font-heading">
-              SPRINT
+            <span className="font-data text-[0.5rem] bg-pk-amber/20 text-pk-amber px-1.5 py-0.5 rounded uppercase tracking-wider">
+              Sprint
             </span>
           )}
         </div>
         <div className="text-right">
           {race.has_results ? (
-            <span className="font-data text-xl text-green-400">+{race.total_points} pts</span>
+            <span className="font-data text-lg text-pk-emerald font-bold">
+              +{race.total_points}
+            </span>
           ) : (
-            <span className="font-body text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">
+            <span className="font-data text-[0.5625rem] text-pk-titane bg-pk-anthracite px-2 py-1 rounded">
               En attente
             </span>
           )}
@@ -127,35 +141,35 @@ function RaceHistoryItem({ race }: { race: RaceHistoryEntry }) {
 
       {/* Points Breakdown */}
       {race.has_results && race.points_breakdown && (
-        <div className="space-y-2">
-          <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="space-y-1.5">
+          <div className="grid grid-cols-2 gap-1.5">
             <BreakdownItem label="Pole" points={race.points_breakdown.quali_pole.points} />
             <BreakdownItem label="Top 10 Quali" points={race.points_breakdown.quali_top10.points} />
-            <BreakdownItem label="Vainqueur" points={race.points_breakdown.race_winner.points} />
-            <BreakdownItem label="Top 10 Course" points={race.points_breakdown.race_top10.points} />
+            <BreakdownItem label="Winner" points={race.points_breakdown.race_winner.points} />
+            <BreakdownItem label="Top 10 Race" points={race.points_breakdown.race_top10.points} />
           </div>
 
           {race.is_sprint_weekend && race.sprint_breakdown && (
-            <div className="grid grid-cols-2 gap-2 text-xs mt-2">
-              <div className="flex justify-between bg-yellow-500/10 p-2 rounded border border-yellow-500/20">
-                <span className="text-yellow-400/70">Sprint Quali</span>
+            <div className="grid grid-cols-2 gap-1.5 mt-1.5">
+              <div className="flex justify-between bg-pk-amber/[0.08] border border-pk-amber/15 p-2 rounded text-xs">
+                <span className="text-pk-amber/70">Sprint Quali</span>
                 <span
                   className={
                     race.sprint_breakdown.sprint_quali_top10.points > 0
-                      ? "text-yellow-400"
-                      : "text-gray-600"
+                      ? "text-pk-amber"
+                      : "text-pk-titane/40"
                   }
                 >
                   +{race.sprint_breakdown.sprint_quali_top10.points}
                 </span>
               </div>
-              <div className="flex justify-between bg-yellow-500/10 p-2 rounded border border-yellow-500/20">
-                <span className="text-yellow-400/70">Sprint Course</span>
+              <div className="flex justify-between bg-pk-amber/[0.08] border border-pk-amber/15 p-2 rounded text-xs">
+                <span className="text-pk-amber/70">Sprint Race</span>
                 <span
                   className={
                     race.sprint_breakdown.sprint_race_top10.points > 0
-                      ? "text-yellow-400"
-                      : "text-gray-600"
+                      ? "text-pk-amber"
+                      : "text-pk-titane/40"
                   }
                 >
                   +{race.sprint_breakdown.sprint_race_top10.points}
@@ -164,11 +178,11 @@ function RaceHistoryItem({ race }: { race: RaceHistoryEntry }) {
             </div>
           )}
 
-          <div className="flex justify-between bg-purple-500/10 p-2 rounded border border-purple-500/20 text-xs">
+          <div className="flex justify-between bg-purple-500/[0.08] border border-purple-500/15 p-2 rounded text-xs">
             <span className="text-purple-400/70">Bonus (SC, DNF, Tour, T1)</span>
             <span
               className={
-                race.points_breakdown.bonus.points > 0 ? "text-purple-400" : "text-gray-600"
+                race.points_breakdown.bonus.points > 0 ? "text-purple-400" : "text-pk-titane/40"
               }
             >
               +{race.points_breakdown.bonus.points}
@@ -176,12 +190,12 @@ function RaceHistoryItem({ race }: { race: RaceHistoryEntry }) {
           </div>
 
           {race.details && race.details.length > 0 && (
-            <div className="mt-2 pt-2 border-t border-gray-700/30">
+            <div className="mt-1.5 pt-1.5 border-t border-white/[0.06]">
               <div className="flex flex-wrap gap-1">
-                {race.details?.map((detail, i) => (
+                {race.details.map((detail, i) => (
                   <span
                     key={i}
-                    className="text-[10px] bg-green-500/10 text-green-400 px-2 py-0.5 rounded"
+                    className="font-data text-[0.5rem] bg-pk-emerald/[0.1] text-pk-emerald px-1.5 py-0.5 rounded"
                   >
                     {detail}
                   </span>
@@ -195,11 +209,15 @@ function RaceHistoryItem({ race }: { race: RaceHistoryEntry }) {
   );
 }
 
+/* ── Breakdown Cell ────────────────────────────────────── */
+
 function BreakdownItem({ label, points }: { label: string; points: number }) {
   return (
-    <div className="flex justify-between bg-gray-800/50 p-2 rounded">
-      <span className="text-gray-400">{label}</span>
-      <span className={points > 0 ? "text-green-400" : "text-gray-600"}>+{points}</span>
+    <div className="flex justify-between bg-pk-anthracite/60 p-2 rounded text-xs">
+      <span className="text-pk-titane">{label}</span>
+      <span className={points > 0 ? "text-pk-emerald font-data" : "text-pk-titane/40 font-data"}>
+        +{points}
+      </span>
     </div>
   );
 }

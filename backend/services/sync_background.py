@@ -202,7 +202,7 @@ async def send_reminders() -> dict:
                 existing = await db.predictions.find_one({"user_id": u["id"], "race_id": race["id"]})
                 if not existing:
                     await send_user_notification(
-                        u["id"], f"Rappel: Pronos {race['name']} ferment dans 24h!", "reminder"
+                        u["id"], f"Rappel: Predictions {race['name']} close in 24h!", "reminder"
                     )
                     notifications_sent += 1
 

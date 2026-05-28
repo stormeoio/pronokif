@@ -70,7 +70,7 @@ function ErrorFallback({ error, onRetry, onHome }: ErrorFallbackProps) {
       {/* Red Flag Banner */}
       <div className="w-full py-2 bg-pk-red text-white font-display text-xs uppercase tracking-wider flex items-center justify-center gap-2">
         <Flag className="w-3 h-3" fill="currentColor" />
-        Drapeau rouge — Erreur systeme
+        Drapeau rouge — Error systeme
       </div>
 
       <div className="flex-1 flex items-center justify-center p-6">
@@ -83,7 +83,7 @@ function ErrorFallback({ error, onRetry, onHome }: ErrorFallbackProps) {
           {/* Title */}
           <h1 className="font-display text-xl mb-2">Incident en piste</h1>
           <p className="text-sm text-pk-titane leading-relaxed mb-6 max-w-[280px] mx-auto">
-            Une erreur inattendue s'est produite. Tes pronostics sont en securite.
+            An unexpected error occurred. Your predictions are safe.
           </p>
 
           {/* Radio message */}
@@ -93,7 +93,7 @@ function ErrorFallback({ error, onRetry, onHome }: ErrorFallbackProps) {
               <span className="font-data text-[0.5rem] text-pk-red uppercase">Radio team</span>
             </div>
             <p className="text-[0.8125rem] italic text-pk-piste leading-snug">
-              "On a un probleme technique. Rentre au stand, on relance."
+              "We have a technical issue. Head back to the pit lane, then retry."
             </p>
           </div>
 
@@ -118,7 +118,7 @@ function ErrorFallback({ error, onRetry, onHome }: ErrorFallbackProps) {
               className="w-full h-11 rounded-lg bg-white/[0.04] border border-white/[0.08] text-pk-piste text-sm flex items-center justify-center gap-2 active:scale-[0.97] transition-transform"
             >
               <Home className="w-4 h-4" />
-              Retour au paddock
+              Back to the paddock
             </button>
           </div>
         </div>

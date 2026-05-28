@@ -65,9 +65,9 @@ def _generate_driver_facts(driver: dict, next_race: dict | None = None) -> list[
         all_facts.append(
             {
                 "type": "achievement",
-                "title": "Champion du Monde",
+                "title": "World Champion",
                 "text": (
-                    f"{driver['first_name']} a remporté {f1_stats['world_championships']} titre(s) mondial(aux) en F1."
+                    f"{driver['first_name']} has won {f1_stats['world_championships']} F1 world title(s)."
                 ),
                 "icon": "trophy",
             }
@@ -77,8 +77,8 @@ def _generate_driver_facts(driver: dict, next_race: dict | None = None) -> list[
         all_facts.append(
             {
                 "type": "stat",
-                "title": "Victoires en F1",
-                "text": f"Total de {f1_stats['wins']} victoire(s) en Grand Prix.",
+                "title": "F1 wins",
+                "text": f"Total of {f1_stats['wins']} Grand Prix win(s).",
                 "icon": "flag",
             }
         )
@@ -88,7 +88,7 @@ def _generate_driver_facts(driver: dict, next_race: dict | None = None) -> list[
             {
                 "type": "stat",
                 "title": "Podiums",
-                "text": f"{f1_stats['podiums']} podium(s) au total dans sa carrière F1.",
+                "text": f"{f1_stats['podiums']} total podium(s) in their F1 career.",
                 "icon": "medal",
             }
         )
@@ -98,7 +98,7 @@ def _generate_driver_facts(driver: dict, next_race: dict | None = None) -> list[
             {
                 "type": "stat",
                 "title": "Pole Positions",
-                "text": f"{f1_stats['poles']} pole position(s) en qualifications.",
+                "text": f"{f1_stats['poles']} pole position(s) in qualifying.",
                 "icon": "zap",
             }
         )
@@ -107,8 +107,8 @@ def _generate_driver_facts(driver: dict, next_race: dict | None = None) -> list[
         all_facts.append(
             {
                 "type": "stat",
-                "title": "Meilleurs Tours",
-                "text": f"{f1_stats['fastest_laps']} meilleur(s) tour(s) en course.",
+                "title": "Fastest Laps",
+                "text": f"{f1_stats['fastest_laps']} fastest lap(s) in races.",
                 "icon": "timer",
             }
         )
@@ -120,8 +120,8 @@ def _generate_driver_facts(driver: dict, next_race: dict | None = None) -> list[
                     "type": "junior",
                     "title": f"Champion {junior_season['series']}",
                     "text": (
-                        f"Champion de {junior_season['series']} en {junior_season['year']}"
-                        f" avec {junior_season.get('team', 'N/A')}."
+                        f"Champion of {junior_season['series']} in {junior_season['year']}"
+                        f" with {junior_season.get('team', 'N/A')}."
                     ),
                     "icon": "award",
                 }
@@ -133,10 +133,10 @@ def _generate_driver_facts(driver: dict, next_race: dict | None = None) -> list[
             all_facts.append(
                 {
                     "type": "contract",
-                    "title": "Contrat actuel",
+                    "title": "Current contract",
                     "text": (
-                        f"Sous contrat avec {driver['team']} jusqu'en {contract['end_year']}"
-                        f" ({years_left} an(s) restant(s))."
+                        f"Under contract with {driver['team']} until {contract['end_year']}"
+                        f" ({years_left} year(s) remaining)."
                     ),
                     "icon": "file",
                 }
@@ -146,8 +146,8 @@ def _generate_driver_facts(driver: dict, next_race: dict | None = None) -> list[
         all_facts.append(
             {
                 "type": "contract",
-                "title": "Salaire estimé",
-                "text": f"Rémunération estimée : {contract['salary_estimate']}.",
+                "title": "Estimated salary",
+                "text": f"Estimated compensation: {contract['salary_estimate']}.",
                 "icon": "dollar",
             }
         )
@@ -156,8 +156,8 @@ def _generate_driver_facts(driver: dict, next_race: dict | None = None) -> list[
     all_facts.append(
         {
             "type": "personal",
-            "title": "Âge",
-            "text": f"{driver['first_name']} a {age} ans (né le {driver.get('date_of_birth', 'N/A')}).",
+            "title": "Age",
+            "text": f"{driver['first_name']} is {age} years old (born on {driver.get('date_of_birth', 'N/A')}).",
             "icon": "calendar",
         }
     )
@@ -165,8 +165,8 @@ def _generate_driver_facts(driver: dict, next_race: dict | None = None) -> list[
     all_facts.append(
         {
             "type": "personal",
-            "title": "Nationalité",
-            "text": f"Représente {driver.get('country_name', driver.get('country', 'N/A'))} en Formule 1.",
+            "title": "Nationality",
+            "text": f"Represents {driver.get('country_name', driver.get('country', 'N/A'))} in Formula 1.",
             "icon": "flag",
         }
     )
@@ -174,8 +174,8 @@ def _generate_driver_facts(driver: dict, next_race: dict | None = None) -> list[
     all_facts.append(
         {
             "type": "personal",
-            "title": "Lieu de naissance",
-            "text": f"Né à {driver.get('place_of_birth', 'N/A')}.",
+            "title": "Place of birth",
+            "text": f"Born in {driver.get('place_of_birth', 'N/A')}.",
             "icon": "map",
         }
     )
@@ -184,8 +184,8 @@ def _generate_driver_facts(driver: dict, next_race: dict | None = None) -> list[
         all_facts.append(
             {
                 "type": "physical",
-                "title": "Taille",
-                "text": f"Mesure {driver['height_cm']} cm.",
+                "title": "Height",
+                "text": f"Measures {driver['height_cm']} cm.",
                 "icon": "ruler",
             }
         )
@@ -193,8 +193,8 @@ def _generate_driver_facts(driver: dict, next_race: dict | None = None) -> list[
     all_facts.append(
         {
             "type": "team",
-            "title": "Équipe actuelle",
-            "text": f"Pilote pour {driver['team']} avec le numéro {driver.get('number', 'N/A')}.",
+            "title": "Current team",
+            "text": f"Drives for {driver['team']} with number {driver.get('number', 'N/A')}.",
             "icon": "car",
         }
     )
@@ -203,8 +203,8 @@ def _generate_driver_facts(driver: dict, next_race: dict | None = None) -> list[
         all_facts.append(
             {
                 "type": "career",
-                "title": "Débuts en F1",
-                "text": f"A débuté en F1 avec {f1_stats['first_team']} ({f1_stats.get('seasons', 'N/A')}).",
+                "title": "F1 debut",
+                "text": f"Debuted in F1 with {f1_stats['first_team']} ({f1_stats.get('seasons', 'N/A')}).",
                 "icon": "play",
             }
         )
@@ -213,8 +213,8 @@ def _generate_driver_facts(driver: dict, next_race: dict | None = None) -> list[
         all_facts.append(
             {
                 "type": "experience",
-                "title": "Expérience",
-                "text": f"{f1_stats['entries']} Grand(s) Prix disputé(s) en carrière.",
+                "title": "Experience",
+                "text": f"{f1_stats['entries']} Grand Prix starts in their career.",
                 "icon": "target",
             }
         )
@@ -223,8 +223,8 @@ def _generate_driver_facts(driver: dict, next_race: dict | None = None) -> list[
         all_facts.append(
             {
                 "type": "stat",
-                "title": "Points en carrière",
-                "text": f"Total de {f1_stats['points']} points marqués en F1.",
+                "title": "Career points",
+                "text": f"Total of {f1_stats['points']} points scored in F1.",
                 "icon": "hash",
             }
         )
@@ -233,8 +233,8 @@ def _generate_driver_facts(driver: dict, next_race: dict | None = None) -> list[
         all_facts.append(
             {
                 "type": "misc",
-                "title": "Points de permis",
-                "text": f"Actuellement {driver['license_points']}/12 points sur sa super-licence.",
+                "title": "License points",
+                "text": f"Currently {driver['license_points']}/12 points on their super licence.",
                 "icon": "shield",
             }
         )
@@ -243,7 +243,7 @@ def _generate_driver_facts(driver: dict, next_race: dict | None = None) -> list[
         all_facts.append(
             {
                 "type": "info",
-                "title": "Info contrat",
+                "title": "Contract info",
                 "text": contract["notes"],
                 "icon": "info",
             }

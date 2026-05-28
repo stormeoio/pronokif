@@ -1,14 +1,38 @@
+/**
+ * MiniGamesPage — Reaction & Batak mini-games hub.
+ * Broadcast Premium: glass header, pk-* cards, chip tabs.
+ */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, Zap, Target, Trophy, Dumbbell } from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Card, CardContent } from "../components/ui/card";
 import { ReactionGame, BatakGame } from "../components/mini-games/MiniGames";
 import { useMiniGamesData } from "./mini-games/useMiniGamesData";
 import { MiniGamesLeaderboard } from "./mini-games/MiniGamesLeaderboard";
 import { useAuth } from "@/lib/auth";
 import { haptic } from "@/lib/haptics";
+import { staggerContainer, fadeUp } from "@/lib/motion";
+
+/* -- Skeleton ----------------------------------------------------------- */
+
+function MiniGamesSkeleton() {
+  return (
+    <div className="min-h-screen bg-pk-carbon">
+      <div className="h-14 bg-pk-surface animate-shimmer" />
+      <div className="max-w-2xl mx-auto px-4 pt-4 space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-24 rounded-lg bg-pk-surface border border-white/[0.08] animate-shimmer"
+            style={{ animationDelay: `${i * 80}ms` }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* -- Component ---------------------------------------------------------- */
 
 export default function MiniGamesPage() {
   const navigate = useNavigate();
@@ -42,42 +66,32 @@ export default function MiniGamesPage() {
     setMode(m);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-app-main p-4 pt-6">
-        <div className="max-w-2xl mx-auto space-y-4">
-          <div className="h-8 w-48 skeleton-arcade rounded" />
-          <div className="h-64 skeleton-arcade rounded-md" />
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <MiniGamesSkeleton />;
 
   const leagueLeaderboard = activeTab === "reaction" ? reactionLeaderboard : batakLeaderboard;
   const globalLeaderboard =
     activeTab === "reaction" ? globalReactionLeaderboard : globalBatakLeaderboard;
 
   return (
-    <div className="min-h-screen bg-app-main pb-24" data-testid="minigames-page">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-[#050a14]/95 backdrop-blur-md border-b border-purple-500/30">
-        <div className="max-w-2xl mx-auto p-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
+    <div className="min-h-screen bg-pk-carbon pb-24" data-testid="minigames-page">
+      {/* Glass Header */}
+      <div className="sticky top-0 z-40 bg-pk-carbon/85 backdrop-blur-xl saturate-[1.3] border-b border-white/[0.08]">
+        <div className="max-w-2xl mx-auto px-4 py-3">
+          <div className="flex items-center gap-3">
+            <button
               onClick={() => navigate(-1)}
-              className="text-gray-400 hover:text-white hover:bg-white/10"
+              className="p-1.5 -ml-1.5 rounded-lg text-pk-titane hover:text-pk-piste transition-colors"
+              data-testid="minigames-back"
             >
-              <ChevronLeft className="w-6 h-6" />
-            </Button>
+              <ChevronLeft className="w-5 h-5" />
+            </button>
             <div className="flex-1">
-              <h1 className="font-heading text-xl uppercase tracking-tight text-white flex items-center gap-2">
-                <Zap className="w-5 h-5 text-purple-500" />
+              <h1 className="font-display text-lg flex items-center gap-2">
+                <Zap className="w-5 h-5 text-pk-amber" />
                 Mini-Jeux
               </h1>
               {nextRace && (
-                <p className="font-body text-xs text-gray-400">
+                <p className="font-data text-[0.5625rem] text-pk-titane">
                   Weekend: {nextRace.name.replace(" Grand Prix", "")}
                 </p>
               )}
@@ -87,141 +101,99 @@ export default function MiniGamesPage() {
       </div>
 
       <motion.div
-        className="max-w-2xl mx-auto p-4 space-y-6"
+        className="max-w-2xl mx-auto px-4 pt-4 space-y-4"
         initial="hidden"
         animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.08 } }, hidden: {} }}
+        variants={staggerContainer}
       >
-        {/* Info Card - Récompenses */}
+        {/* Rewards Info Card */}
         <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 20, scale: 0.97 },
-            visible: { opacity: 1, y: 0, scale: 1 },
-          }}
+          variants={fadeUp}
+          className="bg-pk-amber/[0.06] border border-pk-amber/20 rounded-lg p-4"
         >
-          <Card className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 border-yellow-500/30 glass-card">
-            <CardContent className="p-4">
-              <h3 className="font-heading text-sm uppercase text-yellow-500 mb-2 flex items-center gap-2">
-                <Trophy className="w-4 h-4" /> Récompenses
-              </h3>
-              <ul className="font-body text-xs text-gray-400 space-y-1">
-                <li>• Mode compétition: 3 essais par jeu et par weekend</li>
-                <li>
-                  • Le gagnant de chaque jeu dans la ligue gagne{" "}
-                  <span className="text-orange-400">+2 points</span>
-                </li>
-                <li>• XP gagné à chaque partie jouée</li>
-                <li>• Mode entraînement illimité pour s'améliorer!</li>
-              </ul>
-            </CardContent>
-          </Card>
+          <h3 className="font-display text-xs flex items-center gap-2 mb-2">
+            <Trophy className="w-4 h-4 text-pk-amber" /> Rewards
+          </h3>
+          <ul className="font-data text-[0.5625rem] text-pk-titane space-y-1">
+            <li>Competition mode: 3 attempts per game per weekend</li>
+            <li>
+              The winner of each league game earns <span className="text-pk-amber">+2 points</span>
+            </li>
+            <li>XP earned for every game played</li>
+            <li>Unlimited practice mode to improve!</li>
+          </ul>
         </motion.div>
 
         {/* Mode Toggle */}
-        <motion.div
-          className="flex gap-2"
-          variants={{
-            hidden: { opacity: 0, y: 15 },
-            visible: { opacity: 1, y: 0 },
-          }}
-        >
-          <motion.div className="flex-1" whileTap={{ scale: 0.96 }}>
-            <Button
-              onClick={() => handleModeChange("training")}
-              className={`w-full h-12 font-heading uppercase transition-all ${
-                mode === "training"
-                  ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white border-2 border-purple-400 shadow-[0_0_15px_rgba(147,51,234,0.5)]"
-                  : "bg-white/[0.03] text-gray-500 border-2 border-white/10 hover:bg-white/5 hover:text-gray-300"
-              }`}
-            >
-              <Dumbbell className="w-5 h-5 mr-2" />
-              Entraînement
-            </Button>
-          </motion.div>
-          <motion.div className="flex-1" whileTap={{ scale: 0.96 }}>
-            <Button
-              onClick={() => handleModeChange("competition")}
-              className={`w-full h-12 font-heading uppercase transition-all ${
-                mode === "competition"
-                  ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-2 border-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.5)]"
-                  : "bg-white/[0.03] text-gray-500 border-2 border-white/10 hover:bg-white/5 hover:text-gray-300"
-              }`}
-            >
-              <Trophy className="w-5 h-5 mr-2" />
-              Compétition
-            </Button>
-          </motion.div>
+        <motion.div className="grid grid-cols-2 gap-2" variants={fadeUp}>
+          <button
+            onClick={() => handleModeChange("training")}
+            className={`h-11 rounded-lg font-display text-sm transition-all flex items-center justify-center gap-2 active:scale-[0.97] ${
+              mode === "training"
+                ? "bg-pk-info text-white shadow-lg"
+                : "bg-white/[0.04] border border-white/[0.08] text-pk-titane hover:text-pk-piste"
+            }`}
+            data-testid="mode-training"
+          >
+            <Dumbbell className="w-4 h-4" />
+            Practice
+          </button>
+          <button
+            onClick={() => handleModeChange("competition")}
+            className={`h-11 rounded-lg font-display text-sm transition-all flex items-center justify-center gap-2 active:scale-[0.97] ${
+              mode === "competition"
+                ? "bg-pk-amber text-pk-carbon shadow-lg"
+                : "bg-white/[0.04] border border-white/[0.08] text-pk-titane hover:text-pk-piste"
+            }`}
+            data-testid="mode-competition"
+          >
+            <Trophy className="w-4 h-4" />
+            Competition
+          </button>
         </motion.div>
 
         {/* Game Tabs */}
-        <motion.div
-          className="flex gap-2"
-          variants={{
-            hidden: { opacity: 0, y: 15 },
-            visible: { opacity: 1, y: 0 },
-          }}
-        >
-          <motion.button
+        <motion.div className="grid grid-cols-2 gap-2" variants={fadeUp}>
+          <button
             onClick={() => handleTabChange("reaction")}
-            className={`flex-1 p-3 rounded-xl border-2 transition-all relative overflow-hidden ${
+            className={`p-3 rounded-lg border transition-all text-center ${
               activeTab === "reaction"
-                ? "border-orange-500 bg-orange-500/10"
-                : "border-white/10 bg-white/[0.02] hover:bg-white/5"
+                ? "bg-pk-amber/[0.08] border-pk-amber/30"
+                : "bg-white/[0.04] border-white/[0.08] hover:bg-white/[0.06]"
             }`}
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ y: -2 }}
+            data-testid="tab-reaction"
           >
-            {activeTab === "reaction" && (
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-transparent"
-                layoutId="gameTabBg"
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              />
-            )}
             <Zap
-              className={`w-6 h-6 mx-auto mb-1 relative z-10 ${activeTab === "reaction" ? "text-orange-500" : "text-gray-500"}`}
+              className={`w-5 h-5 mx-auto mb-1 ${activeTab === "reaction" ? "text-pk-amber" : "text-pk-titane"}`}
             />
             <p
-              className={`font-heading text-sm uppercase relative z-10 ${activeTab === "reaction" ? "text-white" : "text-gray-400"}`}
+              className={`font-display text-xs ${activeTab === "reaction" ? "text-white" : "text-pk-titane"}`}
             >
               Reaction
             </p>
-          </motion.button>
-          <motion.button
+          </button>
+          <button
             onClick={() => handleTabChange("batak")}
-            className={`flex-1 p-3 rounded-xl border-2 transition-all relative overflow-hidden ${
+            className={`p-3 rounded-lg border transition-all text-center ${
               activeTab === "batak"
-                ? "border-cyan-500 bg-cyan-500/10"
-                : "border-white/10 bg-white/[0.02] hover:bg-white/5"
+                ? "bg-pk-info/[0.08] border-pk-info/30"
+                : "bg-white/[0.04] border-white/[0.08] hover:bg-white/[0.06]"
             }`}
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ y: -2 }}
+            data-testid="tab-batak"
           >
-            {activeTab === "batak" && (
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-transparent"
-                layoutId="gameTabBg"
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              />
-            )}
             <Target
-              className={`w-6 h-6 mx-auto mb-1 relative z-10 ${activeTab === "batak" ? "text-cyan-500" : "text-gray-500"}`}
+              className={`w-5 h-5 mx-auto mb-1 ${activeTab === "batak" ? "text-pk-info" : "text-pk-titane"}`}
             />
             <p
-              className={`font-heading text-sm uppercase relative z-10 ${activeTab === "batak" ? "text-white" : "text-gray-400"}`}
+              className={`font-display text-xs ${activeTab === "batak" ? "text-white" : "text-pk-titane"}`}
             >
               Batak
             </p>
-          </motion.button>
+          </button>
         </motion.div>
 
         {/* Active Game */}
-        <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 15 },
-            visible: { opacity: 1, y: 0 },
-          }}
-        >
+        <motion.div variants={fadeUp}>
           <AnimatePresence mode="wait">
             {activeTab === "reaction" ? (
               <motion.div
@@ -233,7 +205,9 @@ export default function MiniGamesPage() {
               >
                 <ReactionGame
                   onSubmit={handleReactionSubmit}
-                  attemptsRemaining={mode === "competition" ? reactionAttempts.remaining : undefined}
+                  attemptsRemaining={
+                    mode === "competition" ? reactionAttempts.remaining : undefined
+                  }
                   isTraining={mode === "training"}
                 />
               </motion.div>
@@ -256,12 +230,7 @@ export default function MiniGamesPage() {
         </motion.div>
 
         {/* Leaderboard */}
-        <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0 },
-          }}
-        >
+        <motion.div variants={fadeUp}>
           <MiniGamesLeaderboard
             activeTab={activeTab}
             mode={mode}

@@ -260,7 +260,7 @@ async def send_magic_link(request: Request, data: MagicLinkRequest) -> dict:
         if not sent:
             logger.warning("[Magic Login] Email delivery was not confirmed for %s", email)
 
-    return {"message": "Si un compte existe avec cet email, un lien magique a ete envoye."}
+    return {"message": "If an account exists for this email, a magic link has been sent."}
 
 
 @router.post("/magic-link/verify", response_model=TokenResponse)
@@ -270,23 +270,23 @@ async def verify_magic_link(request: Request, data: MagicLinkVerifyRequest, resp
     try:
         payload = jwt.decode(data.token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         if payload.get("type") != "user_magic_link":
-            raise HTTPException(status_code=400, detail="Lien invalide")
+            raise HTTPException(status_code=400, detail="Invalid link")
 
         user_id = payload.get("sub")
         token_id = payload.get("jti")
         if not user_id or not token_id:
-            raise HTTPException(status_code=400, detail="Lien invalide")
+            raise HTTPException(status_code=400, detail="Invalid link")
 
         link_doc = await db.user_magic_links.find_one(
             {"token_id": token_id, "user_id": user_id, "used": False}
         )
         if not link_doc:
-            raise HTTPException(status_code=400, detail="Lien deja utilise ou expire")
+            raise HTTPException(status_code=400, detail="Link already used or expired")
 
         user = await db.users.find_one({"id": user_id}, {"_id": 0})
         if not user:
             await db.user_magic_links.update_one({"token_id": token_id}, {"$set": {"used": True}})
-            raise HTTPException(status_code=400, detail="Lien invalide")
+            raise HTTPException(status_code=400, detail="Invalid link")
 
         await db.user_magic_links.update_one({"token_id": token_id}, {"$set": {"used": True}})
         await _record_login(user, request)
@@ -320,9 +320,9 @@ async def verify_magic_link(request: Request, data: MagicLinkVerifyRequest, resp
         )
 
     except jwt.ExpiredSignatureError as exc:
-        raise HTTPException(status_code=400, detail="Lien expire") from exc
+        raise HTTPException(status_code=400, detail="Expired link") from exc
     except jwt.InvalidTokenError as exc:
-        raise HTTPException(status_code=400, detail="Lien invalide") from exc
+        raise HTTPException(status_code=400, detail="Invalid link") from exc
 
 
 # ── Refresh ──────────────────────────────────────────────────────────────────
@@ -417,7 +417,7 @@ async def verify_email(token: str):
         {"_id": 0},
     )
     if not user:
-        raise HTTPException(status_code=400, detail="Token de verification invalide ou deja utilise")
+        raise HTTPException(status_code=400, detail="Invalid or already used verification token")
 
     await db.users.update_one(
         {"id": user["id"]},
@@ -426,14 +426,14 @@ async def verify_email(token: str):
             "$unset": {"email_verification_token": ""},
         },
     )
-    return {"message": "Email verifie avec succes"}
+    return {"message": "Email verified successfully"}
 
 
 @router.post("/resend-verification")
 async def resend_verification(user=Depends(get_current_user)):
     """Resend verification email for the current user."""
     if user.get("email_verified"):
-        return {"message": "Email deja verifie"}
+        return {"message": "Email already verified"}
 
     new_token = generate_verification_token()
     await db.users.update_one(
@@ -441,7 +441,7 @@ async def resend_verification(user=Depends(get_current_user)):
         {"$set": {"email_verification_token": new_token}},
     )
     await send_verification_email(user["email"], new_token)
-    return {"message": "Email de verification renvoye"}
+    return {"message": "Verification email sent again"}
 
 
 # ── Password reset (P1-4) ──────────────────────────────────────────────────
@@ -476,7 +476,7 @@ async def forgot_password(request: Request, data: ForgotPasswordRequest):
             logger.warning("[Password Reset] Email delivery was not confirmed for %s", email)
 
     # Always return same message (no email enumeration)
-    return {"message": "Si un compte existe avec cet email, un lien de reinitialisation a ete envoye."}
+    return {"message": "If an account exists for this email, a reset link has been sent."}
 
 
 class ResetPasswordData(BaseModel):
@@ -498,12 +498,12 @@ async def reset_password(request: Request, data: ResetPasswordData):
         {"_id": 0},
     )
     if not user:
-        raise HTTPException(status_code=400, detail="Lien invalide ou expire")
+        raise HTTPException(status_code=400, detail="Invalid link ou expire")
 
     # Check expiration
     expires = user.get("reset_password_expires", "")
     if expires and datetime.fromisoformat(expires) < datetime.now(UTC):
-        raise HTTPException(status_code=400, detail="Lien expire, veuillez en demander un nouveau")
+        raise HTTPException(status_code=400, detail="Expired link, please request a new one")
 
     # Update password and clear token
     await db.users.update_one(
@@ -514,4 +514,4 @@ async def reset_password(request: Request, data: ResetPasswordData):
         },
     )
 
-    return {"message": "Mot de passe reinitialise avec succes"}
+    return {"message": "Password reset successfully"}

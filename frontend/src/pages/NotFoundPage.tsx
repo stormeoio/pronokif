@@ -80,9 +80,9 @@ export default function NotFoundPage() {
             <span className="font-data text-[0.5rem] text-pk-red uppercase">Radio team</span>
           </div>
           <p className="text-[0.8125rem] italic text-pk-piste leading-snug">
-            "Fred, on a perdu ta position. Rentre aux stands, on te remet en piste."
+            "Fred, we lost your position. Come back to the pits and we will get you back on track."
           </p>
-          <p className="font-data text-[0.5rem] text-pk-titane mt-1">— Ingenieur de course</p>
+          <p className="font-data text-[0.5rem] text-pk-titane mt-1">— Race engineer</p>
         </motion.div>
 
         {/* Actions */}
@@ -95,7 +95,7 @@ export default function NotFoundPage() {
             className="w-full h-12 rounded-lg bg-pk-red text-white font-display text-[0.9375rem] flex items-center justify-center gap-2 shadow-glow-red active:scale-[0.97] transition-transform"
           >
             <RotateCcw className="w-4 h-4" />
-            Retour au paddock
+            Back to the paddock
           </button>
           <button
             onClick={() => navigate(-1)}
