@@ -415,34 +415,8 @@ def magic_login(magic_url: str, expire_minutes: int = 15, lang: str = "fr") -> E
     )
 
 
-def admin_magic_link(magic_url: str, expire_minutes: int = 15, lang: str = "fr") -> EmailContent:
-    if lang == "en":
-        return EmailContent(
-            subject="Race Control access — PronoKif",
-            text=(
-                "PronoKif back-office login\n\n"
-                "Open this link to access the back-office:\n"
-                f"{magic_url}\n\n"
-                f"This link expires in {expire_minutes} minutes.\n"
-                "You didn't request this link? Ignore this message."
-            ),
-            html_body=_render(
-                preheader="Your Race Control access is ready.",
-                title="Race Control",
-                paragraphs=[
-                    "Your PronoKif back-office access is ready. "
-                    "One click to enter Race Control.",
-                ],
-                button_url=magic_url,
-                button_label="ACCESS BACK-OFFICE",
-                fine_print=(
-                    f"This link expires in {expire_minutes} minutes. "
-                    "You didn't request this link? Ignore this message."
-                ),
-                admin=True,
-                lang="en",
-            ),
-        )
+def admin_magic_link(magic_url: str, expire_minutes: int = 15, **_kwargs: object) -> EmailContent:
+    """Admin back-office is French-only — no lang parameter, always FR."""
     return EmailContent(
         subject="Accès Direction de Course — PronoKif",
         text=(
