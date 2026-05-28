@@ -60,7 +60,11 @@ async def test_send_magic_login_email_uses_frontend_magic_link(monkeypatch):
         calls.append((to_email, subject, text_body, html_body))
         return True
 
+    async def fake_locale(_email: str) -> str:
+        return "fr"
+
     monkeypatch.setattr(auth_service, "send_email", fake_send_email)
+    monkeypatch.setattr(auth_service, "_get_user_locale", fake_locale)
     monkeypatch.setenv("FRONTEND_URL", "https://app.example.com/")
 
     sent = await auth_service.send_magic_login_email("pilot@example.com", "token-abc")
@@ -83,7 +87,11 @@ async def test_send_reset_email_returns_delivery_status(monkeypatch):
         calls.append((to_email, subject, text_body, html_body))
         return False
 
+    async def fake_locale(_email: str) -> str:
+        return "fr"
+
     monkeypatch.setattr(auth_service, "send_email", fake_send_email)
+    monkeypatch.setattr(auth_service, "_get_user_locale", fake_locale)
     monkeypatch.setattr(auth_service, "is_smtp_enabled", lambda: True)
     monkeypatch.setenv("FRONTEND_URL", "https://app.example.com/")
 
