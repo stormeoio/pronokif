@@ -35,7 +35,7 @@ export default function LeaguesTab() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="font-heading text-2xl text-white uppercase tracking-tight">Leagues</h2>
+        <h2 className="font-heading text-2xl text-white uppercase tracking-tight">Ligues</h2>
         <span className="font-data text-sm text-gray-500">{total} au total</span>
       </div>
 
@@ -47,7 +47,7 @@ export default function LeaguesTab() {
             setSearch(e.target.value);
             setPage(0);
           }}
-          placeholder="Rechercher par nom ou code..."
+          placeholder="Rechercher une ligue par nom ou code..."
           className="border-gray-700 bg-gray-900 pl-10 text-white"
         />
       </div>
@@ -59,7 +59,7 @@ export default function LeaguesTab() {
       ) : leagues.length === 0 ? (
         <div className="card-arcade p-8 text-center">
           <Network className="mx-auto mb-3 h-12 w-12 text-gray-600" />
-          <p className="font-body text-gray-500">No league found</p>
+          <p className="font-body text-gray-500">Aucune ligue trouvée</p>
         </div>
       ) : (
         <div className="card-arcade overflow-hidden">
@@ -69,9 +69,9 @@ export default function LeaguesTab() {
                 <tr className="border-b border-gray-800 font-body text-xs uppercase text-gray-500">
                   <th className="p-3 text-left">Ligue</th>
                   <th className="p-3 text-left">Code</th>
-                  <th className="p-3 text-left">Members</th>
-                  <th className="p-3 text-left">Creator</th>
-                  <th className="p-3 text-left">Created on</th>
+                  <th className="p-3 text-left">Membres</th>
+                  <th className="p-3 text-left">Créateur</th>
+                  <th className="p-3 text-left">Créée le</th>
                 </tr>
               </thead>
               <tbody>

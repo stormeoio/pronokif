@@ -59,10 +59,10 @@ export default function SettingsTab() {
     setSaving(true);
     try {
       await adminApi.settings.update(form);
-      toast.success("Settings saved");
+      toast.success("Paramètres enregistrés");
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "settings"] });
     } catch {
-      toast.error("Error");
+      toast.error("Erreur");
     } finally {
       setSaving(false);
     }
@@ -82,7 +82,7 @@ export default function SettingsTab() {
     setEnabling2fa(true);
     try {
       await adminApi.verify2faSetup(totpCode);
-      toast.success("2FA enabled!");
+      toast.success("2FA activé !");
       setShow2fa(false);
       setTotpCode("");
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "me"] });
@@ -103,7 +103,7 @@ export default function SettingsTab() {
 
   return (
     <div>
-      <h2 className="font-heading text-2xl text-white uppercase tracking-tight mb-6">Settings</h2>
+      <h2 className="font-heading text-2xl text-white uppercase tracking-tight mb-6">Paramètres</h2>
 
       {/* App Settings */}
       <form onSubmit={handleSave} className="card-arcade p-4 mb-6 space-y-4">
@@ -122,7 +122,7 @@ export default function SettingsTab() {
             />
           </div>
           <div>
-            <label className="font-body text-xs text-gray-400 block mb-1">Season en cours</label>
+            <label className="font-body text-xs text-gray-400 block mb-1">Saison en cours</label>
             <Input
               type="number"
               value={form.current_season}
@@ -163,7 +163,9 @@ export default function SettingsTab() {
             </div>
           </div>
           <div>
-            <label className="font-body text-xs text-gray-400 block mb-1">Max leagues/user</label>
+            <label className="font-body text-xs text-gray-400 block mb-1">
+              Max ligues/utilisateur
+            </label>
             <Input
               type="number"
               value={form.max_leagues_per_user}
@@ -208,7 +210,7 @@ export default function SettingsTab() {
           ) : (
             <Save className="w-4 h-4 mr-1" />
           )}
-          Save
+          Enregistrer
         </Button>
       </form>
 
@@ -216,16 +218,16 @@ export default function SettingsTab() {
       <div className="card-arcade p-4">
         <h3 className="font-heading text-sm text-cyan-400 uppercase flex items-center gap-2 mb-4">
           <Shield className="w-4 h-4" />
-          Security
+          Sécurité
         </h3>
 
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="font-body text-sm text-white">Two-factor authentication (2FA)</p>
+            <p className="font-body text-sm text-white">Authentification à deux facteurs (2FA)</p>
             <p className="font-body text-xs text-gray-500">
               {adminInfo?.totp_enabled
-                ? "Enabled — your account is protected"
-                : "Disabled — enable it for stronger security"}
+                ? "Activé — votre compte est protégé"
+                : "Désactivé — activez-le pour une sécurité renforcée"}
             </p>
           </div>
           {!adminInfo?.totp_enabled && (
@@ -244,7 +246,8 @@ export default function SettingsTab() {
         {show2fa && (
           <div className="bg-gray-900 rounded-xl p-4 border border-cyan-500/30 space-y-3">
             <p className="font-body text-sm text-gray-300">
-              Add this secret code to your authenticator app (Google Authenticator, Authy, etc.) :
+              Ajoutez ce code secret dans votre application d'authentification (Google
+              Authenticator, Authy, etc.) :
             </p>
             <div className="bg-black/50 p-3 rounded-lg">
               <code className="font-mono text-sm text-cyan-400 break-all select-all">
@@ -252,7 +255,7 @@ export default function SettingsTab() {
               </code>
             </div>
             <p className="font-body text-xs text-gray-500">
-              Then enter the 6-digit code shown in your app:
+              Puis saisissez le code à 6 chiffres affiché dans votre application :
             </p>
             <div className="flex gap-2">
               <Input
@@ -268,7 +271,7 @@ export default function SettingsTab() {
                 size="sm"
                 className="btn-racing text-xs"
               >
-                {enabling2fa ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verify and enable"}
+                {enabling2fa ? <Loader2 className="w-4 h-4 animate-spin" /> : "Vérifier et activer"}
               </Button>
             </div>
           </div>

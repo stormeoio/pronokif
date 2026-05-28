@@ -36,13 +36,13 @@ export default function InvitationsTab() {
     setSending(true);
     try {
       await adminApi.invitations.send({ email, message: message || undefined });
-      toast.success("Invitation sent!");
+      toast.success("Invitation envoyée !");
       setEmail("");
       setMessage("");
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "invitations"] });
     } catch (err: unknown) {
       const e2 = err as { response?: { data?: { detail?: string } } };
-      toast.error(e2.response?.data?.detail || "Error while sending");
+      toast.error(e2.response?.data?.detail || "Erreur lors de l'envoi");
     } finally {
       setSending(false);
     }
@@ -61,7 +61,7 @@ export default function InvitationsTab() {
       >
         <h3 className="font-heading text-sm text-cyan-400 uppercase flex items-center gap-2">
           <Send className="w-4 h-4" />
-          Send an invitation
+          Envoyer une invitation
         </h3>
         <Input
           type="email"
@@ -74,7 +74,7 @@ export default function InvitationsTab() {
         <Textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Custom message (optional)"
+          placeholder="Message personnalisé (optionnel)"
           rows={2}
           className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500 resize-none"
         />
@@ -84,12 +84,13 @@ export default function InvitationsTab() {
           ) : (
             <Mail className="w-4 h-4 mr-1" />
           )}
-          Send invitation
+          Envoyer l'invitation
         </Button>
       </form>
 
       {/* List */}
       <h3 className="font-heading text-sm text-gray-400 uppercase mb-3">Historique</h3>
+
       {isLoading ? (
         <div className="flex justify-center py-8">
           <Loader2 className="w-6 h-6 text-orange-500 animate-spin" />
@@ -97,7 +98,7 @@ export default function InvitationsTab() {
       ) : invitations.length === 0 ? (
         <div className="card-arcade p-8 text-center">
           <Mail className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-          <p className="font-body text-gray-500">No invitations sent</p>
+          <p className="font-body text-gray-500">Aucune invitation envoyée</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -106,7 +107,7 @@ export default function InvitationsTab() {
               <div>
                 <p className="font-body text-sm text-white">{inv.email}</p>
                 <p className="font-body text-xs text-gray-500">
-                  Sent on{" "}
+                  Envoyée le{" "}
                   {new Date(inv.created_at).toLocaleDateString("fr-FR", {
                     day: "numeric",
                     month: "short",
@@ -118,7 +119,7 @@ export default function InvitationsTab() {
               <div className="flex items-center gap-1">
                 {inv.accepted ? (
                   <span className="flex items-center gap-1 text-xs text-green-400 bg-green-500/20 px-2 py-1 rounded">
-                    <Check className="w-3 h-3" /> Accepted
+                    <Check className="w-3 h-3" /> Acceptée
                   </span>
                 ) : (
                   <span className="flex items-center gap-1 text-xs text-yellow-400 bg-yellow-500/20 px-2 py-1 rounded">

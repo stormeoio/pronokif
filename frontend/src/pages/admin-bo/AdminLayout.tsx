@@ -66,18 +66,18 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, section: "general" },
-  { key: "users", label: "Users", icon: Users, section: "general" },
-  { key: "predictions", label: "Pickstics", icon: BarChart3, section: "general" },
-  { key: "leagues", label: "Leagues", icon: Network, section: "general" },
+  { key: "dashboard", label: "Tableau de bord", icon: LayoutDashboard, section: "general" },
+  { key: "users", label: "Utilisateurs", icon: Users, section: "general" },
+  { key: "predictions", label: "Pronostics", icon: BarChart3, section: "general" },
+  { key: "leagues", label: "Ligues", icon: Network, section: "general" },
   { key: "championships", label: "Championnats", icon: Trophy, section: "general" },
-  { key: "races", label: "Races", icon: Flag, section: "general" },
-  { key: "feedbacks", label: "Feedbacks", icon: MessageSquare, section: "general" },
+  { key: "races", label: "Courses", icon: Flag, section: "general" },
+  { key: "feedbacks", label: "Retours", icon: MessageSquare, section: "general" },
   { key: "invitations", label: "Invitations", icon: Mail, section: "general" },
-  { key: "media", label: "Media", icon: Image, section: "general" },
+  { key: "media", label: "Médias", icon: Image, section: "general" },
   { key: "audit", label: "Audit", icon: Shield, section: "dev" },
-  { key: "roadmap", label: "Roadmap", icon: Map, section: "dev" },
-  { key: "settings", label: "Settings", icon: Settings, section: "general" },
+  { key: "roadmap", label: "Feuille de route", icon: Map, section: "dev" },
+  { key: "settings", label: "Paramètres", icon: Settings, section: "general" },
 ];
 
 export default function AdminLayout() {
@@ -199,7 +199,7 @@ export default function AdminLayout() {
             {/* Dev section */}
             <div className="pt-3 mt-3 border-t border-white/[0.08]">
               <p className="px-3 pb-2 font-body text-[10px] uppercase text-pk-titane tracking-wider">
-                Development
+                Développement
               </p>
               {devItems.map(({ key, label, icon: Icon }) => {
                 const isActive = activeTab === key;
@@ -231,7 +231,7 @@ export default function AdminLayout() {
                 <Smartphone
                   className={`w-4 h-4 ${previewOpen ? "text-pk-red" : "text-pk-titane"}`}
                 />
-                <span className="font-body text-sm">Preview App</span>
+                <span className="font-body text-sm">Aperçu de l'app</span>
                 {previewOpen ? (
                   <PanelRightClose className="w-3 h-3 ml-auto text-pk-red" />
                 ) : (

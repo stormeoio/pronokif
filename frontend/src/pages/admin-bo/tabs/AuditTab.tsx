@@ -37,16 +37,16 @@ const SCORES = [
 ];
 
 const METRICS = [
-  { label: "Backend LOC", before: "~3,500", after: "15,710", mult: "x4.5" },
-  { label: "Frontend LOC", before: "~12,000", after: "36,598", mult: "x3" },
+  { label: "LOC backend", before: "~3,500", after: "15,710", mult: "x4.5" },
+  { label: "LOC frontend", before: "~12,000", after: "36,598", mult: "x3" },
   { label: "Endpoints API", before: "~25", after: "131", mult: "x5" },
   { label: "Composants", before: "~15", after: "83", mult: "x5.5" },
-  { label: "Hooks custom", before: "~2", after: "16", mult: "x8" },
+  { label: "Hooks personnalisés", before: "~2", after: "16", mult: "x8" },
   { label: "Modeles Pydantic", before: "~8", after: "40", mult: "x5" },
   { label: "Index MongoDB", before: "0", after: "47", mult: "new" },
-  { label: "Fichiers test", before: "~5", after: "35", mult: "x7" },
+  { label: "Fichiers de test", before: "~5", after: "35", mult: "x7" },
   { label: "LOC tests", before: "~400", after: "6,659", mult: "x16" },
-  { label: "Errors lint", before: "1,137", after: "0", mult: "-100%" },
+  { label: "Erreurs lint", before: "1,137", after: "0", mult: "-100%" },
   { label: '"as any" TS', before: "49", after: "0", mult: "-100%" },
   { label: "Workflows CI/CD", before: "0", after: "2", mult: "new" },
 ];
@@ -66,30 +66,30 @@ const SECURITY = [
   },
   {
     threat: "Brute force login",
-    before: "No protection",
+    before: "Aucune protection",
     after: "Rate limit 5/min/IP",
     resolved: true,
   },
   {
     threat: "Comptes fantomes",
-    before: "No verification",
-    after: "Email verification",
+    before: "Aucune vérification",
+    after: "Vérification par e-mail",
     resolved: true,
   },
   {
     threat: "Password faible",
-    before: "No validation",
-    after: "Min 8, updated+min+chiffre",
+    before: "Aucune validation",
+    after: "Min 8, maj+min+chiffre",
     resolved: true,
   },
   {
     threat: "Recuperation compte",
-    before: "No mechanism",
+    before: "Aucun mécanisme",
     after: "Token 30min + rate limit",
     resolved: true,
   },
   {
-    threat: "Admin non protege",
+    threat: "Admin non protégé",
     before: "Token simple",
     after: "Magic link + TOTP 2FA",
     resolved: true,
@@ -97,7 +97,7 @@ const SECURITY = [
   {
     threat: "Data leak",
     before: "CORS permissif",
-    after: "Origines strictes + headers",
+    after: "Origines strictes + en-têtes",
     resolved: true,
   },
 ];

@@ -135,7 +135,9 @@ export default function RoadmapTab() {
     <div>
       {/* Header + stats */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-heading text-2xl text-white uppercase tracking-tight">Roadmap</h2>
+        <h2 className="font-heading text-2xl text-white uppercase tracking-tight">
+          Feuille de route
+        </h2>
         <Button
           onClick={() => {
             setShowAddTask(true);
@@ -505,7 +507,7 @@ function PhasesView({
   };
 
   const handleDeletePhase = (id: string) => {
-    if (!confirm("Delete this phase? Associated tasks will not be deleted.")) return;
+    if (!confirm("Supprimer cette phase ? Les tâches associées ne seront pas supprimées.")) return;
     setPhases(phases.filter((p) => p.id !== id));
   };
 
@@ -514,7 +516,7 @@ function PhasesView({
       {(newPhase || editingPhase) && (
         <div className="card-arcade p-4 border border-purple-500/30 space-y-3">
           <h3 className="font-heading text-xs text-purple-400 uppercase">
-            {editingPhase ? "Edit phase" : "New phase"}
+            {editingPhase ? "Modifier la phase" : "Nouvelle phase"}
           </h3>
           <div className="grid grid-cols-2 gap-3">
             <Input
@@ -553,7 +555,7 @@ function PhasesView({
           </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={handleSavePhase} className="btn-racing text-xs">
-              <Save className="w-3.5 h-3.5 mr-1" /> Save
+              <Save className="w-3.5 h-3.5 mr-1" /> Enregistrer
             </Button>
             <Button
               size="sm"
@@ -564,7 +566,7 @@ function PhasesView({
               }}
               className="text-gray-400 text-xs"
             >
-              Cancel
+              Annuler
             </Button>
           </div>
         </div>
@@ -581,7 +583,7 @@ function PhasesView({
           }}
           className="text-xs border-purple-500/30 text-purple-400"
         >
-          <Plus className="w-3.5 h-3.5 mr-1" /> New phase
+          <Plus className="w-3.5 h-3.5 mr-1" /> Nouvelle phase
         </Button>
       </div>
 
@@ -648,7 +650,7 @@ function PhasesView({
                 />
               </div>
               <p className="font-body text-xs text-gray-500">
-                {doneCount}/{phaseTasks.length} tasks completed
+                {doneCount}/{phaseTasks.length} tâches terminées
               </p>
             </div>
           );
@@ -687,7 +689,7 @@ function TaskEditor({
     <div className="card-arcade p-4 mb-4 border border-orange-500/30 space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="font-heading text-sm text-orange-400 uppercase">
-          {task ? "Edit task" : "New task"}
+          {task ? "Modifier la tâche" : "Nouvelle tâche"}
         </h3>
         <button onClick={onCancel} className="p-1 text-gray-500 hover:text-white">
           <X className="w-4 h-4" />
@@ -697,7 +699,7 @@ function TaskEditor({
       <Input
         value={form.title}
         onChange={(e) => setForm({ ...form, title: e.target.value })}
-        placeholder="Task title"
+        placeholder="Titre de la tâche"
         className="bg-gray-900 border-gray-700 text-white"
         autoFocus
       />
@@ -763,7 +765,7 @@ function TaskEditor({
           disabled={!form.title}
           className="btn-racing text-xs"
         >
-          <Save className="w-3.5 h-3.5 mr-1" /> {task ? "Mettre a jour" : "Creer"}
+          <Save className="w-3.5 h-3.5 mr-1" /> {task ? "Mettre à jour" : "Créer"}
         </Button>
         <Button size="sm" variant="ghost" onClick={onCancel} className="text-gray-400 text-xs">
           Cancel

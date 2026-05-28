@@ -31,18 +31,18 @@ export default function FeedbacksTab() {
       await adminApi.feedbacks.markRead(id);
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "feedbacks"] });
     } catch {
-      toast.error("Error");
+      toast.error("Erreur");
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete ce feedback ?")) return;
+    if (!confirm("Supprimer ce retour ?")) return;
     try {
       await adminApi.feedbacks.delete(id);
-      toast.success("Feedback deleted");
+      toast.success("Retour supprimé");
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "feedbacks"] });
     } catch {
-      toast.error("Error");
+      toast.error("Erreur");
     }
   };
 
@@ -64,14 +64,14 @@ export default function FeedbacksTab() {
       case "suggestion":
         return "Suggestion";
       default:
-        return "Back";
+        return "Autre";
     }
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="font-heading text-2xl text-white uppercase tracking-tight">Feedbacks</h2>
+        <h2 className="font-heading text-2xl text-white uppercase tracking-tight">Retours</h2>
         <span className="font-data text-sm text-gray-500">{data?.total ?? 0} au total</span>
       </div>
 
@@ -82,7 +82,7 @@ export default function FeedbacksTab() {
       ) : feedbacks.length === 0 ? (
         <div className="card-arcade p-8 text-center">
           <MessageSquare className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-          <p className="font-body text-gray-500">No feedback</p>
+          <p className="font-body text-gray-500">Aucun retour</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -128,7 +128,7 @@ export default function FeedbacksTab() {
                   <button
                     onClick={() => handleDelete(fb.id)}
                     className="p-1.5 text-gray-400 hover:text-red-400 rounded"
-                    title="Delete"
+                    title="Supprimer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

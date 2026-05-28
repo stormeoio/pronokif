@@ -48,7 +48,7 @@ export default function AdminAuthPage() {
         }
       } catch (err: unknown) {
         const e = err as { response?: { data?: { detail?: string } } };
-        setError(e.response?.data?.detail || "Invalid or expired link");
+        setError(e.response?.data?.detail || "Lien invalide ou expiré");
       } finally {
         setVerifying(false);
       }
@@ -73,7 +73,7 @@ export default function AdminAuthPage() {
       setSent(true);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
-      setError(e.response?.data?.detail || "Error while sending");
+      setError(e.response?.data?.detail || "Erreur lors de l'envoi");
     } finally {
       setSending(false);
     }
@@ -119,7 +119,7 @@ export default function AdminAuthPage() {
                 className="mb-2 h-8 w-auto max-w-[210px] object-contain"
                 draggable={false}
               />
-              <p className="font-body text-xs text-pk-titane">Secure back office</p>
+              <p className="font-body text-xs text-pk-titane">Back-office sécurisé</p>
             </div>
           </div>
 
@@ -128,16 +128,16 @@ export default function AdminAuthPage() {
               /* Verifying magic link */
               <div className="text-center py-8">
                 <Loader2 className="w-8 h-8 text-pk-red animate-spin mx-auto mb-4" />
-                <p className="font-body text-pk-titane">Verifying link...</p>
+                <p className="font-body text-pk-titane">Vérification du lien...</p>
               </div>
             ) : requires2fa ? (
               /* 2FA verification */
               <form onSubmit={handleVerify2fa} className="space-y-4">
                 <div className="text-center mb-4">
                   <KeyRound className="w-10 h-10 text-pk-red mx-auto mb-2" />
-                  <h2 className="font-heading text-lg text-pk-piste">2FA verification</h2>
+                  <h2 className="font-heading text-lg text-pk-piste">Vérification 2FA</h2>
                   <p className="font-body text-sm text-pk-titane">
-                    Enter the code from your authenticator app
+                    Entrez le code de votre application d'authentification
                   </p>
                 </div>
                 <Input
@@ -161,19 +161,20 @@ export default function AdminAuthPage() {
                   disabled={totpCode.length !== 6 || verifying}
                   className="w-full h-12 font-heading"
                 >
-                  {verifying ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify"}
+                  {verifying ? <Loader2 className="w-5 h-5 animate-spin" /> : "Vérifier"}
                 </BorderGlowButton>
               </form>
             ) : sent ? (
               /* Email sent confirmation */
               <div className="text-center py-8">
                 <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-4" />
-                <h2 className="font-heading text-lg text-pk-emerald mb-2">Link sent!</h2>
+                <h2 className="font-heading text-lg text-pk-emerald mb-2">Lien envoyé !</h2>
                 <p className="font-body text-sm text-pk-titane mb-4">
-                  A sign-in link has been sent to <strong className="text-pk-piste">{email}</strong>
+                  Un lien de connexion a été envoyé à{" "}
+                  <strong className="text-pk-piste">{email}</strong>
                 </p>
                 <p className="font-body text-xs text-pk-titane/80">
-                  Check your inbox and click the link to sign in. The link expires in 15 minutes.
+                  Vérifiez votre boîte mail et cliquez sur le lien. Le lien expire dans 15 minutes.
                 </p>
                 <Button
                   variant="ghost"
@@ -188,9 +189,9 @@ export default function AdminAuthPage() {
               <form onSubmit={handleSendMagicLink} className="space-y-4">
                 <div className="text-center mb-4">
                   <Mail className="w-10 h-10 text-pk-red mx-auto mb-2" />
-                  <h2 className="font-heading text-lg text-pk-piste">Sign in by email</h2>
+                  <h2 className="font-heading text-lg text-pk-piste">Connexion par email</h2>
                   <p className="font-body text-sm text-pk-titane">
-                    Enter your admin address to receive a sign-in link
+                    Entrez votre adresse admin pour recevoir un lien de connexion
                   </p>
                 </div>
                 <Input
@@ -218,7 +219,7 @@ export default function AdminAuthPage() {
                   ) : (
                     <>
                       <Mail className="w-5 h-5 mr-2" />
-                      Send link magique
+                      Envoyer le lien magique
                     </>
                   )}
                 </BorderGlowButton>

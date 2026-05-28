@@ -181,7 +181,7 @@ const timezoneOptions = [
 ];
 
 function formatDate(value?: string | null, timeZone?: string | null) {
-  if (!value) return "Not scheduled";
+  if (!value) return "Non programmée";
   return new Date(value.includes("T") ? value : `${value}T12:00:00`).toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "short",
@@ -191,7 +191,7 @@ function formatDate(value?: string | null, timeZone?: string | null) {
 }
 
 function formatDateTime(value?: string | null, timeZone?: string | null) {
-  if (!value) return "Not configured";
+  if (!value) return "Non configuré";
   return new Date(value).toLocaleString("fr-FR", {
     day: "numeric",
     month: "short",
@@ -210,7 +210,7 @@ function formatRaceWindow(race: Race) {
 }
 
 function podium(values: string[]) {
-  return values.length ? values.slice(0, 3).join(" / ") : "Not provided";
+  return values.length ? values.slice(0, 3).join(" / ") : "Non renseigné";
 }
 
 function toDateInput(date: Date) {
@@ -225,10 +225,10 @@ function toTimeInput(date: Date) {
 }
 
 function statusLabel(status?: Race["status"]) {
-  if (status === "in_progress") return "Race in progress";
-  if (status === "finished") return "Race finished";
-  if (status === "cancelled") return "Cancelled";
-  return "Upcoming";
+  if (status === "in_progress") return "Course en cours";
+  if (status === "finished") return "Course terminée";
+  if (status === "cancelled") return "Annulée";
+  return "À venir";
 }
 
 function statusClass(status?: Race["status"]) {
@@ -239,9 +239,9 @@ function statusClass(status?: Race["status"]) {
 }
 
 function contentStatusLabel(status?: RaceEditorial["content_status"]) {
-  if (status === "published") return "Published";
-  if (status === "ready") return "Ready";
-  return "Draft";
+  if (status === "published") return "Publié";
+  if (status === "ready") return "Prêt";
+  return "Brouillon";
 }
 
 function contentStatusClass(status?: RaceEditorial["content_status"]) {
@@ -262,7 +262,7 @@ function joinedLines(values?: string[]) {
 }
 
 function driverList(values?: string[]) {
-  return values?.length ? values.join(" / ") : "TBC";
+  return values?.length ? values.join(" / ") : "À confirmer";
 }
 
 export default function RacesTab() {
@@ -338,21 +338,23 @@ export default function RacesTab() {
   const seedMutation = useMutation({
     mutationFn: () => adminApi.races.seed2026(),
     onSuccess: (data) => {
-      toast.success(`${data.inserted} race(s) added, ${data.existing} already present`);
+      toast.success(`${data.inserted} course(s) ajoutée(s), ${data.existing} déjà présente(s)`);
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "races"] });
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "stats"] });
     },
-    onError: () => toast.error("Unable to seed calendar"),
+    onError: () => toast.error("Impossible de peupler le calendrier"),
   });
 
   const reminderMutation = useMutation({
     mutationFn: () =>
       adminApi.races.sendReminders(selectedRaceId!, { send_email: true, send_notification: true }),
     onSuccess: (data) => {
-      toast.success(`${data.targeted} player(s) reminded, ${data.emails_sent} email(s) sent`);
+      toast.success(
+        `${data.targeted} joueur(s) relancé(s), ${data.emails_sent} e-mail(s) envoyé(s)`,
+      );
       overviewQuery.refetch();
     },
-    onError: () => toast.error("Unable to send reminders"),
+    onError: () => toast.error("Impossible d'envoyer les rappels"),
   });
 
   const resetForm = () => {
@@ -414,16 +416,16 @@ export default function RacesTab() {
       };
       if (editing) {
         await adminApi.races.update(editing.id, payload);
-        toast.success("Race updated");
+        toast.success("Course mise à jour");
       } else {
         await adminApi.races.create(payload);
-        toast.success("Race created");
+        toast.success("Course créée");
       }
       setShowForm(false);
       resetForm();
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "races"] });
     } catch {
-      toast.error("Error");
+      toast.error("Erreur");
     }
   };
 
@@ -462,11 +464,11 @@ export default function RacesTab() {
     if (!confirm(`Supprimer la course "${name}" ?`)) return;
     try {
       await adminApi.races.delete(id);
-      toast.success("Race deleted");
+      toast.success("Course supprimée");
       if (selectedRaceId === id) setSelectedRaceId(null);
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "races"] });
     } catch {
-      toast.error("Error");
+      toast.error("Erreur");
     }
   };
 
@@ -478,9 +480,9 @@ export default function RacesTab() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
-          <h2 className="font-heading text-2xl text-white uppercase tracking-tight">Races</h2>
+          <h2 className="font-heading text-2xl text-white uppercase tracking-tight">Courses</h2>
           <p className="font-body text-xs text-gray-500">
-            Editorial calendar, prediction tracking, and player reminders.
+            Calendrier éditorial, suivi des pronostics et rappels aux joueurs.
           </p>
         </div>
         <div className="flex gap-2">
@@ -490,7 +492,7 @@ export default function RacesTab() {
             className="text-cyan-400 hover:text-cyan-300 text-xs"
             size="sm"
           >
-            Upcoming test
+            Test à venir
           </Button>
           <Button
             onClick={() => fillTestRace("in_progress")}
@@ -498,7 +500,7 @@ export default function RacesTab() {
             className="text-red-300 hover:text-red-200 text-xs"
             size="sm"
           >
-            Test live
+            Test en direct
           </Button>
           <Button
             onClick={() => fillTestRace("finished")}
@@ -506,7 +508,7 @@ export default function RacesTab() {
             className="text-green-300 hover:text-green-200 text-xs"
             size="sm"
           >
-            Finished test
+            Test terminé
           </Button>
           <Button
             onClick={() => seedMutation.mutate()}
@@ -531,7 +533,7 @@ export default function RacesTab() {
             size="sm"
           >
             <Plus className="w-4 h-4 mr-1" />
-            New race
+            Nouvelle course
           </Button>
         </div>
       </div>
@@ -540,27 +542,27 @@ export default function RacesTab() {
         <div className="card-arcade border-l-4 border-pk-red p-3">
           <Trophy className="mb-2 h-4 w-4 text-pk-red" />
           <p className="font-data text-2xl text-white">{seasonStats.total}</p>
-          <p className="font-body text-[10px] uppercase text-gray-500">Races 2026</p>
+          <p className="font-body text-[10px] uppercase text-gray-500">Courses 2026</p>
         </div>
         <div className="card-arcade border-l-4 border-green-500 p-3">
           <CheckCircle2 className="mb-2 h-4 w-4 text-green-400" />
           <p className="font-data text-2xl text-white">{seasonStats.finished}</p>
-          <p className="font-body text-[10px] uppercase text-gray-500">Expected recaps</p>
+          <p className="font-body text-[10px] uppercase text-gray-500">Résumés attendus</p>
         </div>
         <div className="card-arcade border-l-4 border-cyan-500 p-3">
           <CalendarClock className="mb-2 h-4 w-4 text-cyan-400" />
           <p className="font-data text-2xl text-white">{seasonStats.upcoming}</p>
-          <p className="font-body text-[10px] uppercase text-gray-500">Upcoming</p>
+          <p className="font-body text-[10px] uppercase text-gray-500">À venir</p>
         </div>
         <div className="card-arcade border-l-4 border-red-500 p-3">
           <XCircle className="mb-2 h-4 w-4 text-red-400" />
           <p className="font-data text-2xl text-white">{seasonStats.cancelled}</p>
-          <p className="font-body text-[10px] uppercase text-gray-500">Cancelled</p>
+          <p className="font-body text-[10px] uppercase text-gray-500">Annulées</p>
         </div>
         <div className="card-arcade border-l-4 border-orange-500 p-3">
           <Users className="mb-2 h-4 w-4 text-orange-400" />
           <p className="font-data text-2xl text-white">{seasonStats.averageCoverage}%</p>
-          <p className="font-body text-[10px] uppercase text-gray-500">Avg. coverage</p>
+          <p className="font-body text-[10px] uppercase text-gray-500">Couverture moy.</p>
         </div>
       </div>
 
@@ -568,12 +570,12 @@ export default function RacesTab() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-red">
-              Championship summary
+              Résumé du championnat
             </p>
             <p className="font-body text-sm text-gray-300">
               {seasonStats.nextRace
-                ? `Next event : ${seasonStats.nextRace.name}, ${formatRaceWindow(seasonStats.nextRace)}.`
-                : "All active weekends have been handled."}
+                ? `Prochain événement : ${seasonStats.nextRace.name}, ${formatRaceWindow(seasonStats.nextRace)}.`
+                : "Tous les week-ends actifs ont été traités."}
             </p>
           </div>
           <div className="flex min-w-[260px] items-center gap-2">
@@ -581,18 +583,18 @@ export default function RacesTab() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Filter by GP, circuit, country..."
+              placeholder="Filtrer par GP, circuit, pays..."
               className="border-gray-700 bg-gray-900 text-white"
             />
           </div>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           {[
-            ["all", "All"],
-            ["upcoming", "Upcoming"],
-            ["in_progress", "Live"],
-            ["finished", "Finished"],
-            ["cancelled", "Cancelled"],
+            ["all", "Toutes"],
+            ["upcoming", "À venir"],
+            ["in_progress", "En direct"],
+            ["finished", "Terminées"],
+            ["cancelled", "Annulées"],
           ].map(([key, label]) => (
             <button
               key={key}
@@ -627,7 +629,7 @@ export default function RacesTab() {
             <Input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Name"
+              placeholder="Nom"
               className="bg-gray-900 border-gray-700 text-white"
               required
             />
@@ -640,7 +642,7 @@ export default function RacesTab() {
             <Input
               value={form.country}
               onChange={(e) => setForm({ ...form, country: e.target.value })}
-              placeholder="Country"
+              placeholder="Pays"
               className="bg-gray-900 border-gray-700 text-white"
             />
             <Input
@@ -659,20 +661,20 @@ export default function RacesTab() {
             <Input
               value={form.quali_time}
               onChange={(e) => setForm({ ...form, quali_time: e.target.value })}
-              placeholder="Qualifying time"
+              placeholder="Heure des qualifications"
               className="bg-gray-900 border-gray-700 text-white"
             />
             <Input
               value={form.race_time}
               onChange={(e) => setForm({ ...form, race_time: e.target.value })}
-              placeholder="Race time"
+              placeholder="Heure de la course"
               className="bg-gray-900 border-gray-700 text-white"
             />
             <select
               value={form.timezone}
               onChange={(e) => setForm({ ...form, timezone: e.target.value })}
               className="h-10 rounded-md border border-gray-700 bg-gray-900 px-3 text-sm text-white"
-              aria-label="Circuit timezone"
+              aria-label="Fuseau horaire du circuit"
             >
               {timezoneOptions.map((timezone) => (
                 <option key={timezone} value={timezone}>
@@ -686,27 +688,27 @@ export default function RacesTab() {
               max={1440}
               value={form.race_duration_minutes}
               onChange={(e) => setForm({ ...form, race_duration_minutes: Number(e.target.value) })}
-              placeholder="Race duration (min)"
+              placeholder="Durée de la course (min)"
               className="bg-gray-900 border-gray-700 text-white"
             />
             <Input
               type="number"
               value={form.round_number}
               onChange={(e) => setForm({ ...form, round_number: Number(e.target.value) })}
-              placeholder="Round"
+              placeholder="Manche"
               className="bg-gray-900 border-gray-700 text-white"
             />
             <Input
               type="number"
               value={form.season}
               onChange={(e) => setForm({ ...form, season: Number(e.target.value) })}
-              placeholder="Season"
+              placeholder="Saison"
               className="bg-gray-900 border-gray-700 text-white"
             />
             <Input
               value={form.thumbnail_url}
               onChange={(e) => setForm({ ...form, thumbnail_url: e.target.value })}
-              placeholder="Thumbnail"
+              placeholder="Miniature"
               className="bg-gray-900 border-gray-700 text-white md:col-span-2"
             />
           </div>
@@ -717,7 +719,7 @@ export default function RacesTab() {
               onChange={(e) => setForm({ ...form, is_sprint: e.target.checked })}
               className="rounded border-gray-700"
             />
-            Sprint weekend
+            Week-end sprint
           </label>
           <label className="flex items-center gap-2 text-sm text-gray-400">
             <input
@@ -726,7 +728,7 @@ export default function RacesTab() {
               onChange={(e) => setForm({ ...form, is_test_race: e.target.checked })}
               className="rounded border-gray-700"
             />
-            Test race
+            Course de test
           </label>
           <label className="flex items-center gap-2 text-sm text-gray-400">
             <input
@@ -735,11 +737,11 @@ export default function RacesTab() {
               onChange={(e) => setForm({ ...form, is_cancelled: e.target.checked })}
               className="rounded border-gray-700"
             />
-            Race cancelled
+            Course annulée
           </label>
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
             <label className="grid gap-1 text-xs text-gray-500">
-              Content status
+              Statut du contenu
               <select
                 value={form.content_status}
                 onChange={(e) =>
@@ -750,43 +752,43 @@ export default function RacesTab() {
                 }
                 className="h-10 rounded-md border border-gray-700 bg-gray-900 px-3 text-sm text-white"
               >
-                <option value="draft">Draft</option>
-                <option value="ready">Ready to publish</option>
-                <option value="published">Published</option>
+                <option value="draft">Brouillon</option>
+                <option value="ready">Prêt à publier</option>
+                <option value="published">Publié</option>
               </select>
             </label>
             <Textarea
               value={form.story_angle}
               onChange={(e) => setForm({ ...form, story_angle: e.target.value })}
-              placeholder="Weekend editorial angle"
+              placeholder="Angle éditorial du week-end"
               rows={3}
               className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
             />
             <Textarea
               value={form.track_profile}
               onChange={(e) => setForm({ ...form, track_profile: e.target.value })}
-              placeholder="Track profile"
+              placeholder="Profil du circuit"
               rows={3}
               className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
             />
             <Textarea
               value={form.key_info}
               onChange={(e) => setForm({ ...form, key_info: e.target.value })}
-              placeholder="Key info, one per line"
+              placeholder="Infos clés, une par ligne"
               rows={4}
               className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
             />
             <Textarea
               value={form.public_recap}
               onChange={(e) => setForm({ ...form, public_recap: e.target.value })}
-              placeholder="Public recap / previous race summary"
+              placeholder="Résumé public / récap de la course précédente"
               rows={4}
               className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
             />
             <Textarea
               value={form.admin_summary}
               onChange={(e) => setForm({ ...form, admin_summary: e.target.value })}
-              placeholder="Admin summary"
+              placeholder="Résumé admin"
               rows={4}
               className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
             />
@@ -795,21 +797,21 @@ export default function RacesTab() {
                 <Textarea
                   value={form.cancellation_reason}
                   onChange={(e) => setForm({ ...form, cancellation_reason: e.target.value })}
-                  placeholder="Reason / official cancellation status"
+                  placeholder="Raison / statut officiel d'annulation"
                   rows={3}
                   className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
                 />
                 <Textarea
                   value={form.cancellation_impact}
                   onChange={(e) => setForm({ ...form, cancellation_impact: e.target.value })}
-                  placeholder="User impact: scoring, reminders, replacement content"
+                  placeholder="Impact joueurs : scoring, rappels, contenu de remplacement"
                   rows={3}
                   className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
                 />
                 <Textarea
                   value={form.user_content_idea}
                   onChange={(e) => setForm({ ...form, user_content_idea: e.target.value })}
-                  placeholder="Content idea to keep players engaged"
+                  placeholder="Idée de contenu pour maintenir l'engagement"
                   rows={3}
                   className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
                 />
@@ -818,7 +820,7 @@ export default function RacesTab() {
           </div>
           <div className="flex gap-2">
             <Button type="submit" size="sm" className="btn-racing text-xs">
-              {editing ? "Update" : "Create"}
+              {editing ? "Mettre à jour" : "Créer"}
             </Button>
             <Button
               type="button"
@@ -830,7 +832,7 @@ export default function RacesTab() {
               }}
               className="text-gray-400 text-xs"
             >
-              Cancel
+              Annuler
             </Button>
           </div>
         </form>
@@ -847,8 +849,8 @@ export default function RacesTab() {
               <Flag className="w-12 h-12 text-gray-600 mx-auto mb-3" />
               <p className="font-body text-gray-500">
                 {raceList.length === 0
-                  ? "No race yet. Run the 2026 seed."
-                  : "No race matches this filter."}
+                  ? "Aucune course. Lancez le peuplement 2026."
+                  : "Aucune course ne correspond à ce filtre."}
               </p>
             </div>
           ) : (
@@ -911,12 +913,12 @@ export default function RacesTab() {
                           </span>
                           {race.is_cancelled && (
                             <span className="text-[10px] text-red-300 bg-red-500/15 px-1 rounded">
-                              Cancelled
+                              Annulée
                             </span>
                           )}
                           {race.has_results && (
                             <span className="text-[10px] text-green-400 bg-green-500/20 px-1 rounded">
-                              Results
+                              Résultats
                             </span>
                           )}
                         </p>
@@ -931,7 +933,7 @@ export default function RacesTab() {
                         )}
                         <div className="mt-2 flex items-center gap-2 text-[10px] font-data text-gray-500">
                           {race.is_cancelled ? (
-                            <span className="text-red-300">reminders disabled</span>
+                            <span className="text-red-300">rappels désactivés</span>
                           ) : (
                             <>
                               <span className="text-cyan-400">
@@ -942,7 +944,7 @@ export default function RacesTab() {
                                 {(race.submitted_predictions ?? 0) +
                                   (race.missing_predictions ?? 0)}
                               </span>
-                              <span>picks</span>
+                              <span>pronos</span>
                               <span className="text-orange-400">{race.completion_rate ?? 0}%</span>
                             </>
                           )}
@@ -953,21 +955,21 @@ export default function RacesTab() {
                       <button
                         onClick={() => setSelectedRaceId(race.id)}
                         className="p-2 text-gray-400 hover:text-white rounded"
-                        title="View predictions"
+                        title="Voir les pronostics"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleEdit(race)}
                         className="p-2 text-gray-400 hover:text-cyan-400 rounded"
-                        title="Edit"
+                        title="Modifier"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(race.id, race.name)}
                         className="p-2 text-gray-400 hover:text-red-400 rounded"
-                        title="Delete"
+                        title="Supprimer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -982,7 +984,7 @@ export default function RacesTab() {
         <section className="card-arcade p-4 min-h-[520px]">
           {!selectedRace ? (
             <div className="h-full flex items-center justify-center text-center text-gray-500 font-body">
-              Select a race.
+              Sélectionnez une course.
             </div>
           ) : overviewQuery.isLoading ? (
             <div className="h-full flex items-center justify-center">
@@ -993,13 +995,13 @@ export default function RacesTab() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-data text-[10px] uppercase tracking-[0.16em] text-orange-400">
-                    Round {selectedRace.round_number}
-                    {selectedRace.is_cancelled ? " • cancelled" : ""}
+                    Manche {selectedRace.round_number}
+                    {selectedRace.is_cancelled ? " • annulée" : ""}
                     {selectedRace.is_test_race ? " • test" : ""}
                   </p>
                   <h3 className="font-heading text-xl uppercase text-white">{selectedRace.name}</h3>
                   <p className="font-body text-xs text-gray-500">
-                    {selectedRace.circuit} • closes{" "}
+                    {selectedRace.circuit} • clôture{" "}
                     {formatDateTime(overview?.predictions_close_at, selectedRace.timezone)}
                   </p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -1016,7 +1018,7 @@ export default function RacesTab() {
                     </span>
                     {selectedRace.race_end_at && (
                       <span className="font-data text-[10px] uppercase px-2 py-1 rounded bg-white/5 text-gray-400">
-                        ends {formatDateTime(selectedRace.race_end_at, selectedRace.timezone)}
+                        fin {formatDateTime(selectedRace.race_end_at, selectedRace.timezone)}
                       </span>
                     )}
                   </div>
@@ -1036,7 +1038,7 @@ export default function RacesTab() {
                   ) : (
                     <Mail className="w-4 h-4 mr-1" />
                   )}
-                  Send reminder
+                  Envoyer un rappel
                 </Button>
               </div>
 
@@ -1061,7 +1063,7 @@ export default function RacesTab() {
                           editorial?.content_status,
                         )}`}
                       >
-                        Content {contentStatusLabel(editorial?.content_status)}
+                        Contenu {contentStatusLabel(editorial?.content_status)}
                       </span>
                       {selectedRace.is_sprint && (
                         <span className="rounded bg-purple-500/15 px-2 py-1 font-data text-[10px] uppercase text-purple-300">
@@ -1070,10 +1072,10 @@ export default function RacesTab() {
                       )}
                     </div>
                     <h4 className="mb-2 font-heading text-sm uppercase text-white">
-                      Editorial angle
+                      Angle éditorial
                     </h4>
                     <p className="font-body text-sm leading-6 text-gray-300">
-                      {editorial?.story_angle || "Editorial angle to define for this race."}
+                      {editorial?.story_angle || "Angle éditorial à définir pour cette course."}
                     </p>
                   </div>
                 </div>
@@ -1085,23 +1087,23 @@ export default function RacesTab() {
                       {selectedRace.circuit || "Circuit"}
                     </p>
                     <p className="font-body text-xs text-gray-500">
-                      {selectedRace.country || "Country"}
+                      {selectedRace.country || "Pays"}
                     </p>
                   </div>
                   <div className="rounded-md border border-white/10 bg-black/30 p-3">
                     <Timer className="mb-2 h-4 w-4 text-orange-400" />
                     <p className="font-body text-sm text-white">
-                      Race {formatDateTime(selectedRace.race_start_at, selectedRace.timezone)}
+                      Course {formatDateTime(selectedRace.race_start_at, selectedRace.timezone)}
                     </p>
                     <p className="font-body text-xs text-gray-500">
-                      Qualifying {formatDate(selectedRace.quali_date, selectedRace.timezone)}{" "}
+                      Qualifications {formatDate(selectedRace.quali_date, selectedRace.timezone)}{" "}
                       {selectedRace.quali_time || ""}
                     </p>
                   </div>
                   <div className="rounded-md border border-white/10 bg-black/30 p-3">
                     <Radio className="mb-2 h-4 w-4 text-green-400" />
                     <p className="font-body text-sm text-white">
-                      {editorial?.track_profile || "Track profile to document."}
+                      {editorial?.track_profile || "Profil du circuit à documenter."}
                     </p>
                   </div>
                 </div>
@@ -1111,21 +1113,19 @@ export default function RacesTab() {
                 <div className="rounded-md border border-white/10 bg-black/30 p-3 lg:col-span-2">
                   <div className="mb-2 flex items-center gap-2">
                     <FileText className="h-4 w-4 text-pk-red" />
-                    <h4 className="font-heading text-sm uppercase text-white">
-                      Public recap / summary
-                    </h4>
+                    <h4 className="font-heading text-sm uppercase text-white">Résumé public</h4>
                   </div>
                   <p className="font-body text-sm leading-6 text-gray-300">
-                    {editorial?.public_recap || "No public recap defined."}
+                    {editorial?.public_recap || "Aucun résumé public défini."}
                   </p>
                 </div>
                 <div className="rounded-md border border-white/10 bg-black/30 p-3">
                   <div className="mb-2 flex items-center gap-2">
                     <ClipboardList className="h-4 w-4 text-cyan-400" />
-                    <h4 className="font-heading text-sm uppercase text-white">Key info</h4>
+                    <h4 className="font-heading text-sm uppercase text-white">Infos clés</h4>
                   </div>
                   <ul className="space-y-1 font-body text-xs text-gray-400">
-                    {(editorial?.key_info?.length ? editorial.key_info : ["Info to complete"]).map(
+                    {(editorial?.key_info?.length ? editorial.key_info : ["Info à compléter"]).map(
                       (info: string) => (
                         <li key={info} className="flex gap-2">
                           <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-pk-red" />
@@ -1142,27 +1142,27 @@ export default function RacesTab() {
                   <div className="mb-2 flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-red-300" />
                     <h4 className="font-heading text-sm uppercase text-white">
-                      Race cancelled : replacement content
+                      Course annulée : contenu de remplacement
                     </h4>
                   </div>
                   <div className="grid gap-3 md:grid-cols-3">
                     <p className="font-body text-sm leading-6 text-red-100/90">
                       <span className="block font-data text-[10px] uppercase text-red-300">
-                        Reason
+                        Raison
                       </span>
-                      {editorial?.cancellation_reason || "To specify"}
+                      {editorial?.cancellation_reason || "À préciser"}
                     </p>
                     <p className="font-body text-sm leading-6 text-red-100/90">
                       <span className="block font-data text-[10px] uppercase text-red-300">
                         Impact
                       </span>
-                      {editorial?.cancellation_impact || "No scoring for this round."}
+                      {editorial?.cancellation_impact || "Pas de scoring pour cette manche."}
                     </p>
                     <p className="font-body text-sm leading-6 text-red-100/90">
                       <span className="block font-data text-[10px] uppercase text-red-300">
-                        To publish
+                        À publier
                       </span>
-                      {editorial?.user_content_idea || "Community poll or quiz."}
+                      {editorial?.user_content_idea || "Sondage ou quiz communautaire."}
                     </p>
                   </div>
                 </div>
@@ -1173,33 +1173,38 @@ export default function RacesTab() {
                   <div className="mb-3 flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-green-300" />
                     <h4 className="font-heading text-sm uppercase text-white">
-                      Results and story points
+                      Résultats et faits marquants
                     </h4>
                   </div>
                   <div className="grid gap-3 md:grid-cols-4">
                     <div>
                       <p className="font-data text-[10px] uppercase text-green-300">Pole</p>
                       <p className="font-body text-sm text-white">
-                        {editorial.results_digest.quali_pole || "TBC"}
+                        {editorial.results_digest.quali_pole || "À confirmer"}
                       </p>
                     </div>
                     <div>
-                      <p className="font-data text-[10px] uppercase text-green-300">Winner</p>
+                      <p className="font-data text-[10px] uppercase text-green-300">Vainqueur</p>
                       <p className="font-body text-sm text-white">
-                        {editorial.results_digest.race_winner || "TBC"}
+                        {editorial.results_digest.race_winner || "À confirmer"}
                       </p>
                     </div>
                     <div>
                       <p className="font-data text-[10px] uppercase text-green-300">Podium</p>
+
                       <p className="font-body text-sm text-white">
                         {driverList(editorial.results_digest.race_top3)}
                       </p>
                     </div>
                     <div>
-                      <p className="font-data text-[10px] uppercase text-green-300">Story bonus</p>
+                      <p className="font-data text-[10px] uppercase text-green-300">
+                        Bonus histoire
+                      </p>
                       <p className="font-body text-sm text-white">
-                        {editorial.results_digest.safety_car ? "Safety car" : "Clean race"} •{" "}
-                        {editorial.results_digest.dnf_count ?? 0} DNF
+                        {editorial.results_digest.safety_car
+                          ? "Voiture de sécurité"
+                          : "Course propre"}{" "}
+                        • {editorial.results_digest.dnf_count ?? 0} DNF
                       </p>
                     </div>
                   </div>
@@ -1210,37 +1215,37 @@ export default function RacesTab() {
                 <div className="bg-black/30 border border-white/10 rounded-md p-3">
                   <Users className="w-4 h-4 text-cyan-400 mb-2" />
                   <p className="font-data text-xl text-white">{overview?.submitted_count ?? 0}</p>
-                  <p className="font-body text-[10px] text-gray-500">Submitted</p>
+                  <p className="font-body text-[10px] text-gray-500">Soumis</p>
                 </div>
                 <div className="bg-black/30 border border-white/10 rounded-md p-3">
                   <Bell className="w-4 h-4 text-orange-400 mb-2" />
                   <p className="font-data text-xl text-white">{overview?.missing_count ?? 0}</p>
-                  <p className="font-body text-[10px] text-gray-500">To remind</p>
+                  <p className="font-body text-[10px] text-gray-500">À relancer</p>
                 </div>
                 <div className="bg-black/30 border border-white/10 rounded-md p-3">
                   <CheckCircle2 className="w-4 h-4 text-green-400 mb-2" />
                   <p className="font-data text-xl text-white">{overview?.completion_rate ?? 0}%</p>
-                  <p className="font-body text-[10px] text-gray-500">Coverage</p>
+                  <p className="font-body text-[10px] text-gray-500">Couverture</p>
                 </div>
               </div>
 
               <div className="rounded-md border border-white/10 bg-black/30 p-3">
                 <div className="mb-2 flex items-center gap-2">
                   <ClipboardList className="h-4 w-4 text-orange-400" />
-                  <h4 className="font-heading text-sm uppercase text-white">Admin summary</h4>
+                  <h4 className="font-heading text-sm uppercase text-white">Résumé admin</h4>
                 </div>
                 <p className="font-body text-sm leading-6 text-gray-300">
-                  {editorial?.admin_summary || "Operational summary to complete."}
+                  {editorial?.admin_summary || "Résumé opérationnel à compléter."}
                 </p>
               </div>
 
               <div>
                 <h4 className="font-heading text-sm uppercase text-white mb-2">
-                  Players without picks
+                  Joueurs sans pronostics
                 </h4>
                 {selectedRace.is_cancelled ? (
                   <p className="font-body text-sm text-red-300">
-                    Race cancelled : reminders disabled for this weekend.
+                    Course annulée : rappels désactivés pour ce week-end.
                   </p>
                 ) : overview?.missing_users.length ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -1250,7 +1255,7 @@ export default function RacesTab() {
                         className="border border-white/10 rounded-md p-2 bg-black/20"
                       >
                         <p className="font-body text-sm text-white truncate">
-                          {user.username || "Username not set"}
+                          {user.username || "Pseudo non défini"}
                         </p>
                         <p className="font-body text-[11px] text-gray-500 truncate">{user.email}</p>
                       </div>
@@ -1258,13 +1263,15 @@ export default function RacesTab() {
                   </div>
                 ) : (
                   <p className="font-body text-sm text-green-400">
-                    All active players have submitted picks.
+                    Tous les joueurs actifs ont soumis leurs pronostics.
                   </p>
                 )}
               </div>
 
               <div>
-                <h4 className="font-heading text-sm uppercase text-white mb-2">Submitted picks</h4>
+                <h4 className="font-heading text-sm uppercase text-white mb-2">
+                  Pronostics soumis
+                </h4>
                 {overview?.predictions.length ? (
                   <div className="space-y-2">
                     {overview.predictions.map((prediction) => (
@@ -1278,7 +1285,7 @@ export default function RacesTab() {
                               {prediction.user.username || prediction.user.email}
                             </p>
                             <p className="font-body text-[11px] text-gray-500">
-                              {prediction.is_complete ? "Complete" : "Partial"} • maj{" "}
+                              {prediction.is_complete ? "Complet" : "Partiel"} • maj{" "}
                               {formatDateTime(prediction.updated_at)}
                             </p>
                           </div>
@@ -1289,7 +1296,7 @@ export default function RacesTab() {
                                 : "bg-yellow-500/15 text-yellow-400"
                             }`}
                           >
-                            {prediction.is_complete ? "OK" : "Partial"}
+                            {prediction.is_complete ? "OK" : "Partiel"}
                           </span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
@@ -1298,21 +1305,21 @@ export default function RacesTab() {
                             <span className="text-white">{prediction.quali_pole || "—"}</span>
                           </p>
                           <p className="font-body text-gray-400">
-                            Winner :{" "}
+                            Vainqueur :{" "}
                             <span className="text-white">{prediction.race_winner || "—"}</span>
                           </p>
                           <p className="font-body text-gray-400 md:col-span-2">
-                            Top 3 qualifying :{" "}
+                            Top 3 qualifications :{" "}
                             <span className="text-white">{podium(prediction.quali_top10)}</span>
                           </p>
                           <p className="font-body text-gray-400 md:col-span-2">
-                            Top 3 race :{" "}
+                            Top 3 course :{" "}
                             <span className="text-white">{podium(prediction.race_top10)}</span>
                           </p>
                           {selectedRace.is_sprint && (
                             <>
                               <p className="font-body text-gray-400 md:col-span-2">
-                                Top 3 sprint qualifying :{" "}
+                                Top 3 qualifications sprint :{" "}
                                 <span className="text-white">
                                   {podium(prediction.sprint_quali_top10)}
                                 </span>
@@ -1331,7 +1338,7 @@ export default function RacesTab() {
                   </div>
                 ) : (
                   <p className="font-body text-sm text-gray-500">
-                    No picks submitted for this race.
+                    Aucun pronostic soumis pour cette course.
                   </p>
                 )}
               </div>

@@ -35,17 +35,17 @@ export default function ChampionshipsTab() {
     try {
       if (editing) {
         await adminApi.championships.update(editing.id, form);
-        toast.success("Championship updated");
+        toast.success("Championnat mis à jour");
       } else {
         await adminApi.championships.create(form);
-        toast.success("Championship created");
+        toast.success("Championnat créé");
       }
       setShowForm(false);
       setEditing(null);
       setForm({ name: "", season: 2025, description: "", is_active: true });
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "championships"] });
     } catch {
-      toast.error("Error");
+      toast.error("Erreur");
     }
   };
 
@@ -61,13 +61,13 @@ export default function ChampionshipsTab() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Delete le championnat "${name}" ?`)) return;
+    if (!confirm(`Supprimer le championnat « ${name} » ?`)) return;
     try {
       await adminApi.championships.delete(id);
-      toast.success("Championship deleted");
+      toast.success("Championnat supprimé");
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "championships"] });
     } catch {
-      toast.error("Error while deleting");
+      toast.error("Erreur lors de la suppression");
     }
   };
 
@@ -85,7 +85,7 @@ export default function ChampionshipsTab() {
           size="sm"
         >
           <Plus className="w-4 h-4 mr-1" />
-          New
+          Nouveau
         </Button>
       </div>
 
@@ -96,7 +96,7 @@ export default function ChampionshipsTab() {
           className="card-arcade p-4 mb-4 border border-orange-500/30 space-y-3"
         >
           <h3 className="font-heading text-sm text-orange-400 uppercase">
-            {editing ? "Edit le championnat" : "New championnat"}
+            {editing ? "Modifier le championnat" : "Nouveau championnat"}
           </h3>
           <div className="grid grid-cols-2 gap-3">
             <Input
@@ -110,7 +110,7 @@ export default function ChampionshipsTab() {
               type="number"
               value={form.season}
               onChange={(e) => setForm({ ...form, season: parseInt(e.target.value) })}
-              placeholder="Season"
+              placeholder="Saison"
               className="bg-gray-900 border-gray-700 text-white"
               required
             />
@@ -132,7 +132,7 @@ export default function ChampionshipsTab() {
           </label>
           <div className="flex gap-2">
             <Button type="submit" size="sm" className="btn-racing text-xs">
-              {editing ? "Update" : "Create"}
+              {editing ? "Mettre à jour" : "Créer"}
             </Button>
             <Button
               type="button"
@@ -141,7 +141,7 @@ export default function ChampionshipsTab() {
               onClick={() => setShowForm(false)}
               className="text-gray-400 text-xs"
             >
-              Cancel
+              Annuler
             </Button>
           </div>
         </form>
@@ -155,7 +155,7 @@ export default function ChampionshipsTab() {
       ) : championships.length === 0 ? (
         <div className="card-arcade p-8 text-center">
           <Trophy className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-          <p className="font-body text-gray-500">No championship yet. Create one!</p>
+          <p className="font-body text-gray-500">Aucun championnat. Créez-en un !</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -176,7 +176,7 @@ export default function ChampionshipsTab() {
                 <div>
                   <p className="font-body text-white text-sm">{champ.name}</p>
                   <p className="font-body text-xs text-gray-500">
-                    Season {champ.season}
+                    Saison {champ.season}
                     {!champ.is_active && <span className="ml-2 text-red-400">(inactif)</span>}
                   </p>
                 </div>

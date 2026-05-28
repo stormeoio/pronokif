@@ -33,7 +33,7 @@ function predictionSummary(prediction: Prediction) {
     const value = prediction[field];
     if (value) return String(value);
   }
-  return "Details available in the race";
+  return "Détails disponibles dans la course";
 }
 
 export default function PredictionsTab() {
@@ -62,7 +62,7 @@ export default function PredictionsTab() {
       ) : predictions.length === 0 ? (
         <div className="card-arcade p-8 text-center">
           <BarChart3 className="mx-auto mb-3 h-12 w-12 text-gray-600" />
-          <p className="font-body text-gray-500">No prediction recorded</p>
+          <p className="font-body text-gray-500">Aucun pronostic enregistré</p>
         </div>
       ) : (
         <div className="card-arcade overflow-hidden">
@@ -70,9 +70,9 @@ export default function PredictionsTab() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-800 font-body text-xs uppercase text-gray-500">
-                  <th className="p-3 text-left">Race</th>
+                  <th className="p-3 text-left">Course</th>
                   <th className="p-3 text-left">Joueur</th>
-                  <th className="p-3 text-left">Selection</th>
+                  <th className="p-3 text-left">Sélection</th>
                   <th className="p-3 text-left">Points</th>
                   <th className="p-3 text-left">Date</th>
                 </tr>

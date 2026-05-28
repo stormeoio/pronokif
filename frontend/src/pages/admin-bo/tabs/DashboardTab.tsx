@@ -69,15 +69,15 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
     mutationFn: () => adminApi.demo.seed(),
     onSuccess: (data) => {
       toast.success(
-        `Demo synced: ${data.summary?.users ?? 0} users, ${data.summary?.predictions ?? 0} predictions`,
+        `Démo synchronisée : ${data.summary?.users ?? 0} utilisateurs, ${data.summary?.predictions ?? 0} pronostics`,
       );
       queryClient.invalidateQueries({ queryKey: ["admin-bo"] });
     },
-    onError: () => toast.error("Seed demo impossible"),
+    onError: () => toast.error("Synchronisation démo impossible"),
   });
 
   const handleSeedDemo = () => {
-    if (!confirm("Sync the full demo dataset?")) return;
+    if (!confirm("Synchroniser le jeu de données démo complet ?")) return;
     seedDemoMutation.mutate();
   };
 
@@ -89,7 +89,7 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
     target: AdminTabKey;
   }> = [
     {
-      label: "Users",
+      label: "Utilisateurs",
       value: stats?.total_users ?? "—",
       icon: Users,
       color: "cyan",
@@ -103,21 +103,21 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
       target: "predictions",
     },
     {
-      label: "Leagues",
+      label: "Ligues",
       value: stats?.total_leagues ?? "—",
       icon: Trophy,
       color: "purple",
       target: "leagues",
     },
     {
-      label: "Races",
+      label: "Courses",
       value: stats?.total_races ?? "—",
       icon: Flag,
       color: "green",
       target: "races",
     },
     {
-      label: "Feedbacks non lus",
+      label: "Retours non lus",
       value: stats?.unread_feedbacks ?? "—",
       icon: MessageSquare,
       color: "yellow",
@@ -134,7 +134,9 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
 
   return (
     <div>
-      <h2 className="font-heading text-2xl text-white uppercase tracking-tight mb-6">Dashboard</h2>
+      <h2 className="font-heading text-2xl text-white uppercase tracking-tight mb-6">
+        Tableau de bord
+      </h2>
 
       {isLoading ? (
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -167,10 +169,12 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
 
           {stats?.new_users_week !== undefined && (
             <div className="card-arcade p-4">
-              <h3 className="font-heading text-sm text-gray-400 uppercase mb-2">Recent activity</h3>
+              <h3 className="font-heading text-sm text-gray-400 uppercase mb-2">
+                Activité récente
+              </h3>
               <p className="font-body text-gray-300">
-                <span className="text-cyan-400 font-data text-lg">{stats.new_users_week}</span> new
-                users this week
+                <span className="text-cyan-400 font-data text-lg">{stats.new_users_week}</span>{" "}
+                nouveaux utilisateurs cette semaine
               </p>
             </div>
           )}
@@ -182,9 +186,9 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
                   <Database className="h-5 w-5 text-pk-red" />
                 </div>
                 <div>
-                  <h3 className="font-heading text-sm text-white uppercase">Demo data</h3>
+                  <h3 className="font-heading text-sm text-white uppercase">Données démo</h3>
                   <p className="font-body text-xs text-gray-500">
-                    Calendar, results, leagues, predictions, media, and counters.
+                    Calendrier, résultats, ligues, pronostics, médias et compteurs.
                   </p>
                 </div>
               </div>

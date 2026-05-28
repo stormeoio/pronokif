@@ -66,13 +66,15 @@ export default function UsersTab() {
       const failed = result.failed?.length ?? 0;
 
       if (sent > 0) {
-        toast.success(`${sent} invitation${sent > 1 ? "s" : ""} sent`);
+        toast.success(`${sent} invitation${sent > 1 ? "s" : ""} envoyée${sent > 1 ? "s" : ""}`);
         setInviteInput("");
         setInviteMessage("");
       }
 
       if (skipped > 0 || failed > 0) {
-        toast.warning(`${skipped} skipped, ${failed} failed`);
+        toast.warning(
+          `${skipped} ignorée${skipped > 1 ? "s" : ""}, ${failed} échouée${failed > 1 ? "s" : ""}`,
+        );
       }
 
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "invitations"] });
@@ -80,41 +82,41 @@ export default function UsersTab() {
     },
     onError: (err: unknown) => {
       const e = err as { response?: { data?: { detail?: string } } };
-      toast.error(e.response?.data?.detail || "Unable to send invitations");
+      toast.error(e.response?.data?.detail || "Impossible d'envoyer les invitations");
     },
   });
 
   const handleBatchInvite = (e: React.FormEvent) => {
     e.preventDefault();
     if (inviteEmails.invalid.length > 0) {
-      toast.error(`${inviteEmails.invalid.length} invalid email address(es)`);
+      toast.error(`${inviteEmails.invalid.length} adresse(s) email invalide(s)`);
       return;
     }
     if (inviteEmails.valid.length === 0) {
-      toast.error("Add at least one email address");
+      toast.error("Ajoutez au moins une adresse email");
       return;
     }
     batchInviteMutation.mutate();
   };
 
   const handleDelete = async (userId: string, username: string) => {
-    if (!confirm(`Delete user "${username}" and all their data ?`)) return;
+    if (!confirm(`Supprimer l'utilisateur "${username}" et toutes ses données ?`)) return;
     try {
       await adminApi.users.delete(userId);
-      toast.success("User deleted");
+      toast.success("Utilisateur supprimé");
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "users"] });
     } catch {
-      toast.error("Error while deleting");
+      toast.error("Erreur lors de la suppression");
     }
   };
 
   const handleBan = async (userId: string, currentlyBanned: boolean) => {
     try {
       await adminApi.users.update(userId, { is_banned: !currentlyBanned });
-      toast.success(currentlyBanned ? "User unbanned" : "User banned");
+      toast.success(currentlyBanned ? "Utilisateur débanni" : "Utilisateur banni");
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "users"] });
     } catch {
-      toast.error("Error");
+      toast.error("Erreur");
     }
   };
 
@@ -125,18 +127,18 @@ export default function UsersTab() {
         username: editingUser.username,
         email: editingUser.email,
       });
-      toast.success("User updated");
+      toast.success("Utilisateur mis à jour");
       setEditingUser(null);
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "users"] });
     } catch {
-      toast.error("Error while updating");
+      toast.error("Erreur lors de la mise à jour");
     }
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="font-heading text-2xl text-white uppercase tracking-tight">Users</h2>
+        <h2 className="font-heading text-2xl text-white uppercase tracking-tight">Utilisateurs</h2>
         <span className="font-data text-sm text-gray-500">{total} au total</span>
       </div>
 
@@ -146,7 +148,7 @@ export default function UsersTab() {
           <div>
             <h3 className="font-heading text-sm uppercase text-cyan-400">Inviter des testeurs</h3>
             <p className="font-body text-xs text-gray-500">
-              Paste multiple addresses separated by a comma, a space, or a new line.
+              Collez plusieurs adresses séparées par une virgule, un espace ou un retour à la ligne.
             </p>
           </div>
           <span className="font-data text-xs text-gray-500">
@@ -180,7 +182,7 @@ export default function UsersTab() {
               ) : (
                 <MailPlus className="mr-1 h-4 w-4" />
               )}
-              Send invitations
+              Envoyer les invitations
             </Button>
           </div>
         </div>
@@ -209,7 +211,9 @@ export default function UsersTab() {
       {/* Edit Modal */}
       {editingUser && (
         <div className="card-arcade p-4 mb-4 border border-orange-500/30">
-          <h3 className="font-heading text-sm text-orange-400 uppercase mb-3">Edit user</h3>
+          <h3 className="font-heading text-sm text-orange-400 uppercase mb-3">
+            Modifier l'utilisateur
+          </h3>
           <div className="grid grid-cols-2 gap-3 mb-3">
             <Input
               value={(editingUser.username as string) || ""}
@@ -226,7 +230,7 @@ export default function UsersTab() {
           </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={handleSaveEdit} className="btn-racing text-xs">
-              Save
+              Enregistrer
             </Button>
             <Button
               size="sm"
@@ -234,7 +238,7 @@ export default function UsersTab() {
               onClick={() => setEditingUser(null)}
               className="text-gray-400 text-xs"
             >
-              Cancel
+              Annuler
             </Button>
           </div>
         </div>
@@ -269,7 +273,7 @@ export default function UsersTab() {
                       {user.username ? (
                         String(user.username)
                       ) : (
-                        <span className="text-gray-600 italic">not set</span>
+                        <span className="text-gray-600 italic">non défini</span>
                       )}
                       {!!user.is_banned && (
                         <span className="ml-2 text-xs text-red-400 bg-red-500/20 px-1 rounded">
@@ -290,14 +294,14 @@ export default function UsersTab() {
                         <button
                           onClick={() => setEditingUser(user)}
                           className="p-1.5 text-gray-400 hover:text-cyan-400 rounded"
-                          title="Edit"
+                          title="Modifier"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleBan(user.id as string, !!user.is_banned)}
                           className={`p-1.5 rounded ${user.is_banned ? "text-green-400 hover:text-green-300" : "text-yellow-400 hover:text-yellow-300"}`}
-                          title={user.is_banned ? "Unban" : "Ban"}
+                          title={user.is_banned ? "Débannir" : "Bannir"}
                         >
                           <Ban className="w-3.5 h-3.5" />
                         </button>
@@ -309,7 +313,7 @@ export default function UsersTab() {
                             )
                           }
                           className="p-1.5 text-gray-400 hover:text-red-400 rounded"
-                          title="Delete"
+                          title="Supprimer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -320,7 +324,7 @@ export default function UsersTab() {
                 {users.length === 0 && (
                   <tr>
                     <td colSpan={6} className="p-8 text-center text-gray-500 font-body">
-                      No user found
+                      Aucun utilisateur trouvé
                     </td>
                   </tr>
                 )}

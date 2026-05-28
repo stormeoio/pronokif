@@ -25,7 +25,7 @@ type DeviceMode = "mobile" | "tablet" | "desktop";
 const DEVICE_SIZES: Record<DeviceMode, { width: number; height: number; label: string }> = {
   mobile: { width: 375, height: 812, label: "iPhone 13" },
   tablet: { width: 768, height: 1024, label: "iPad" },
-  desktop: { width: 1280, height: 800, label: "Desktop" },
+  desktop: { width: 1280, height: 800, label: "Bureau" },
 };
 
 export default function PreviewPanel({ open, onClose }: PreviewPanelProps) {
@@ -44,12 +44,12 @@ export default function PreviewPanel({ open, onClose }: PreviewPanelProps) {
   };
 
   const quickLinks = [
-    { path: "/", label: "Dashboard" },
-    { path: "/auth", label: "Auth" },
-    { path: "/predictions", label: "Pickstics" },
-    { path: "/leaderboard", label: "Leaderboard" },
+    { path: "/", label: "Tableau de bord" },
+    { path: "/auth", label: "Connexion" },
+    { path: "/predictions", label: "Pronostics" },
+    { path: "/leaderboard", label: "Classement" },
     { path: "/championship", label: "Championnat" },
-    { path: "/profile", label: "Profile" },
+    { path: "/profile", label: "Profil" },
   ];
 
   return (
@@ -66,7 +66,7 @@ export default function PreviewPanel({ open, onClose }: PreviewPanelProps) {
           <div className="p-3 border-b border-gray-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Smartphone className="w-4 h-4 text-cyan-400" />
-              <span className="font-heading text-xs text-white uppercase">Preview</span>
+              <span className="font-heading text-xs text-white uppercase">Aperçu</span>
               <span className="font-body text-[10px] text-gray-500">
                 {DEVICE_SIZES[device].label}
               </span>
@@ -97,7 +97,7 @@ export default function PreviewPanel({ open, onClose }: PreviewPanelProps) {
               <button
                 onClick={handleRefresh}
                 className="p-1.5 text-gray-500 hover:text-white rounded"
-                title="Refresh"
+                title="Rafraîchir"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
@@ -106,14 +106,14 @@ export default function PreviewPanel({ open, onClose }: PreviewPanelProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-1.5 text-gray-500 hover:text-white rounded"
-                title="Open in a new tab"
+                title="Ouvrir dans un nouvel onglet"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
               <button
                 onClick={onClose}
                 className="p-1.5 text-gray-500 hover:text-red-400 rounded"
-                title="Close"
+                title="Fermer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -184,7 +184,7 @@ export default function PreviewPanel({ open, onClose }: PreviewPanelProps) {
                   height: DEVICE_SIZES[device].height,
                   transform: device === "tablet" ? "scale(1)" : undefined,
                 }}
-                title="App Preview"
+                title="Aperçu de l'app"
                 sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
               />
             </div>
@@ -197,7 +197,7 @@ export default function PreviewPanel({ open, onClose }: PreviewPanelProps) {
             </span>
             <span className="font-body text-[10px] text-green-500 flex items-center gap-1">
               <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              Live
+              En direct
             </span>
           </div>
         </motion.aside>
