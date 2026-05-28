@@ -248,8 +248,14 @@ export default function AdminAuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Video background — splash trailer */}
+    <div
+      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-pk-carbon"
+      style={{
+        background:
+          "radial-gradient(circle at 50% -12%, rgba(225,6,0,.16), transparent 34%), linear-gradient(180deg, #0B0D12 0%, #07090D 56%, #0B0D12 100%)",
+      }}
+    >
+      {/* Video background — splash trailer (loads over fallback gradient) */}
       <video
         autoPlay
         muted

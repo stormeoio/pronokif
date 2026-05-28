@@ -236,15 +236,6 @@ export default function PronoKifSplashScreen({
         <div className="pk-splash__redFog pk-splash__redFog--right" />
       </div>
 
-      <button
-        type="button"
-        className="pk-splash__skip"
-        onClick={completeSplash}
-        data-testid="splash-skip"
-      >
-        {skipLabel}
-      </button>
-
       <section
         className={`pk-splash__content ${logoVisible ? "is-visible" : ""}`}
         aria-label={ariaContent}
@@ -599,7 +590,7 @@ const styles = `
 }
 
 .pk-splash__loaderDock.has-logo {
-  top: calc(50% + 224px);
+  top: calc(50% + 274px);
   width: min(306px, 76vw);
 }
 
@@ -1123,7 +1114,7 @@ const styles = `
   }
 
   .pk-splash__loaderDock.has-logo {
-    top: calc(50% + 186px);
+    top: calc(50% + 220px);
   }
 }
 
@@ -1138,7 +1129,7 @@ const styles = `
   }
 
   .pk-splash__loaderDock.has-logo {
-    top: calc(50% + 138px);
+    top: calc(50% + 162px);
   }
 
   .pk-progress__logs {

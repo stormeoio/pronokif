@@ -161,8 +161,14 @@ export default function AuthPage() {
   return (
     <>
       {/* ---- AUTH PAGE ---- */}
-      <div className="relative w-full min-h-dvh flex flex-col items-center justify-center px-5 py-8 overflow-hidden">
-        {/* Video background — splash trailer */}
+      <div
+        className="relative w-full min-h-dvh flex flex-col items-center justify-center px-5 py-8 overflow-hidden"
+        style={{
+          background:
+            "radial-gradient(ellipse 120% 80% at 50% 100%, rgba(225,6,0,0.06) 0%, transparent 50%), linear-gradient(180deg, #0a0c10 0%, #0B0D12 40%, #110a0a 100%)",
+        }}
+      >
+        {/* Video background — splash trailer (progressive: solid bg shows immediately) */}
         <video
           autoPlay
           muted

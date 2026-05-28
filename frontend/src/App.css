@@ -565,21 +565,20 @@ button:active:not(:disabled) {
    AUTH VIDEO BACKGROUND + SPORT TRANSITIONS
    ============================================ */
 
-/* Diagonal wipe reveal — extreme sport style */
+/* Dynamic sport reveal — fast slide + scale settle.
+   No clip-path: card is always visible even if animation fails to trigger. */
 @keyframes pk-sport-reveal {
   0% {
-    clip-path: polygon(0 0, 6% 0, 0 100%, 0 100%);
     opacity: 0;
-    transform: translateX(-20px) scale(1.03);
+    transform: translateX(-28px) scale(1.04) skewX(-2deg);
   }
-  45% {
-    clip-path: polygon(0 0, 100% 0, 92% 100%, 0 100%);
+  50% {
     opacity: 1;
+    transform: translateX(4px) scale(1) skewX(0deg);
   }
   100% {
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
     opacity: 1;
-    transform: translateX(0) scale(1);
+    transform: translateX(0) scale(1) skewX(0deg);
   }
 }
 
