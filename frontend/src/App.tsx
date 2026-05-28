@@ -4,11 +4,12 @@
  * Route definitions live in routes.tsx (extracted Sprint 4).
  * This file is pure orchestration: providers + layout + suspense + 3D background.
  */
-import { Suspense, lazy, useCallback, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useState } from "react";
 import { BrowserRouter, useLocation } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth";
+import { apiClient } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppRouter } from "@/routes";
@@ -122,10 +123,46 @@ function FallbackLoader() {
   );
 }
 
+// ------------------------------------------------------- app preload hook ---
+
+/**
+ * Preload critical resources while the splash screen is shown.
+ * Warms auth session, lazy chunks, and 3D background so the app
+ * renders instantly when the user taps "Commencer".
+ */
+function useAppPreload(enabled: boolean): boolean {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    Promise.allSettled([
+      // Warm auth session + cache user object for AuthProvider instant hydration
+      apiClient
+        .get("/auth/me")
+        .then((res) => {
+          try {
+            localStorage.setItem("user", JSON.stringify(res.data));
+          } catch {
+            /* non-critical */
+          }
+        })
+        .catch(() => null),
+      // Preload critical lazy-loaded chunks
+      import("@/pages/dashboard/DashboardPage").catch(() => null),
+      import("@/pages/AuthPage").catch(() => null),
+      import("@/components/three/ParticleBackground").catch(() => null),
+    ]).then(() => setReady(true));
+  }, [enabled]);
+
+  return ready;
+}
+
 // --------------------------------------------------------------------- app ---
 
 export default function App() {
   const [hasStarted, setHasStarted] = useState(hasSeenSplash);
+  const appReady = useAppPreload(!hasStarted);
 
   const handleSplashStart = useCallback(() => {
     markSplashSeen();
@@ -140,6 +177,7 @@ export default function App() {
         videoSrc="/video/splash-trailer.mp4"
         introDelayMs={950}
         buttonDelayMs={3600}
+        appReady={appReady}
         onCompletee={handleSplashStart}
       />
     );

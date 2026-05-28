@@ -18,6 +18,8 @@ interface SplashScreenProps {
   introDelayMs?: number;
   /** Delay before replacing the loader with the start CTA. */
   buttonDelayMs?: number;
+  /** True when critical app resources are loaded. Button waits for this. */
+  appReady?: boolean;
 }
 
 // ----------------------------------------------------------- component ---
@@ -30,6 +32,7 @@ export default function SplashScreen({
   maxDuration = 13000,
   introDelayMs = 950,
   buttonDelayMs = 3600,
+  appReady,
 }: SplashScreenProps) {
   return (
     <PronoKifSplashScreen
@@ -39,6 +42,7 @@ export default function SplashScreen({
       introDelayMs={introDelayMs}
       buttonDelayMs={buttonDelayMs}
       maxDurationMs={maxDuration}
+      appReady={appReady}
       onStart={onCompletee}
     />
   );

@@ -45,6 +45,8 @@ type PronoKifSplashScreenProps = {
   loadingLogs?: string[];
   introDelayMs?: number;
   buttonDelayMs?: number;
+  /** True when critical app resources are loaded. Button waits for this. */
+  appReady?: boolean;
   maxDurationMs?: number;
   onStart?: () => void;
   className?: string;
@@ -52,7 +54,7 @@ type PronoKifSplashScreenProps = {
 
 const DEFAULT_LOADING_LOGS = [
   "Initialisation du paddock",
-  "Loading du calendrier 2026",
+  "Chargement du calendrier 2026",
   "Préparation des pronostics",
   "Ouverture de la grille",
 ];
@@ -125,12 +127,14 @@ export default function PronoKifSplashScreen({
   loadingLogs = DEFAULT_LOADING_LOGS,
   introDelayMs = 950,
   buttonDelayMs = 3600,
+  appReady = true,
   maxDurationMs = 13000,
   onStart,
   className = "",
 }: PronoKifSplashScreenProps) {
   const [logoVisible, setLogoVisible] = useState(false);
-  const [ready, setReady] = useState(false);
+  const [timerDone, setTimerDone] = useState(false);
+  const ready = timerDone && appReady;
   const [isLeaving, setIsLeaving] = useState(false);
   const [activeLogIndex, setActiveLogIndex] = useState(0);
   const hasCompleteedRef = useRef(false);
@@ -144,7 +148,7 @@ export default function PronoKifSplashScreen({
 
   useEffect(() => {
     const logoTimer = window.setTimeout(() => setLogoVisible(true), introDelayMs);
-    const readyTimer = window.setTimeout(() => setReady(true), buttonDelayMs);
+    const readyTimer = window.setTimeout(() => setTimerDone(true), buttonDelayMs);
 
     return () => {
       window.clearTimeout(logoTimer);
@@ -198,7 +202,7 @@ export default function PronoKifSplashScreen({
           data-testid="splash-video"
           onError={() => {
             setLogoVisible(true);
-            setReady(true);
+            setTimerDone(true);
           }}
         />
         <div className="pk-splash__videoOverlay" />
