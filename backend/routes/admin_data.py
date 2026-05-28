@@ -97,7 +97,9 @@ RACE_EDITORIAL_PROFILES = {
     "bahrain-2026": {
         "track_profile": "Sakhir would have focused on traction, braking, and thermal degradation.",
         "story_angle": "Cancelled race: turn the window into strategy, tyre, and hypothetical duel content.",
-        "cancellation_impact": "No scoring or prediction reminder. Use it as an editorial pause to keep the paddock active.",
+        "cancellation_impact": (
+            "No scoring or prediction reminder. Use it as an editorial pause to keep the paddock active."
+        ),
     },
     "saudi-2026": {
         "track_profile": "Jeddah would have been a pure speed test between walls, with very little margin for error.",
@@ -188,7 +190,10 @@ def _default_public_recap(
         return (
             race.get("cancellation_impact")
             or _race_editorial_profile(race).get("cancellation_impact")
-            or "Race cancelled: no points to award, but a good chance to publish analysis content or a mini-challenge to keep players engaged."
+            or (
+                "Race cancelled: no points to award, but a good chance to publish analysis content "
+                "or a mini-challenge to keep players engaged."
+            )
         )
 
     if result_digest:

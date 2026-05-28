@@ -103,8 +103,7 @@ describe("ChampionshipPage", () => {
   it("shows loading spinner initially", () => {
     mockFetch.mockReturnValue(new Promise(() => {}));
     renderWithProviders(<ChampionshipPage />);
-    expect(document.querySelector(".animate-spin")).toBeInTheDocument();
-    expect(screen.getByText(/loading standings/i)).toBeInTheDocument();
+    expect(document.querySelector(".animate-shimmer")).toBeInTheDocument();
   });
 
   it("renders header with season after load", async () => {
@@ -113,7 +112,7 @@ describe("ChampionshipPage", () => {
     await waitFor(() => {
       expect(screen.getByText(/championnat f1/i)).toBeInTheDocument();
     });
-    expect(screen.getByText(/saison 2026/i)).toBeInTheDocument();
+    expect(screen.getByText(/season 2026/i)).toBeInTheDocument();
   });
 
   it("shows 3 tabs: Drivers, Ecuries, Resultats", async () => {

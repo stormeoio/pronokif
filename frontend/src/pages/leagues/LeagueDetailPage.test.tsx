@@ -110,7 +110,7 @@ describe("LeagueDetailPage", () => {
   it("shows loading spinner initially", () => {
     mockedApi.get.mockReturnValue(new Promise(() => {}));
     renderLeagueDetail();
-    expect(document.querySelector(".animate-spin")).toBeInTheDocument();
+    expect(document.querySelector(".animate-shimmer")).toBeInTheDocument();
   });
 
   it("displays league name after load", async () => {

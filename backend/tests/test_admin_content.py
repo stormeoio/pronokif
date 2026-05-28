@@ -1,3 +1,7 @@
+"""Admin content route tests."""
+
+# ruff: noqa: E402, I001
+
 import pytest
 import fastapi.dependencies.utils as fastapi_dependency_utils
 

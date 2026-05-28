@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from routes.health import root_router, router as health_router
+from routes.health import root_router
+from routes.health import router as health_router
 
 
 def test_root_endpoint_points_to_api_health_and_docs():

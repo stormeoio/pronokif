@@ -52,7 +52,7 @@ describe("NotificationsPage", () => {
   it("shows loading skeleton initially", () => {
     mockApiClient.get.mockReturnValue(new Promise(() => {})); // never resolves
     const { container } = renderWithProviders(<NotificationsPage />, { user: mockUser });
-    expect(container.querySelector(".skeleton-arcade")).toBeInTheDocument();
+    expect(container.querySelector(".animate-shimmer")).toBeInTheDocument();
   });
 
   it("renders notification list after load", async () => {

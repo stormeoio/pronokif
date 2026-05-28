@@ -268,7 +268,7 @@ async def delete_league(league_id: str, user: dict = Depends(get_current_user)) 
     await db.chat_read_status.delete_many({"league_id": league_id})
     await db.leagues.delete_one({"id": league_id})
 
-    return {"status": "success", "message": f"The league .{league[name]}. has been deleted"}
+    return {"status": "success", "message": f"The league .{league['name']}. has been deleted"}
 
 
 @router.post("/{league_id}/transfer")
