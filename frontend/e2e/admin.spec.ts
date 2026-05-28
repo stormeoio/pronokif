@@ -165,18 +165,21 @@ test.describe("Admin panel", () => {
     await page.goto("/admin");
     await page.waitForLoadState("networkidle");
 
-    await page.locator("aside nav").getByRole("button", { name: "Users", exact: true }).click();
+    await page
+      .locator("aside nav")
+      .getByRole("button", { name: "Utilisateurs", exact: true })
+      .click();
 
     await expect(page.getByText("SpeedKing")).toBeVisible({ timeout: 10000 });
     await expect(page.getByText("RaceQueen")).toBeVisible();
-    await expect(page.getByText("not set")).toBeVisible(); // null username
+    await expect(page.getByText("non défini")).toBeVisible(); // null username
   });
 
   test("feedbacks tab shows messages with categories", async ({ page }) => {
     await page.goto("/admin");
     await page.waitForLoadState("networkidle");
 
-    await page.locator("aside nav").getByRole("button", { name: "Feedbacks", exact: true }).click();
+    await page.locator("aside nav").getByRole("button", { name: "Retours", exact: true }).click();
 
     await expect(page.getByText("Le classement ne se met pas a jour")).toBeVisible({
       timeout: 10000,
@@ -194,7 +197,7 @@ test.describe("Admin panel", () => {
       .getByRole("button", { name: "Invitations", exact: true })
       .click();
 
-    const sendBtn = page.getByRole("button", { name: /send invitation/i });
+    const sendBtn = page.getByRole("button", { name: /envoyer l'invitation/i });
     await expect(sendBtn).toBeVisible({ timeout: 10000 });
     await expect(sendBtn).toBeDisabled();
   });
@@ -210,7 +213,7 @@ test.describe("Admin panel", () => {
 
     await page.getByPlaceholder("email.com").fill("new@test.fr");
 
-    const sendBtn = page.getByRole("button", { name: /send invitation/i });
+    const sendBtn = page.getByRole("button", { name: /envoyer l'invitation/i });
     await expect(sendBtn).toBeEnabled();
   });
 });
