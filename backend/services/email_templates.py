@@ -400,3 +400,199 @@ def invitation(
             code_label="CODE DE LIGUE",
         ),
     )
+
+
+# ── Admin launch announcement (festive, always-dark) ─────────────────────
+
+
+def admin_launch() -> EmailContent:
+    """Festive email: pronokif.eu is live, admin access ready, beta starts.
+
+    Always-dark design (Noir Carbone brand identity) — no light-mode swap
+    so every client renders the same premium dark aesthetic.
+    """
+    frontend = _frontend_url()
+    admin_url = f"{frontend}/admin/auth"
+    safe_front = _safe(frontend)
+    logo = _safe(_logo_url("white-red"))
+
+    html_body = f"""<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="color-scheme" content="dark">
+<meta name="supported-color-schemes" content="dark">
+<title>PronoKif.eu est LIVE</title>
+<!--[if mso]>
+<noscript><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+<style>table{{border-collapse:collapse;}}td{{font-family:Arial,sans-serif;}}</style>
+<![endif]-->
+<style>
+:root{{color-scheme:dark;supported-color-schemes:dark;}}
+body,table,td{{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;}}
+table{{border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;}}
+img{{-ms-interpolation-mode:bicubic;border:0;outline:none;text-decoration:none;}}
+a{{color:#E10600;text-decoration:none;}}
+@keyframes glow{{0%,100%{{box-shadow:0 0 24px rgba(225,6,0,0.25);}}50%{{box-shadow:0 0 48px rgba(225,6,0,0.5),0 0 72px rgba(255,215,0,0.15);}}}}
+@media only screen and (max-width:600px){{
+.wrap{{width:100%!important;}}
+.inner{{padding:28px 20px!important;}}
+.feat-cell{{display:block!important;width:100%!important;padding:0 0 12px!important;}}
+}}
+</style>
+</head>
+<body style="margin:0;padding:0;word-spacing:normal;background-color:#0B0D12;">
+<div style="display:none;font-size:1px;color:#0B0D12;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">&#127937; PronoKif.eu est officiel ! Ton acc&egrave;s admin est pr&ecirc;t &mdash; la beta d&eacute;marre !</div>
+
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0B0D12;">
+<tr><td align="center" style="padding:40px 16px;">
+
+<!--[if mso]><table role="presentation" border="0" cellpadding="0" cellspacing="0" width="580" align="center"><tr><td><![endif]-->
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:580px;" class="wrap">
+
+<!-- LOGO -->
+<tr><td align="center" style="padding:0 0 32px;">
+<a href="{safe_front}">
+<img src="{logo}" alt="PronoKif" width="160" style="display:block;width:160px;height:auto;">
+</a>
+</td></tr>
+
+<!-- MAIN CARD -->
+<tr><td style="background-color:#13161C;border-radius:16px;overflow:hidden;animation:glow 4s ease-in-out infinite;">
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+
+<!-- Gradient top stripe -->
+<tr><td style="height:5px;background:linear-gradient(90deg,#E10600,#FF4D00,#FFD700,#FF4D00,#E10600);font-size:0;line-height:0;">&nbsp;</td></tr>
+
+<!-- Content -->
+<tr><td style="padding:40px 40px 36px;" class="inner">
+
+<!-- Badge -->
+<table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr>
+<td style="background-color:rgba(225,6,0,0.15);border:1px solid rgba(225,6,0,0.4);border-radius:6px;padding:5px 14px;">
+<span style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;color:#FF6B6B;letter-spacing:2.5px;text-transform:uppercase;">DIRECTION DE COURSE</span>
+</td></tr></table>
+
+<!-- Emojis -->
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin:28px 0 16px;">
+<tr><td align="center" style="font-size:44px;line-height:1.1;letter-spacing:8px;">&#127881;&#127937;&#127942;&#127937;&#127881;</td></tr>
+</table>
+
+<!-- Title -->
+<h1 style="margin:0 0 6px;font-family:'Arial Black',Arial,Helvetica,sans-serif;font-size:30px;font-weight:900;color:#FFFFFF;letter-spacing:.5px;line-height:1.2;text-align:center;">PRONOKIF.EU EST LIVE&nbsp;!</h1>
+
+<!-- Sub-headline -->
+<p style="margin:0 0 32px;font-family:Arial,Helvetica,sans-serif;font-size:13px;letter-spacing:3px;text-align:center;font-weight:700;color:#FFD700;">&#9733;&ensp;LA PHASE BETA D&Eacute;MARRE&ensp;&#9733;</p>
+
+<!-- Body text -->
+<p style="margin:0 0 14px;color:#D1D5DB;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.7;">Salut&nbsp;!</p>
+
+<p style="margin:0 0 14px;color:#D1D5DB;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.7;">C&rsquo;est officiel&nbsp;: <strong style="color:#FFFFFF;">pronokif.eu</strong> est d&eacute;sormais le <strong style="color:#FF4D00;">nom de domaine officiel</strong> de PronoKif. Fini le sous-domaine, on passe aux choses s&eacute;rieuses.</p>
+
+<p style="margin:0 0 28px;color:#D1D5DB;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.7;">Ton acc&egrave;s <strong style="color:#FFD700;">Direction de Course</strong> (admin) est pr&ecirc;t et t&rsquo;attend. Tu fais partie du cercle restreint qui pilote la plateforme.&nbsp;&#128274;</p>
+
+<!-- Feature cards 2x2 -->
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 28px;">
+<tr>
+<td width="50%" style="padding:0 6px 12px 0;" valign="top" class="feat-cell">
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#1C1F27;border:1px solid rgba(255,255,255,0.08);border-radius:10px;">
+<tr><td style="padding:20px 12px;text-align:center;">
+<span style="font-size:26px;display:block;margin:0 0 10px;">&#127942;</span>
+<span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#FFFFFF;line-height:1.5;font-weight:700;">Pronostics &amp; courses</span>
+</td></tr></table>
+</td>
+<td width="50%" style="padding:0 0 12px 6px;" valign="top" class="feat-cell">
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#1C1F27;border:1px solid rgba(255,255,255,0.08);border-radius:10px;">
+<tr><td style="padding:20px 12px;text-align:center;">
+<span style="font-size:26px;display:block;margin:0 0 10px;">&#128101;</span>
+<span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#FFFFFF;line-height:1.5;font-weight:700;">Utilisateurs &amp; ligues</span>
+</td></tr></table>
+</td>
+</tr>
+<tr>
+<td width="50%" style="padding:0 6px 0 0;" valign="top" class="feat-cell">
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#1C1F27;border:1px solid rgba(255,255,255,0.08);border-radius:10px;">
+<tr><td style="padding:20px 12px;text-align:center;">
+<span style="font-size:26px;display:block;margin:0 0 10px;">&#128202;</span>
+<span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#FFFFFF;line-height:1.5;font-weight:700;">Dashboard admin</span>
+</td></tr></table>
+</td>
+<td width="50%" style="padding:0 0 0 6px;" valign="top" class="feat-cell">
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#1C1F27;border:1px solid rgba(255,255,255,0.08);border-radius:10px;">
+<tr><td style="padding:20px 12px;text-align:center;">
+<span style="font-size:26px;display:block;margin:0 0 10px;">&#128640;</span>
+<span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#FFFFFF;line-height:1.5;font-weight:700;">Beta lanc&eacute;e&nbsp;!</span>
+</td></tr></table>
+</td>
+</tr>
+</table>
+
+<!-- Domain highlight -->
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 32px;">
+<tr><td align="center">
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" style="background-color:#0B0D12;border:2px solid #E10600;border-radius:12px;">
+<tr><td style="padding:20px 40px;text-align:center;">
+<span style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#9CA3AF;letter-spacing:2.5px;text-transform:uppercase;display:block;margin:0 0 8px;">DOMAINE OFFICIEL</span>
+<span style="font-family:'Courier New',Courier,monospace;font-size:24px;font-weight:700;color:#FFFFFF;letter-spacing:3px;">pronokif.eu</span>
+</td></tr></table>
+</td></tr></table>
+
+<!-- CTA button -->
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+<tr><td align="center">
+{_vml_button(admin_url, "ACCÉDER AU BACK-OFFICE", 320)}
+</td></tr>
+</table>
+
+<p style="margin:24px 0 0;color:#9CA3AF;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;text-align:center;">&Agrave; tout de suite dans le paddock&nbsp;!&nbsp;&#127937;</p>
+
+<!-- Fine print -->
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin:32px 0 0;">
+<tr><td style="border-top:1px solid rgba(255,255,255,0.06);padding:16px 0 0;">
+<p style="margin:0;color:#6B7280;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.5;">Cet email est r&eacute;serv&eacute; aux administrateurs de PronoKif. Tu re&ccedil;ois ce message car ton adresse fait partie de la Direction de Course.</p>
+</td></tr></table>
+
+</td></tr>
+</table>
+</td></tr>
+
+<!-- FOOTER -->
+<tr><td align="center" style="padding:28px 0 0;">
+<p style="margin:0 0 6px;font-family:'Arial Black',Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:2.5px;color:#4B5563;line-height:1.4;">PRONOSTIQUE. D&Eacute;FIE. <span style="color:#E10600;">VIBRE.</span></p>
+<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#374151;line-height:1.4;">&copy; 2026 PronoKif</p>
+</td></tr>
+
+</table>
+<!--[if mso]></td></tr></table><![endif]-->
+
+</td></tr>
+</table>
+</body>
+</html>"""
+
+    return EmailContent(
+        subject="\U0001f3c1 PronoKif.eu est LIVE — Ton accès admin est prêt !",
+        text=(
+            "\U0001f389\U0001f3c1 PRONOKIF.EU EST OFFICIELLEMENT LIVE ! \U0001f3c1\U0001f389\n\n"
+            "Salut !\n\n"
+            "C'est officiel : pronokif.eu est désormais le nom de domaine "
+            "officiel de PronoKif. Fini le sous-domaine, on passe aux choses "
+            "sérieuses.\n\n"
+            "Ton accès Direction de Course (admin) est prêt et t'attend.\n\n"
+            f"\U0001f517 Accès admin : {admin_url}\n"
+            f"\U0001f310 Le site : {frontend}\n\n"
+            "⭐ LA PHASE BETA DÉMARRE ! ⭐\n\n"
+            "Ce qui t'attend en tant qu'admin :\n"
+            "  \U0001f3c6 Pronostics & courses\n"
+            "  \U0001f465 Utilisateurs & ligues\n"
+            "  \U0001f4ca Dashboard admin\n"
+            "  \U0001f680 La beta est officiellement lancée !\n\n"
+            "À tout de suite dans le paddock !\n\n"
+            "--\nL'équipe PronoKif\n"
+            "PRONOSTIQUE. DÉFIE. VIBRE."
+        ),
+        html_body=html_body,
+    )
+
