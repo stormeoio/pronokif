@@ -85,15 +85,27 @@ export default function AdminLayout() {
   const mainRef = useRef<HTMLElement | null>(null);
   const [activeTab, setActiveTab] = useState<AdminTabKey>("dashboard");
   const [adminEmail, setAdminEmail] = useState("");
+  const [authChecked, setAuthChecked] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
     adminApi
       .me()
-      .then((res) => setAdminEmail(res.data.email))
-      .catch(() => navigate(ADMIN_AUTH_PATH));
+      .then((res) => {
+        setAdminEmail(res.data.email);
+        setAuthChecked(true);
+      })
+      .catch(() => navigate(ADMIN_AUTH_PATH, { replace: true }));
   }, [navigate]);
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full border-3 border-pk-red/25 border-t-pk-red animate-spin" />
+      </div>
+    );
+  }
 
   const handleLogout = async () => {
     try {
