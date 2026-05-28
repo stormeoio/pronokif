@@ -1,11 +1,23 @@
 /**
  * Admin Back-Office Authentication Page.
  * Magic link login + 2FA verification.
+ *
+ * Never shows a blank page: every state has visible UI + a back CTA.
+ * "Link sent" state persists in sessionStorage so a page refresh
+ * doesn't lose the user's context.
  */
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Loader2, KeyRound, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  Mail,
+  Loader2,
+  KeyRound,
+  CheckCircle,
+  AlertCircle,
+  ArrowLeft,
+  RefreshCw,
+} from "lucide-react";
 import { adminApi } from "./adminApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +25,30 @@ import { BorderGlowButton } from "@/components/ui/border-glow-button";
 import { brandAssets } from "@/lib/brand";
 
 const ADMIN_HOME_PATH = "/admin";
+const SENT_EMAIL_KEY = "pronokif:admin-magic-sent";
+
+/** Persist "link sent" email so a page refresh shows the right state. */
+function getSentEmail(): string | null {
+  try {
+    return sessionStorage.getItem(SENT_EMAIL_KEY);
+  } catch {
+    return null;
+  }
+}
+function setSentEmail(email: string) {
+  try {
+    sessionStorage.setItem(SENT_EMAIL_KEY, email);
+  } catch {
+    /* non-critical */
+  }
+}
+function clearSentEmail() {
+  try {
+    sessionStorage.removeItem(SENT_EMAIL_KEY);
+  } catch {
+    /* non-critical */
+  }
+}
 
 export default function AdminAuthPage() {
   const navigate = useNavigate();
@@ -20,7 +56,9 @@ export default function AdminAuthPage() {
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [sentAddress, setSentAddress] = useState("");
   const [verifying, setVerifying] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
   const [requires2fa, setRequires2fa] = useState(false);
   const [totpCode, setTotpCode] = useState("");
   const [partialToken, setPartialToken] = useState("");
@@ -30,8 +68,16 @@ export default function AdminAuthPage() {
   useEffect(() => {
     adminApi
       .me()
-      .then(() => navigate(ADMIN_HOME_PATH))
-      .catch(() => {});
+      .then(() => navigate(ADMIN_HOME_PATH, { replace: true }))
+      .catch(() => {
+        setAuthChecking(false);
+        // Restore "link sent" state from sessionStorage
+        const savedEmail = getSentEmail();
+        if (savedEmail) {
+          setSent(true);
+          setSentAddress(savedEmail);
+        }
+      });
   }, [navigate]);
 
   const verifyMagicLink = useCallback(
@@ -40,11 +86,12 @@ export default function AdminAuthPage() {
       setError("");
       try {
         const res = await adminApi.verifyMagicLink(token);
+        clearSentEmail();
         if (res.data.requires_2fa) {
           setRequires2fa(true);
           setPartialToken(res.data.partial_token);
         } else {
-          navigate(ADMIN_HOME_PATH);
+          navigate(ADMIN_HOME_PATH, { replace: true });
         }
       } catch (err: unknown) {
         const e = err as { response?: { data?: { detail?: string } } };
@@ -60,6 +107,7 @@ export default function AdminAuthPage() {
   useEffect(() => {
     const token = searchParams.get("token");
     if (token) {
+      setAuthChecking(false);
       verifyMagicLink(token);
     }
   }, [searchParams, verifyMagicLink]);
@@ -71,6 +119,8 @@ export default function AdminAuthPage() {
     try {
       await adminApi.sendMagicLink(email);
       setSent(true);
+      setSentAddress(email);
+      setSentEmail(email);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
       setError(e.response?.data?.detail || "Erreur lors de l'envoi");
@@ -79,13 +129,20 @@ export default function AdminAuthPage() {
     }
   };
 
+  const handleResend = () => {
+    setSent(false);
+    setSentAddress("");
+    clearSentEmail();
+  };
+
   const handleVerify2fa = async (e: React.FormEvent) => {
     e.preventDefault();
     setVerifying(true);
     setError("");
     try {
       await adminApi.validate2fa(totpCode, partialToken);
-      navigate(ADMIN_HOME_PATH);
+      clearSentEmail();
+      navigate(ADMIN_HOME_PATH, { replace: true });
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
       setError(e.response?.data?.detail || "Code invalide");
@@ -94,9 +151,33 @@ export default function AdminAuthPage() {
     }
   };
 
+  // Branded loading state while checking cookie auth
+  if (authChecking && !searchParams.has("token")) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{
+          background:
+            "radial-gradient(circle at 50% -12%, rgba(225,6,0,.16), transparent 34%), linear-gradient(180deg, #0B0D12 0%, #07090D 56%, #0B0D12 100%)",
+        }}
+      >
+        <div className="text-center">
+          <img
+            src={brandAssets.wordmarkWhiteRed}
+            alt="PronoKif"
+            className="mx-auto mb-6 h-8 w-auto max-w-[210px] object-contain"
+            draggable={false}
+          />
+          <Loader2 className="w-8 h-8 text-pk-red animate-spin mx-auto mb-3" />
+          <p className="font-body text-xs text-pk-titane">Vérification de session...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4 bg-app-main"
+      className="min-h-screen flex items-center justify-center p-4"
       style={{
         background:
           "radial-gradient(circle at 50% -12%, rgba(225,6,0,.16), transparent 34%), radial-gradient(circle at 0% 34%, rgba(244,244,244,.04), transparent 28%), linear-gradient(180deg, #0B0D12 0%, #07090D 56%, #0B0D12 100%)",
@@ -108,7 +189,7 @@ export default function AdminAuthPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <div className="card-arcade overflow-hidden border-white/[0.1]">
+        <div className="bg-pk-surface/80 backdrop-blur-xl border border-white/[0.08] rounded-xl overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,.5)]">
           {/* Header */}
           <div className="border-b border-pk-red/25 bg-gradient-to-r from-pk-red/12 to-transparent p-6">
             <div>
@@ -129,6 +210,12 @@ export default function AdminAuthPage() {
               <div className="text-center py-8">
                 <Loader2 className="w-8 h-8 text-pk-red animate-spin mx-auto mb-4" />
                 <p className="font-body text-pk-titane">Vérification du lien...</p>
+                {error && (
+                  <div className="mt-4 flex items-center justify-center gap-2 text-red-400 text-sm">
+                    <AlertCircle className="w-4 h-4" />
+                    {error}
+                  </div>
+                )}
               </div>
             ) : requires2fa ? (
               /* 2FA verification */
@@ -166,21 +253,22 @@ export default function AdminAuthPage() {
               </form>
             ) : sent ? (
               /* Email sent confirmation */
-              <div className="text-center py-8">
+              <div className="text-center py-6">
                 <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-4" />
                 <h2 className="font-heading text-lg text-pk-emerald mb-2">Lien envoyé !</h2>
-                <p className="font-body text-sm text-pk-titane mb-4">
+                <p className="font-body text-sm text-pk-titane mb-2">
                   Un lien de connexion a été envoyé à{" "}
-                  <strong className="text-pk-piste">{email}</strong>
+                  <strong className="text-pk-piste">{sentAddress}</strong>
                 </p>
-                <p className="font-body text-xs text-pk-titane/80">
+                <p className="font-body text-xs text-pk-titane/80 mb-6">
                   Vérifiez votre boîte mail et cliquez sur le lien. Le lien expire dans 15 minutes.
                 </p>
                 <Button
                   variant="ghost"
-                  onClick={() => setSent(false)}
-                  className="mt-4 text-pk-titane hover:text-pk-piste"
+                  onClick={handleResend}
+                  className="text-pk-titane hover:text-pk-piste"
                 >
+                  <RefreshCw className="w-4 h-4 mr-1.5" />
                   Renvoyer un lien
                 </Button>
               </div>
@@ -227,7 +315,19 @@ export default function AdminAuthPage() {
             )}
           </div>
 
-          <div className="h-2 bg-kerb-stripe" />
+          {/* Footer — always visible CTA */}
+          <div className="border-t border-white/[0.06] px-6 py-4 flex items-center justify-between">
+            <Link
+              to="/auth"
+              className="text-xs text-pk-titane hover:text-pk-piste transition-colors inline-flex items-center gap-1.5"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Retour à l'app
+            </Link>
+            <span className="text-[10px] text-pk-titane/40 font-data">DIRECTION DE COURSE</span>
+          </div>
+
+          <div className="h-2 bg-gradient-to-r from-pk-red via-pk-red/60 to-pk-red" />
         </div>
       </motion.div>
     </div>

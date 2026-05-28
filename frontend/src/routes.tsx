@@ -35,7 +35,9 @@ const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
 const VerifyEmailPage = lazy(() => import("@/pages/VerifyEmailPage"));
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
-const AdminAuthPage = lazy(() => import("@/pages/admin-bo/AdminAuthPage"));
+// AdminAuthPage is NOT lazy — it's a critical entry point that must never
+// show a blank screen. Small bundle cost, massive UX win.
+import AdminAuthPage from "@/pages/admin-bo/AdminAuthPage";
 const AdminLayout = lazy(() => import("@/pages/admin-bo/AdminLayout"));
 
 // --- Simple protected routes (path → component) ---
