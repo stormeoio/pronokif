@@ -86,7 +86,7 @@ jobs:
       - name: Canary health check
         run: |
           for attempt in $(seq 1 30); do
-            if curl --fail --silent --show-error https://pronokif.stormeo.io/api/health >/tmp/pronokif-health.json; then
+            if curl --fail --silent --show-error https://pronokif.eu/api/health >/tmp/pronokif-health.json; then
               cat /tmp/pronokif-health.json
               exit 0
             fi
