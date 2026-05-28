@@ -296,11 +296,8 @@ async def send_magic_link(data: MagicLinkRequest) -> dict:
 
     magic_url = _build_admin_magic_url(token)
 
-    # Look up admin's locale preference for bilingual email
-    admin_user = await db.users.find_one({"email": email}, {"locale": 1, "_id": 0})
-    admin_lang = admin_user.get("locale", "fr") if admin_user else "fr"
-
-    if not await _send_magic_link_email(email, magic_url, lang=admin_lang):
+    # Admin back-office is French-only — always send admin emails in French
+    if not await _send_magic_link_email(email, magic_url, lang="fr"):
         logger.info(f"[Admin Auth] Magic link for {email}: {magic_url}")
 
     return {"message": "Si cette adresse est autorisée, un lien de connexion a été envoyé."}
