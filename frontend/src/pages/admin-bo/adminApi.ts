@@ -14,17 +14,21 @@ const api = axios.create({
 export const adminApi = {
   // Auth
   sendMagicLink: (email: string) => api.post("/auth/magic-link", { email }),
-  verifyMagicLink: (token: string) => api.post("/auth/verify", { token }),
-  validate2fa: (code: string, partialToken: string) =>
+  verifyMagicLink: (token: string, rememberDevice = false) =>
+    api.post("/auth/verify", { token, remember_device: rememberDevice }),
+  validate2fa: (code: string, partialToken: string, rememberDevice = false) =>
     api.post(
       "/auth/2fa/validate",
-      { code },
+      { code, remember_device: rememberDevice },
       { headers: { Authorization: `Bearer ${partialToken}` } },
     ),
+  /** Re-create session from a stored device token (survives cookie loss). */
+  refreshSession: (deviceToken: string) => api.post("/auth/refresh", { device_token: deviceToken }),
   setup2fa: () => api.post("/auth/2fa/setup", {}),
   verify2faSetup: (code: string) => api.post("/auth/2fa/verify", { code }),
   me: () => api.get("/auth/me"),
-  logout: () => api.post("/auth/logout"),
+  logout: (deviceToken?: string) =>
+    api.post("/auth/logout", deviceToken ? { device_token: deviceToken } : {}),
 
   // Stats
   stats: () => api.get("/stats").then((r) => r.data),

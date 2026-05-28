@@ -1,10 +1,12 @@
 /**
  * Admin Back-Office Authentication Page.
- * Magic link login + 2FA verification.
+ * Magic link login + 2FA verification + device remember.
  *
  * Never shows a blank page: every state has visible UI + a back CTA.
  * "Link sent" state persists in sessionStorage so a page refresh
  * doesn't lose the user's context.
+ * "Remember device" stores a long-lived token in localStorage that
+ * can re-create a session without a new magic link (90 days).
  */
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
@@ -17,6 +19,7 @@ import {
   AlertCircle,
   ArrowLeft,
   RefreshCw,
+  Smartphone,
 } from "lucide-react";
 import { adminApi } from "./adminApi";
 import { Button } from "@/components/ui/button";
@@ -26,8 +29,10 @@ import { brandAssets } from "@/lib/brand";
 
 const ADMIN_HOME_PATH = "/admin";
 const SENT_EMAIL_KEY = "pronokif:admin-magic-sent";
+const DEVICE_TOKEN_KEY = "pronokif:admin-device";
 
-/** Persist "link sent" email so a page refresh shows the right state. */
+// ── SessionStorage helpers (link sent state) ───────────────────────────────
+
 function getSentEmail(): string | null {
   try {
     return sessionStorage.getItem(SENT_EMAIL_KEY);
@@ -50,6 +55,32 @@ function clearSentEmail() {
   }
 }
 
+// ── LocalStorage helpers (device token) ────────────────────────────────────
+
+function getDeviceToken(): string | null {
+  try {
+    return localStorage.getItem(DEVICE_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+function setDeviceToken(token: string) {
+  try {
+    localStorage.setItem(DEVICE_TOKEN_KEY, token);
+  } catch {
+    /* non-critical */
+  }
+}
+function clearDeviceToken() {
+  try {
+    localStorage.removeItem(DEVICE_TOKEN_KEY);
+  } catch {
+    /* non-critical */
+  }
+}
+
+// ── Component ──────────────────────────────────────────────────────────────
+
 export default function AdminAuthPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -62,22 +93,59 @@ export default function AdminAuthPage() {
   const [requires2fa, setRequires2fa] = useState(false);
   const [totpCode, setTotpCode] = useState("");
   const [partialToken, setPartialToken] = useState("");
+  const [rememberDevice, setRememberDevice] = useState(!!getDeviceToken());
   const [error, setError] = useState("");
 
-  // Check if already authenticated (cookie-based)
+  /** Store device token from API response if remember was checked. */
+  const handleDeviceToken = useCallback((resData: Record<string, unknown>) => {
+    if (resData.device_token && typeof resData.device_token === "string") {
+      setDeviceToken(resData.device_token);
+    }
+  }, []);
+
+  // Check auth: cookie → device token → show login form
   useEffect(() => {
-    adminApi
-      .me()
-      .then(() => navigate(ADMIN_HOME_PATH, { replace: true }))
-      .catch(() => {
-        setAuthChecking(false);
-        // Restore "link sent" state from sessionStorage
-        const savedEmail = getSentEmail();
-        if (savedEmail) {
-          setSent(true);
-          setSentAddress(savedEmail);
+    const tryAuth = async () => {
+      // 1. Try cookie-based session
+      try {
+        await adminApi.me();
+        navigate(ADMIN_HOME_PATH, { replace: true });
+        return;
+      } catch {
+        /* cookie gone or expired — try device token */
+      }
+
+      // 2. Try device token refresh
+      const deviceToken = getDeviceToken();
+      if (deviceToken) {
+        try {
+          const res = await adminApi.refreshSession(deviceToken);
+          if (res.data.requires_2fa) {
+            setRequires2fa(true);
+            setPartialToken(res.data.partial_token);
+            setAuthChecking(false);
+            return;
+          }
+          navigate(ADMIN_HOME_PATH, { replace: true });
+          return;
+        } catch {
+          // Device token expired or revoked — clear it
+          clearDeviceToken();
         }
-      });
+      }
+
+      // 3. Fall through to login form
+      setAuthChecking(false);
+
+      // Restore "link sent" state from sessionStorage
+      const savedEmail = getSentEmail();
+      if (savedEmail) {
+        setSent(true);
+        setSentAddress(savedEmail);
+      }
+    };
+
+    tryAuth();
   }, [navigate]);
 
   const verifyMagicLink = useCallback(
@@ -85,8 +153,9 @@ export default function AdminAuthPage() {
       setVerifying(true);
       setError("");
       try {
-        const res = await adminApi.verifyMagicLink(token);
+        const res = await adminApi.verifyMagicLink(token, rememberDevice);
         clearSentEmail();
+        handleDeviceToken(res.data);
         if (res.data.requires_2fa) {
           setRequires2fa(true);
           setPartialToken(res.data.partial_token);
@@ -100,7 +169,7 @@ export default function AdminAuthPage() {
         setVerifying(false);
       }
     },
-    [navigate],
+    [navigate, rememberDevice, handleDeviceToken],
   );
 
   // Handle magic link token from URL
@@ -140,8 +209,9 @@ export default function AdminAuthPage() {
     setVerifying(true);
     setError("");
     try {
-      await adminApi.validate2fa(totpCode, partialToken);
+      const res = await adminApi.validate2fa(totpCode, partialToken, rememberDevice);
       clearSentEmail();
+      handleDeviceToken(res.data);
       navigate(ADMIN_HOME_PATH, { replace: true });
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
@@ -151,7 +221,7 @@ export default function AdminAuthPage() {
     }
   };
 
-  // Branded loading state while checking cookie auth
+  // Branded loading state while checking cookie/device auth
   if (authChecking && !searchParams.has("token")) {
     return (
       <div
@@ -237,6 +307,19 @@ export default function AdminAuthPage() {
                   className="input-pk text-center text-2xl tracking-[0.5em]"
                   autoFocus
                 />
+                {/* Remember device checkbox */}
+                <label className="flex items-center gap-2.5 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={rememberDevice}
+                    onChange={(e) => setRememberDevice(e.target.checked)}
+                    className="w-4 h-4 rounded border-white/20 bg-pk-anthracite text-pk-red focus:ring-pk-red/40 focus:ring-offset-0"
+                  />
+                  <span className="flex items-center gap-1.5 text-xs text-pk-titane group-hover:text-pk-piste transition-colors">
+                    <Smartphone className="w-3.5 h-3.5" />
+                    Se souvenir de cet appareil
+                  </span>
+                </label>
                 {error && (
                   <div className="flex items-center gap-2 text-red-400 text-sm">
                     <AlertCircle className="w-4 h-4" />
@@ -291,6 +374,19 @@ export default function AdminAuthPage() {
                   autoFocus
                   required
                 />
+                {/* Remember device checkbox */}
+                <label className="flex items-center gap-2.5 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={rememberDevice}
+                    onChange={(e) => setRememberDevice(e.target.checked)}
+                    className="w-4 h-4 rounded border-white/20 bg-pk-anthracite text-pk-red focus:ring-pk-red/40 focus:ring-offset-0"
+                  />
+                  <span className="flex items-center gap-1.5 text-xs text-pk-titane group-hover:text-pk-piste transition-colors">
+                    <Smartphone className="w-3.5 h-3.5" />
+                    Se souvenir de cet appareil (90 jours)
+                  </span>
+                </label>
                 {error && (
                   <div className="flex items-center gap-2 text-red-400 text-sm">
                     <AlertCircle className="w-4 h-4" />

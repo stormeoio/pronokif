@@ -71,15 +71,49 @@ def _build_admin_magic_url(token: str) -> str:
 
 
 def _create_admin_token(email: str, require_2fa: bool = False) -> str:
-    """Create a JWT for admin session."""
+    """Create a JWT for admin session (30 days)."""
     payload = {
         "sub": email,
         "type": "admin_session",
         "require_2fa": require_2fa,
-        "exp": datetime.now(UTC) + timedelta(hours=24 * 7),
+        "exp": datetime.now(UTC) + timedelta(days=30),
         "iat": datetime.now(UTC),
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+async def _create_device_token(email: str) -> str:
+    """Create a long-lived opaque device token and store it in DB."""
+    token = secrets.token_urlsafe(48)
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    await db.admin_device_tokens.insert_one({
+        "token_hash": token_hash,
+        "email": email,
+        "created_at": datetime.now(UTC),
+        "expires_at": datetime.now(UTC) + timedelta(days=DEVICE_TOKEN_EXPIRY_DAYS),
+        "last_used": datetime.now(UTC),
+    })
+    return token
+
+
+async def _verify_device_token(token: str) -> str | None:
+    """Verify a device token and return the associated email, or None."""
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    doc = await db.admin_device_tokens.find_one({
+        "token_hash": token_hash,
+        "expires_at": {"$gt": datetime.now(UTC)},
+    })
+    if not doc:
+        return None
+    email = doc["email"]
+    if email not in ADMIN_EMAILS:
+        return None
+    # Refresh last_used timestamp
+    await db.admin_device_tokens.update_one(
+        {"token_hash": token_hash},
+        {"$set": {"last_used": datetime.now(UTC)}},
+    )
+    return email
 
 
 def _create_magic_token(email: str) -> str:
@@ -97,7 +131,12 @@ def _create_magic_token(email: str) -> str:
 # ── Cookie helpers ──────────────────────────────────────────────────────────
 
 ADMIN_COOKIE_NAME = "admin_access_token"
-ADMIN_COOKIE_MAX_AGE = 7 * 24 * 60 * 60  # 7 days, matches JWT expiry
+ADMIN_COOKIE_MAX_AGE = 30 * 24 * 60 * 60  # 30 days
+
+# Device token: long-lived opaque token stored in localStorage + DB.
+# Survives private browsing / cookie purge → allows session refresh
+# without re-authenticating via magic link.
+DEVICE_TOKEN_EXPIRY_DAYS = 90
 
 
 def _set_admin_cookie(response: Response, token: str) -> None:
@@ -190,10 +229,16 @@ class MagicLinkRequest(BaseModel):
 
 class MagicLinkVerify(BaseModel):
     token: str
+    remember_device: bool = False
 
 
 class TotpVerifyRequest(BaseModel):
     code: str = Field(..., min_length=6, max_length=6)
+    remember_device: bool = False
+
+
+class DeviceRefreshRequest(BaseModel):
+    device_token: str
 
 
 # ── Email helpers ────────────────────────────────────────────────────────────
@@ -283,7 +328,11 @@ async def verify_magic_link(data: MagicLinkVerify, response: Response) -> dict:
 
         if totp_enabled:
             partial_token = _create_admin_token(email, require_2fa=True)
-            return {"requires_2fa": True, "partial_token": partial_token}
+            return {
+                "requires_2fa": True,
+                "partial_token": partial_token,
+                "remember_device": data.remember_device,
+            }
 
         session_token = _create_admin_token(email, require_2fa=False)
 
@@ -295,7 +344,11 @@ async def verify_magic_link(data: MagicLinkVerify, response: Response) -> dict:
         )
 
         _set_admin_cookie(response, session_token)
-        return {"requires_2fa": False, "email": email}
+
+        result: dict = {"requires_2fa": False, "email": email}
+        if data.remember_device:
+            result["device_token"] = await _create_device_token(email)
+        return result
 
     except jwt.ExpiredSignatureError as exc:
         raise HTTPException(status_code=400, detail="Lien expire") from exc
@@ -362,7 +415,11 @@ async def validate_2fa_login(data: TotpVerifyRequest, request: Request, response
         )
 
         _set_admin_cookie(response, session_token)
-        return {"email": email}
+
+        result: dict = {"email": email}
+        if data.remember_device:
+            result["device_token"] = await _create_device_token(email)
+        return result
 
     except jwt.ExpiredSignatureError as exc:
         raise HTTPException(status_code=401, detail="Session expiree") from exc
@@ -370,10 +427,47 @@ async def validate_2fa_login(data: TotpVerifyRequest, request: Request, response
         raise HTTPException(status_code=401, detail="Token invalide") from exc
 
 
+@router.post("/auth/refresh")
+async def refresh_session(data: DeviceRefreshRequest, response: Response) -> dict:
+    """Re-create an admin session from a device token (stored in localStorage).
+
+    This allows admins to stay logged in even if the httpOnly cookie is
+    cleared (private browsing, cache purge, etc.) without requesting a
+    new magic link.
+    """
+    email = await _verify_device_token(data.device_token)
+    if not email:
+        raise HTTPException(status_code=401, detail="Token appareil invalide ou expiré")
+
+    # If admin has 2FA enabled, they must still pass it
+    admin = await db.admin_accounts.find_one({"email": email}, {"_id": 0})
+    if admin and admin.get("totp_enabled"):
+        partial_token = _create_admin_token(email, require_2fa=True)
+        return {"requires_2fa": True, "partial_token": partial_token}
+
+    session_token = _create_admin_token(email, require_2fa=False)
+    await db.admin_accounts.update_one(
+        {"email": email}, {"$set": {"last_login": datetime.now(UTC).isoformat()}}
+    )
+
+    _set_admin_cookie(response, session_token)
+    return {"email": email}
+
+
 @router.post("/auth/logout")
-async def admin_logout(response: Response) -> dict:
-    """Clear admin session cookie."""
+async def admin_logout(request: Request, response: Response) -> dict:
+    """Clear admin session cookie and optionally revoke device token."""
     _clear_admin_cookie(response)
+    # Revoke the device token if the frontend sends it
+    import contextlib
+
+    body: dict = {}
+    with contextlib.suppress(Exception):
+        body = await request.json()
+    device_token = body.get("device_token")
+    if device_token:
+        token_hash = hashlib.sha256(device_token.encode()).hexdigest()
+        await db.admin_device_tokens.delete_one({"token_hash": token_hash})
     return {"message": "Deconnecte"}
 
 

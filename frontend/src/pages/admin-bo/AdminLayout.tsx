@@ -109,7 +109,19 @@ export default function AdminLayout() {
 
   const handleLogout = async () => {
     try {
-      await adminApi.logout();
+      // Revoke device token if stored
+      let deviceToken: string | undefined;
+      try {
+        deviceToken = localStorage.getItem("pronokif:admin-device") ?? undefined;
+      } catch {
+        /* ignore */
+      }
+      await adminApi.logout(deviceToken);
+      try {
+        localStorage.removeItem("pronokif:admin-device");
+      } catch {
+        /* ignore */
+      }
     } catch {
       /* ignore */
     }
