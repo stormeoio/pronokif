@@ -34,10 +34,15 @@ const isAutomatedLocalBrowser = () =>
   typeof navigator !== "undefined" &&
   navigator.webdriver;
 
+/** Admin routes have their own video-bg auth page — skip the global splash. */
+const isAdminRoute = () =>
+  window.location.pathname.startsWith("/admin") ||
+  window.location.pathname.startsWith("/admin-bo") ||
+  window.location.pathname.startsWith("/bo-admin");
+
 const hasSeenSplash = () => {
-  if (isAutomatedLocalBrowser()) {
-    return true;
-  }
+  if (isAutomatedLocalBrowser()) return true;
+  if (isAdminRoute()) return true;
 
   try {
     return window.sessionStorage.getItem(SPLASH_SEEN_KEY) === "true";
