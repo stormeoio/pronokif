@@ -768,7 +768,7 @@ function TaskEditor({
           <Save className="w-3.5 h-3.5 mr-1" /> {task ? "Mettre à jour" : "Créer"}
         </Button>
         <Button size="sm" variant="ghost" onClick={onCancel} className="text-gray-400 text-xs">
-          Cancel
+          Annuler
         </Button>
       </div>
     </div>

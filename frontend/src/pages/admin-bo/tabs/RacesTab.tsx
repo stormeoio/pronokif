@@ -1191,7 +1191,6 @@ export default function RacesTab() {
                     </div>
                     <div>
                       <p className="font-data text-[10px] uppercase text-green-300">Podium</p>
-
                       <p className="font-body text-sm text-white">
                         {driverList(editorial.results_digest.race_top3)}
                       </p>

@@ -53,8 +53,8 @@ export const STATUS_CONFIG: Record<
 > = {
   todo: { label: "A faire", color: "text-gray-400", icon: Circle },
   in_progress: { label: "En cours", color: "text-blue-400", icon: Clock },
-  done: { label: "Termine", color: "text-green-400", icon: CheckCircle2 },
-  blocked: { label: "Bloque", color: "text-red-400", icon: AlertTriangle },
+  done: { label: "Terminé", color: "text-green-400", icon: CheckCircle2 },
+  blocked: { label: "Bloqué", color: "text-red-400", icon: AlertTriangle },
 };
 
 export const PRIORITY_CONFIG: Record<TaskPriority, { label: string; color: string }> = {
@@ -73,8 +73,8 @@ export const CATEGORY_CONFIG: Record<
   ux: { label: "UX", icon: Sparkles, color: "text-cyan-400" },
   a11y: { label: "A11y", icon: Circle, color: "text-purple-400" },
   refactor: { label: "Refacto", icon: Layers, color: "text-orange-400" },
-  feature: { label: "Feature", icon: Sparkles, color: "text-yellow-400" },
-  security: { label: "Securite", icon: AlertTriangle, color: "text-red-400" },
+  feature: { label: "Fonctionnalité", icon: Sparkles, color: "text-yellow-400" },
+  security: { label: "Sécurité", icon: AlertTriangle, color: "text-red-400" },
 };
 
 // ── Default seed data ────────────────────────────────────────────────────────
@@ -114,7 +114,7 @@ export const DEFAULT_PHASES: Phase[] = [
   },
   {
     id: "features",
-    name: "Nouvelles fonctionnalites",
+    name: "Nouvelles fonctionnalités",
     color: "#eab308",
     order: 4,
     startDate: "2025-07-01",
@@ -134,8 +134,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   // Audit phase
   {
     id: "a1",
-    title: "Traduction complete FR",
-    description: "Toutes les notices en francais",
+    title: "Traduction complète FR",
+    description: "Toutes les notices en français",
     status: "done",
     priority: "high",
     category: "ux",
@@ -145,8 +145,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   },
   {
     id: "a2",
-    title: "Accessibilite ARIA",
-    description: "Roles, labels, focus management",
+    title: "Accessibilité ARIA",
+    description: "Rôles, labels, gestion du focus",
     status: "done",
     priority: "high",
     category: "a11y",
@@ -156,8 +156,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   },
   {
     id: "a3",
-    title: "Haptic feedback complet",
-    description: "Back haptique sur toutes les interactions",
+    title: "Retour haptique complet",
+    description: "Retour haptique sur toutes les interactions",
     status: "done",
     priority: "medium",
     category: "ux",
@@ -167,8 +167,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   },
   {
     id: "a4",
-    title: "Page 404 thematisee",
-    description: "NotFoundPage arcade-style",
+    title: "Page 404 thématisée",
+    description: "NotFoundPage style arcade",
     status: "done",
     priority: "low",
     category: "ux",
@@ -178,8 +178,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   },
   {
     id: "a5",
-    title: "Indicateur reseau hors-ligne",
-    description: "NetworkStatus banner PWA",
+    title: "Indicateur réseau hors-ligne",
+    description: "Bannière NetworkStatus PWA",
     status: "done",
     priority: "medium",
     category: "ux",
@@ -189,8 +189,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   },
   {
     id: "a6",
-    title: "Back-office administration",
-    description: "Magic link auth + CRUD complet",
+    title: "Back-office d'administration",
+    description: "Authentification magic link + CRUD complet",
     status: "done",
     priority: "critical",
     category: "feature",
@@ -201,8 +201,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   // Refactor phase
   {
     id: "r1",
-    title: "Decoupage AdminPage monolithique",
-    description: "Extraire les sous-composants > 400L",
+    title: "Découpage AdminPage monolithique",
+    description: "Extraire les sous-composants > 400 lignes",
     status: "todo",
     priority: "high",
     category: "refactor",
@@ -211,8 +211,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   },
   {
     id: "r2",
-    title: "Type safety API responses",
-    description: "Type all API responses with Zod",
+    title: "Typage strict des réponses API",
+    description: "Typer toutes les réponses API avec Zod",
     status: "todo",
     priority: "high",
     category: "refactor",
@@ -222,7 +222,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   {
     id: "r3",
     title: "Error boundaries par route",
-    description: "Catch + fallback UI par section",
+    description: "Capture + interface de repli par section",
     status: "todo",
     priority: "medium",
     category: "refactor",
@@ -231,8 +231,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   },
   {
     id: "r4",
-    title: "Lazy loading images",
-    description: "Intersection Observer + placeholders",
+    title: "Chargement différé des images",
+    description: "Intersection Observer + espaces réservés",
     status: "todo",
     priority: "medium",
     category: "perf",
@@ -241,7 +241,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   },
   {
     id: "r5",
-    title: "Query key factory pattern",
+    title: "Pattern factory pour les query keys",
     description: "Centraliser les queryKeys TanStack",
     status: "todo",
     priority: "low",
@@ -252,8 +252,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   // UX Polish
   {
     id: "u1",
-    title: "Animations transitions pages",
-    description: "Shared layout animations framer",
+    title: "Animations de transition entre pages",
+    description: "Animations de mise en page partagées avec Framer",
     status: "todo",
     priority: "medium",
     category: "ux",
@@ -262,8 +262,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   },
   {
     id: "u2",
-    title: "Skeleton loaders partout",
-    description: "Remplacer les spinners par des skeletons",
+    title: "Squelettes de chargement partout",
+    description: "Remplacer les indicateurs de chargement par des squelettes",
     status: "todo",
     priority: "medium",
     category: "ux",
@@ -273,7 +273,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   {
     id: "u3",
     title: "Pull-to-refresh natif",
-    description: "Ameliorer le geste de rafraichissement",
+    description: "Améliorer le geste de rafraîchissement",
     status: "in_progress",
     priority: "high",
     category: "ux",
@@ -282,8 +282,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   },
   {
     id: "u4",
-    title: "Onboarding wizard",
-    description: "Tutorial interactif premier lancement",
+    title: "Assistant d'accueil",
+    description: "Tutoriel interactif au premier lancement",
     status: "todo",
     priority: "high",
     category: "feature",
@@ -293,8 +293,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   // Performance
   {
     id: "p1",
-    title: "Bundle splitting Three.js",
-    description: "Lazy import scenes 3D uniquement si visibles",
+    title: "Découpage du bundle Three.js",
+    description: "Import différé des scènes 3D uniquement si visibles",
     status: "todo",
     priority: "critical",
     category: "perf",
@@ -303,7 +303,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   },
   {
     id: "p2",
-    title: "Service Worker cache strategie",
+    title: "Stratégie de cache Service Worker",
     description: "API stale-while-revalidate",
     status: "todo",
     priority: "high",
@@ -313,8 +313,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   },
   {
     id: "p3",
-    title: "Optimiser re-renders predictions",
-    description: "Memo + useMemo driver grid",
+    title: "Optimiser les re-renders des pronostics",
+    description: "Memo + useMemo sur la grille des pilotes",
     status: "todo",
     priority: "medium",
     category: "perf",
@@ -325,7 +325,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   {
     id: "f1",
     title: "Notifications push web",
-    description: "Web Push API + backend notifications",
+    description: "Web Push API + notifications côté serveur",
     status: "todo",
     priority: "high",
     category: "feature",
@@ -335,7 +335,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   {
     id: "f2",
     title: "Mode sombre/clair",
-    description: "Theme toggle with persistence",
+    description: "Sélecteur de thème avec persistance",
     status: "todo",
     priority: "low",
     category: "feature",
@@ -344,8 +344,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   },
   {
     id: "f3",
-    title: "Leaderboard PDF export",
-    description: "Generer un PDF du leaderboard",
+    title: "Export PDF du classement",
+    description: "Générer un PDF du classement",
     status: "todo",
     priority: "low",
     category: "feature",
@@ -354,7 +354,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   },
   {
     id: "f4",
-    title: "Statistiques avancees",
+    title: "Statistiques avancées",
     description: "Graphiques de progression, historique",
     status: "todo",
     priority: "medium",

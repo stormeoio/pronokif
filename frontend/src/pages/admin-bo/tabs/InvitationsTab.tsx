@@ -90,7 +90,6 @@ export default function InvitationsTab() {
 
       {/* List */}
       <h3 className="font-heading text-sm text-gray-400 uppercase mb-3">Historique</h3>
-
       {isLoading ? (
         <div className="flex justify-center py-8">
           <Loader2 className="w-6 h-6 text-orange-500 animate-spin" />
