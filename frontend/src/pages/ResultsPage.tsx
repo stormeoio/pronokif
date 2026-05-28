@@ -153,7 +153,7 @@ export default function ResultsPage() {
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <h1 className="font-display text-lg">Resultats</h1>
+            <h1 className="font-display text-lg">Résultats</h1>
           </div>
 
           {/* Race selector chips */}
@@ -190,8 +190,8 @@ export default function ResultsPage() {
         {!selectedRace && (
           <EmptyFullPage
             Icon={Clock}
-            title="No result"
-            description="Results will be available after each race."
+            title="Aucun résultat"
+            description="Les résultats seront disponibles après chaque course."
           />
         )}
 
@@ -292,7 +292,7 @@ export default function ResultsPage() {
               <ResultComparisonCard
                 title="Qualifications"
                 icon={<Flag className="w-5 h-5 text-pk-red" />}
-                winnerLabel="Pole Position"
+                winnerLabel="Pole position"
                 winnerId={result.results.quali_pole}
                 predictionWinnerId={result.prediction?.quali_pole}
                 top3={qualiTop3}
@@ -304,9 +304,9 @@ export default function ResultsPage() {
             {}
             <motion.div variants={fadeUp}>
               <ResultComparisonCard
-                title="Race"
+                title="Course"
                 icon={<Trophy className="w-5 h-5 text-pk-amber" />}
-                winnerLabel="Winner"
+                winnerLabel="Vainqueur"
                 winnerId={result.results.race_winner}
                 predictionWinnerId={result.prediction?.race_winner}
                 top3={raceTop3}
@@ -322,7 +322,7 @@ export default function ResultsPage() {
                 className="bg-pk-surface border border-white/[0.08] rounded-lg overflow-hidden"
               >
                 <div className="px-4 py-3 border-b border-white/[0.08]">
-                  <h3 className="font-display text-sm">Detail des points</h3>
+                  <h3 className="font-display text-sm">Détail des points</h3>
                 </div>
                 <div className="px-4 py-3 space-y-2">
                   {result.points.details.map((detail: string, i: number) => (
@@ -346,8 +346,8 @@ export default function ResultsPage() {
         {selectedRace && !result?.results && (
           <EmptyFullPage
             Icon={Clock}
-            title="Resultats en attente"
-            description="Results will be available after the race."
+            title="Résultats en attente"
+            description="Les résultats seront disponibles après la course."
           />
         )}
 
@@ -358,7 +358,7 @@ export default function ResultsPage() {
             className="bg-pk-amber/[0.06] border border-pk-amber/20 rounded-lg p-4 flex items-center gap-3"
           >
             <Clock className="w-4 h-4 text-pk-amber flex-shrink-0" />
-            <p className="text-xs text-pk-amber">You did not make predictions for this race</p>
+            <p className="text-xs text-pk-amber">Tu n'as pas fait de pronostic pour cette course</p>
           </motion.div>
         )}
       </motion.div>

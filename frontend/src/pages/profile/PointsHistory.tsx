@@ -63,7 +63,7 @@ export default function PointsHistory({
           <div className="text-left">
             <span className="font-display text-sm block">Historique des points</span>
             <span className="font-data text-[0.5625rem] text-pk-titane">
-              {pointsHistory.summary?.races_with_results || 0} races with results
+              {pointsHistory.summary?.races_with_results || 0} courses avec résultats
             </span>
           </div>
         </div>
@@ -84,9 +84,9 @@ export default function PointsHistory({
             {pointsHistory.history?.length === 0 ? (
               <div className="p-6 text-center">
                 <History className="w-8 h-8 text-pk-titane mx-auto mb-2 opacity-40" />
-                <p className="text-xs text-pk-titane">No history available</p>
+                <p className="text-xs text-pk-titane">Aucun historique disponible</p>
                 <p className="font-data text-[0.5625rem] text-pk-titane/60 mt-0.5">
-                  Make predictions to see your history
+                  Fais des pronostics pour voir ton historique
                 </p>
               </div>
             ) : (
@@ -145,8 +145,8 @@ function RaceHistoryItem({ race }: { race: RaceHistoryEntry }) {
           <div className="grid grid-cols-2 gap-1.5">
             <BreakdownItem label="Pole" points={race.points_breakdown.quali_pole.points} />
             <BreakdownItem label="Top 10 Quali" points={race.points_breakdown.quali_top10.points} />
-            <BreakdownItem label="Winner" points={race.points_breakdown.race_winner.points} />
-            <BreakdownItem label="Top 10 Race" points={race.points_breakdown.race_top10.points} />
+            <BreakdownItem label="Vainqueur" points={race.points_breakdown.race_winner.points} />
+            <BreakdownItem label="Top 10 Course" points={race.points_breakdown.race_top10.points} />
           </div>
 
           {race.is_sprint_weekend && race.sprint_breakdown && (
@@ -164,7 +164,7 @@ function RaceHistoryItem({ race }: { race: RaceHistoryEntry }) {
                 </span>
               </div>
               <div className="flex justify-between bg-pk-amber/[0.08] border border-pk-amber/15 p-2 rounded text-xs">
-                <span className="text-pk-amber/70">Sprint Race</span>
+                <span className="text-pk-amber/70">Sprint Course</span>
                 <span
                   className={
                     race.sprint_breakdown.sprint_race_top10.points > 0

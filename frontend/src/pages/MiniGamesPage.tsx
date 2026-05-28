@@ -112,15 +112,16 @@ export default function MiniGamesPage() {
           className="bg-pk-amber/[0.06] border border-pk-amber/20 rounded-lg p-4"
         >
           <h3 className="font-display text-xs flex items-center gap-2 mb-2">
-            <Trophy className="w-4 h-4 text-pk-amber" /> Rewards
+            <Trophy className="w-4 h-4 text-pk-amber" /> Recompenses
           </h3>
           <ul className="font-data text-[0.5625rem] text-pk-titane space-y-1">
-            <li>Competition mode: 3 attempts per game per weekend</li>
+            <li>Mode competition : 3 essais par jeu par weekend</li>
             <li>
-              The winner of each league game earns <span className="text-pk-amber">+2 points</span>
+              Le gagnant de chaque jeu de ligue remporte{" "}
+              <span className="text-pk-amber">+2 points</span>
             </li>
-            <li>XP earned for every game played</li>
-            <li>Unlimited practice mode to improve!</li>
+            <li>XP gagnes a chaque partie jouee</li>
+            <li>Mode entrainement illimite pour progresser !</li>
           </ul>
         </motion.div>
 
@@ -136,7 +137,7 @@ export default function MiniGamesPage() {
             data-testid="mode-training"
           >
             <Dumbbell className="w-4 h-4" />
-            Practice
+            Entrainement
           </button>
           <button
             onClick={() => handleModeChange("competition")}

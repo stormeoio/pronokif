@@ -130,7 +130,7 @@ export default function LeagueChatPage() {
       setNewMessage("");
       queryClient.invalidateQueries({ queryKey: ["/leagues", leagueId, "messages"] });
     } catch (e: unknown) {
-      toast.error(getApiError(e, "Error while sending"));
+      toast.error(getApiError(e, "Erreur lors de l'envoi"));
     } finally {
       setSending(false);
     }
@@ -139,7 +139,7 @@ export default function LeagueChatPage() {
   const refreshMessages = () => {
     haptic("light");
     queryClient.invalidateQueries({ queryKey: ["/leagues", leagueId, "messages"] });
-    toast.success("Messages actualises");
+    toast.success("Messages actualisés");
   };
 
   const getAvatarById = (avatarId: string | undefined) => {
@@ -165,13 +165,13 @@ export default function LeagueChatPage() {
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <h1 className="font-display text-lg">Chat</h1>
+            <h1 className="font-display text-lg">Discussion</h1>
           </div>
         </header>
         <EmptyFullPage
           Icon={MessageCircle}
-          title="Ligue non trouvee"
-          description="This league does not exist or you no longer have access."
+          title="Ligue non trouvée"
+          description="Cette ligue n'existe pas ou tu n'y as plus accès."
         />
       </div>
     );
@@ -199,7 +199,7 @@ export default function LeagueChatPage() {
                   <h1 className="font-display text-base truncate max-w-[200px]">{league.name}</h1>
                 </div>
                 <p className="font-data text-[0.5625rem] text-pk-titane ml-6">
-                  {members.length} member{members.length > 1 ? "s" : ""}
+                  {members.length} membre{members.length > 1 ? "s" : ""}
                 </p>
               </div>
             </div>
@@ -254,8 +254,8 @@ export default function LeagueChatPage() {
           {messages.length === 0 ? (
             <EmptyFullPage
               Icon={MessageCircle}
-              title="No messages"
-              description="Sois le premier a ecrire !"
+              title="Aucun message"
+              description="Sois le premier à écrire !"
             />
           ) : (
             (messages as ChatMessageResponse[]).map((msg, index) => {
@@ -332,7 +332,7 @@ export default function LeagueChatPage() {
           <input
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Ecris un message..."
+            placeholder="Écris un message..."
             maxLength={500}
             className="flex-1 h-11 px-4 bg-pk-surface border border-white/[0.08] rounded-full text-sm text-pk-piste placeholder:text-pk-titane/40 focus:outline-none focus:border-pk-red/40 focus:ring-1 focus:ring-pk-red/15 transition-colors"
             data-testid="message-input"

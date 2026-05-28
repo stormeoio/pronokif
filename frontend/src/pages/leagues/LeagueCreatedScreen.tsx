@@ -61,10 +61,10 @@ export default function LeagueCreatedScreen({
         </motion.div>
 
         <motion.h1 variants={fadeUp} className="font-display text-xl mb-1">
-          Ligue creee !
+          Ligue créée !
         </motion.h1>
         <motion.p variants={fadeUp} className="text-xs text-pk-titane mb-6">
-          Share this code with your friends
+          Partage ce code avec tes amis
         </motion.p>
 
         {/* Code card */}
@@ -100,7 +100,7 @@ export default function LeagueCreatedScreen({
             {copied === league.code ? (
               <>
                 <Check className="w-3 h-3 text-pk-emerald" />
-                <span className="text-pk-emerald">Copie !</span>
+                <span className="text-pk-emerald">Copié !</span>
               </>
             ) : (
               <>
@@ -122,7 +122,7 @@ export default function LeagueCreatedScreen({
             data-testid="share-code-btn"
           >
             <Share2 className="w-4 h-4" />
-            Share
+            Partager
           </button>
           <button
             onClick={() => {
@@ -148,7 +148,7 @@ export default function LeagueCreatedScreen({
             data-testid="go-dashboard-btn"
           >
             <Flag className="w-4 h-4" />
-            Start making picks
+            Commencer à pronostiquer
           </button>
         </motion.div>
       </motion.div>

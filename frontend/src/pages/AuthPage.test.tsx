@@ -4,7 +4,7 @@
  * Covers: tab rendering, form fields, login/register submission, error handling.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { AuthContext } from "@/lib/auth";
@@ -74,18 +74,21 @@ describe("AuthPage", () => {
 
   it("calls login on form submit and navigates to home", async () => {
     const auth = renderAuthPage();
-    const user = userEvent.setup();
 
-    await user.type(screen.getByTestId("login-email"), "test@pronokif.com");
-    await user.type(screen.getByTestId("login-password"), "password123");
-    await user.click(screen.getByTestId("login-submit"));
+    fireEvent.change(screen.getByTestId("login-email"), {
+      target: { value: "test@pronokif.com" },
+    });
+    fireEvent.change(screen.getByTestId("login-password"), {
+      target: { value: "password123" },
+    });
+    fireEvent.submit(screen.getByTestId("login-form"));
 
     await waitFor(() => {
       expect(auth.login).toHaveBeenCalledWith("test@pronokif.com", "password123");
     });
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith("Signed in successfully!");
+      expect(toast.success).toHaveBeenCalledWith("Connexion réussie !");
       expect(mockNavigate).toHaveBeenCalledWith("/");
     });
   });
@@ -96,11 +99,14 @@ describe("AuthPage", () => {
         response: { data: { detail: "Identifiants invalides" } },
       }),
     });
-    const user = userEvent.setup();
 
-    await user.type(screen.getByTestId("login-email"), "bad@email.com");
-    await user.type(screen.getByTestId("login-password"), "wrong123");
-    await user.click(screen.getByTestId("login-submit"));
+    fireEvent.change(screen.getByTestId("login-email"), {
+      target: { value: "bad@email.com" },
+    });
+    fireEvent.change(screen.getByTestId("login-password"), {
+      target: { value: "wrong123" },
+    });
+    fireEvent.submit(screen.getByTestId("login-form"));
 
     await waitFor(() => {
       expect(auth.login).toHaveBeenCalled();
@@ -112,11 +118,14 @@ describe("AuthPage", () => {
     renderAuthPage({
       login: vi.fn().mockResolvedValue({ username: null, current_league_id: null }),
     });
-    const user = userEvent.setup();
 
-    await user.type(screen.getByTestId("login-email"), "new@user.com");
-    await user.type(screen.getByTestId("login-password"), "pass123456");
-    await user.click(screen.getByTestId("login-submit"));
+    fireEvent.change(screen.getByTestId("login-email"), {
+      target: { value: "new@user.com" },
+    });
+    fireEvent.change(screen.getByTestId("login-password"), {
+      target: { value: "pass123456" },
+    });
+    fireEvent.submit(screen.getByTestId("login-form"));
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith("/set-username");

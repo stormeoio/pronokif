@@ -138,7 +138,7 @@ describe("LeagueDetailPage", () => {
     renderLeagueDetail();
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Error while loading");
+      expect(toast.error).toHaveBeenCalledWith("Erreur lors du chargement");
     });
   });
 });

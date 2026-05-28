@@ -26,7 +26,7 @@ export function MyLeaguesSection({ leagues, currentLeagueId }: MyLeaguesSectionP
       haptic("light");
       await navigator.clipboard.writeText(code);
       setCopied(code);
-      toast.success("Code copie !");
+      toast.success("Code copié !");
       setTimeout(() => setCopied(null), 2000);
     } catch {
       toast.error("Impossible de copier");
@@ -35,7 +35,7 @@ export function MyLeaguesSection({ leagues, currentLeagueId }: MyLeaguesSectionP
 
   const shareLeague = async (league: League) => {
     const shareUrl = `${window.location.origin}/join/${league.code}`;
-    const shareText = `Join my F1 league "${league.name}" sur PRONOKIF !`;
+    const shareText = `Rejoins ma ligue F1 "${league.name}" sur PRONOKIF !`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -58,7 +58,7 @@ export function MyLeaguesSection({ leagues, currentLeagueId }: MyLeaguesSectionP
     try {
       haptic("medium");
       await api.leagues.select(leagueId);
-      toast.success("Ligue selectionnee !");
+      toast.success("Ligue sélectionnée !");
       window.location.reload();
     } catch {
       toast.error("Error");
@@ -72,7 +72,7 @@ export function MyLeaguesSection({ leagues, currentLeagueId }: MyLeaguesSectionP
           <div className="w-7 h-7 rounded-md bg-pk-info/[0.12] flex items-center justify-center">
             <Users className="w-3.5 h-3.5 text-pk-info" />
           </div>
-          <span className="font-display text-sm">My leagues</span>
+          <span className="font-display text-sm">Mes ligues</span>
         </div>
         <button
           onClick={() => navigate("/league")}
@@ -88,12 +88,12 @@ export function MyLeaguesSection({ leagues, currentLeagueId }: MyLeaguesSectionP
         {leagues.length === 0 ? (
           <div className="text-center py-6">
             <Users className="w-8 h-8 text-pk-titane mx-auto mb-2 opacity-40" />
-            <p className="text-xs text-pk-titane mb-3">No league</p>
+            <p className="text-xs text-pk-titane mb-3">Aucune ligue</p>
             <button
               onClick={() => navigate("/league")}
               className="h-9 px-4 rounded-lg bg-pk-red text-white font-display text-sm shadow-glow-red active:scale-[0.97] transition-transform"
             >
-              Creer / Join
+              Créer / Rejoindre
             </button>
           </div>
         ) : (
@@ -127,7 +127,7 @@ export function MyLeaguesSection({ leagues, currentLeagueId }: MyLeaguesSectionP
                         {isActive && <Crown className="w-3 h-3 text-pk-red flex-shrink-0" />}
                       </div>
                       <p className="font-data text-[0.5625rem] text-pk-titane mt-0.5">
-                        {league.members?.length ?? 0} members ·{" "}
+                        {league.members?.length ?? 0} membres ·{" "}
                         <span className="text-pk-info">{league.code}</span>
                       </p>
                     </div>
@@ -155,7 +155,7 @@ export function MyLeaguesSection({ leagues, currentLeagueId }: MyLeaguesSectionP
                       onClick={() => selectLeague(league.id)}
                       className="w-full mt-2 h-8 rounded-md bg-white/[0.04] border border-white/[0.08] text-pk-piste font-data text-[0.5625rem] font-bold active:scale-[0.97] transition-transform"
                     >
-                      Selectionner
+                      Sélectionner
                     </button>
                   )}
                 </motion.div>

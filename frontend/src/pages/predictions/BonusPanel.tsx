@@ -102,12 +102,12 @@ export default function BonusPanel({
       >
         <div className="flex items-center gap-2">
           <Timer size={16} strokeWidth={1.5} className="text-pk-amber" />
-          <span className="text-[0.8125rem]">Fastest lap</span>
+          <span className="text-[0.8125rem]">Meilleur tour</span>
         </div>
         <span className="font-mono text-[0.75rem] text-pk-red">
           {fastestLap
-            ? drivers.find((d) => d.id === fastestLap)?.name || "Selectionne"
-            : "Select →"}
+            ? drivers.find((d) => d.id === fastestLap)?.name || "Sélectionné"
+            : "Sélectionner →"}
         </span>
       </button>
 
@@ -122,12 +122,12 @@ export default function BonusPanel({
       >
         <div className="flex items-center gap-2">
           <Flag size={16} strokeWidth={1.5} className="text-pk-emerald" />
-          <span className="text-[0.8125rem]">Turn 1 leader</span>
+          <span className="text-[0.8125rem]">Leader au virage 1</span>
         </div>
         <span className="font-mono text-[0.75rem] text-pk-red">
           {firstCorner
-            ? drivers.find((d) => d.id === firstCorner)?.name || "Selectionne"
-            : "Select →"}
+            ? drivers.find((d) => d.id === firstCorner)?.name || "Sélectionné"
+            : "Sélectionner →"}
         </span>
       </button>
 
@@ -135,7 +135,7 @@ export default function BonusPanel({
       <div className="p-3 bg-white/[0.03] border border-white/[0.06] rounded-md space-y-2.5">
         <div className="flex items-center gap-2">
           <X size={16} strokeWidth={1.5} className="text-pk-red" />
-          <span className="text-[0.8125rem]">Abandons (DNF)</span>
+          <span className="text-[0.8125rem]">Abandons</span>
         </div>
         <div className="flex gap-1.5">
           <button
@@ -152,7 +152,7 @@ export default function BonusPanel({
                   : "bg-white/[0.03] border border-white/[0.08] text-pk-titane hover:text-pk-piste"
               }`}
           >
-            Pas de DNF
+            Pas d'abandon
           </button>
           <button
             onClick={() => {
@@ -168,7 +168,7 @@ export default function BonusPanel({
                   : "bg-white/[0.03] border border-white/[0.08] text-pk-titane hover:text-pk-piste"
               }`}
           >
-            {dnfDrivers.length > 0 ? `${dnfDrivers.length} driver(s)` : "Select →"}
+            {dnfDrivers.length > 0 ? `${dnfDrivers.length} pilote(s)` : "Sélectionner →"}
           </button>
         </div>
       </div>

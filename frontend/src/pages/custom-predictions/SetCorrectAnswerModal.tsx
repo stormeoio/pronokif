@@ -75,7 +75,7 @@ export default function SetCorrectAnswerModal({
       >
         {/* Header */}
         <div className="p-4 border-b border-white/[0.06] flex items-center justify-between">
-          <h2 className="font-display text-sm text-pk-emerald">Set correct answer</h2>
+          <h2 className="font-display text-sm text-pk-emerald">Definir la bonne reponse</h2>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg text-pk-titane hover:text-pk-piste hover:bg-white/[0.04] transition-colors"
@@ -116,7 +116,7 @@ export default function SetCorrectAnswerModal({
             <input
               value={correctAnswer}
               onChange={(e) => setCorrectAnswer(e.target.value)}
-              placeholder="The correct answer..."
+              placeholder="La bonne reponse..."
               className="w-full bg-pk-surface border border-white/[0.08] rounded-lg px-3 py-2.5 text-sm text-pk-piste placeholder:text-pk-titane/50 focus:border-pk-emerald/50 focus:outline-none transition-colors"
             />
           )}
@@ -150,7 +150,7 @@ export default function SetCorrectAnswerModal({
               onClick={onClose}
               className="flex-1 py-2.5 rounded-lg border border-white/[0.08] text-pk-titane font-display text-xs hover:text-pk-piste hover:border-white/[0.15] transition-colors"
             >
-              Cancel
+              Annuler
             </button>
             <button
               onClick={handleSubmit}
@@ -162,7 +162,7 @@ export default function SetCorrectAnswerModal({
               data-testid="confirm-correct-answer-btn"
             >
               <CheckCircle className="w-4 h-4" />
-              Submit
+              Valider
             </button>
           </div>
         </div>

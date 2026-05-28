@@ -122,7 +122,7 @@ export default function MemberProfilePage() {
     });
 
   const loading = profileLoading || avatarsLoading;
-  const error = profileError ? "Unable to load profile" : null;
+  const error = profileError ? "Impossible de charger le profil" : null;
 
   const getAvatarById = (avatarId: string | undefined) => {
     return avatars?.all?.find((a: { id: string }) => a.id === avatarId) || null;
@@ -153,13 +153,13 @@ export default function MemberProfilePage() {
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <h1 className="font-display text-lg">Profile</h1>
+            <h1 className="font-display text-lg">Profil</h1>
           </div>
         </header>
         <EmptyFullPage
           Icon={Users}
-          title="Profile non trouve"
-          description={error || "This player does not exist or is no longer active."}
+          title="Profil introuvable"
+          description={error || "Ce joueur n'existe pas ou n'est plus actif."}
         />
       </div>
     );
@@ -231,7 +231,7 @@ export default function MemberProfilePage() {
         <motion.div variants={fadeUp}>
           <div className="flex items-center gap-2 mb-2">
             <BarChart3 className="w-4 h-4 text-pk-titane" />
-            <span className="font-display text-sm">Statistiques</span>
+            <span className="font-display text-sm">Stats</span>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <StatCard
@@ -246,14 +246,14 @@ export default function MemberProfilePage() {
               color="text-pk-emerald"
               bg="bg-pk-emerald/[0.12]"
               value={profile.stats.races_participated}
-              label="Races"
+              label="Courses"
             />
             <StatCard
               icon={Trophy}
               color="text-pk-amber"
               bg="bg-pk-amber/[0.12]"
               value={profile.stats.correct_winners}
-              label="Exact winners"
+              label="Vainqueurs exacts"
             />
             <StatCard
               icon={Medal}
@@ -276,7 +276,7 @@ export default function MemberProfilePage() {
                 <p className="font-data text-xl font-bold">
                   {profile.minigames.reaction_best_ms} ms
                 </p>
-                <p className="font-data text-[0.5625rem] text-pk-titane">Meilleur reaction</p>
+                <p className="font-data text-[0.5625rem] text-pk-titane">Meilleure réaction</p>
               </div>
             )}
             {profile.minigames.batak_best_score != null && (
@@ -301,7 +301,7 @@ export default function MemberProfilePage() {
               <div className="w-7 h-7 rounded-md bg-pk-amber/[0.12] flex items-center justify-center">
                 <Users className="w-3.5 h-3.5 text-pk-amber" />
               </div>
-              <span className="font-display text-sm">Leagues en commun</span>
+              <span className="font-display text-sm">Ligues en commun</span>
             </div>
 
             <div className="divide-y divide-white/[0.06]">
@@ -327,7 +327,7 @@ export default function MemberProfilePage() {
                     <div>
                       <p className="font-display text-sm">{league.name}</p>
                       <p className="font-data text-[0.5625rem] text-pk-titane">
-                        {league.members_count} members
+                        {league.members_count} membres
                       </p>
                     </div>
                   </div>
@@ -351,7 +351,7 @@ export default function MemberProfilePage() {
               <div className="w-7 h-7 rounded-md bg-pk-red/[0.12] flex items-center justify-center">
                 <Target className="w-3.5 h-3.5 text-pk-red" />
               </div>
-              <span className="font-display text-sm">Latest Pickstics</span>
+              <span className="font-display text-sm">Derniers Pickstics</span>
             </div>
 
             <div className="divide-y divide-white/[0.06]">
@@ -360,12 +360,12 @@ export default function MemberProfilePage() {
                   <div className="min-w-0">
                     <p className="font-display text-sm truncate">{pred.race_name}</p>
                     <p className="font-data text-[0.5625rem] text-pk-titane">
-                      Winner: {pred.race_winner} · Pole: {pred.quali_pole}
+                      Vainqueur : {pred.race_winner} · Pole : {pred.quali_pole}
                     </p>
                   </div>
                   {pred.locked && (
                     <span className="font-data text-[0.5rem] text-pk-emerald bg-pk-emerald/[0.1] px-2 py-0.5 rounded flex-shrink-0 ml-2">
-                      Valide
+                      Validé
                     </span>
                   )}
                 </div>

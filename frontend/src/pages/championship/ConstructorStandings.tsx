@@ -25,7 +25,7 @@ interface ConstructorStandingsProps {
 
 export default function ConstructorStandings({ constructorsStandings }: ConstructorStandingsProps) {
   if (constructorsStandings.length === 0) {
-    return <EmptyMinimal icon="🏎️" message="No data available" />;
+    return <EmptyMinimal icon="🏎️" message="Aucune donnée disponible" />;
   }
 
   return (

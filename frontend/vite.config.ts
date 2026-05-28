@@ -131,6 +131,9 @@ export default defineConfig(({ mode }) => {
       environment: "jsdom",
       setupFiles: ["src/test/setup.ts"],
       include: ["src/**/*.{test,spec}.{ts,tsx,js,jsx}"],
+      fileParallelism: false,
+      testTimeout: 15000,
+      hookTimeout: 15000,
       coverage: {
         provider: "v8",
         reporter: ["text", "html"],

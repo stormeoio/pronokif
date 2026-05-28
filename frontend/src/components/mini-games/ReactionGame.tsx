@@ -139,7 +139,7 @@ export function ReactionGame({
       };
     if (time < 250)
       return {
-        label: "Very good!",
+        label: "Tres bien !",
         color: "text-pk-info",
         bg: "from-pk-info/20 to-pk-info/5",
         grade: "A",
@@ -159,7 +159,7 @@ export function ReactionGame({
         grade: "C",
       };
     return {
-      label: "Needs work",
+      label: "A travailler",
       color: "text-pk-red",
       bg: "from-pk-red/20 to-pk-red/5",
       grade: "D",
@@ -186,10 +186,10 @@ export function ReactionGame({
               <Zap className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-display text-sm">Reaction time</h3>
+              <h3 className="font-display text-sm">Temps de reaction</h3>
               {isTraining && (
                 <span className="font-data text-[0.5625rem] text-pk-info uppercase tracking-wider">
-                  Training
+                  Entrainement
                 </span>
               )}
             </div>
@@ -278,7 +278,7 @@ export function ReactionGame({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                Press START to launch the sequence
+                Appuie sur COMMENCER pour lancer la sequence
               </motion.p>
             )}
             {gameState === "waiting" && (
@@ -306,7 +306,7 @@ export function ReactionGame({
                   animate={{ scale: [1, 1.05, 1] }}
                   transition={{ duration: 0.8, repeat: Infinity }}
                 >
-                  READY...
+                  PRET...
                 </motion.p>
                 <p className="text-xs text-pk-titane mt-1">Attendez l'extinction !</p>
               </motion.div>
@@ -337,9 +337,9 @@ export function ReactionGame({
                   animate={{ x: [-3, 3, -3, 3, 0] }}
                   transition={{ duration: 0.4 }}
                 >
-                  FALSE START!
+                  FAUX DEPART !
                 </motion.p>
-                <p className="text-xs text-pk-titane mt-2">Too early!</p>
+                <p className="text-xs text-pk-titane mt-2">Trop tot !</p>
               </motion.div>
             )}
             {gameState === "result" && reactionTime !== null && (
@@ -393,7 +393,7 @@ export function ReactionGame({
                 disabled={!isTraining && attemptsRemaining === 0}
                 data-testid="reaction-start-btn"
               >
-                <Play className="w-5 h-5" /> START
+                <Play className="w-5 h-5" /> COMMENCER
               </button>
             </motion.div>
           )}
@@ -409,7 +409,7 @@ export function ReactionGame({
                 onClick={resetGame}
                 className="flex-1 h-11 rounded-lg border border-white/[0.08] text-pk-titane font-display text-xs hover:text-pk-piste hover:border-white/[0.15] transition-colors flex items-center justify-center gap-2"
               >
-                <RotateCcw className="w-4 h-4" /> Try again
+                <RotateCcw className="w-4 h-4" /> Reessayer
               </button>
               {gameState === "result" && (
                 <button
@@ -417,7 +417,7 @@ export function ReactionGame({
                   className="flex-1 h-11 rounded-lg bg-pk-red text-white font-display text-xs shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   disabled={!isTraining && attemptsRemaining === 0}
                 >
-                  <Trophy className="w-4 h-4" /> Save
+                  <Trophy className="w-4 h-4" /> Sauvegarder
                 </button>
               )}
             </motion.div>

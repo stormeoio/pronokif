@@ -42,7 +42,7 @@ export default function NetworkStatus() {
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
         >
           <WifiOff className="w-4 h-4" />
-          <span>Offline - data will sync when you reconnect</span>
+          <span>Hors ligne — les données se synchroniseront à la reconnexion</span>
         </motion.div>
       )}
       {showReconnected && isOnline && (
@@ -54,7 +54,7 @@ export default function NetworkStatus() {
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
         >
           <Wifi className="w-4 h-4" />
-          <span>Connection restored</span>
+          <span>Connexion rétablie</span>
         </motion.div>
       )}
     </AnimatePresence>

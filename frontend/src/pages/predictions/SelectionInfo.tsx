@@ -39,32 +39,33 @@ export default function SelectionInfo({
         >
           {activeTab === "sprint" ? (
             <>
-              {selectionMode === "sprint_quali_pole" && "Select the Sprint Qualifying pole sitter"}
+              {selectionMode === "sprint_quali_pole" && "Sélectionne le poleman des qualifs sprint"}
               {selectionMode === "sprint_quali_top10" &&
-                `Selectionnez le Top 10 des qualifs sprint (${sprintQualiTop10.length}/10)`}
-              {selectionMode === "sprint_race_winner" && "Select the Sprint Race winner"}
+                `Sélectionne le Top 10 des qualifs sprint (${sprintQualiTop10.length}/10)`}
+              {selectionMode === "sprint_race_winner" && "Sélectionne le vainqueur du sprint"}
               {selectionMode === "sprint_race_top10" &&
-                `Select the Sprint Race Top 10 (${sprintRaceTop10.length}/10)`}
-              {selectionMode === "sprint_bonus" && "Configure your sprint bonus picks"}
+                `Sélectionne le Top 10 du sprint (${sprintRaceTop10.length}/10)`}
+              {selectionMode === "sprint_bonus" && "Configure tes bonus sprint"}
               {selectionMode === "sprint_fastest_lap" &&
-                "Select the driver who will set the Sprint fastest lap"}
+                "Sélectionne le pilote qui fera le meilleur tour du sprint"}
               {selectionMode === "sprint_first_corner" &&
-                "Selectionnez le leader au premier virage du sprint"}
+                "Sélectionne le leader au premier virage du sprint"}
               {selectionMode === "sprint_dnf_select" &&
-                `Selectionnez les abandons sprint (${sprintDnfDrivers.length}/5)`}
+                `Sélectionne les abandons sprint (${sprintDnfDrivers.length}/5)`}
             </>
           ) : (
             <>
-              {selectionMode === "quali_pole" && "Select the pole sitter"}
+              {selectionMode === "quali_pole" && "Sélectionne le poleman"}
               {selectionMode === "quali_top10" &&
-                `Selectionnez le Top 10 des qualifications (${qualiTop10.length}/10)`}
-              {selectionMode === "race_winner" && "Select the race winner"}
-              {selectionMode === "race_top10" && `Select the race Top 10 (${raceTop10.length}/10)`}
-              {selectionMode === "bonus" && "Configure your bonus picks"}
-              {selectionMode === "fastest_lap" && "Select the driver who will set the fastest lap"}
-              {selectionMode === "first_corner" && "Selectionnez le leader au premier virage"}
+                `Sélectionne le Top 10 des qualifications (${qualiTop10.length}/10)`}
+              {selectionMode === "race_winner" && "Sélectionne le vainqueur de la course"}
+              {selectionMode === "race_top10" &&
+                `Sélectionne le Top 10 de la course (${raceTop10.length}/10)`}
+              {selectionMode === "bonus" && "Configure tes bonus"}
+              {selectionMode === "fastest_lap" && "Sélectionne le pilote qui fera le meilleur tour"}
+              {selectionMode === "first_corner" && "Sélectionne le leader au premier virage"}
               {selectionMode === "dnf_select" &&
-                `Selectionnez les abandons (${dnfDrivers.length}/5)`}
+                `Sélectionne les abandons (${dnfDrivers.length}/5)`}
             </>
           )}
         </motion.p>

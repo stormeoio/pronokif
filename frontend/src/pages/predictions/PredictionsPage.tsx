@@ -83,10 +83,10 @@ export default function PredictionsPage() {
       <div className="min-h-dvh bg-pk-carbon p-4 pt-16 max-w-[430px] mx-auto">
         <div className="bg-pk-surface border border-white/[0.08] rounded-md p-6 text-center">
           <AlertTriangle size={32} strokeWidth={1.5} className="text-pk-red mx-auto mb-3" />
-          <p className="text-pk-piste text-[0.875rem]">Race not found</p>
+          <p className="text-pk-piste text-[0.875rem]">Course introuvable</p>
           <button onClick={() => navigate(-1)} className="btn-pk-outline text-[0.75rem] mt-4 px-4">
             <ChevronLeft size={14} strokeWidth={2} />
-            Back
+            Retour
           </button>
         </div>
       </div>
@@ -106,7 +106,7 @@ export default function PredictionsPage() {
         show={form.showCelebration}
         onDone={form.dismissCelebration}
         xpEarned={form.celebrationXp}
-        message={form.activeTab === "sprint" ? "Sprint saved!" : "Pickstics saved!"}
+        message={form.activeTab === "sprint" ? "Sprint enregistré !" : "Pronostics enregistrés !"}
       />
 
       {/* Delete modal */}
@@ -143,7 +143,7 @@ export default function PredictionsPage() {
             {race.name.replace(" Grand Prix", "")}
           </h1>
           <p className="font-mono text-[0.5625rem] text-pk-titane uppercase tracking-[0.1em]">
-            Race pickstic
+            Pronostic course
           </p>
         </div>
         {form.existingPrediction && (canPredictMain || canPredictSprint) && (
@@ -154,7 +154,7 @@ export default function PredictionsPage() {
               text-pk-red hover:bg-pk-red-subtle
               transition-colors duration-pk-short"
             data-testid="delete-predictions-btn"
-            title="Delete my predictions"
+            title="Supprimer mes pronostics"
           >
             <Trash2 size={16} strokeWidth={1.5} />
           </button>
@@ -188,7 +188,7 @@ export default function PredictionsPage() {
               <Zap size={16} strokeWidth={1.5} className="mx-auto mb-0.5" />
               <span className="font-display text-[0.75rem] uppercase">Sprint</span>
               {!canPredictSprint && (
-                <span className="block font-mono text-[0.5rem] text-pk-red mt-0.5">Closed</span>
+                <span className="block font-mono text-[0.5rem] text-pk-red mt-0.5">Fermé</span>
               )}
               {form.isSprintCompletee && canPredictSprint && (
                 <Check size={12} strokeWidth={2} className="text-pk-emerald mx-auto mt-0.5" />
@@ -212,9 +212,9 @@ export default function PredictionsPage() {
               data-testid="tab-main"
             >
               <Flag size={16} strokeWidth={1.5} className="mx-auto mb-0.5" />
-              <span className="font-display text-[0.75rem] uppercase">Race</span>
+              <span className="font-display text-[0.75rem] uppercase">Course</span>
               {!canPredictMain && (
-                <span className="block font-mono text-[0.5rem] text-pk-red mt-0.5">Closed</span>
+                <span className="block font-mono text-[0.5rem] text-pk-red mt-0.5">Fermé</span>
               )}
               {form.isMainCompletee && canPredictMain && (
                 <Check size={12} strokeWidth={2} className="text-pk-emerald mx-auto mt-0.5" />
@@ -278,11 +278,11 @@ export default function PredictionsPage() {
           <p className="font-mono text-[0.625rem] text-pk-titane uppercase tracking-[0.1em]">
             {form.activeTab === "sprint"
               ? form.isSprintCompletee
-                ? "Sprint ready"
-                : "Sprint incomplete"
+                ? "Sprint prêt"
+                : "Sprint incomplet"
               : form.isMainCompletee
-                ? "Race ready"
-                : "Race incomplete"}
+                ? "Course prête"
+                : "Course incomplète"}
           </p>
           <div className="w-full h-[3px] bg-white/[0.04] rounded-sm mt-1 overflow-hidden">
             <div
@@ -316,16 +316,16 @@ export default function PredictionsPage() {
           data-testid="save-predictions-btn"
         >
           {form.saving ? (
-            "Saving..."
+            "Enregistrement..."
           ) : (form.activeTab === "sprint" ? !canPredictSprint : !canPredictMain) ? (
-            "Picks closed"
+            "Pronostics fermés"
           ) : (form.activeTab === "sprint" ? form.isSprintCompletee : form.isMainCompletee) ? (
             <>
               <Check size={14} strokeWidth={2} />
-              Save
+              Enregistrer
             </>
           ) : (
-            "Incomplete"
+            "Incomplet"
           )}
         </BorderGlowButton>
       </div>

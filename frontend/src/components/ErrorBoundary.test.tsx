@@ -38,7 +38,7 @@ describe("ErrorBoundary", () => {
     );
     expect(screen.getByText(/incident en piste/i)).toBeInTheDocument();
     expect(screen.getByText(/relancer/i)).toBeInTheDocument();
-    expect(screen.getByText(/back to the paddock/i)).toBeInTheDocument();
+    expect(screen.getByText(/retour au paddock/i)).toBeInTheDocument();
   });
 
   it("shows error details in dev mode", () => {

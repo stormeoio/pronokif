@@ -48,7 +48,7 @@ export function ProfileTab({ driver, colors }: TabProps) {
           <InfoRow label="Nom complet" value={driver.full_name} />
           <InfoRow label="Date de naissance" value={formatDate(driver.date_of_birth)} />
           <InfoRow label="Lieu de naissance" value={driver.place_of_birth} />
-          <InfoRow label="Nationalite" value={driver.country_name} />
+          <InfoRow label="Nationalité" value={driver.country_name} />
           <InfoRow label="Taille" value={driver.height_cm ? `${driver.height_cm} cm` : "-"} />
           <InfoRow label="Poids" value={driver.weight_kg ? `${driver.weight_kg} kg` : "-"} />
         </div>
@@ -63,12 +63,12 @@ export function ProfileTab({ driver, colors }: TabProps) {
           <FileText className="w-3.5 h-3.5" style={{ color: colors.primary }} /> Contrat actuel
         </h3>
         <div className="grid grid-cols-2 gap-3">
-          <InfoRow label="Equipe" value={driver.team} />
-          <InfoRow label="Numero" value={`#${driver.number}`} />
-          <InfoRow label="Debut contrat" value={contract.start_year || "-"} />
+          <InfoRow label="Écurie" value={driver.team} />
+          <InfoRow label="Numéro" value={`#${driver.number}`} />
+          <InfoRow label="Début contrat" value={contract.start_year || "-"} />
           <InfoRow label="Fin contrat" value={contract.end_year || "-"} />
-          <InfoRow label="Salaire estime" value={contract.salary_estimate || "-"} />
-          <InfoRow label="Points permis" value={`${driver.license_points || 12}/12`} />
+          <InfoRow label="Salaire estimé" value={contract.salary_estimate || "-"} />
+          <InfoRow label="Points de permis" value={`${driver.license_points || 12}/12`} />
         </div>
         {contract.notes && (
           <p className="mt-3 text-xs text-pk-titane italic border-t border-white/[0.06] pt-3">
@@ -84,7 +84,7 @@ export function ProfileTab({ driver, colors }: TabProps) {
           variants={fadeUp}
         >
           <h3 className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-3 flex items-center gap-1.5">
-            <Star className="w-3.5 h-3.5" style={{ color: colors.primary }} /> Reseaux sociaux
+            <Star className="w-3.5 h-3.5" style={{ color: colors.primary }} /> Réseaux sociaux
           </h3>
           <div className="flex gap-2">
             {driver.social.instagram && (
@@ -127,7 +127,7 @@ export function PalmaresTab({ driver, colors }: TabProps) {
       {/* F1 Career */}
       <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-4">
         <h3 className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-3 flex items-center gap-1.5">
-          <Trophy className="w-3.5 h-3.5 text-pk-gold" /> Carriere F1
+          <Trophy className="w-3.5 h-3.5 text-pk-gold" /> Carrière F1
         </h3>
         <div className="grid grid-cols-3 gap-2 mb-3">
           <StatCard
@@ -169,18 +169,18 @@ export function PalmaresTab({ driver, colors }: TabProps) {
         </div>
         <div className="border-t border-white/[0.06] pt-3 space-y-2">
           <div className="flex justify-between items-center">
-            <span className="font-data text-[0.5rem] text-pk-titane uppercase">Saisons</span>
+            <span className="font-data text-[0.5rem] text-pk-titane uppercase">Saisons en F1</span>
             <span className="text-sm">{f1Stats.seasons || "-"}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="font-data text-[0.5rem] text-pk-titane uppercase">
-              Premiere equipe
+              Première équipe
             </span>
             <span className="text-sm">{f1Stats.first_team || "-"}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="font-data text-[0.5rem] text-pk-titane uppercase">
-              Grands Prix disputes
+              Grands Prix disputés
             </span>
             <span className="text-sm">{f1Stats.entries || 0}</span>
           </div>
@@ -191,7 +191,7 @@ export function PalmaresTab({ driver, colors }: TabProps) {
       {juniorCareer.length > 0 && (
         <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-4">
           <h3 className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-3 flex items-center gap-1.5">
-            <History className="w-3.5 h-3.5 text-pk-info" /> Carriere junior
+            <History className="w-3.5 h-3.5 text-pk-info" /> Carrière junior
           </h3>
           <div className="space-y-1.5">
             {juniorCareer.map(
@@ -273,7 +273,7 @@ export function FactsTab({ driver, colors }: TabProps) {
         <h3 className="font-display text-sm flex items-center gap-2">
           <Lightbulb className="w-4 h-4 text-pk-amber" /> 10 infos utiles sur {driver.first_name}
         </h3>
-        <p className="text-xs text-pk-titane mt-1">Interesting facts for your predictions</p>
+        <p className="text-xs text-pk-titane mt-1">Des infos utiles pour tes pronostics</p>
       </div>
 
       {/* Fact cards */}
@@ -303,7 +303,7 @@ export function FactsTab({ driver, colors }: TabProps) {
       {facts.length === 0 && (
         <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-8 text-center">
           <Info className="w-10 h-10 text-pk-titane mx-auto mb-3" />
-          <p className="text-sm text-pk-titane">No information available</p>
+          <p className="text-sm text-pk-titane">Aucune information disponible</p>
         </div>
       )}
     </div>

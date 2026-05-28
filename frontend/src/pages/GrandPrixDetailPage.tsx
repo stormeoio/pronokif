@@ -170,7 +170,7 @@ function parseSessions(raceDetails: Record<string, unknown>): ParsedSession[] {
       sprint_qualifying: { name: "Qualifications Sprint", short_name: "SQ" },
       sprint_race: { name: "Sprint", short_name: "SPRINT" },
       qualifying: { name: "Qualifications", short_name: "QUALI" },
-      race: { name: "Race", short_name: "COURSE" },
+      race: { name: "Course", short_name: "COURSE" },
     };
 
     return Object.entries(rawSessions as Record<string, unknown>)
@@ -350,8 +350,10 @@ export default function GrandPrixDetailPage() {
         <EmptyFullPage
           Icon={Flag}
           title="Grand Prix introuvable"
-          description={queryError ? "Unable to load details" : "This Grand Prix does not exist"}
-          actionLabel="Back"
+          description={
+            queryError ? "Impossible de charger les détails" : "Ce Grand Prix n'existe pas"
+          }
+          actionLabel="Retour"
           onAction={() => navigate(-1)}
         />
       </div>
@@ -432,7 +434,7 @@ export default function GrandPrixDetailPage() {
                   <div className="flex items-center gap-1.5 mb-3">
                     <span className="w-1.5 h-1.5 rounded-full bg-pk-red animate-live-pulse" />
                     <span className="font-data text-[0.5625rem] text-pk-red uppercase tracking-wider">
-                      {nextSession.name} in
+                      {nextSession.name} dans
                     </span>
                   </div>
                   <div className="flex items-center justify-center gap-2">
@@ -457,7 +459,7 @@ export default function GrandPrixDetailPage() {
                   <div className="w-8 h-8 rounded-md bg-pk-anthracite flex items-center justify-center">
                     <Check className="w-4 h-4 text-pk-titane" />
                   </div>
-                  <p className="text-[0.8125rem] text-pk-titane">Race finished</p>
+                  <p className="text-[0.8125rem] text-pk-titane">Course terminée</p>
                 </motion.div>
               ) : null}
 
@@ -542,7 +544,7 @@ export default function GrandPrixDetailPage() {
                     <div className="flex items-center gap-2.5">
                       <Clock className="w-3.5 h-3.5 text-pk-titane flex-shrink-0" />
                       <span className="text-[0.8125rem] text-pk-piste">
-                        Picks deadline :{" "}
+                        Limite des picks :{" "}
                         <span className="text-pk-red">
                           {formatTime(raceDetails.predictions_close_at as string)}
                         </span>
@@ -650,7 +652,7 @@ export default function GrandPrixDetailPage() {
                       <Clock className="w-3.5 h-3.5 text-pk-red" />
                     </motion.div>
                     <span className="text-[0.8125rem] text-pk-piste">
-                      Closes 15 min before {raceDetails.is_sprint_weekend ? "SQ1" : "Q1"}
+                      Ferme 15 min avant {raceDetails.is_sprint_weekend ? "SQ1" : "Q1"}
                     </span>
                   </div>
 
@@ -664,7 +666,7 @@ export default function GrandPrixDetailPage() {
                     data-testid="make-predictions-cta"
                   >
                     <Target className="w-4 h-4" />
-                    Make my picks
+                    Faire mes picks
                   </button>
 
                   {Boolean(raceDetails.is_sprint_weekend) &&
@@ -689,7 +691,7 @@ export default function GrandPrixDetailPage() {
                   </div>
                   <p className="font-display text-sm text-pk-titane mb-1">Picks non disponibles</p>
                   <p className="text-xs text-pk-titane/60">
-                    Predictions will open soon for this Grand Prix.
+                    Les pronostics ouvriront bientôt pour ce Grand Prix.
                   </p>
                 </motion.div>
               ) : isFinished ? (
@@ -698,7 +700,7 @@ export default function GrandPrixDetailPage() {
                     <div className="w-8 h-8 rounded-md bg-pk-emerald/[0.12] border border-pk-emerald/25 flex items-center justify-center">
                       <Check className="w-4 h-4 text-pk-emerald" />
                     </div>
-                    <p className="text-[0.8125rem] text-pk-piste">Race finished</p>
+                    <p className="text-[0.8125rem] text-pk-piste">Course terminée</p>
                   </div>
 
                   <button
@@ -709,7 +711,7 @@ export default function GrandPrixDetailPage() {
                     className="w-full h-11 rounded-lg bg-pk-surface border border-white/[0.08] text-pk-piste font-display text-sm flex items-center justify-center gap-2 active:scale-[0.97] transition-transform"
                     data-testid="view-results-cta"
                   >
-                    View results
+                    Voir les résultats
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </motion.div>
@@ -717,7 +719,7 @@ export default function GrandPrixDetailPage() {
                 <EmptyFullPage
                   Icon={Target}
                   title="Picks indisponibles"
-                  description="Predictions are not open yet for this Grand Prix."
+                  description="Les pronostics ne sont pas encore ouverts pour ce Grand Prix."
                 />
               )}
             </>

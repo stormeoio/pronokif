@@ -97,7 +97,7 @@ function DriverSelector({
               </span>
             </>
           ) : (
-            <span className="text-pk-titane text-xs">Driver</span>
+            <span className="text-pk-titane text-xs">Pilote</span>
           )}
         </div>
         <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
@@ -213,7 +213,7 @@ export default function DriverComparisonPage() {
                 <GitCompare className="w-5 h-5 text-pk-info" /> Comparateur
               </h1>
               <p className="font-data text-[0.5625rem] text-pk-titane">
-                Compare stats for 2 drivers
+                Compare les stats de 2 pilotes
               </p>
             </div>
           </div>
@@ -297,7 +297,7 @@ export default function DriverComparisonPage() {
               className="bg-pk-surface border border-white/[0.08] rounded-lg p-4"
             >
               <h3 className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                <Trophy className="w-3.5 h-3.5 text-pk-gold" /> Statistiques F1
+                <Trophy className="w-3.5 h-3.5 text-pk-gold" /> Stats F1
               </h3>
               <motion.div
                 className="space-y-3"
@@ -346,7 +346,7 @@ export default function DriverComparisonPage() {
                   color2={getTeamColor(d2.team_id)}
                 />
                 <ComparisonBar
-                  label="Career points"
+                  label="Points en carrière"
                   icon={Hash}
                   value1={stats?.points?.driver1 || 0}
                   value2={stats?.points?.driver2 || 0}
@@ -370,7 +370,7 @@ export default function DriverComparisonPage() {
               className="bg-pk-surface border border-white/[0.08] rounded-lg p-4"
             >
               <h3 className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                <TrendingUp className="w-3.5 h-3.5 text-pk-emerald" /> Efficacite
+                <TrendingUp className="w-3.5 h-3.5 text-pk-emerald" /> Efficacité
               </h3>
               <div className="grid grid-cols-2 gap-2">
                 <EfficiencyCard
@@ -427,7 +427,9 @@ export default function DriverComparisonPage() {
             className="bg-pk-surface border border-white/[0.08] rounded-lg p-8 text-center"
           >
             <GitCompare className="w-10 h-10 text-pk-titane mx-auto mb-3" />
-            <p className="text-sm text-pk-titane">Select two different drivers to compare them</p>
+            <p className="text-sm text-pk-titane">
+              Sélectionne deux pilotes différents pour les comparer
+            </p>
           </motion.div>
         )}
       </motion.div>

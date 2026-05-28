@@ -34,8 +34,8 @@ export default function SocialProofBadge({ raceId }: SocialProofBadgeProps) {
       </span>
       <Users className="w-3 h-3" />
       <span>
-        <span className="text-pk-emerald font-data">{data.count}</span> players have already
-        submitted picks
+        <span className="text-pk-emerald font-data">{data.count}</span> joueurs ont déjà soumis
+        leurs pronos
       </span>
     </motion.div>
   );

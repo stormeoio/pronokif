@@ -114,7 +114,7 @@ export default function PredictionForm({
     },
     {
       key: "sprint_race_winner",
-      label: "Winner",
+      label: "Vainqueur",
       sublabel: "Sprint",
       icon: Trophy,
       done: !!sprintRaceWinner,
@@ -173,8 +173,8 @@ export default function PredictionForm({
     },
     {
       key: "race_winner",
-      label: "Winner",
-      sublabel: "Race",
+      label: "Vainqueur",
+      sublabel: "Course",
       icon: Trophy,
       done: !!raceWinner,
       count: raceWinner ? 1 : 0,
@@ -183,7 +183,7 @@ export default function PredictionForm({
     {
       key: "race_top10",
       label: "Top 10",
-      sublabel: "Race",
+      sublabel: "Course",
       icon: Medal,
       done: raceTop10.length === 10,
       count: raceTop10.length,
@@ -247,7 +247,7 @@ export default function PredictionForm({
       <motion.div
         className="grid grid-cols-3 gap-2"
         role="tablist"
-        aria-label="Prediction steps"
+        aria-label="Étapes du pronostic"
         initial="hidden"
         animate="visible"
         variants={staggerContainer}
@@ -377,7 +377,7 @@ export default function PredictionForm({
             data-testid="back-to-bonus-btn"
           >
             <Check className="w-4 h-4" />
-            Submit and back to bonuses
+            Valider et retour aux bonus
           </button>
         </div>
       )}

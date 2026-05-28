@@ -4,8 +4,7 @@
  * Covers: loading state, notification list rendering, empty state, mark all read.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { renderWithProviders, mockUser } from "@/test/utils";
 
 const mockApiClient = vi.hoisted(() => ({
@@ -99,7 +98,7 @@ describe("NotificationsPage", () => {
     renderWithProviders(<NotificationsPage />, { user: mockUser });
 
     await waitFor(() => {
-      expect(screen.getByText("No notifications")).toBeInTheDocument();
+      expect(screen.getByText("Aucune notification")).toBeInTheDocument();
     });
   });
 
@@ -125,11 +124,10 @@ describe("NotificationsPage", () => {
     renderWithProviders(<NotificationsPage />, { user: mockUser });
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Mark all as read" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Tout marquer comme lu" })).toBeInTheDocument();
     });
 
-    const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Mark all as read" }));
+    fireEvent.click(screen.getByTestId("mark-all-read"));
 
     await waitFor(() => {
       expect(mockApiClient.put).toHaveBeenCalledWith("/notifications/read-all");

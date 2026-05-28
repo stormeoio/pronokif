@@ -50,7 +50,7 @@ export default function NewResultsBanner() {
           <div className="text-left">
             <p className="font-display text-xs text-pk-amber flex items-center gap-1">
               <Sparkles className="w-3 h-3" />
-              Results available!
+              Résultats disponibles !
             </p>
             <p className="font-data text-[0.5625rem] text-pk-titane">
               {latestResult.race_name}

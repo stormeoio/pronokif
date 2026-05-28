@@ -21,9 +21,31 @@ const PROFILE_DATA = {
 
 const MISSIONS_DATA = {
   missions: [
-    { id: "m1", title: "Premier prono", description: "Fais ton premier pronostic", xp: 50, completed: true },
-    { id: "m2", title: "Fidele", description: "Participe 5 courses de suite", xp: 100, completed: false, progress: 3, target: 5 },
-    { id: "m3", title: "Expert", description: "Termine dans le top 3 du classement", xp: 200, completed: false, progress: 0, target: 1 },
+    {
+      id: "m1",
+      title: "Premier prono",
+      description: "Fais ton premier pronostic",
+      xp: 50,
+      completed: true,
+    },
+    {
+      id: "m2",
+      title: "Fidele",
+      description: "Participe 5 courses de suite",
+      xp: 100,
+      completed: false,
+      progress: 3,
+      target: 5,
+    },
+    {
+      id: "m3",
+      title: "Expert",
+      description: "Termine dans le top 3 du classement",
+      xp: 200,
+      completed: false,
+      progress: 0,
+      target: 1,
+    },
   ],
 };
 
@@ -96,8 +118,10 @@ test.describe("Missions page", () => {
     await page.goto("/missions");
     await page.waitForLoadState("networkidle");
 
-    await expect(page.getByText("Premier prono")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText("Fidele")).toBeVisible();
+    await expect(page.getByText("Premier prono", { exact: true })).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(page.getByText("Fidele", { exact: true })).toBeVisible();
   });
 
   test("shows completed missions differently from active ones", async ({ page }) => {
@@ -105,8 +129,10 @@ test.describe("Missions page", () => {
     await page.waitForLoadState("networkidle");
 
     // Both missions should be visible
-    await expect(page.getByText("Premier prono")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText("Expert")).toBeVisible();
+    await expect(page.getByText("Premier prono", { exact: true })).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(page.getByText("Expert", { exact: true })).toBeVisible();
   });
 
   test("page loads without errors", async ({ page }) => {

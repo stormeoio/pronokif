@@ -244,7 +244,7 @@ export default function RewardCelebration({
               animate={{ opacity: [0, 1, 0.5, 1] }}
               transition={{ delay: 1, duration: 2, repeat: Infinity }}
             >
-              Tap to continue
+              Touche pour continuer
             </motion.p>
           </motion.div>
         </motion.div>

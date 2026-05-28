@@ -68,7 +68,7 @@ function raceFlag(raceId: string) {
 }
 
 function tierLabel(rank: number, totalPlayers: number) {
-  if (!rank || !totalPlayers) return "Leaderboard";
+  if (!rank || !totalPlayers) return "Classement";
   const ratio = rank / totalPlayers;
   if (ratio <= 0.05) return "Diamant";
   if (ratio <= 0.15) return "Platine";
@@ -302,7 +302,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-1.5 mb-1.5">
               <Zap size={12} strokeWidth={1.5} className="text-pk-titane" />
               <span className="font-mono text-[0.5625rem] uppercase tracking-[0.12em] text-pk-titane">
-                Total points
+                Points totaux
               </span>
             </div>
             <div
@@ -357,7 +357,7 @@ export default function DashboardPage() {
               <span className="text-[1rem] text-pk-titane">e</span>
             </div>
             <p className="font-mono text-[0.625rem] text-pk-titane mt-1">
-              / {stats.totalPlayers.toLocaleString("fr-FR")} players
+              / {stats.totalPlayers.toLocaleString("fr-FR")} joueurs
             </p>
             {/* Progress bar */}
             <div className="w-full h-1 bg-white/[0.04] rounded-sm mt-3 overflow-hidden">
@@ -388,7 +388,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-1.5 mb-1.5">
               <Target size={12} strokeWidth={1.5} className="text-pk-titane" />
               <span className="font-mono text-[0.5625rem] uppercase tracking-[0.12em] text-pk-titane">
-                Precision
+                Précision
               </span>
             </div>
             <div className="flex items-baseline gap-1">
@@ -404,7 +404,7 @@ export default function DashboardPage() {
               />
             </div>
             <p className="font-mono text-[0.5625rem] text-pk-titane mt-1.5">
-              {stats.gpsPlayed} GP joues
+              {stats.gpsPlayed} GP joués
             </p>
           </motion.div>
 
@@ -417,7 +417,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-1.5 mb-1.5">
               <Flame size={12} strokeWidth={1.5} className="text-pk-titane" />
               <span className="font-mono text-[0.5625rem] uppercase tracking-[0.12em] text-pk-titane">
-                Serie en cours
+                Série en cours
               </span>
             </div>
             <div className="font-mono text-[1.5rem] font-bold leading-none text-pk-amber">
@@ -453,7 +453,7 @@ export default function DashboardPage() {
         {userLeagues.length > 0 && (
           <motion.div variants={fadeUp}>
             <div className="flex items-center justify-between mb-2">
-              <h2 className="font-display text-[1rem] uppercase">My leagues</h2>
+              <h2 className="font-display text-[1rem] uppercase">Mes ligues</h2>
               <button
                 onClick={() => navigate("/league")}
                 className="flex items-center gap-1 font-mono text-[0.6875rem] text-pk-red"
@@ -496,7 +496,7 @@ export default function DashboardPage() {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-[0.8125rem] truncate">{league.name}</p>
                           <p className="font-mono text-[0.625rem] text-pk-titane">
-                            {memberCount} members
+                            {memberCount} membres
                           </p>
                         </div>
                       </div>
@@ -527,7 +527,9 @@ export default function DashboardPage() {
                 <div className="w-10 h-10 rounded-full bg-pk-red-subtle flex items-center justify-center">
                   <Plus size={18} strokeWidth={2} className="text-pk-red" />
                 </div>
-                <span className="font-mono text-[0.625rem] text-pk-titane text-center">Join</span>
+                <span className="font-mono text-[0.625rem] text-pk-titane text-center">
+                  Rejoindre
+                </span>
               </div>
             </div>
           </motion.div>
@@ -543,7 +545,7 @@ export default function DashboardPage() {
             </div>
             <h3 className="font-display text-[1.125rem] uppercase mb-1">Rejoins une Ligue !</h3>
             <p className="text-[0.8125rem] text-pk-titane mb-4">
-              Create or join a league to play with your friends
+              Crée ou rejoins une ligue pour jouer avec tes potes
             </p>
             <button onClick={() => navigate("/league")} className="btn-pk text-[0.8125rem] px-6">
               <Plus {...iconSmall} size={14} strokeWidth={2} />
@@ -555,7 +557,7 @@ export default function DashboardPage() {
         {/* ---- RECENT RESULTS ---- */}
         <motion.div variants={fadeUp}>
           <div className="flex items-center justify-between mb-2">
-            <h2 className="font-display text-[1rem] uppercase">Latest results</h2>
+            <h2 className="font-display text-[1rem] uppercase">Derniers résultats</h2>
             <button
               onClick={() => navigate("/results")}
               className="flex items-center gap-1 font-mono text-[0.6875rem] text-pk-red"
@@ -568,7 +570,7 @@ export default function DashboardPage() {
             {recentResults.length === 0 && (
               <div className="bg-pk-surface border border-white/[0.08] rounded-md p-4 text-center">
                 <p className="font-mono text-[0.6875rem] text-pk-titane uppercase">
-                  No result imported
+                  Aucun résultat importé
                 </p>
               </div>
             )}
@@ -633,8 +635,8 @@ export default function DashboardPage() {
               },
               {
                 icon: Trophy,
-                label: "Leaderboards",
-                sub: "Season 2026",
+                label: "Classements",
+                sub: "Saison 2026",
                 color: "emerald" as const,
                 action: () => navigate("/leaderboard"),
               },
@@ -647,7 +649,7 @@ export default function DashboardPage() {
                   if (navigator.share) {
                     navigator.share({
                       title: "PronoKif",
-                      text: "Make F1 picks with me!",
+                      text: "Fais tes pronos F1 avec moi !",
                       url: window.location.origin,
                     });
                   }
@@ -656,7 +658,7 @@ export default function DashboardPage() {
               {
                 icon: Radio,
                 label: "Direct",
-                sub: "No race",
+                sub: "Pas de course",
                 color: "info" as const,
                 action: () => navigate("/live"),
               },

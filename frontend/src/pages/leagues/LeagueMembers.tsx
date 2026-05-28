@@ -62,7 +62,7 @@ export default function LeagueMembers({
                 {avatar ? (
                   <img
                     src={avatar}
-                    alt={member.username ?? "member"}
+                    alt={member.username ?? "membre"}
                     className="w-full h-full object-cover"
                     loading="lazy"
                     decoding="async"
@@ -92,7 +92,7 @@ export default function LeagueMembers({
                   )}
                   {isMemberOwner && (
                     <span className="font-data text-[0.5rem] bg-pk-amber/20 text-pk-amber px-1 py-0.5 rounded uppercase">
-                      Createur
+                      Créateur
                     </span>
                   )}
                 </div>

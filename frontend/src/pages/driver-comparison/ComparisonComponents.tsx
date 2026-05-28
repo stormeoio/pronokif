@@ -205,10 +205,10 @@ export function getVerdict(
   });
 
   if (d1Wins > d2Wins) {
-    return `${d1.first_name} ${d1.last_name} leads in ${d1Wins} categories out of 7. Their experience and stats make them the favorite in a direct matchup.`;
+    return `${d1.first_name} ${d1.last_name} domine dans ${d1Wins} catégories sur 7. Son expérience et ses stats en font le favori dans un duel direct.`;
   } else if (d2Wins > d1Wins) {
-    return `${d2.first_name} ${d2.last_name} leads in ${d2Wins} categories out of 7. Their statistical profile is stronger in this comparison.`;
+    return `${d2.first_name} ${d2.last_name} domine dans ${d2Wins} catégories sur 7. Son profil statistique est plus solide dans cette comparaison.`;
   } else {
-    return `These two drivers are very close! The result of a head-to-head would depend on the circuit and weekend conditions.`;
+    return `Ces deux pilotes sont très proches ! Le résultat d'un duel dépendrait du circuit et des conditions du week-end.`;
   }
 }

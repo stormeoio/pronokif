@@ -38,7 +38,7 @@ vi.mock("@/lib/api", () => {
         unreadCount: () => unwrap(mockApiClient.get("/notifications/unread-count")),
       },
     },
-    getApiError: (e: unknown, fallback = "Error") => {
+    getApiError: (e: unknown, fallback = "Erreur") => {
       const err = e as { response?: { data?: { detail?: string } } };
       return err.response?.data?.detail || fallback;
     },
@@ -77,7 +77,7 @@ function setupApiResponses(overrides: Record<string, unknown> = {}) {
       },
     ],
     "/avatars": { all: [{ id: "1", name: "Default", url: "/avatars/default.png" }] },
-    "/leagues/my": [{ id: "league-1", name: "The Pistons" }],
+    "/leagues/my": [{ id: "league-1", name: "Les Pistonnés" }],
     "/leagues/unread-messages": { by_league: {} },
     "/predictions/race/race-1": null,
     "/notifications/unread-count": { count: 0 },

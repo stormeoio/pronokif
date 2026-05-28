@@ -16,7 +16,7 @@ export default function VerifyEmailPage() {
   useEffect(() => {
     if (!token) {
       setStatus("error");
-      setMessage("Lien de verification invalide");
+      setMessage("Lien de vérification invalide");
       return;
     }
 
@@ -24,11 +24,11 @@ export default function VerifyEmailPage() {
       .get(`/auth/verify-email?token=${token}`)
       .then(() => {
         setStatus("success");
-        setMessage("Your email has been verified successfully!");
+        setMessage("Ton email a été vérifié avec succès !");
       })
       .catch((err) => {
         setStatus("error");
-        setMessage(err.response?.data?.detail || "Ce lien est invalide ou a deja ete utilise");
+        setMessage(err.response?.data?.detail || "Ce lien est invalide ou a déjà été utilisé");
       });
   }, [token]);
 
@@ -41,7 +41,7 @@ export default function VerifyEmailPage() {
         {status === "loading" && (
           <>
             <Loader2 className="w-10 h-10 text-pk-info animate-spin mx-auto mb-4" />
-            <p className="text-sm text-pk-titane">Verification en cours...</p>
+            <p className="text-sm text-pk-titane">Vérification en cours...</p>
           </>
         )}
 
@@ -50,14 +50,14 @@ export default function VerifyEmailPage() {
             <div className="w-14 h-14 rounded-full bg-pk-emerald/[0.12] border border-pk-emerald/20 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-7 h-7 text-pk-emerald" />
             </div>
-            <h2 className="font-display text-xl mb-1">Email verified!</h2>
+            <h2 className="font-display text-xl mb-1">Email vérifié !</h2>
             <p className="text-xs text-pk-titane mb-6">{message}</p>
             <Link
               to="/"
               className="inline-flex items-center justify-center h-11 px-6 rounded-lg bg-pk-red text-white font-display text-sm shadow-glow-red active:scale-[0.97] transition-transform"
               data-testid="verify-success-link"
             >
-              Back to dashboard
+              Retour au tableau de bord
             </Link>
           </>
         )}
@@ -67,14 +67,14 @@ export default function VerifyEmailPage() {
             <div className="w-14 h-14 rounded-full bg-pk-red/[0.12] border border-pk-red/20 flex items-center justify-center mx-auto mb-4">
               <XCircle className="w-7 h-7 text-pk-red" />
             </div>
-            <h2 className="font-display text-xl mb-1">Error</h2>
+            <h2 className="font-display text-xl mb-1">Erreur</h2>
             <p className="text-xs text-pk-titane mb-6">{message}</p>
             <Link
               to="/"
               className="inline-flex items-center justify-center h-11 px-6 rounded-lg bg-white/[0.06] border border-white/[0.08] text-pk-piste font-display text-sm active:scale-[0.97] transition-transform"
               data-testid="verify-error-link"
             >
-              Back
+              Retour
             </Link>
           </>
         )}

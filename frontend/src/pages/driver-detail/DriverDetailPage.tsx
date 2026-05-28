@@ -45,7 +45,7 @@ export default function DriverDetailPage() {
 
   useEffect(() => {
     if (error) {
-      toast.error("Unable to load driver information");
+      toast.error("Impossible de charger les infos du pilote");
       navigate("/championship");
     }
   }, [error, navigate]);
@@ -57,7 +57,7 @@ export default function DriverDetailPage() {
       <div className="min-h-screen bg-pk-carbon flex items-center justify-center">
         <div className="text-center">
           <User className="w-10 h-10 text-pk-titane mx-auto mb-3" />
-          <p className="text-sm text-pk-titane">Driver not found</p>
+          <p className="text-sm text-pk-titane">Pilote introuvable</p>
         </div>
       </div>
     );
@@ -197,8 +197,8 @@ export default function DriverDetailPage() {
         <div className="max-w-2xl mx-auto px-4 py-2">
           <div className="flex gap-1.5">
             {[
-              { id: "profile", Icon: User, label: "Driver" },
-              { id: "palmares", Icon: History, label: "Palmares" },
+              { id: "profile", Icon: User, label: "Pilote" },
+              { id: "palmares", Icon: History, label: "Palmarès" },
               { id: "facts", Icon: Lightbulb, label: "Infos" },
             ].map((tab) => (
               <button

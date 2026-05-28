@@ -38,7 +38,7 @@ function JoinSpinner() {
     <div className="min-h-screen bg-pk-carbon flex items-center justify-center">
       <div className="text-center">
         <div className="w-10 h-10 border-[3px] border-white/[0.08] border-t-pk-red rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-xs text-pk-titane">Loading invitation...</p>
+        <p className="text-xs text-pk-titane">Chargement de l'invitation...</p>
       </div>
     </div>
   );
@@ -118,7 +118,7 @@ export default function JoinLeaguePage() {
   });
 
   const loading = leagueLoading || (!!user && !!league && myLeaguesLoading);
-  const error = leagueError ? "This league does not exist or the link is invalid" : null;
+  const error = leagueError ? "Cette ligue n'existe pas ou le lien est invalide" : null;
   const alreadyMember = myLeagues.some((l) => l.code === code?.toUpperCase());
 
   const handleJoin = async () => {
@@ -134,12 +134,12 @@ export default function JoinLeaguePage() {
       const res = await api.leagues.join({ code: code!.toUpperCase() });
       updateUser({ ...user, current_league_id: res.id });
       haptic("success");
-      toast.success(`You joined "${res.name}" !`);
+      toast.success(`Tu as rejoint "${res.name}" !`);
       navigate("/");
     } catch (e: unknown) {
       haptic("error");
       const axiosError = e as AxiosError<{ detail: string }>;
-      const message = axiosError.response?.data?.detail || "Error while signing in";
+      const message = axiosError.response?.data?.detail || "Erreur lors de l'inscription";
       if (message.includes("already")) {
         queryClient.invalidateQueries({ queryKey: ["/leagues/my"] });
       } else {
@@ -162,7 +162,7 @@ export default function JoinLeaguePage() {
         iconColor="text-pk-red"
         title="Lien invalide"
         description={error}
-        actionLabel="Back"
+        actionLabel="Retour"
         onAction={() => navigate("/")}
       />
     );
@@ -175,9 +175,9 @@ export default function JoinLeaguePage() {
         icon={<CheckCircle className="w-7 h-7 text-pk-emerald" />}
         iconBg="bg-pk-emerald/[0.12]"
         iconColor="text-pk-emerald"
-        title="Already a member!"
-        description={`You are already part of ${league?.name}.`}
-        actionLabel="Aller au dashboard"
+        title="Déjà membre !"
+        description={`Tu fais déjà partie de ${league?.name}.`}
+        actionLabel="Aller au tableau de bord"
         onAction={() => navigate("/")}
       />
     );
@@ -201,7 +201,7 @@ export default function JoinLeaguePage() {
         </div>
 
         <h1 className="font-display text-xl mb-1">Invitation</h1>
-        <p className="text-xs text-pk-titane mb-6">You have been invited to join a league</p>
+        <p className="text-xs text-pk-titane mb-6">Tu as été invité à rejoindre une ligue</p>
 
         {/* OTP-style code display */}
         <div className="flex justify-center gap-1.5 mb-6">
@@ -236,7 +236,7 @@ export default function JoinLeaguePage() {
               <p className="font-bold text-sm truncate">{league?.name}</p>
               <p className="font-data text-[0.5rem] text-pk-titane flex items-center gap-1">
                 <Users className="w-3 h-3" />
-                {league?.members_count} member{(league?.members_count ?? 0) > 1 ? "s" : ""}
+                {league?.members_count} membre{(league?.members_count ?? 0) > 1 ? "s" : ""}
               </p>
             </div>
           </div>
@@ -255,18 +255,20 @@ export default function JoinLeaguePage() {
           {joining ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Signing in...
+              Inscription...
             </>
           ) : (
             <>
               <LogIn className="w-4 h-4" />
-              Join league
+              Rejoindre la ligue
             </>
           )}
         </button>
 
         {!user && (
-          <p className="text-[0.625rem] text-pk-titane mt-3">You will need to sign in to join</p>
+          <p className="text-[0.625rem] text-pk-titane mt-3">
+            Tu devras te connecter pour rejoindre
+          </p>
         )}
       </motion.div>
     </div>

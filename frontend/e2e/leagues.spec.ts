@@ -17,8 +17,20 @@ const TEST_LEAGUE_MEMBERS = [
 ];
 
 const TEST_CHAT_MESSAGES = [
-  { id: "m1", user_id: "u2", username: "SpeedKing", message: "Allez Max!", created_at: "2026-05-10T14:00:00Z" },
-  { id: "m2", user_id: "e2e-user-1", username: "TestPilot", message: "Hamilton pour la victoire", created_at: "2026-05-10T14:01:00Z" },
+  {
+    id: "m1",
+    user_id: "u2",
+    username: "SpeedKing",
+    content: "Allez Max!",
+    created_at: "2026-05-10T14:00:00Z",
+  },
+  {
+    id: "m2",
+    user_id: "e2e-user-1",
+    username: "TestPilot",
+    content: "Hamilton pour la victoire",
+    created_at: "2026-05-10T14:01:00Z",
+  },
 ];
 
 test.describe("Leagues flow", () => {
@@ -27,7 +39,7 @@ test.describe("Leagues flow", () => {
     await mockDashboardAPIs(page);
 
     // League detail
-    await page.route("**/api/leagues/league-1", (route) =>
+    await page.route(/\/api\/leagues\/league-1$/, (route) =>
       route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -37,6 +49,14 @@ test.describe("Leagues flow", () => {
 
     // League members / leaderboard
     await page.route("**/api/leagues/league-1/leaderboard", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(TEST_LEAGUE_MEMBERS),
+      }),
+    );
+
+    await page.route("**/api/leagues/league-1/members", (route) =>
       route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -75,7 +95,7 @@ test.describe("Leagues flow", () => {
     await page.waitForLoadState("networkidle");
 
     // Message input should exist
-    const input = page.locator("input[type='text'], textarea").first();
+    const input = page.getByTestId("message-input");
     await expect(input).toBeVisible({ timeout: 10000 });
   });
 

@@ -43,8 +43,8 @@ const COUNTRY_FLAGS: Record<string, string> = {
 type FilterKey = "upcoming" | "completed" | "all";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "upcoming", label: "Upcoming" },
-  { key: "completed", label: "Termines" },
+  { key: "upcoming", label: "A venir" },
+  { key: "completed", label: "Terminés" },
   { key: "all", label: "Tous" },
 ];
 
@@ -147,9 +147,9 @@ export default function RaceCalendarPage() {
         <div className="px-4 pt-3 pb-3">
           <h1 className="font-display text-lg flex items-center gap-2 mb-0.5">
             <Calendar className="w-4 h-4 text-pk-red" />
-            2026 Calendar
+            Calendrier 2026
           </h1>
-          <p className="text-[0.625rem] text-pk-titane mb-2.5">Closes 15 min before FP1</p>
+          <p className="text-[0.625rem] text-pk-titane mb-2.5">Ferme 15 min avant EL1</p>
 
           {/* Filter chips */}
           <div className="flex gap-1.5">
@@ -196,8 +196,8 @@ export default function RaceCalendarPage() {
           {filteredRaces.length === 0 ? (
             <EmptyFullPage
               Icon={Calendar}
-              title="No races"
-              description={filter === "upcoming" ? "Season finished" : "No finished races"}
+              title="Aucune course"
+              description={filter === "upcoming" ? "Saison terminée" : "Aucune course terminée"}
             />
           ) : (
             filteredRaces.map((race: Race, index: number) => {
@@ -260,7 +260,7 @@ export default function RaceCalendarPage() {
                       {canPredict && !hasPrediction && (
                         <p className="text-[0.5rem] text-pk-red mt-1 flex items-center gap-1">
                           <Clock className="w-2.5 h-2.5" />
-                          Cloture: {formatCloseTime(race.predictions_close_at)}
+                          Clôture : {formatCloseTime(race.predictions_close_at)}
                         </p>
                       )}
                     </div>

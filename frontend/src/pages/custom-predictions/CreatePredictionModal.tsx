@@ -42,7 +42,7 @@ export function CreatePredictionModal({
       return;
     }
     if (answerType === "choice" && choices.filter((c) => c.text.trim()).length < 2) {
-      toast.error("Add at least 2 choices");
+      toast.error("Ajoute au moins 2 choix");
       return;
     }
     setCreating(true);
@@ -56,12 +56,12 @@ export function CreatePredictionModal({
         choices: answerType === "choice" ? choices.filter((c) => c.text.trim()) : null,
       };
       await api.customPredictions.create(payload);
-      toast.success("Prediction created!");
+      toast.success("Prono cree !");
       onCreated();
       onClose();
     } catch (e: unknown) {
       const err = e as { response?: { data?: { detail?: string } } };
-      toast.error(err.response?.data?.detail || "Error");
+      toast.error(err.response?.data?.detail || "Erreur");
     } finally {
       setCreating(false);
     }
@@ -96,7 +96,7 @@ export function CreatePredictionModal({
         {/* Header */}
         <div className="sticky top-0 bg-pk-anthracite p-4 border-b border-white/[0.06]">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-lg">Create a Prediction</h2>
+            <h2 className="font-display text-lg">Creer un prono</h2>
             <button
               onClick={onClose}
               className="p-1.5 rounded-lg text-pk-titane hover:text-pk-piste hover:bg-white/[0.04] transition-colors"
@@ -124,7 +124,7 @@ export function CreatePredictionModal({
           {/* Answer Type */}
           <div>
             <p className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-2">
-              Answer type
+              Type de reponse
             </p>
             <div className="grid grid-cols-3 gap-2">
               {[
@@ -163,7 +163,7 @@ export function CreatePredictionModal({
                   Options
                 </p>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="font-data text-[0.5625rem] text-pk-titane">Multi-answer</span>
+                  <span className="font-data text-[0.5625rem] text-pk-titane">Multi-reponse</span>
                   <button
                     onClick={() => setMultipleChoice(!multipleChoice)}
                     className={`w-8 h-4 rounded-full transition-colors ${
@@ -216,7 +216,7 @@ export function CreatePredictionModal({
             className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
             data-testid="submit-prediction-btn"
           >
-            {creating ? "Creating..." : "Create prediction"}
+            {creating ? "Creation..." : "Creer le prono"}
           </button>
         </div>
       </motion.div>

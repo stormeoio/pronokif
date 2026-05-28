@@ -84,7 +84,7 @@ export default function PredictionCard({ prediction, onAnswer }: PredictionCardP
 
         {isResolved ? (
           <div className="space-y-2">
-            <p className="font-data text-[0.5625rem] text-pk-titane">Correct answer:</p>
+            <p className="font-data text-[0.5625rem] text-pk-titane">Bonne reponse :</p>
             <p className="font-display text-sm text-pk-emerald">{prediction.correct_answer}</p>
             {hasAnswered && (
               <p
@@ -94,7 +94,7 @@ export default function PredictionCard({ prediction, onAnswer }: PredictionCardP
                     : "text-pk-red"
                 }`}
               >
-                Your answer: {prediction.user_answer}
+                Ta reponse : {prediction.user_answer}
                 {prediction.user_answer === prediction.correct_answer ? " +2 pts" : ""}
               </p>
             )}
@@ -132,7 +132,7 @@ export default function PredictionCard({ prediction, onAnswer }: PredictionCardP
               <input
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
-                placeholder="Your answer..."
+                placeholder="Ta reponse..."
                 className="w-full bg-pk-anthracite border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-pk-piste placeholder:text-pk-titane/50 focus:border-pk-info/50 focus:outline-none transition-colors disabled:opacity-40"
                 disabled={hasAnswered}
               />
@@ -175,12 +175,12 @@ export default function PredictionCard({ prediction, onAnswer }: PredictionCardP
                 data-testid={`submit-answer-${prediction.id}`}
               >
                 <Send className="w-4 h-4" />
-                Submit my answer
+                Envoyer ma reponse
               </button>
             ) : (
               <p className="font-data text-[0.5625rem] text-pk-info flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                Answer saved - Waiting for the result
+                Reponse enregistree - En attente du resultat
               </p>
             )}
           </div>

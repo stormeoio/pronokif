@@ -24,7 +24,7 @@ interface LeaderboardEntry {
 type FilterKey = "season" | "month" | "gp";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "season", label: "Season" },
+  { key: "season", label: "Saison" },
   { key: "month", label: "Ce mois" },
   { key: "gp", label: "Dernier GP" },
 ];
@@ -174,9 +174,9 @@ export default function GlobalLeaderboardPage() {
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <h1 className="font-display text-lg">Leaderboard</h1>
+              <h1 className="font-display text-lg">Classement général</h1>
             </div>
-            <span className="font-data text-[0.5rem] text-pk-titane">{totalPlayers} players</span>
+            <span className="font-data text-[0.5rem] text-pk-titane">{totalPlayers} joueurs</span>
           </div>
 
           {/* Filter chips */}
@@ -296,7 +296,7 @@ export default function GlobalLeaderboardPage() {
           className="bg-pk-surface border border-white/[0.08] rounded-lg overflow-hidden"
         >
           {rest.length === 0 ? (
-            <p className="text-sm text-pk-titane text-center py-8">Not enough players.</p>
+            <p className="text-sm text-pk-titane text-center py-8">Pas assez de joueurs.</p>
           ) : (
             rest.map((entry) => {
               const isMe = entry.user_id === user?.id;

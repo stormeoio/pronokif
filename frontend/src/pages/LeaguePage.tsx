@@ -68,7 +68,7 @@ export default function LeaguePage() {
     try {
       const res = await api.leagues.join({ code });
       updateUser({ ...user, current_league_id: res.id });
-      toast.success(`You joined "${res.name}" !`);
+      toast.success(`Tu as rejoint "${res.name}" !`);
       invalidateLeagues();
       (e.target as HTMLFormElement).reset();
     } catch (error: unknown) {
@@ -91,12 +91,12 @@ export default function LeaguePage() {
       const res = await api.leagues.create({ name });
       setCreatedLeague(res);
       updateUser({ ...user, current_league_id: res.id });
-      toast.success("Ligue creee !");
+      toast.success("Ligue créée !");
       invalidateLeagues();
     } catch (error: unknown) {
       toast.error(
         (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-          "Error while creating",
+          "Erreur lors de la création",
       );
     } finally {
       setIsLoading(false);
@@ -107,7 +107,7 @@ export default function LeaguePage() {
     try {
       await navigator.clipboard.writeText(code || createdLeague?.code || "");
       setCopied(code || createdLeague?.code || false);
-      toast.success("Code copie !");
+      toast.success("Code copié !");
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("Impossible de copier");
@@ -116,7 +116,7 @@ export default function LeaguePage() {
 
   const shareLeague = async (league: { name: string; code: string }) => {
     const shareUrl = `${window.location.origin}/join/${league.code}`;
-    const shareText = `Join my F1 league "${league.name}" sur PRONOKIF !`;
+    const shareText = `Rejoins ma ligue F1 "${league.name}" sur PRONOKIF !`;
 
     if (navigator.share) {
       try {
@@ -136,7 +136,7 @@ export default function LeaguePage() {
 
   const selectLeague = (leagueId: string) => {
     updateUser({ ...user, current_league_id: leagueId });
-    toast.success("Ligue selectionnee !");
+    toast.success("Ligue sélectionnée !");
   };
 
   /* ── Created league success screen ──────────────────── */
@@ -173,7 +173,7 @@ export default function LeaguePage() {
             </button>
             <div className="flex items-center gap-2">
               <Trophy className="w-4.5 h-4.5 text-pk-red" />
-              <h1 className="font-display text-lg">My Leagues</h1>
+              <h1 className="font-display text-lg">Mes ligues</h1>
             </div>
           </div>
         </div>
@@ -222,7 +222,7 @@ export default function LeaguePage() {
               data-testid="tab-join"
             >
               <LogIn className="w-3.5 h-3.5" />
-              Join
+              Rejoindre
             </button>
             <button
               onClick={() => {
@@ -237,7 +237,7 @@ export default function LeaguePage() {
               data-testid="tab-create"
             >
               <Plus className="w-3.5 h-3.5" />
-              Creer
+              Créer
             </button>
           </div>
 
@@ -253,7 +253,7 @@ export default function LeaguePage() {
                 className="p-5"
               >
                 <p className="text-xs text-pk-titane text-center mb-4">
-                  Enter the code for the league you want to join
+                  Entre le code de la ligue que tu veux rejoindre
                 </p>
 
                 <form onSubmit={handleJoin} className="space-y-4">
@@ -283,12 +283,12 @@ export default function LeaguePage() {
                     {isLoading ? (
                       <>
                         <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Signing in...
+                        Connexion...
                       </>
                     ) : (
                       <>
                         <LogIn className="w-4 h-4" />
-                        Join league
+                        Rejoindre la ligue
                       </>
                     )}
                   </button>
@@ -304,7 +304,7 @@ export default function LeaguePage() {
                 className="p-5"
               >
                 <p className="text-xs text-pk-titane text-center mb-4">
-                  Create your own league and invite your friends
+                  Crée ta propre ligue et invite tes amis
                 </p>
 
                 <form onSubmit={handleCreate} className="space-y-4">
@@ -313,7 +313,7 @@ export default function LeaguePage() {
                       htmlFor="name"
                       className="block font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-1.5"
                     >
-                      League name
+                      Nom de la ligue
                     </label>
                     <input
                       id="name"
@@ -334,12 +334,12 @@ export default function LeaguePage() {
                     {isLoading ? (
                       <>
                         <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Creation...
+                        Création...
                       </>
                     ) : (
                       <>
                         <Plus className="w-4 h-4" />
-                        Create my league
+                        Créer ma ligue
                       </>
                     )}
                   </button>

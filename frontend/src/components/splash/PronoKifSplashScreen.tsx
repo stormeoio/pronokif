@@ -53,7 +53,7 @@ type PronoKifSplashScreenProps = {
 const DEFAULT_LOADING_LOGS = [
   "Initialisation du paddock",
   "Loading du calendrier 2026",
-  "Preparing predictions",
+  "Préparation des pronostics",
   "Ouverture de la grille",
 ];
 
@@ -82,7 +82,7 @@ export function BorderGlowButton({
 
 export function AppIconGlow({
   iconSrc,
-  alt = "PronoKif F1 app icon",
+  alt = "Icône PronoKif F1",
   size = 72,
   radius = 18,
   className = "",
@@ -120,7 +120,7 @@ export default function PronoKifSplashScreen({
   videoSrc = "/video/splash-trailer.mp4",
   posterSrc,
   appName = "PronoKif F1",
-  baseline = "Make picks. Challenge. Feel it.",
+  baseline = "Pronostique. Défie. Vibre.",
   loadingLabel = "Synchronisation paddock",
   loadingLogs = DEFAULT_LOADING_LOGS,
   introDelayMs = 950,
@@ -221,7 +221,7 @@ export default function PronoKifSplashScreen({
 
       <section
         className={`pk-splash__content ${logoVisible ? "is-visible" : ""}`}
-        aria-label="PronoKif F1 launch screen"
+        aria-label="Écran de lancement PronoKif F1"
       >
         <AppIconGlow iconSrc={iconSrc} size={72} radius={18} />
 
@@ -250,7 +250,7 @@ export default function PronoKifSplashScreen({
         className={`pk-splash__loaderDock ${logoVisible ? "has-logo" : ""} ${
           ready ? "is-ready" : ""
         }`}
-        aria-label="Loading PronoKif F1"
+        aria-label="Chargement de PronoKif F1"
       >
         <div className="pk-splash__actionZone">
           <div className="pk-progress" role="status" aria-live="polite">
@@ -262,7 +262,7 @@ export default function PronoKifSplashScreen({
             </div>
             <div className="pk-progress__copy">
               <span className="pk-progress__label">{loadingLabel}</span>
-              <div className="pk-progress__logs" aria-label="Loading steps">
+              <div className="pk-progress__logs" aria-label="Étapes de chargement">
                 {startupLogs.map((log, index) => (
                   <span
                     key={log}

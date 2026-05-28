@@ -46,13 +46,13 @@ export default function AuthPage() {
     setVerifyingMagic(true);
     loginWithMagicLink(token)
       .then((user) => {
-        toast.success("Magic sign-in confirmed!");
+        toast.success("Connexion magique confirmée !");
         navigateAfterAuth(user);
       })
       .catch((error: unknown) => {
         const message =
           (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-          "Invalid or expired magic link";
+          "Lien magique invalide ou expiré";
         toast.error(message);
       })
       .finally(() => setVerifyingMagic(false));
@@ -70,13 +70,13 @@ export default function AuthPage() {
       const user =
         type === "login" ? await login(email, password) : await register(email, password);
 
-      toast.success(type === "login" ? "Signed in successfully!" : "Account created!");
+      toast.success(type === "login" ? "Connexion réussie !" : "Compte créé !");
 
       navigateAfterAuth(user);
     } catch (error: unknown) {
       const message =
         (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-        "An error occurred";
+        "Une erreur est survenue";
       toast.error(message);
     } finally {
       setIsLoading(false);
@@ -86,7 +86,7 @@ export default function AuthPage() {
   const handleSendMagicLink = async () => {
     const email = loginEmail.trim();
     if (!email) {
-      toast.error("Enter your email to receive the magic link");
+      toast.error("Entre ton email pour recevoir le lien magique");
       return;
     }
 
@@ -94,11 +94,11 @@ export default function AuthPage() {
     try {
       await requestMagicLink(email);
       setMagicSent(true);
-      toast.success("Magic link sent!");
+      toast.success("Lien magique envoyé !");
     } catch (error: unknown) {
       const message =
         (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-        "Error while sending du lien magique";
+        "Erreur lors de l'envoi du lien magique";
       toast.error(message);
     } finally {
       setIsLoading(false);
@@ -167,7 +167,7 @@ export default function AuthPage() {
             />
           </div>
           <p className="text-center text-pk-titane text-[0.75rem] mb-7 leading-relaxed">
-            Make picks, challenge your friends,
+            Fais tes pronos, défie tes potes,
             <br />
             vivez la F1 comme jamais.
           </p>
@@ -178,7 +178,7 @@ export default function AuthPage() {
                 border-pk-red/30 bg-pk-red-subtle px-3 py-2 text-[0.75rem] text-pk-piste"
             >
               <Loader2 {...iconProps} size={14} className="animate-spin" />
-              Verifying magic link...
+              Vérification du lien magique...
             </div>
           )}
 
@@ -191,7 +191,7 @@ export default function AuthPage() {
                 ${activeTab === "login" ? "text-pk-piste bg-pk-red-subtle" : "text-pk-titane hover:text-pk-piste"}`}
               data-testid="tab-login"
             >
-              Sign in
+              Connexion
               {activeTab === "login" && (
                 <span className="absolute bottom-0 left-[20%] right-[20%] h-0.5 bg-pk-red rounded-sm" />
               )}
@@ -234,7 +234,7 @@ export default function AuthPage() {
               </div>
               <div className="mb-3.5">
                 <label className="block font-mono text-[0.625rem] uppercase tracking-[0.12em] text-pk-titane mb-1">
-                  Password
+                  Mot de passe
                 </label>
                 <input
                   name="password"
@@ -261,7 +261,7 @@ export default function AuthPage() {
                   to="/forgot-password"
                   className="text-[0.6875rem] text-pk-red no-underline hover:underline"
                 >
-                  Forgot?
+                  Oublié ?
                 </Link>
               </div>
 
@@ -272,7 +272,7 @@ export default function AuthPage() {
                 data-testid="login-submit"
               >
                 <ArrowRight {...iconProps} size={14} strokeWidth={2} />
-                {isLoading ? "Signing in..." : "Se connecter"}
+                {isLoading ? "Connexion..." : "Se connecter"}
               </BorderGlowButton>
 
               <button
@@ -283,7 +283,7 @@ export default function AuthPage() {
                 data-testid="magic-link-submit"
               >
                 <Mail {...iconProps} size={14} strokeWidth={2} />
-                {magicSent ? "Magic link sent" : "Get a magic link"}
+                {magicSent ? "Lien envoyé ✓" : "Recevoir un lien magique"}
               </button>
             </form>
           )}
@@ -293,7 +293,7 @@ export default function AuthPage() {
             <form onSubmit={(e) => handleSubmit(e, "register")} data-testid="register-form">
               <div className="mb-3.5">
                 <label className="block font-mono text-[0.625rem] uppercase tracking-[0.12em] text-pk-titane mb-1">
-                  Driver username
+                  Pseudo pilote
                 </label>
                 <input
                   name="username"
@@ -318,12 +318,12 @@ export default function AuthPage() {
               </div>
               <div className="mb-5">
                 <label className="block font-mono text-[0.625rem] uppercase tracking-[0.12em] text-pk-titane mb-1">
-                  Password
+                  Mot de passe
                 </label>
                 <input
                   name="password"
                   type="password"
-                  placeholder="8 characters minimum"
+                  placeholder="8 caractères minimum"
                   required
                   minLength={8}
                   autoComplete="new-password"
@@ -339,7 +339,7 @@ export default function AuthPage() {
                 data-testid="register-submit"
               >
                 <Plus {...iconProps} size={14} strokeWidth={2} />
-                {isLoading ? "Creating..." : "Create my account"}
+                {isLoading ? "Création..." : "Créer mon compte"}
               </BorderGlowButton>
             </form>
           )}
@@ -348,7 +348,7 @@ export default function AuthPage() {
           <div className="flex items-center gap-2.5 my-4">
             <span className="flex-1 h-px bg-white/[0.08]" />
             <span className="font-mono text-[0.625rem] text-pk-titane uppercase tracking-[0.1em]">
-              or continue with
+              ou continuer avec
             </span>
             <span className="flex-1 h-px bg-white/[0.08]" />
           </div>
@@ -388,17 +388,17 @@ export default function AuthPage() {
           <p className="text-center mt-4 text-[0.6875rem] text-pk-titane">
             {activeTab === "login" ? (
               <>
-                New ?{" "}
+                Nouveau ?{" "}
                 <button
                   onClick={() => setActiveTab("register")}
                   className="text-pk-red font-medium hover:underline"
                 >
-                  Join the race
+                  Rejoins la course
                 </button>
               </>
             ) : (
               <>
-                Already registered?{" "}
+                Déjà inscrit ?{" "}
                 <button
                   onClick={() => setActiveTab("login")}
                   className="text-pk-red font-medium hover:underline"
@@ -418,7 +418,7 @@ export default function AuthPage() {
           animate={{ opacity: 0.4, y: 0 }}
           transition={{ duration: duration.long, ease: easing.enter, delay: 0.3 }}
         >
-          Predict. Challenge. <em className="not-italic text-pk-red">Feel it.</em>
+          Pronostique. Défie. <em className="not-italic text-pk-red">Vis-le.</em>
         </motion.p>
       </div>
     </>

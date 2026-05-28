@@ -91,7 +91,7 @@ export default function LeagueDetailPage() {
   // Navigate away on error
   useEffect(() => {
     if (error) {
-      toast.error("Error while loading");
+      toast.error("Erreur lors du chargement");
       navigate("/league");
     }
   }, [error, navigate]);
@@ -102,7 +102,7 @@ export default function LeagueDetailPage() {
     try {
       await navigator.clipboard.writeText(league.code);
       setCopied(true);
-      toast.success("Code copie !");
+      toast.success("Code copié !");
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("Impossible de copier");
@@ -116,7 +116,7 @@ export default function LeagueDetailPage() {
     haptic("medium");
 
     const shareUrl = `${window.location.origin}/join/${league?.code}`;
-    const shareText = `Join my F1 league "${league.name}" sur PRONOKIF !`;
+    const shareText = `Rejoins ma ligue F1 "${league.name}" sur PRONOKIF !`;
 
     if (navigator.share) {
       try {
@@ -148,7 +148,7 @@ export default function LeagueDetailPage() {
 
   const saveChanges = async () => {
     if (!editName.trim()) {
-      toast.error("Le nom ne peut pas etre vide");
+      toast.error("Le nom ne peut pas être vide");
       return;
     }
     setSaving(true);
@@ -159,9 +159,9 @@ export default function LeagueDetailPage() {
       });
       refetch();
       setIsEditing(false);
-      toast.success("League updated!");
+      toast.success("Ligue mise à jour !");
     } catch (e: unknown) {
-      toast.error(getApiError(e, "Error while updating"));
+      toast.error(getApiError(e, "Erreur lors de la mise à jour"));
     } finally {
       setSaving(false);
     }
@@ -177,7 +177,7 @@ export default function LeagueDetailPage() {
   if (!league) {
     return (
       <div className="min-h-screen bg-pk-carbon flex items-center justify-center">
-        <p className="text-sm text-pk-titane">Ligue non trouvee</p>
+        <p className="text-sm text-pk-titane">Ligue non trouvée</p>
       </div>
     );
   }
@@ -204,7 +204,7 @@ export default function LeagueDetailPage() {
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   className="w-full font-display text-lg bg-pk-anthracite border border-white/[0.08] rounded-lg px-3 py-1.5 text-pk-piste placeholder:text-pk-titane focus:border-pk-red/40 focus:outline-none focus:ring-1 focus:ring-pk-red/20 transition-colors"
-                  placeholder="League name"
+                  placeholder="Nom de la ligue"
                   data-testid="league-edit-name"
                 />
               ) : (
@@ -215,7 +215,7 @@ export default function LeagueDetailPage() {
                     <button
                       onClick={startEditing}
                       className="p-1 text-pk-titane hover:text-pk-amber transition-colors flex-shrink-0"
-                      title="Edit league"
+                      title="Modifier la ligue"
                       data-testid="league-edit-btn"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -226,7 +226,7 @@ export default function LeagueDetailPage() {
               <div className="flex items-center gap-3 mt-0.5">
                 <span className="font-data text-[0.5625rem] text-pk-titane flex items-center gap-1">
                   <Users className="w-3 h-3" />
-                  {members.length} members
+                  {members.length} membres
                 </span>
                 <button
                   onClick={copyCode}
@@ -272,7 +272,7 @@ export default function LeagueDetailPage() {
                 <button
                   onClick={shareLeague}
                   className="p-2 rounded-lg bg-pk-emerald/[0.1] border border-pk-emerald/20 text-pk-emerald hover:bg-pk-emerald/[0.2] transition-colors"
-                  title="Share"
+                  title="Partager"
                   data-testid="league-share-btn"
                 >
                   <Share2 className="w-4 h-4" />
@@ -286,7 +286,7 @@ export default function LeagueDetailPage() {
                   data-testid="league-chat-btn"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  Chat
+                  Discussion
                 </button>
               </div>
             )}
@@ -315,14 +315,14 @@ export default function LeagueDetailPage() {
             >
               <label className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5" />
-                League description
+                Description de la ligue
               </label>
               <textarea
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
                 className="w-full bg-pk-anthracite border border-white/[0.08] rounded-lg p-3 text-pk-piste text-sm resize-none focus:border-pk-red/40 focus:outline-none focus:ring-1 focus:ring-pk-red/20 transition-colors placeholder:text-pk-titane"
                 rows={3}
-                placeholder="Describe your league in a few words... (optional)"
+                placeholder="Décris ta ligue en quelques mots... (optionnel)"
                 maxLength={500}
                 data-testid="league-edit-description"
               />
@@ -348,7 +348,7 @@ export default function LeagueDetailPage() {
             >
               <FileText className="w-5 h-5 text-pk-titane group-hover:text-pk-amber mx-auto mb-1.5 transition-colors" />
               <p className="text-xs text-pk-titane group-hover:text-pk-piste/70 transition-colors">
-                Add a description to your league
+                Ajoute une description à ta ligue
               </p>
             </motion.button>
           ) : null}
@@ -357,8 +357,8 @@ export default function LeagueDetailPage() {
         {/* Tab Toggle */}
         <motion.div variants={fadeUp} className="flex gap-1.5">
           {[
-            { id: "leaderboard", label: "Leaderboard", Icon: Trophy },
-            { id: "members", label: "Members", Icon: Users },
+            { id: "leaderboard", label: "Classement", Icon: Trophy },
+            { id: "members", label: "Membres", Icon: Users },
           ].map((tab) => (
             <button
               key={tab.id}

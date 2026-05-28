@@ -48,12 +48,12 @@ export default function SetUsernamePage() {
     try {
       await setUsername(username);
       haptic("success");
-      toast.success("Pseudo enregistre !");
+      toast.success("Pseudo enregistré !");
       navigate("/league");
     } catch (error: unknown) {
       const message =
         (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-        "This username is already taken";
+        "Ce pseudo est déjà pris";
       haptic("error");
       toast.error(message);
     } finally {
@@ -80,7 +80,7 @@ export default function SetUsernamePage() {
             <div className="h-1 flex-1 rounded-full bg-pk-red" />
             <div className="h-1 flex-1 rounded-full bg-pk-red" />
           </div>
-          <p className="font-data text-[0.5rem] text-pk-titane text-right">Etape 3/3</p>
+          <p className="font-data text-[0.5rem] text-pk-titane text-right">Étape 3/3</p>
         </motion.div>
 
         {/* Big Avatar */}
@@ -88,8 +88,8 @@ export default function SetUsernamePage() {
           <div className="w-24 h-24 rounded-full bg-pk-surface border-2 border-white/[0.08] flex items-center justify-center mx-auto mb-3 text-4xl">
             {selectedEmoji}
           </div>
-          <h1 className="font-display text-xl mb-1">Choose your username</h1>
-          <p className="text-xs text-pk-titane">This is how your friends will see you.</p>
+          <h1 className="font-display text-xl mb-1">Choisis ton pseudo</h1>
+          <p className="text-xs text-pk-titane">C'est comme ça que tes amis te verront.</p>
         </motion.div>
 
         {/* Emoji scroll */}
@@ -173,7 +173,7 @@ export default function SetUsernamePage() {
                 <p className="font-data text-[0.5rem] text-pk-titane">Niveau 1</p>
               </div>
               <span className="font-data text-[0.5rem] px-2 py-0.5 rounded-full bg-pk-red/20 text-pk-red">
-                New
+                Nouveau
               </span>
             </motion.div>
           )}
@@ -185,7 +185,7 @@ export default function SetUsernamePage() {
             className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm flex items-center justify-center gap-2 shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-50"
             data-testid="username-submit"
           >
-            {isLoading ? "Saving..." : "Let.s go!"}
+            {isLoading ? "Enregistrement..." : "C'est parti !"}
             <ChevronRight className="w-4 h-4" />
           </button>
         </motion.form>

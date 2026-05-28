@@ -194,7 +194,7 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
       });
     } catch (e: unknown) {
       console.error("Error fetching race results:", e);
-      toast.error("Error while loading results");
+      toast.error("Erreur lors du chargement des résultats");
     } finally {
       setLoadingResults(false);
     }
@@ -212,7 +212,7 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
       <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-4">
         <h3 className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-3 flex items-center gap-1.5">
           <Calendar className="w-3.5 h-3.5" />
-          Selectionner un Grand Prix
+          Sélectionner un Grand Prix
         </h3>
         <motion.div
           className="space-y-1.5 max-h-64 overflow-y-auto scrollbar-none"
@@ -280,7 +280,7 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
                     className={`w-4 h-4 ${isSelected ? "text-pk-red" : "text-pk-titane"}`}
                   />
                 ) : (
-                  <span className="font-data text-[0.5rem] text-pk-titane">Upcoming</span>
+                  <span className="font-data text-[0.5rem] text-pk-titane">À venir</span>
                 )}
               </motion.button>
             );
@@ -306,14 +306,14 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
             {loadingResults ? (
               <div className="py-8 text-center">
                 <Loader2 className="w-8 h-8 text-pk-red animate-spin mx-auto mb-2" />
-                <p className="text-xs text-pk-titane">Loading results...</p>
+                <p className="text-xs text-pk-titane">Chargement des résultats...</p>
               </div>
             ) : raceResults ? (
               <>
                 {/* Results Sub-tabs */}
                 <div className="flex flex-wrap gap-1.5 mb-4">
                   {[
-                    { key: "race", label: "Race" },
+                    { key: "race", label: "Course" },
                     { key: "qualifying", label: "Qualifs" },
                     ...(raceResults.hasSprint ? [{ key: "sprint", label: "Sprint" }] : []),
                     { key: "practice", label: "Essais" },
@@ -361,7 +361,7 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
               </>
             ) : (
               <p className="text-xs text-pk-titane text-center py-4">
-                Select a finished Grand Prix to view results
+                Sélectionne un Grand Prix terminé pour voir les résultats
               </p>
             )}
           </motion.div>

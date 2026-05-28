@@ -95,11 +95,11 @@ export default function ProfilePage() {
       await api.avatars.select(avatarId);
       if (updateUser) updateUser({ avatar_id: avatarId, custom_avatar_url: null });
       haptic("success");
-      toast.success("Avatar mis a jour !");
+      toast.success("Avatar mis à jour !");
       setShowAvatarModal(false);
     } catch {
       haptic("error");
-      toast.error("Error while updating");
+      toast.error("Erreur lors de la mise a jour");
     }
   };
 
@@ -115,10 +115,10 @@ export default function ProfilePage() {
           avatar_id: undefined,
           custom_avatar_url: (res.data as { avatar_url: string }).avatar_url,
         });
-      toast.success("Photo uploadee !");
+      toast.success("Photo uploadée !");
       setShowAvatarModal(false);
     } catch (e: unknown) {
-      toast.error(getApiError(e, "Error while uploading"));
+      toast.error(getApiError(e, "Erreur lors de l'upload"));
     }
   };
 
@@ -144,7 +144,7 @@ export default function ProfilePage() {
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <h1 className="font-display text-lg">My Profile</h1>
+            <h1 className="font-display text-lg">Mon profil</h1>
           </div>
           <button
             onClick={handleLogout}
@@ -215,7 +215,7 @@ export default function ProfilePage() {
               <Trophy className="w-4.5 h-4.5 text-pk-amber" />
             </div>
             <p className="font-data text-2xl font-bold">{stats.totalPoints}</p>
-            <p className="font-data text-[0.5625rem] text-pk-titane uppercase">Total points</p>
+            <p className="font-data text-[0.5625rem] text-pk-titane uppercase">Points totaux</p>
           </div>
           <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-4 text-center">
             <div className="w-9 h-9 rounded-lg bg-pk-red/[0.12] flex items-center justify-center mx-auto mb-2">
@@ -262,7 +262,7 @@ export default function ProfilePage() {
           <QuickLink
             icon={MessageSquare}
             label="Picks Perso"
-            sub="Create fun picks"
+            sub="Cree tes picks perso"
             color="bg-purple-500/[0.12]"
             iconColor="text-purple-400"
             onClick={() => navigate("/custom-predictions")}
@@ -270,8 +270,8 @@ export default function ProfilePage() {
           />
           <QuickLink
             icon={Crown}
-            label="Global Leaderboard"
-            sub="All players"
+            label="Classement global"
+            sub="Tous les joueurs"
             color="bg-pk-info/[0.12]"
             iconColor="text-pk-info"
             onClick={() => navigate("/leaderboard/global")}
@@ -298,7 +298,7 @@ export default function ProfilePage() {
               <div className="w-8 h-8 rounded-md bg-pk-amber/[0.12] flex items-center justify-center">
                 <Trophy className="w-4 h-4 text-pk-amber" />
               </div>
-              <span className="font-display text-sm">League Leaderboard</span>
+              <span className="font-display text-sm">Classement de ligue</span>
             </div>
             <ChevronRight className="w-4 h-4 text-pk-titane" />
           </button>
@@ -325,7 +325,7 @@ export default function ProfilePage() {
             data-testid="logout-btn-bottom"
           >
             <LogOut className="w-4 h-4" />
-            Deconnexion
+            Déconnexion
           </button>
         </motion.div>
 

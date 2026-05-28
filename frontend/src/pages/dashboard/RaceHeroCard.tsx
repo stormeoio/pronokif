@@ -127,7 +127,7 @@ export default function RaceHeroCard({
           type="button"
           onClick={onViewDetails}
           className="relative block w-full aspect-[16/9] overflow-hidden border-b border-white/[0.08]"
-          aria-label={`View details for ${race.name}`}
+          aria-label={`Voir les détails de ${race.name}`}
         >
           <img
             src={thumbnailUrl}
@@ -180,7 +180,7 @@ export default function RaceHeroCard({
               bg-pk-amber/10 border border-pk-amber/20
               font-mono text-[0.5625rem] uppercase tracking-[0.1em] text-pk-amber"
           >
-            Sprint Weekend
+            Week-end Sprint
           </div>
         )}
 
@@ -224,12 +224,12 @@ export default function RaceHeroCard({
                   isLive ? "text-pk-red" : "text-pk-piste"
                 }`}
               >
-                {isCancelled ? "Race cancelled" : isLive ? "Race in progress" : "Race finished"}
+                {isCancelled ? "Course annulée" : isLive ? "Course en cours" : "Course terminée"}
               </span>
             </div>
             {isLive && raceEndLabel && (
               <p className="mt-1 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-pk-titane">
-                Estimated finish {raceEndLabel} locale
+                Fin estimée {raceEndLabel} heure locale
               </p>
             )}
           </div>
@@ -241,7 +241,7 @@ export default function RaceHeroCard({
             {hasPrediction ? (
               <button onClick={onPredict} className="btn-pk-outline text-[0.8125rem] px-4">
                 <Clock {...iconSmall} size={14} strokeWidth={2} />
-                Edit my predictions
+                Modifier mes pronos
               </button>
             ) : (
               <BorderGlowButton
@@ -260,7 +260,7 @@ export default function RaceHeroCard({
         )}
         {race.can_predict === false && (
           <p className="font-mono text-[0.6875rem] text-pk-titane text-center">
-            Predictions are closed for this race
+            Les pronostics sont fermés pour cette course
           </p>
         )}
       </div>

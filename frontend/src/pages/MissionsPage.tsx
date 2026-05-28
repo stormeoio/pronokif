@@ -47,7 +47,7 @@ type TabKey = "active" | "complete" | "season";
 const TABS: { key: TabKey; label: string }[] = [
   { key: "active", label: "Actives" },
   { key: "complete", label: "Completees" },
-  { key: "season", label: "Season" },
+  { key: "season", label: "Saison" },
 ];
 
 /* ── Rarity colors ─────────────────────────────────────── */
@@ -154,10 +154,21 @@ export default function MissionsPage() {
   const rmProps = getReducedMotionProps(prefersReducedMotion);
 
   useEffect(() => {
-    const id = requestIdleCallback(() => {
-      import("../components/three/VictoryExplosion");
-    });
-    return () => cancelIdleCallback(id);
+    const preloadExplosion = () => {
+      void import("../components/three/VictoryExplosion");
+    };
+    const idleWindow = window as Window & {
+      requestIdleCallback?: (callback: () => void) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+
+    if (typeof idleWindow.requestIdleCallback === "function") {
+      const id = idleWindow.requestIdleCallback(preloadExplosion);
+      return () => idleWindow.cancelIdleCallback?.(id);
+    }
+
+    const id = window.setTimeout(preloadExplosion, 0);
+    return () => window.clearTimeout(id);
   }, []);
 
   const [activeTab, setActiveTab] = useState<TabKey>("active");
@@ -233,7 +244,7 @@ export default function MissionsPage() {
     } catch (e: unknown) {
       haptic("error");
       toast.error(
-        (e as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Error",
+        (e as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Erreur",
       );
     } finally {
       setClaiming(null);
@@ -422,7 +433,7 @@ export default function MissionsPage() {
                         className="px-4 py-1.5 rounded-md bg-pk-emerald text-white font-data text-[0.625rem] font-bold active:scale-[0.95] transition-transform disabled:opacity-50"
                         data-testid={`claim-mission-${mission.mission_id}`}
                       >
-                        {isClaiming ? "..." : "Reclamer"}
+                        {isClaiming ? "..." : "Recuperer"}
                       </button>
                     </motion.div>
                   )}
@@ -445,7 +456,7 @@ export default function MissionsPage() {
             icon={activeTab === "complete" ? "🏅" : "🎯"}
             message={
               activeTab === "complete"
-                ? "No mission completed yet."
+                ? "Aucune mission terminee."
                 : "Toutes les missions sont terminees !"
             }
           />

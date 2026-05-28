@@ -102,7 +102,7 @@ export const fadeIn: Variants = {
 };
 
 /* ------------------------------------------------
-   VARIANTS — Slide in from left (leaderboard rows)
+   VARIANTS — Slide in from left (classement rows)
    ------------------------------------------------ */
 export const slideInLeft: Variants = {
   hidden: {

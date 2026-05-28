@@ -160,7 +160,7 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
       };
     if (s >= 30)
       return {
-        label: "Very good!",
+        label: "Tres bien !",
         color: "text-pk-info",
         bg: "from-pk-info/20 to-pk-info/5",
         grade: "A",
@@ -180,7 +180,7 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
         grade: "C",
       };
     return {
-      label: "Needs work",
+      label: "A travailler",
       color: "text-pk-red",
       bg: "from-pk-red/20 to-pk-red/5",
       grade: "D",
@@ -214,12 +214,12 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
   const handleShareToLeague = async (leagueId: number, leagueName: string) => {
     setSharing(true);
     try {
-      const message = `🎯 J'ai fait ${score} targets au Batak Pro ! ${getResultGrade(score).label} Qui peut faire mieux ?`;
+      const message = `🎯 J'ai fait ${score} cibles au Batak Pro ! ${getResultGrade(score).label} Qui peut faire mieux ?`;
       await api.chat.send(String(leagueId), { content: message });
-      toast.success(`Score shared in ${leagueName} !`);
+      toast.success(`Score partage dans ${leagueName} !`);
       setShowShareModal(false);
     } catch (error: unknown) {
-      toast.error("Error lors du partage");
+      toast.error("Erreur lors du partage");
     } finally {
       setSharing(false);
     }
@@ -248,7 +248,7 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
               <h3 className="font-display text-sm">Batak Pro</h3>
               {isTraining && (
                 <span className="font-data text-[0.5625rem] text-pk-info uppercase tracking-wider">
-                  Training
+                  Entrainement
                 </span>
               )}
             </div>
@@ -372,7 +372,7 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
               exit={{ opacity: 0, y: -10 }}
             >
               <p className="text-pk-titane text-sm">
-                Clique sur les targets le plus vite possible !
+                Clique sur les cibles le plus vite possible !
               </p>
               <button
                 onClick={startGame}
@@ -380,7 +380,7 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
                 disabled={!isTraining && attemptsRemaining === 0}
                 data-testid="batak-start-btn"
               >
-                <Play className="w-5 h-5" /> START (30s)
+                <Play className="w-5 h-5" /> COMMENCER (30s)
               </button>
             </motion.div>
           )}
@@ -416,7 +416,7 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
                   transition={{ type: "spring", stiffness: 400 }}
                 >
                   {score}
-                  <span className="text-lg ml-1 opacity-70">targets</span>
+                  <span className="text-lg ml-1 opacity-70">cibles</span>
                 </motion.p>
                 <p className="font-display text-sm mt-1 text-white/80">
                   {getResultGrade(score).label}
@@ -429,14 +429,14 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
                   onClick={resetGame}
                   className="flex-1 h-11 rounded-lg border border-white/[0.08] text-pk-titane font-display text-xs hover:text-pk-piste hover:border-white/[0.15] transition-colors flex items-center justify-center gap-2"
                 >
-                  <RotateCcw className="w-4 h-4" /> Try again
+                  <RotateCcw className="w-4 h-4" /> Reessayer
                 </button>
                 <button
                   onClick={handleSubmit}
                   className="flex-1 h-11 rounded-lg bg-pk-red text-white font-display text-xs shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   disabled={!isTraining && attemptsRemaining === 0}
                 >
-                  <Trophy className="w-4 h-4" /> Save
+                  <Trophy className="w-4 h-4" /> Sauvegarder
                 </button>
               </div>
               <button
@@ -444,7 +444,7 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
                 className="w-full h-11 rounded-lg border border-pk-emerald/30 text-pk-emerald font-display text-xs hover:bg-pk-emerald/5 transition-colors flex items-center justify-center gap-2"
                 data-testid="batak-share-btn"
               >
-                <Share2 className="w-4 h-4" /> Share in a league
+                <Share2 className="w-4 h-4" /> Partager dans une ligue
               </button>
             </motion.div>
           )}
@@ -480,9 +480,9 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
                   <Share2 className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-display text-sm text-pk-piste">Share mon score</h3>
+                  <h3 className="font-display text-sm text-pk-piste">Partager mon score</h3>
                   <p className="text-xs text-pk-titane">
-                    <span className="text-pk-info font-data">{score} targets</span> —{" "}
+                    <span className="text-pk-info font-data">{score} cibles</span> —{" "}
                     {getResultGrade(score).label}
                   </p>
                 </div>
@@ -495,12 +495,12 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                   />
-                  <p className="text-pk-titane text-sm mt-3">Loading...</p>
+                  <p className="text-pk-titane text-sm mt-3">Chargement...</p>
                 </div>
               ) : userLeagues.length === 0 ? (
                 <div className="text-center py-8">
                   <MessageCircle className="w-10 h-10 text-pk-titane/40 mx-auto mb-2" />
-                  <p className="text-pk-titane text-sm">No league rejointe</p>
+                  <p className="text-pk-titane text-sm">Aucune ligue rejointe</p>
                 </div>
               ) : (
                 <motion.div

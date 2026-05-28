@@ -28,8 +28,8 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { path: "/", icon: Home, label: "Home" },
-  { path: "/predictions", icon: Target, label: "Picks" },
+  { path: "/", icon: Home, label: "Accueil" },
+  { path: "/predictions", icon: Target, label: "Pronos" },
   { path: "/championship", icon: Flag, label: "Champ." },
   { path: "/league", icon: Users, label: "Ligues" },
   { path: "/profile", icon: User, label: "Profil" },

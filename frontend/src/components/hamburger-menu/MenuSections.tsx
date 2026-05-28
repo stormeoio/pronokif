@@ -14,19 +14,19 @@ export { ScoringContent } from "./ScoringContent";
 export function TutorialContent() {
   const steps = [
     {
-      title: "1. Create or join a league",
+      title: "1. Crée ou rejoins une ligue",
       description:
-        "Tap the Leagues tab at the bottom of the screen. You can create your own league and invite friends with a code, or join an existing league.",
+        "Appuie sur l'onglet Ligues en bas de l'écran. Tu peux créer ta propre ligue et inviter tes potes avec un code, ou rejoindre une ligue existante.",
     },
     {
-      title: "2. Make your predictions",
+      title: "2. Fais tes pronostics",
       description:
-        "Before each Grand Prix, go to the Picks tab. Predict pole position, the qualifying top 10, the winner, the race top 10, and bonuses.",
+        "Avant chaque Grand Prix, va dans l'onglet Pronos. Prédi la pole position, le top 10 des qualifications, le vainqueur, le top 10 de la course, et les bonus.",
     },
     {
       title: "3. Week-end Sprint",
       description:
-        "During a Sprint weekend, you have two sets of predictions: one for the sprint (closes before SQ1) and one for the main race (closes before Q1).",
+        "Lors d'un week-end Sprint, tu as deux séries de pronostics : une pour le sprint (ferme avant SQ1) et une pour la course principale (ferme avant Q1).",
     },
     {
       title: "4. Bonus",
@@ -36,17 +36,17 @@ export function TutorialContent() {
     {
       title: "5. Marque des points",
       description:
-        "After each race, results are entered and your points are calculated automatically. Check your profile history for the details.",
+        "Après chaque course, les résultats sont saisis et tes points sont calculés automatiquement. Consulte l'historique de ton profil pour les détails.",
     },
     {
       title: "6. Mini-jeux",
       description:
-        "Play mini-games (Reaction and Batak) to earn bonus points and challenge your friends. The best player in each league wins +2 points!",
+        "Joue aux mini-jeux (Réaction et Batak) pour gagner des points bonus et défier tes potes. Le meilleur joueur de chaque ligue gagne +2 points !",
     },
     {
       title: "7. Classement",
       description:
-        "Track your league and global standings. Beat your friends and become the season champion.",
+        "Suis le classement de ta ligue et le classement général. Bats tes potes et deviens le champion de la saison.",
     },
   ];
 
@@ -54,8 +54,8 @@ export function TutorialContent() {
     <div className="space-y-4">
       <SectionHeader
         icon={BookOpen}
-        title="Tutorial"
-        subtitle="How to play PRONOKIF"
+        title="Tutoriel"
+        subtitle="Comment jouer à PRONOKIF"
         color="bg-pk-info"
       />
       <motion.div
@@ -85,50 +85,50 @@ export function PrivacyContent() {
     <div className="space-y-4">
       <SectionHeader
         icon={Shield}
-        title="Privacy"
-        subtitle="Data protection"
+        title="Confidentialité"
+        subtitle="Protection des données"
         color="bg-pk-emerald"
       />
       <div className="space-y-4 text-sm text-pk-piste/80 leading-relaxed">
         <section>
-          <h4 className="font-display text-xs text-pk-emerald mb-2">Data collected</h4>
-          <p>PRONOKIF only collects the data needed to run the app:</p>
+          <h4 className="font-display text-xs text-pk-emerald mb-2">Données collectées</h4>
+          <p>PRONOKIF ne collecte que les données nécessaires au fonctionnement de l'appli :</p>
           <ul className="list-disc list-inside mt-2 space-y-1 text-pk-titane">
-            <li>Email address (for authentication)</li>
-            <li>Username (for leaderboard display)</li>
-            <li>Pickstics et scores de jeu</li>
+            <li>Adresse email (pour l'authentification)</li>
+            <li>Pseudo (pour l'affichage au classement)</li>
+            <li>Pronostics et scores de jeu</li>
             <li>Appartenances aux ligues</li>
           </ul>
         </section>
         <section>
-          <h4 className="font-display text-xs text-pk-emerald mb-2">Data usage</h4>
-          <p>Your data is used exclusively to:</p>
+          <h4 className="font-display text-xs text-pk-emerald mb-2">Utilisation des données</h4>
+          <p>Tes données sont utilisées exclusivement pour :</p>
           <ul className="list-disc list-inside mt-2 space-y-1 text-pk-titane">
-            <li>Manage your account and predictions</li>
+            <li>Gérer ton compte et tes pronostics</li>
             <li>Calculer et afficher les classements</li>
             <li>Permettre les interactions entre membres (chat, ligues)</li>
           </ul>
         </section>
         <section>
-          <h4 className="font-display text-xs text-pk-emerald mb-2">Security</h4>
-          <p>Your data is protected:</p>
+          <h4 className="font-display text-xs text-pk-emerald mb-2">Sécurité</h4>
+          <p>Tes données sont protégées :</p>
           <ul className="list-disc list-inside mt-2 space-y-1 text-pk-titane">
-            <li>Encrypted passwords (bcrypt)</li>
-            <li>Secure sign-in (HTTPS)</li>
-            <li>No data sold to third parties</li>
+            <li>Mots de passe chiffrés (bcrypt)</li>
+            <li>Connexion sécurisée (HTTPS)</li>
+            <li>Aucune donnée vendue à des tiers</li>
           </ul>
         </section>
         <section>
-          <h4 className="font-display text-xs text-pk-emerald mb-2">Vos droits</h4>
-          <p>Under GDPR, you can:</p>
+          <h4 className="font-display text-xs text-pk-emerald mb-2">Tes droits</h4>
+          <p>Conformément au RGPD, tu peux :</p>
           <ul className="list-disc list-inside mt-2 space-y-1 text-pk-titane">
-            <li>Access your personal data</li>
+            <li>Accéder à tes données personnelles</li>
             <li>Demander des modifications ou la suppression</li>
-            <li>Export your data</li>
+            <li>Exporter tes données</li>
           </ul>
           <p className="mt-2 text-pk-titane">
-            Contact us at <span className="text-pk-emerald">pronokif@gmail.com</span> to exercise
-            your rights.
+            Contacte-nous à <span className="text-pk-emerald">pronokif@gmail.com</span> pour exercer
+            tes droits.
           </p>
         </section>
       </div>
@@ -142,44 +142,47 @@ export function LegalContent() {
     <div className="space-y-4">
       <SectionHeader
         icon={FileText}
-        title="Legal notice"
+        title="Mentions légales"
         subtitle="Informations juridiques"
         color="bg-pk-amber"
       />
       <div className="space-y-4 text-sm text-pk-piste/80 leading-relaxed">
         <section>
-          <h4 className="font-display text-xs text-pk-amber mb-2">App publisher</h4>
-          <p>PRONOKIF is a free, non-commercial game app created by a Formula 1 enthusiast.</p>
+          <h4 className="font-display text-xs text-pk-amber mb-2">Éditeur de l'appli</h4>
+          <p>
+            PRONOKIF est une appli de jeu gratuite et non commerciale, créée par un passionné de
+            Formule 1.
+          </p>
           <p className="mt-2 text-pk-titane">
             Contact : <span className="text-pk-amber">pronokif@gmail.com</span>
           </p>
         </section>
         <section>
-          <h4 className="font-display text-xs text-pk-amber mb-2">Hosting</h4>
-          <p>The app is hosted on the Emergent platform.</p>
+          <h4 className="font-display text-xs text-pk-amber mb-2">Hébergement</h4>
+          <p>L'application est hébergée sur la plateforme Emergent.</p>
         </section>
         <section>
-          <h4 className="font-display text-xs text-pk-amber mb-2">Intellectual property</h4>
+          <h4 className="font-display text-xs text-pk-amber mb-2">Propriété intellectuelle</h4>
           <p>
-            PRONOKIF is not affiliated with Formula 1, the FIA, or FOM. Trademarks, logos, and names
-            of drivers/teams belong to their respective owners.
+            PRONOKIF n'est pas affilié à la Formule 1, la FIA ou FOM. Les marques, logos et noms de
+            pilotes/écuries appartiennent à leurs propriétaires respectifs.
           </p>
-          <p className="mt-2">The app graphics and code are the property of the publisher.</p>
+          <p className="mt-2">Les visuels et le code de l'appli sont la propriété de l'éditeur.</p>
         </section>
         <section>
-          <h4 className="font-display text-xs text-pk-amber mb-2">Liability</h4>
+          <h4 className="font-display text-xs text-pk-amber mb-2">Responsabilité</h4>
           <p>
-            PRONOKIF is a prediction game with no financial stakes. The publisher declines any
-            liability for use of the app.
+            PRONOKIF est un jeu de pronostics sans enjeu financier. L'éditeur décline toute
+            responsabilité quant à l'utilisation de l'appli.
           </p>
         </section>
         <section>
           <h4 className="font-display text-xs text-pk-amber mb-2">Conditions d'utilisation</h4>
           <ul className="list-disc list-inside space-y-1 text-pk-titane">
             <li>L'application est gratuite et le restera</li>
-            <li>Registration implies acceptance of the rules</li>
-            <li>Inappropriate behavior may lead to exclusion</li>
-            <li>The administrator reserves the right to change the rules</li>
+            <li>L'inscription implique l'acceptation des règles</li>
+            <li>Tout comportement inapproprié peut entraîner une exclusion</li>
+            <li>L'administrateur se réserve le droit de modifier les règles</li>
           </ul>
         </section>
       </div>
@@ -195,10 +198,11 @@ export function ContactContent() {
 
   return (
     <div className="space-y-4">
-      <SectionHeader icon={Mail} title="Contact" subtitle="Contactez-nous" color="bg-pk-red" />
+      <SectionHeader icon={Mail} title="Contact" subtitle="Écris-nous" color="bg-pk-red" />
       <div className="space-y-4">
         <p className="text-sm text-pk-piste/80 leading-relaxed">
-          Question, suggestion, or bug to report? Feel free to contact the PRONOKIF administrator.
+          Une question, une suggestion ou un bug à signaler ? N'hésite pas à contacter
+          l'administrateur de PRONOKIF.
         </p>
         <div className="bg-white/[0.04] rounded-lg p-4 border border-pk-red/20">
           <p className="font-data text-[0.5625rem] text-pk-titane mb-2">Adresse email</p>
@@ -209,12 +213,12 @@ export function ContactContent() {
           className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm shadow-glow-red active:scale-[0.97] transition-transform flex items-center justify-center gap-2"
           data-testid="contact-email-btn"
         >
-          <Mail className="w-5 h-5" /> Send an email <ExternalLink className="w-4 h-4" />
+          <Mail className="w-5 h-5" /> Envoyer un email <ExternalLink className="w-4 h-4" />
         </button>
         <div className="bg-white/[0.04] rounded-lg p-3 border border-white/[0.08]">
           <p className="text-xs text-pk-titane">
-            You can also use the <span className="text-pk-info">?</span> button at the top right of
-            the screen to send quick feedback directly from the app.
+            Tu peux aussi utiliser le bouton <span className="text-pk-info">?</span> en haut à
+            droite de l'écran pour envoyer un retour rapide directement depuis l'appli.
           </p>
         </div>
       </div>

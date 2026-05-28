@@ -64,7 +64,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     if (!trimmedMessage || sending) return;
 
     if (trimmedMessage.length > 2000) {
-      toast.error("Message too long (max 2000 characters)");
+      toast.error("Message trop long (max 2000 caractères)");
       return;
     }
 
@@ -77,14 +77,14 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       });
 
       setSent(true);
-      toast.success("Message sent!");
+      toast.success("Message envoyé !");
       setTimeout(() => {
         handleClose();
       }, 2000);
     } catch (error: unknown) {
       console.error("Feedback submit error:", error);
       const err = error as { response?: { data?: { detail?: string } } };
-      const errorMessage = err.response?.data?.detail || "Error while sending. Try again.";
+      const errorMessage = err.response?.data?.detail || "Erreur lors de l'envoi. Réessaye.";
       toast.error(errorMessage);
       setSending(false);
     }
@@ -145,9 +145,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
               <CheckCircle className="w-8 h-8 text-pk-emerald" />
             </div>
             <h3 className="font-display text-lg text-pk-emerald mb-2">Merci !</h3>
-            <p className="text-sm text-pk-titane">
-              Your message has been sent to the administrator.
-            </p>
+            <p className="text-sm text-pk-titane">Ton message a été envoyé à l'administrateur.</p>
           </div>
         ) : (
           /* Form */
@@ -155,9 +153,9 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
             {/* Info Text */}
             <div className="bg-pk-info/[0.06] border border-pk-info/20 rounded-lg p-4">
               <p className="text-sm text-pk-piste/80">
-                Help me improve the app! Share your
-                <span className="text-pk-info"> retours</span>, des
-                <span className="text-pk-red"> bugs</span> et des
+                Aide-moi à améliorer l'appli ! Partage tes
+                <span className="text-pk-info"> retours</span>, tes
+                <span className="text-pk-red"> bugs</span> et tes
                 <span className="text-pk-amber"> suggestions</span>.
               </p>
             </div>
@@ -165,7 +163,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
             {/* Category Selection */}
             <div>
               <p className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-2">
-                Category
+                Catégorie
               </p>
               <div className="grid grid-cols-3 gap-2">
                 {CATEGORIES.map((cat) => {
@@ -210,10 +208,10 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder={
                   category === "bug"
-                    ? "Describe the issue you encountered..."
+                    ? "Décris le problème rencontré..."
                     : category === "suggestion"
-                      ? "What feature would you like to see?"
-                      : "Share your experience..."
+                      ? "Quelle fonctionnalité aimerais-tu voir ?"
+                      : "Partage ton expérience..."
                 }
                 maxLength={2000}
                 rows={5}
@@ -221,7 +219,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                 data-testid="feedback-message"
               />
               <p className="font-data text-[0.5625rem] text-pk-titane/60 mt-1 text-right">
-                {message.length}/2000 characters
+                {message.length}/2000 caractères
               </p>
             </div>
 
@@ -236,12 +234,12 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
               {sending ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Sending...
+                  Envoi...
                 </>
               ) : (
                 <>
                   <Send className="w-5 h-5" />
-                  Send my message
+                  Envoyer mon message
                 </>
               )}
             </button>

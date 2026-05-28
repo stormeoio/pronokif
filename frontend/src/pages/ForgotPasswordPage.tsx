@@ -37,7 +37,7 @@ export default function ForgotPasswordPage() {
       setResendTimer(60);
     } catch {
       haptic("error");
-      setError("An error occurred. Please try again.");
+      setError("Une erreur est survenue. Réessaye.");
       setStatus("idle");
     }
   };
@@ -85,15 +85,16 @@ export default function ForgotPasswordPage() {
             <div className="w-14 h-14 rounded-full bg-pk-emerald/[0.12] border border-pk-emerald/20 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-6 h-6 text-pk-emerald" />
             </div>
-            <h2 className="font-display text-lg mb-1">Email sent</h2>
+            <h2 className="font-display text-lg mb-1">Email envoyé</h2>
             <p className="text-xs text-pk-titane leading-relaxed mb-5 max-w-[260px] mx-auto">
-              If an account exists for this email, you will receive a link to reset your password.
+              Si un compte existe pour cet email, tu recevras un lien pour réinitialiser ton mot de
+              passe.
             </p>
 
             {/* Resend timer */}
             {resendTimer > 0 ? (
               <p className="font-data text-[0.5625rem] text-pk-titane mb-4">
-                Resend in {resendTimer}s
+                Renvoyer dans {resendTimer}s
               </p>
             ) : (
               <button
@@ -112,7 +113,7 @@ export default function ForgotPasswordPage() {
               className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm flex items-center justify-center gap-2 shadow-glow-red active:scale-[0.97] transition-transform mb-3"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              Open my mailbox
+              Ouvrir ma boîte mail
             </button>
 
             <Link
@@ -120,7 +121,7 @@ export default function ForgotPasswordPage() {
               className="text-xs text-pk-titane hover:text-pk-piste transition-colors inline-flex items-center gap-1"
             >
               <ArrowLeft className="w-3 h-3" />
-              Back to sign in
+              Retour à la connexion
             </Link>
           </motion.div>
         ) : (
@@ -129,8 +130,10 @@ export default function ForgotPasswordPage() {
               <div className="w-12 h-12 rounded-full bg-pk-red/[0.10] border border-pk-red/20 flex items-center justify-center mx-auto mb-3">
                 <Mail className="w-5 h-5 text-pk-red" />
               </div>
-              <h2 className="font-display text-lg mb-1">Forgot password?</h2>
-              <p className="text-xs text-pk-titane">Enter your email to receive a reset link.</p>
+              <h2 className="font-display text-lg mb-1">Mot de passe oublié ?</h2>
+              <p className="text-xs text-pk-titane">
+                Entre ton email pour recevoir un lien de réinitialisation.
+              </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -151,7 +154,7 @@ export default function ForgotPasswordPage() {
                 className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-50"
                 data-testid="forgot-password-submit"
               >
-                {status === "loading" ? "Sending..." : "Send link"}
+                {status === "loading" ? "Envoi..." : "Envoyer le lien"}
               </button>
             </form>
 
@@ -161,7 +164,7 @@ export default function ForgotPasswordPage() {
                 className="text-xs text-pk-titane hover:text-pk-piste transition-colors inline-flex items-center gap-1"
               >
                 <ArrowLeft className="w-3 h-3" />
-                Back to sign in
+                Retour à la connexion
               </Link>
             </div>
           </>

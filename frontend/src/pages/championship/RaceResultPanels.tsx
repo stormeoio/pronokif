@@ -60,10 +60,10 @@ export function RaceResultsList({ results }: { results: RaceResult[] }) {
       variants={staggerContainer}
     >
       <h4 className="font-data text-[0.5625rem] text-pk-red uppercase tracking-wider mb-2 flex items-center gap-1.5">
-        <Flag className="w-3 h-3" /> Race Standings
+        <Flag className="w-3 h-3" /> Classement Course
       </h4>
       {results.length === 0 ? (
-        <p className="text-xs text-pk-titane text-center py-4">Resultats non disponibles</p>
+        <p className="text-xs text-pk-titane text-center py-4">Résultats non disponibles</p>
       ) : (
         results.slice(0, 10).map((result) => (
           <motion.div
@@ -103,10 +103,10 @@ export function QualifyingResultsList({ results }: { results: QualifyingResult[]
       variants={staggerContainer}
     >
       <h4 className="font-data text-[0.5625rem] text-pk-amber uppercase tracking-wider mb-2 flex items-center gap-1.5">
-        <Clock className="w-3 h-3" /> Qualifying Standings
+        <Clock className="w-3 h-3" /> Classement Qualifications
       </h4>
       {results.length === 0 ? (
-        <p className="text-xs text-pk-titane text-center py-4">Resultats non disponibles</p>
+        <p className="text-xs text-pk-titane text-center py-4">Résultats non disponibles</p>
       ) : (
         results.slice(0, 10).map((result) => (
           <motion.div
@@ -145,10 +145,10 @@ export function SprintResultsList({ results }: { results: RaceResult[] }) {
       variants={staggerContainer}
     >
       <h4 className="font-data text-[0.5625rem] text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-        <Zap className="w-3 h-3" /> Sprint Standings
+        <Zap className="w-3 h-3" /> Classement Sprint
       </h4>
       {results.length === 0 ? (
-        <p className="text-xs text-pk-titane text-center py-4">Resultats non disponibles</p>
+        <p className="text-xs text-pk-titane text-center py-4">Résultats non disponibles</p>
       ) : (
         results.slice(0, 10).map((result) => (
           <motion.div
@@ -192,7 +192,7 @@ export function PracticeResultsList({ practice }: { practice: PracticeData }) {
               <Timer className="w-3 h-3" /> {sessionName}
             </h4>
             {!sessionData || sessionData.length === 0 ? (
-              <p className="text-xs text-pk-titane py-2">Data unavailable</p>
+              <p className="text-xs text-pk-titane py-2">Données indisponibles</p>
             ) : (
               <div className="space-y-1">
                 {sessionData
@@ -229,7 +229,7 @@ export function ExtrasPanel({ raceResults }: { raceResults: RaceResultsData }) {
       {/* Fastest Lap */}
       <div className="bg-purple-500/[0.06] border border-purple-500/20 rounded-lg p-4">
         <h4 className="font-data text-[0.5625rem] text-purple-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-          <Zap className="w-3 h-3" /> Fastest Lap in Race
+          <Zap className="w-3 h-3" /> Meilleur tour en course
         </h4>
         {raceResults.fastestLap ? (
           <div className="flex items-center gap-3">
@@ -253,19 +253,19 @@ export function ExtrasPanel({ raceResults }: { raceResults: RaceResultsData }) {
             <div className="text-right">
               <p className="font-data text-base text-purple-400">{raceResults.fastestLap.time}</p>
               <p className="font-data text-[0.5rem] text-pk-titane">
-                Lap {raceResults.fastestLap.lap}
+                Tour {raceResults.fastestLap.lap}
               </p>
             </div>
           </div>
         ) : (
-          <p className="text-xs text-pk-titane">Data unavailable</p>
+          <p className="text-xs text-pk-titane">Données indisponibles</p>
         )}
       </div>
 
       {/* First Corner Leader - Race */}
       <div className="bg-pk-emerald/[0.06] border border-pk-emerald/20 rounded-lg p-4">
         <h4 className="font-data text-[0.5625rem] text-pk-emerald uppercase tracking-wider mb-3 flex items-center gap-1.5">
-          <Target className="w-3 h-3" /> Leader at Turn 1 (Race)
+          <Target className="w-3 h-3" /> Leader au virage 1 (Course)
         </h4>
         {raceResults.firstCornerLeader ? (
           <div className="flex items-center gap-3">
@@ -275,11 +275,11 @@ export function ExtrasPanel({ raceResults }: { raceResults: RaceResultsData }) {
               </span>
             </div>
             <p className="text-xs text-pk-piste/70">
-              Driver #{raceResults.firstCornerLeader} led at the first corner
+              Le pilote #{raceResults.firstCornerLeader} menait au premier virage
             </p>
           </div>
         ) : (
-          <p className="text-xs text-pk-titane">Data unavailable via API</p>
+          <p className="text-xs text-pk-titane">Données indisponibles via l'API</p>
         )}
       </div>
 
@@ -287,7 +287,7 @@ export function ExtrasPanel({ raceResults }: { raceResults: RaceResultsData }) {
       {raceResults.hasSprint && (
         <div className="bg-pk-amber/[0.06] border border-pk-amber/20 rounded-lg p-4">
           <h4 className="font-data text-[0.5625rem] text-pk-amber uppercase tracking-wider mb-3 flex items-center gap-1.5">
-            <Target className="w-3 h-3" /> Leader at Turn 1 (Sprint)
+            <Target className="w-3 h-3" /> Leader au virage 1 (Sprint)
           </h4>
           {raceResults.sprintFirstCornerLeader ? (
             <div className="flex items-center gap-3">
@@ -297,11 +297,11 @@ export function ExtrasPanel({ raceResults }: { raceResults: RaceResultsData }) {
                 </span>
               </div>
               <p className="text-xs text-pk-piste/70">
-                Driver #{raceResults.sprintFirstCornerLeader} led at the first corner
+                Le pilote #{raceResults.sprintFirstCornerLeader} menait au premier virage
               </p>
             </div>
           ) : (
-            <p className="text-xs text-pk-titane">Data unavailable via API</p>
+            <p className="text-xs text-pk-titane">Données indisponibles via l'API</p>
           )}
         </div>
       )}

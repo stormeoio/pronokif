@@ -84,7 +84,11 @@ export default function LeagueList({
   if (leagues.length === 0) {
     return (
       <div className="mb-5" data-testid="league-list-empty">
-        <EmptyInline icon="🏆" title="No league" description="Create or join a league ci-dessous" />
+        <EmptyInline
+          icon="🏆"
+          title="Aucune ligue"
+          description="Crée ou rejoins une ligue ci-dessous"
+        />
       </div>
     );
   }
@@ -135,7 +139,7 @@ export default function LeagueList({
                     <h3 className="font-display text-sm truncate">{league.name}</h3>
                     {isActive && (
                       <span className="font-data text-[0.5rem] bg-pk-red/20 text-pk-red px-1.5 py-0.5 rounded uppercase tracking-wider">
-                        Active
+                        Actif
                       </span>
                     )}
                   </div>
@@ -158,7 +162,7 @@ export default function LeagueList({
                     onShareLeague(league);
                   }}
                   className="w-8 h-8 rounded-md flex items-center justify-center text-pk-emerald hover:bg-pk-emerald/[0.08] transition-colors"
-                  title="Share"
+                  title="Partager"
                   data-testid={`league-share-${league.id}`}
                 >
                   <Share2 className="w-3.5 h-3.5" />

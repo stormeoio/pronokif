@@ -31,16 +31,16 @@ function getBadges({
   return [
     {
       id: "first_prediction",
-      name: "Beginner",
-      description: "Premier pickstic",
+      name: "Debutant",
+      description: "Premier pronostic",
       icon: Target,
       color: "bg-pk-emerald",
       earned: totalPredictions >= 1,
     },
     {
       id: "five_predictions",
-      name: "Regular",
-      description: "5 predictions",
+      name: "Regulier",
+      description: "5 pronostics",
       icon: Flag,
       color: "bg-pk-info",
       earned: totalPredictions >= 5,
@@ -48,7 +48,7 @@ function getBadges({
     {
       id: "twenty_predictions",
       name: "Veteran",
-      description: "20 predictions",
+      description: "20 pronostics",
       icon: Star,
       color: "bg-pk-info",
       earned: totalPredictions >= 20,
@@ -56,7 +56,7 @@ function getBadges({
     {
       id: "hundred_points",
       name: "Scoreur",
-      description: "100 total points",
+      description: "100 points au total",
       icon: Zap,
       color: "bg-pk-amber",
       earned: totalPoints >= 100,
@@ -64,23 +64,23 @@ function getBadges({
     {
       id: "five_hundred_points",
       name: "Expert",
-      description: "500 total points",
+      description: "500 points au total",
       icon: Trophy,
       color: "bg-pk-gold",
       earned: totalPoints >= 500,
     },
     {
       id: "streak_3",
-      name: "On a streak",
-      description: "3 consecutive GPs",
+      name: "En serie",
+      description: "3 GP consecutifs",
       icon: Flame,
       color: "bg-pk-amber",
       earned: streak >= 3,
     },
     {
       id: "streak_7",
-      name: "Unstoppable",
-      description: "7 consecutive GPs",
+      name: "Inarretable",
+      description: "7 GP consecutifs",
       icon: Flame,
       color: "bg-pk-red",
       earned: streak >= 7,
@@ -95,7 +95,7 @@ function getBadges({
     },
     {
       id: "level_10",
-      name: "Legend",
+      name: "Legende",
       description: "Niveau 10 atteint",
       icon: Crown,
       color: "bg-pk-red",
@@ -136,7 +136,7 @@ export default function BadgeCollection(props: BadgeCollectionProps) {
                   ? "border-white/[0.12] bg-white/[0.04]"
                   : "border-white/[0.06] bg-pk-surface opacity-40"
               }`}
-              title={badge.earned ? badge.description : `${badge.description} (non obtenu)`}
+              title={badge.earned ? badge.description : `${badge.description} (non debloque)`}
               variants={{ hidden: { opacity: 0, scale: 0.7 }, visible: { opacity: 1, scale: 1 } }}
               whileHover={badge.earned ? { scale: 1.1, y: -2 } : undefined}
             >

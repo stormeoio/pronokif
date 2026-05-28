@@ -34,7 +34,7 @@ export default function DriverStandings({ driversStandings }: DriverStandingsPro
   const navigate = useNavigate();
 
   if (driversStandings.length === 0) {
-    return <EmptyMinimal icon="🏆" message="No data available" />;
+    return <EmptyMinimal icon="🏆" message="Aucune donnée disponible" />;
   }
 
   return (
@@ -49,17 +49,19 @@ export default function DriverStandings({ driversStandings }: DriverStandingsPro
         const constructor = entry.Constructors?.[0];
         const teamColor = getTeamColor(constructor?.constructorId);
         const mappedDriverId = DRIVER_ID_MAP[driver.driverId] || driver.familyName?.toLowerCase();
+        const driverKey =
+          driver.driverId || `${driver.givenName}-${driver.familyName}-${entry.position}`;
 
         return (
           <motion.button
-            key={driver.driverId}
+            key={driverKey}
             onClick={() => {
               haptic("light");
               navigate(`/driver/${mappedDriverId}`);
             }}
             className={`w-full p-3 rounded-lg border transition-colors text-left hover:bg-white/[0.02] ${getRankStyle(entry.position)}`}
             style={{ borderLeftWidth: "3px", borderLeftColor: teamColor }}
-            data-testid={`driver-row-${driver.driverId}`}
+            data-testid={`driver-row-${driverKey}`}
             variants={fadeUp}
           >
             <div className="flex items-center gap-2.5">
@@ -83,7 +85,7 @@ export default function DriverStandings({ driversStandings }: DriverStandingsPro
                   <span className="text-pk-red">{driver.familyName?.toUpperCase()}</span>
                 </p>
                 <p className="font-data text-[0.5625rem] text-pk-titane truncate">
-                  {constructor?.name || "Ecurie inconnue"}
+                  {constructor?.name || "Écurie inconnue"}
                 </p>
               </div>
 

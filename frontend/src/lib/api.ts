@@ -160,7 +160,7 @@ async function del<T = void>(url: string): Promise<T> {
 // ═══════════════════════════════════════ ERROR HELPERS ═══════════════════════
 
 /** Extract error message from axios error responses. */
-export function getApiError(e: unknown, fallback = "Error"): string {
+export function getApiError(e: unknown, fallback = "Erreur"): string {
   const err = e as { response?: { data?: { detail?: string }; status?: number } };
   return err.response?.data?.detail || fallback;
 }

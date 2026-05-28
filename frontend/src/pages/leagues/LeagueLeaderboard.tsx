@@ -43,7 +43,7 @@ export default function LeagueLeaderboard({
   getAvatar,
 }: LeagueLeaderboardProps) {
   if (leaderboard.length === 0) {
-    return <EmptyMinimal icon="🏆" message="Points will be calculated after the races" />;
+    return <EmptyMinimal icon="🏆" message="Les points seront calculés après les courses" />;
   }
 
   return (
@@ -74,7 +74,7 @@ export default function LeagueLeaderboard({
                 {avatar ? (
                   <img
                     src={avatar}
-                    alt={entry.username ?? "member"}
+                    alt={entry.username ?? "membre"}
                     className="w-full h-full object-cover"
                     loading="lazy"
                     decoding="async"

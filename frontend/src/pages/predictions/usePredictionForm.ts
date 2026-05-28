@@ -141,7 +141,7 @@ export function usePredictionForm({
     setDeleting(true);
     try {
       await api.predictions.delete(raceId!);
-      toast.success("Predictions deleted!");
+      toast.success("Pronostics supprimés !");
       setExistingPrediction(null);
       setQualiPole(null);
       setQualiTop10([]);
@@ -165,7 +165,7 @@ export function usePredictionForm({
       setShowDeleteConfirm(false);
     } catch (error: unknown) {
       const e = error as { response?: { data?: { detail?: string } } };
-      toast.error(e.response?.data?.detail || "Error while deleting");
+      toast.error(e.response?.data?.detail || "Erreur lors de la suppression");
     } finally {
       setDeleting(false);
     }
@@ -176,7 +176,9 @@ export function usePredictionForm({
     const isSprint = activeTab === "sprint";
     const complete = isSprint ? isSprintCompletee : isMainCompletee;
     if (!complete) {
-      toast.error(isSprint ? "Completee all sprint predictions" : "Completee all race predictions");
+      toast.error(
+        isSprint ? "Complete tous les pronostics sprint" : "Complete tous les pronostics course",
+      );
       return;
     }
     setSaving(true);
@@ -220,7 +222,7 @@ export function usePredictionForm({
       }
     } catch (error: unknown) {
       const e = error as { response?: { data?: { detail?: string } } };
-      toast.error(e.response?.data?.detail || "Error while saving");
+      toast.error(e.response?.data?.detail || "Erreur lors de l'enregistrement");
     } finally {
       setSaving(false);
     }

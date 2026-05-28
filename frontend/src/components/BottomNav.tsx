@@ -15,11 +15,11 @@ interface NavItemDef {
 // ----------------------------------------------------------- config ---
 
 const NAV_ITEMS: NavItemDef[] = [
-  { path: "/", icon: "accueil", label: "Home" },
-  { path: "/predictions", icon: "predictions", label: "Picks" },
+  { path: "/", icon: "accueil", label: "Accueil" },
+  { path: "/predictions", icon: "pronostics", label: "Pronos" },
   { path: "/live", icon: "direct", label: "Direct" },
-  { path: "/leaderboard", icon: "classements", label: "Leaderboards" },
-  { path: "/profile", icon: "profil", label: "Profile" },
+  { path: "/leaderboard", icon: "classements", label: "Classements" },
+  { path: "/profile", icon: "profil", label: "Profil" },
 ];
 
 // ----------------------------------------------------------- component ---

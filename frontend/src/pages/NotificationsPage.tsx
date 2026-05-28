@@ -35,8 +35,8 @@ type FilterKey = "all" | "races" | "leagues" | "chat" | "badges";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "all", label: "Toutes" },
-  { key: "races", label: "Races" },
-  { key: "leagues", label: "Leagues" },
+  { key: "races", label: "Courses" },
+  { key: "leagues", label: "Ligues" },
   { key: "chat", label: "Chat" },
   { key: "badges", label: "Badges" },
 ];
@@ -63,14 +63,14 @@ const CATEGORY_CONFIG: Record<NotifCategory, CategoryConfig> = {
   },
   result: {
     icon: Trophy,
-    label: "Resultats",
+    label: "Résultats",
     iconBg: "bg-pk-emerald/[0.12]",
     iconColor: "text-pk-emerald",
     filterKey: "races",
   },
   league: {
     icon: Users,
-    label: "Leagues",
+    label: "Ligues",
     iconBg: "bg-pk-info/[0.12]",
     iconColor: "text-pk-info",
     filterKey: "leagues",
@@ -84,7 +84,7 @@ const CATEGORY_CONFIG: Record<NotifCategory, CategoryConfig> = {
   },
   info: {
     icon: Bell,
-    label: "General",
+    label: "Général",
     iconBg: "bg-white/[0.06]",
     iconColor: "text-pk-titane",
     filterKey: "all",
@@ -301,8 +301,8 @@ export default function NotificationsPage() {
                 <button
                   onClick={markAllAsRead}
                   className="p-1.5 rounded-lg text-pk-titane hover:text-pk-piste transition-colors"
-                  aria-label="Mark all as read"
-                  title="Mark all as read"
+                  aria-label="Tout marquer comme lu"
+                  title="Tout marquer comme lu"
                   data-testid="mark-all-read"
                 >
                   <CheckCheck className="w-4 h-4" />
@@ -365,7 +365,7 @@ export default function NotificationsPage() {
               className="w-full h-10 rounded-md bg-pk-red text-white font-display text-[0.8125rem] flex items-center justify-center gap-1.5 shadow-glow-red active:scale-[0.97] transition-transform"
             >
               <Clock className="w-3.5 h-3.5" />
-              Make my picks
+              Faire mes pronos
             </button>
           </motion.div>
         )}
@@ -374,15 +374,15 @@ export default function NotificationsPage() {
         {(notifications as Notification[]).length === 0 && (
           <EmptyFullPage
             Icon={Bell}
-            title="No notifications"
-            description="Results, messages, and badges will appear here."
+            title="Aucune notification"
+            description="Les résultats, messages et badges apparaîtront ici."
           />
         )}
 
         {/* No results for this filter */}
         {(notifications as Notification[]).length > 0 && visibleCategories.length === 0 && (
           <motion.div variants={fadeUp} className="text-center py-12 px-6">
-            <p className="text-sm text-pk-titane">No notifications in this category.</p>
+            <p className="text-sm text-pk-titane">Aucune notification dans cette catégorie.</p>
           </motion.div>
         )}
 

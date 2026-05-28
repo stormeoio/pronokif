@@ -75,7 +75,7 @@ export default function ChampionshipPage() {
   const handleRefresh = async () => {
     haptic("selection");
     await refetchAll();
-    toast.success("Leaderboards mis a jour !");
+    toast.success("Classements mis à jour !");
   };
 
   const handleTabChange = (key: string) => {
@@ -86,9 +86,9 @@ export default function ChampionshipPage() {
   if (loading) return <ChampionshipSkeleton />;
 
   const tabs = [
-    { key: "drivers", label: "Drivers", Icon: Trophy },
-    { key: "constructors", label: "Ecuries", Icon: Car },
-    { key: "results", label: "Resultats", Icon: Calendar },
+    { key: "drivers", label: "Pilotes", Icon: Trophy },
+    { key: "constructors", label: "Écuries", Icon: Car },
+    { key: "results", label: "Résultats", Icon: Calendar },
   ];
 
   return (
@@ -103,7 +103,7 @@ export default function ChampionshipPage() {
               </div>
               <div>
                 <h1 className="font-display text-lg">Championnat F1</h1>
-                <p className="font-data text-[0.5625rem] text-pk-titane">Season {season}</p>
+                <p className="font-data text-[0.5625rem] text-pk-titane">Saison {season}</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -121,7 +121,7 @@ export default function ChampionshipPage() {
                   navigate("/compare");
                 }}
                 className="p-2 rounded-lg text-pk-info hover:bg-pk-info/[0.1] transition-colors"
-                title="Compare drivers"
+                title="Comparer les pilotes"
                 data-testid="championship-compare"
               >
                 <GitCompare className="w-5 h-5" />
@@ -131,7 +131,7 @@ export default function ChampionshipPage() {
 
           {lastUpdated && (
             <p className="font-data text-[0.5rem] text-pk-titane mt-1.5">
-              Mise a jour: {lastUpdated.toLocaleString("fr-FR")}
+              Mise à jour : {lastUpdated.toLocaleString("fr-FR")}
             </p>
           )}
         </div>
@@ -186,7 +186,7 @@ export default function ChampionshipPage() {
           variants={fadeUp}
           className="font-data text-[0.5rem] text-pk-titane text-center pt-4"
         >
-          Data provided by Jolpica F1 API & OpenF1
+          Données fournies par Jolpica F1 API & OpenF1
         </motion.p>
       </motion.div>
     </div>

@@ -50,7 +50,7 @@ test.describe("Predictions page", () => {
 
   test("shows existing prediction state when already submitted", async ({ page }) => {
     // Override prediction to return existing one
-    await page.route("**/api/predictions/race-1", (route) =>
+    await page.route("**/api/predictions/race/race-1", (route) =>
       route.fulfill({
         status: 200,
         contentType: "application/json",

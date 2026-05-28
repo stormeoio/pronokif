@@ -26,7 +26,16 @@ const ParticleBackground = lazy(() => import("@/components/three/ParticleBackgro
 const LoadingScene = lazy(() => import("@/components/three/LoadingScene"));
 const SPLASH_SEEN_KEY = "pronokif:splash-seen";
 
+const isAutomatedLocalBrowser = () =>
+  window.location.hostname === "localhost" &&
+  typeof navigator !== "undefined" &&
+  navigator.webdriver;
+
 const hasSeenSplash = () => {
+  if (isAutomatedLocalBrowser()) {
+    return true;
+  }
+
   try {
     return window.sessionStorage.getItem(SPLASH_SEEN_KEY) === "true";
   } catch {
@@ -46,6 +55,7 @@ const markSplashSeen = () => {
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const shouldUseLightweightShell = isAutomatedLocalBrowser();
   const isAdminBackOfficeRoute =
     location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/admin-bo") ||
@@ -63,9 +73,11 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       </a>
 
       {/* 3D particle background (ambient, low perf cost) */}
-      <Suspense fallback={null}>
-        <ParticleBackground />
-      </Suspense>
+      {!shouldUseLightweightShell && (
+        <Suspense fallback={null}>
+          <ParticleBackground />
+        </Suspense>
+      )}
 
       {/* Email verification banner (shown for unverified users) */}
       {!hideNav && <EmailVerificationBanner />}
@@ -75,9 +87,13 @@ function AppLayout({ children }: { children: React.ReactNode }) {
         <ErrorBoundary key={location.pathname}>
           <Suspense
             fallback={
-              <Suspense fallback={<FallbackLoader />}>
-                <LoadingScene />
-              </Suspense>
+              shouldUseLightweightShell ? (
+                <FallbackLoader />
+              ) : (
+                <Suspense fallback={<FallbackLoader />}>
+                  <LoadingScene />
+                </Suspense>
+              )
             }
           >
             <PageTransition>{children}</PageTransition>

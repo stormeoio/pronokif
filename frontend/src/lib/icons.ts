@@ -76,7 +76,7 @@ export const iconLarge: LucideProps = {
 /* Navigation icons (bottom nav — DESIGN.md: 22px) */
 export const navIcons = {
   accueil: Home,
-  predictions: Target,
+  pronostics: Target,
   direct: Radio,
   classements: Trophy,
   profil: User,

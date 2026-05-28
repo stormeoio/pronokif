@@ -84,7 +84,7 @@ beforeEach(() => {
 describe("PageLoader", () => {
   it("renders a spinner with loading text", () => {
     render(<PageLoader />);
-    expect(screen.getByText("Loading...")).toBeInTheDocument();
+    expect(screen.getByText("Chargement...")).toBeInTheDocument();
   });
 });
 
@@ -175,6 +175,6 @@ describe("AppRouter", () => {
   it("shows PageLoader when auth is loading", () => {
     mockAuthState = { user: null as any, loading: true };
     renderRoute("/");
-    expect(screen.getByText("Loading...")).toBeInTheDocument();
+    expect(screen.getByText("Chargement...")).toBeInTheDocument();
   });
 });

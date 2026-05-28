@@ -49,7 +49,7 @@ export default function ResultComparisonCard({
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="font-display text-sm">{getDriverName(winnerId)}</span>
-              <span className="font-data text-[0.5rem] text-pk-titane">(Reel)</span>
+              <span className="font-data text-[0.5rem] text-pk-titane">(Réel)</span>
             </div>
             {predictionWinnerId !== undefined && (
               <div className="flex items-center gap-1.5">
@@ -58,7 +58,7 @@ export default function ResultComparisonCard({
                     predictionWinnerId === winnerId ? "text-pk-emerald" : "text-pk-titane"
                   }`}
                 >
-                  Your pick: {getDriverName(predictionWinnerId)}
+                  Ton choix : {getDriverName(predictionWinnerId)}
                 </span>
                 {predictionWinnerId === winnerId ? (
                   <Check className="w-4 h-4 text-pk-emerald" />

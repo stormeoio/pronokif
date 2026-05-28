@@ -103,7 +103,7 @@ export function AvatarDisplay({ avatar, size = "md", customUrl = null }: AvatarD
   if (customUrl) {
     return (
       <div className={`${sizeClasses[size]} rounded-lg overflow-hidden border-2 border-pk-red`}>
-        <img src={customUrl} alt="Custom avatar" className="w-full h-full object-cover" />
+        <img src={customUrl} alt="Avatar personnalise" className="w-full h-full object-cover" />
       </div>
     );
   }
@@ -190,9 +190,9 @@ export function AvatarSelector({
   const [uploading, setUploading] = useState(false);
 
   const categories: Category[] = [
-    { id: "default", label: "Classics" },
-    { id: "teams", label: "Teams" },
-    { id: "drivers", label: "Drivers" },
+    { id: "default", label: "Classiques" },
+    { id: "teams", label: "Ecuries" },
+    { id: "drivers", label: "Pilotes" },
     { id: "custom", label: "Photo" },
   ];
 
@@ -208,7 +208,7 @@ export function AvatarSelector({
     if (!file) return;
 
     if (file.size > 500000) {
-      alert("Image too large (max 500KB)");
+      alert("Image trop lourde (max 500Ko)");
       return;
     }
 
@@ -253,7 +253,7 @@ export function AvatarSelector({
                   {customUrl ? (
                     <img
                       src={customUrl}
-                      alt="Current avatar"
+                      alt="Avatar actuel"
                       className="w-full h-full object-cover rounded-lg"
                     />
                   ) : (
@@ -261,9 +261,9 @@ export function AvatarSelector({
                   )}
                 </div>
                 <p className="text-sm text-pk-titane">
-                  {uploading ? "Uploading..." : "Click to upload a photo"}
+                  {uploading ? "Envoi en cours..." : "Clique pour envoyer une photo"}
                 </p>
-                <p className="font-data text-[0.5625rem] text-pk-titane/60">Max 500KB, JPG/PNG</p>
+                <p className="font-data text-[0.5625rem] text-pk-titane/60">Max 500Ko, JPG/PNG</p>
               </div>
             </label>
           </div>

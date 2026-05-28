@@ -31,11 +31,11 @@ export default function HamburgerMenu() {
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
   const menuItems = [
-    { id: "tutorial", icon: BookOpen, label: "Tutorial", color: "text-pk-info" },
-    { id: "rules", icon: Trophy, label: "Game rules", color: "text-pk-amber" },
-    { id: "scoring", icon: Calculator, label: "Points system", color: "text-pk-info" },
-    { id: "privacy", icon: Shield, label: "Privacy", color: "text-pk-emerald" },
-    { id: "legal", icon: FileText, label: "Legal notice", color: "text-pk-amber" },
+    { id: "tutorial", icon: BookOpen, label: "Tutoriel", color: "text-pk-info" },
+    { id: "rules", icon: Trophy, label: "Règles du jeu", color: "text-pk-amber" },
+    { id: "scoring", icon: Calculator, label: "Barème des points", color: "text-pk-info" },
+    { id: "privacy", icon: Shield, label: "Confidentialité", color: "text-pk-emerald" },
+    { id: "legal", icon: FileText, label: "Mentions légales", color: "text-pk-amber" },
     { id: "contact", icon: Mail, label: "Contact", color: "text-pk-red" },
   ];
 
@@ -51,7 +51,7 @@ export default function HamburgerMenu() {
           haptic("light");
           setIsOpen(true);
         }}
-        aria-label="Open menu"
+        aria-label="Ouvrir le menu"
         aria-expanded={isOpen}
         className="p-2 rounded-lg text-pk-titane hover:text-pk-piste hover:bg-white/[0.04] transition-colors"
         data-testid="hamburger-menu-btn"
@@ -76,7 +76,7 @@ export default function HamburgerMenu() {
         {isOpen && (
           <motion.div
             role="dialog"
-            aria-label="Main menu"
+            aria-label="Menu principal"
             className="fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-pk-carbon border-r border-white/[0.08] z-50"
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
@@ -95,7 +95,7 @@ export default function HamburgerMenu() {
               </div>
               <button
                 onClick={closeMenu}
-                aria-label="Close menu"
+                aria-label="Fermer le menu"
                 className="p-1.5 rounded-lg text-pk-titane hover:text-pk-piste hover:bg-white/[0.04] transition-colors"
               >
                 <X className="w-5 h-5" />

@@ -24,7 +24,7 @@ export default function NotFoundPage() {
         {...rmProps}
       >
         <Flag className="w-3.5 h-3.5" fill="currentColor" />
-        Drapeau rouge — Session interrompue
+        Drapeau rouge — session interrompue
       </motion.div>
 
       {/* Content */}
@@ -67,7 +67,7 @@ export default function NotFoundPage() {
           variants={fadeUp}
           className="text-sm text-pk-titane leading-relaxed mb-8 max-w-[280px]"
         >
-          Page introuvable. La session a ete interrompue — retourne en piste !
+          Page introuvable. La session a été interrompue — retourne en piste !
         </motion.p>
 
         {/* Radio Message */}
@@ -77,12 +77,12 @@ export default function NotFoundPage() {
         >
           <div className="flex items-center gap-1.5 mb-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-pk-red animate-live-pulse" />
-            <span className="font-data text-[0.5rem] text-pk-red uppercase">Radio team</span>
+            <span className="font-data text-[0.5rem] text-pk-red uppercase">Radio équipe</span>
           </div>
           <p className="text-[0.8125rem] italic text-pk-piste leading-snug">
-            "Fred, we lost your position. Come back to the pits and we will get you back on track."
+            "Fred, on a perdu ta position. Rentre aux stands et on te remet en piste."
           </p>
-          <p className="font-data text-[0.5rem] text-pk-titane mt-1">— Race engineer</p>
+          <p className="font-data text-[0.5rem] text-pk-titane mt-1">— Ingénieur de course</p>
         </motion.div>
 
         {/* Actions */}
@@ -95,13 +95,13 @@ export default function NotFoundPage() {
             className="w-full h-12 rounded-lg bg-pk-red text-white font-display text-[0.9375rem] flex items-center justify-center gap-2 shadow-glow-red active:scale-[0.97] transition-transform"
           >
             <RotateCcw className="w-4 h-4" />
-            Back to the paddock
+            Retour au paddock
           </button>
           <button
             onClick={() => navigate(-1)}
             className="text-xs text-pk-titane hover:text-pk-piste transition-colors"
           >
-            Signaler un probleme
+            Signaler un problème
           </button>
         </motion.div>
       </motion.div>

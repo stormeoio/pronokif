@@ -190,7 +190,7 @@ export default function RaceSlider({
         {/* Race info overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-4">
           <p className="font-data text-[0.5rem] text-pk-red uppercase tracking-widest mb-1 drop-shadow-lg">
-            {currentRaceIndex === 0 ? "Prochain Grand Prix" : "Upcoming"}
+            {currentRaceIndex === 0 ? "Prochain Grand Prix" : "A venir"}
           </p>
           <h2 className="font-display text-2xl text-white uppercase tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
             {currentRace.name.replace(" Grand Prix", "")}
@@ -214,16 +214,16 @@ export default function RaceSlider({
       {currentRace.is_sprint_weekend ? (
         <div className="p-4 border-t border-white/[0.06] space-y-4">
           <CountdownRow
-            label="Sprint Race"
+            label="Course Sprint"
             icon={<Zap className="w-4 h-4" />}
-            subLabel="(closes 15 min before SQ1)"
+            subLabel="(ferme 15 min avant SQ1)"
             countdown={sprintCountdown}
             variant="sprint"
           />
           <CountdownRow
-            label="Main Race"
+            label="Course principale"
             icon={<Flag className="w-4 h-4" />}
-            subLabel="(closes 15 min before Q1)"
+            subLabel="(ferme 15 min avant Q1)"
             countdown={countdown}
             variant="main"
           />
@@ -238,7 +238,7 @@ export default function RaceSlider({
           </Suspense>
           <div className="flex-1">
             <CountdownRow
-              label="Closes 15 min before Q1"
+              label="Ferme 15 min avant Q1"
               icon={<Clock className="w-4 h-4" />}
               countdown={countdown}
               variant="main"
@@ -249,7 +249,9 @@ export default function RaceSlider({
 
       {!currentRace.can_predict && !currentRace.is_sprint_weekend && (
         <div className="p-4 border-t border-white/[0.06] bg-pk-amber/[0.06]">
-          <p className="text-sm text-center text-pk-amber">Predictions are closed for this race</p>
+          <p className="text-sm text-center text-pk-amber">
+            Les pronostics sont fermés pour cette course
+          </p>
         </div>
       )}
 
@@ -269,8 +271,10 @@ export default function RaceSlider({
                 <Target className="w-5 h-5 text-pk-emerald" />
               </div>
               <div>
-                <span className="font-display text-xs text-pk-emerald">Predictions saved!</span>
-                <p className="font-data text-[0.5rem] text-pk-titane">Good luck for this GP</p>
+                <span className="font-display text-xs text-pk-emerald">
+                  Pronostics enregistrés !
+                </span>
+                <p className="font-data text-[0.5rem] text-pk-titane">Bonne chance pour ce GP</p>
               </div>
             </div>
             {currentRace.can_predict && (
@@ -282,7 +286,7 @@ export default function RaceSlider({
                 className="px-4 py-2 rounded-lg bg-pk-amber text-pk-carbon font-display text-xs active:scale-[0.97] transition-transform"
                 data-testid="edit-prediction-btn"
               >
-                Edit
+                Modifier
               </button>
             )}
           </div>
@@ -290,7 +294,7 @@ export default function RaceSlider({
           <div className="relative">
             <OnboardingTooltip
               stepId="first-prediction"
-              message="Start by picking the Top 10 of the next race! You earn XP for every pick."
+              message="Commence par choisir le Top 10 de la prochaine course ! Tu gagnes des XP pour chaque prono."
               position="top"
               emoji=""
             />
@@ -307,7 +311,7 @@ export default function RaceSlider({
           </div>
         ) : (
           <div className="text-center py-2">
-            <p className="text-sm text-pk-titane">Predictions closed</p>
+            <p className="text-sm text-pk-titane">Pronostics fermés</p>
           </div>
         )}
       </div>

@@ -5,7 +5,7 @@
  * and API attribution footer.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderWithProviders, screen, waitFor, userEvent } from "@/test/utils";
+import { fireEvent, renderWithProviders, screen, waitFor } from "@/test/utils";
 
 // Mock sonner
 vi.mock("sonner", () => ({
@@ -112,7 +112,7 @@ describe("ChampionshipPage", () => {
     await waitFor(() => {
       expect(screen.getByText(/championnat f1/i)).toBeInTheDocument();
     });
-    expect(screen.getByText(/season 2026/i)).toBeInTheDocument();
+    expect(screen.getByText(/saison/i)).toBeInTheDocument();
   });
 
   it("shows 3 tabs: Drivers, Ecuries, Resultats", async () => {
@@ -134,15 +134,13 @@ describe("ChampionshipPage", () => {
   });
 
   it("switches tabs on click", async () => {
-    const user = userEvent.setup();
     renderWithProviders(<ChampionshipPage />);
 
     await waitFor(() => {
       expect(screen.getByTestId("tab-constructors")).toBeInTheDocument();
     });
 
-    await user.click(screen.getByTestId("tab-constructors"));
-    // Constructors tab is now active — the ConstructorStandings component should render
-    // We can at least verify the tab switch happened by checking DOM
+    fireEvent.click(screen.getByTestId("tab-constructors"));
+    expect(screen.getByText(/red bull racing/i)).toBeInTheDocument();
   });
 });

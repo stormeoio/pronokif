@@ -76,7 +76,10 @@ test.describe("Navigation and routing", () => {
     await page.waitForLoadState("networkidle");
 
     // Find and click the predictions/calendar nav item
-    const calendarLink = page.locator("nav a[href='/predictions'], nav button").filter({ hasText: /calendrier|pronostics/i }).first();
+    const calendarLink = page
+      .locator("nav a[href='/predictions'], nav button")
+      .filter({ hasText: /calendrier|pronostics/i })
+      .first();
     if (await calendarLink.isVisible()) {
       await calendarLink.click();
       await expect(page).toHaveURL(/\/predictions/);
@@ -140,7 +143,10 @@ test.describe("Navigation and routing", () => {
 
     // Either redirects to / or shows a not-found state
     const url = page.url();
-    const has404Text = await page.getByText(/introuvable|not found|404/i).isVisible().catch(() => false);
+    const has404Text = await page
+      .getByRole("heading", { name: /drapeau rouge/i })
+      .isVisible()
+      .catch(() => false);
     const redirected = url.endsWith("/") || url.includes("/auth");
 
     expect(has404Text || redirected).toBe(true);

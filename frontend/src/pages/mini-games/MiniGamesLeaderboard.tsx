@@ -43,7 +43,7 @@ export function MiniGamesLeaderboard({
       <div className="px-4 py-3 border-b border-white/[0.08] flex items-center gap-2">
         <Medal className="w-4 h-4 text-pk-amber" />
         <h3 className="font-display text-sm">
-          Leaderboard {activeTab === "reaction" ? "Reaction" : "Batak"}
+          Classement {activeTab === "reaction" ? "Reaction" : "Batak"}
         </h3>
         {mode === "competition" && leagueName && (
           <span className="font-data text-[0.5rem] text-pk-titane ml-1">({leagueName})</span>
@@ -59,7 +59,7 @@ export function MiniGamesLeaderboard({
             </p>
             {leagueLeaderboard.length === 0 ? (
               <p className="text-xs text-pk-titane text-center py-4">
-                No score recorded for this weekend
+                Aucun score enregistre ce weekend
               </p>
             ) : (
               <LeaderboardList
@@ -76,10 +76,10 @@ export function MiniGamesLeaderboard({
         {/* Global Leaderboard */}
         <div>
           <p className="font-data text-[0.5rem] text-pk-titane uppercase tracking-wider px-1 mb-2 flex items-center gap-1">
-            <Crown className="w-3 h-3" /> Global Leaderboard (All-time)
+            <Crown className="w-3 h-3" /> Classement global (tous les temps)
           </p>
           {globalLeaderboard.length === 0 ? (
-            <p className="text-xs text-pk-titane text-center py-4">No score recorded</p>
+            <p className="text-xs text-pk-titane text-center py-4">Aucun score enregistre</p>
           ) : (
             <LeaderboardList
               entries={globalLeaderboard.slice(0, 10)}
