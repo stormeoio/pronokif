@@ -24,6 +24,7 @@ Wires three things on the application:
 from __future__ import annotations
 
 import os
+from urllib.parse import urlsplit, urlunsplit
 
 from fastapi import FastAPI
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -56,6 +57,32 @@ def _parse_origins(raw: str | None, environment: str) -> list[str]:
     return origins
 
 
+def _with_dev_loopback_aliases(origins: list[str], environment: str) -> list[str]:
+    """In local dev, allow localhost and 127.0.0.1 to be used interchangeably."""
+    if environment.lower() not in {"development", "dev", "local"}:
+        return origins
+
+    seen = set(origins)
+    with_aliases = list(origins)
+
+    for origin in origins:
+        parsed = urlsplit(origin)
+        if parsed.hostname not in {"localhost", "127.0.0.1"}:
+            continue
+
+        alias_host = "127.0.0.1" if parsed.hostname == "localhost" else "localhost"
+        netloc = alias_host
+        if parsed.port:
+            netloc = f"{alias_host}:{parsed.port}"
+
+        alias = urlunsplit((parsed.scheme, netloc, "", "", ""))
+        if alias not in seen:
+            seen.add(alias)
+            with_aliases.append(alias)
+
+    return with_aliases
+
+
 def install_cors(app: FastAPI) -> None:
     """Install a strict CORS middleware on the app."""
     environment = os.environ.get("ENVIRONMENT", "development")
@@ -73,6 +100,7 @@ def install_cors(app: FastAPI) -> None:
             raise RuntimeError(
                 "CORS_ORIGINS is required outside of development. Set it in the environment to a comma-separated list."
             )
+    origins = _with_dev_loopback_aliases(origins, environment)
 
     app.add_middleware(
         CORSMiddleware,

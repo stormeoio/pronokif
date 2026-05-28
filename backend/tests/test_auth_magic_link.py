@@ -34,12 +34,22 @@ def test_user_email_filter_normalizes_and_matches_case_insensitively():
     }
 
 
-def test_admin_magic_url_targets_backoffice_auth_route(monkeypatch):
+def test_admin_magic_url_targets_public_admin_entrypoint(monkeypatch):
+    monkeypatch.delenv("ADMIN_FRONTEND_URL", raising=False)
     monkeypatch.setenv("FRONTEND_URL", "https://app.example.com/")
 
     magic_url = admin_auth_routes._build_admin_magic_url("admin-token")
 
-    assert magic_url == "https://app.example.com/admin-bo/auth?token=admin-token"
+    assert magic_url == "https://app.example.com/admin?token=admin-token"
+
+
+def test_admin_magic_url_uses_dedicated_admin_frontend_url(monkeypatch):
+    monkeypatch.setenv("FRONTEND_URL", "https://app.example.com/")
+    monkeypatch.setenv("ADMIN_FRONTEND_URL", "https://admin.example.com/")
+
+    magic_url = admin_auth_routes._build_admin_magic_url("admin-token")
+
+    assert magic_url == "https://admin.example.com?token=admin-token"
 
 
 @pytest.mark.asyncio
