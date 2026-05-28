@@ -43,6 +43,16 @@ type PronoKifSplashScreenProps = {
   baseline?: string;
   loadingLabel?: string;
   loadingLogs?: string[];
+  /** Label for the skip button (top-right). */
+  skipLabel?: string;
+  /** Label for the main CTA button that replaces the progress bar. */
+  ctaLabel?: string;
+  /** Aria label for the brand content section. */
+  ariaContent?: string;
+  /** Aria label for the loader dock section. */
+  ariaLoading?: string;
+  /** Aria label for the loading steps list. */
+  ariaSteps?: string;
   introDelayMs?: number;
   buttonDelayMs?: number;
   /** True when critical app resources are loaded. Button waits for this. */
@@ -125,6 +135,11 @@ export default function PronoKifSplashScreen({
   baseline = "Pronostique. Défie. Vibre.",
   loadingLabel = "Synchronisation paddock",
   loadingLogs = DEFAULT_LOADING_LOGS,
+  skipLabel = "Passer",
+  ctaLabel = "Commencer",
+  ariaContent = "Écran de lancement PronoKif F1",
+  ariaLoading = "Chargement de PronoKif F1",
+  ariaSteps = "Étapes de chargement",
   introDelayMs = 950,
   buttonDelayMs = 3600,
   appReady = true,
@@ -220,14 +235,14 @@ export default function PronoKifSplashScreen({
         onClick={completeSplash}
         data-testid="splash-skip"
       >
-        Passer
+        {skipLabel}
       </button>
 
       <section
         className={`pk-splash__content ${logoVisible ? "is-visible" : ""}`}
-        aria-label="Écran de lancement PronoKif F1"
+        aria-label={ariaContent}
       >
-        <AppIconGlow iconSrc={iconSrc} size={72} radius={18} />
+        <AppIconGlow iconSrc={iconSrc} size={88} radius={20} />
 
         <div className="pk-splash__brandBlock">
           <h1 className="pk-splash__wordmark" aria-label={appName}>
@@ -254,7 +269,7 @@ export default function PronoKifSplashScreen({
         className={`pk-splash__loaderDock ${logoVisible ? "has-logo" : ""} ${
           ready ? "is-ready" : ""
         }`}
-        aria-label="Chargement de PronoKif F1"
+        aria-label={ariaLoading}
       >
         <div className="pk-splash__actionZone">
           <div className="pk-progress" role="status" aria-live="polite">
@@ -266,7 +281,7 @@ export default function PronoKifSplashScreen({
             </div>
             <div className="pk-progress__copy">
               <span className="pk-progress__label">{loadingLabel}</span>
-              <div className="pk-progress__logs" aria-label="Étapes de chargement">
+              <div className="pk-progress__logs" aria-label={ariaSteps}>
                 {startupLogs.map((log, index) => (
                   <span
                     key={log}
@@ -280,7 +295,7 @@ export default function PronoKifSplashScreen({
           </div>
 
           <BorderGlowButton onClick={completeSplash} className="pk-splash__startButton">
-            Commencer
+            {ctaLabel}
           </BorderGlowButton>
         </div>
       </section>
@@ -305,7 +320,7 @@ const styles = `
   overflow: hidden;
   display: grid;
   place-items: center;
-  padding: 30px;
+  padding: 44px 30px;
   background: #020307;
   font-family: Chivo, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   isolation: isolate;
@@ -473,7 +488,7 @@ const styles = `
   width: min(460px, 100%);
   display: grid;
   justify-items: center;
-  gap: 18px;
+  gap: 32px;
   opacity: 0;
   transform: translate3d(0, 28px, 0) scale(.94);
   filter: blur(18px);
@@ -495,7 +510,7 @@ const styles = `
 .pk-splash__brandBlock {
   display: grid;
   justify-items: center;
-  gap: 8px;
+  gap: 14px;
   text-align: center;
 }
 
@@ -577,7 +592,7 @@ const styles = `
 }
 
 .pk-splash__loaderDock.has-logo {
-  top: calc(50% + 154px);
+  top: calc(50% + 178px);
   width: min(306px, 76vw);
 }
 
@@ -1060,11 +1075,11 @@ const styles = `
 
 @media (max-width: 480px) {
   .pk-splash {
-    padding: 24px;
+    padding: 36px 20px;
   }
 
   .pk-splash__content {
-    gap: 20px;
+    gap: 26px;
   }
 
   .pk-splash__baseline {
@@ -1079,12 +1094,12 @@ const styles = `
 
 @media (max-height: 680px) {
   .pk-splash__content {
-    gap: 14px;
+    gap: 18px;
   }
 
   .pk-splash__content .pk-appIcon {
-    --pk-icon-size: 64px !important;
-    --pk-radius: 16px !important;
+    --pk-icon-size: 68px !important;
+    --pk-radius: 17px !important;
   }
 
   .pk-splash__wordmarkFallback {
@@ -1101,7 +1116,7 @@ const styles = `
   }
 
   .pk-splash__loaderDock.has-logo {
-    top: calc(50% + 134px);
+    top: calc(50% + 152px);
   }
 }
 
@@ -1116,7 +1131,7 @@ const styles = `
   }
 
   .pk-splash__loaderDock.has-logo {
-    top: calc(50% + 108px);
+    top: calc(50% + 116px);
   }
 
   .pk-progress__logs {

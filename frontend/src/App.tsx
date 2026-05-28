@@ -183,7 +183,7 @@ export default function App() {
         introDelayMs={950}
         buttonDelayMs={3600}
         appReady={appReady}
-        onCompletee={handleSplashStart}
+        onComplete={handleSplashStart}
       />
     );
   }

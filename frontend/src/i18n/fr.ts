@@ -141,6 +141,26 @@ const fr = {
     },
   },
 
+  // ── Splash screen ────────────────────────────────
+  splash: {
+    skip: "Passer",
+    start: "Commencer",
+    start_dashboard: "Accéder au paddock",
+    start_login: "Se connecter",
+    start_admin: "Accéder au back-office",
+    baseline: "Pronostique. Défie. Vibre.",
+    loading_label: "Synchronisation paddock",
+    logs: [
+      "Initialisation du paddock",
+      "Chargement du calendrier 2026",
+      "Préparation des pronostics",
+      "Ouverture de la grille",
+    ],
+    aria_content: "Écran de lancement PronoKif F1",
+    aria_loading: "Chargement de PronoKif F1",
+    aria_steps: "Étapes de chargement",
+  },
+
   // ── Email verification ────────────────────────────
   email_verification: {
     message: "Vérifie ton email pour sécuriser ton compte.",

@@ -141,6 +141,26 @@ const en = {
     },
   },
 
+  // ── Splash screen ────────────────────────────────
+  splash: {
+    skip: "Skip",
+    start: "Get started",
+    start_dashboard: "Enter the paddock",
+    start_login: "Log in",
+    start_admin: "Access back-office",
+    baseline: "Predict. Challenge. Thrill.",
+    loading_label: "Paddock sync",
+    logs: [
+      "Initializing paddock",
+      "Loading 2026 calendar",
+      "Preparing predictions",
+      "Opening the grid",
+    ],
+    aria_content: "PronoKif F1 launch screen",
+    aria_loading: "Loading PronoKif F1",
+    aria_steps: "Loading steps",
+  },
+
   // ── Email verification ────────────────────────────
   email_verification: {
     message: "Verify your email to secure your account.",
