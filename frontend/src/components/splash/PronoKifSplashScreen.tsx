@@ -186,6 +186,13 @@ export default function PronoKifSplashScreen({
     return () => window.clearInterval(logTimer);
   }, [buttonDelayMs, ready, startupLogs.length]);
 
+  // Auto-redirect when loading completes — no manual tap required
+  useEffect(() => {
+    if (!ready) return;
+    const timer = window.setTimeout(completeSplash, 450);
+    return () => window.clearTimeout(timer);
+  }, [ready, completeSplash]);
+
   useEffect(() => {
     const media = window.matchMedia?.("(prefers-reduced-motion: reduce)");
     if (media?.matches) {
@@ -592,7 +599,7 @@ const styles = `
 }
 
 .pk-splash__loaderDock.has-logo {
-  top: calc(50% + 178px);
+  top: calc(50% + 224px);
   width: min(306px, 76vw);
 }
 
@@ -1116,7 +1123,7 @@ const styles = `
   }
 
   .pk-splash__loaderDock.has-logo {
-    top: calc(50% + 152px);
+    top: calc(50% + 186px);
   }
 }
 
@@ -1131,7 +1138,7 @@ const styles = `
   }
 
   .pk-splash__loaderDock.has-logo {
-    top: calc(50% + 116px);
+    top: calc(50% + 138px);
   }
 
   .pk-progress__logs {
