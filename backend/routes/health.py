@@ -12,6 +12,18 @@ from fastapi import APIRouter
 from config import db, logger
 
 router = APIRouter(tags=["health"])
+root_router = APIRouter(tags=["health"])
+
+
+@root_router.get("/")
+async def root_check() -> dict:
+    """Human-friendly API landing endpoint for direct backend visits."""
+    return {
+        "service": "pronokif-api",
+        "status": "ok",
+        "health": "/api/health",
+        "docs": "/docs",
+    }
 
 
 @router.get("/health")

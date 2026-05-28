@@ -46,7 +46,7 @@ from routes.avatars import router as avatars_router
 from routes.custom_predictions import router as custom_predictions_router
 from routes.drivers import router as drivers_router
 from routes.feedback import router as feedback_router
-from routes.health import router as health_router
+from routes.health import root_router, router as health_router
 from routes.leaderboards import router as leaderboards_router
 from routes.leagues import router as leagues_router
 from routes.minigames import router as minigames_router
@@ -60,6 +60,8 @@ from services.indexes import ensure_indexes
 from services.sync import auto_sync_loop
 
 app = FastAPI(title="PRONOKIF API", description="F1 Predictions Game API")
+
+app.include_router(root_router)
 
 # Mount every domain router under /api. Keep this list alphabetical so
 # diffs stay clean as new domains arrive.
