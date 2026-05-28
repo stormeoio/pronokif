@@ -99,7 +99,10 @@ async def set_correct_answer_legacy(
     if not custom_pred:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Prono custom introuvable")
     if custom_pred["created_by"] != user["id"]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Seul le créateur peut définir la bonne réponse")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Seul le créateur peut définir la bonne réponse",
+        )
 
     await db.custom_predictions.update_one(
         {"id": prediction_id}, {"$set": {"correct_answer": body.correct_answer}}

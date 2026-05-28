@@ -107,7 +107,12 @@ async def save_minigame_result(data: MinigameResultCreate, user: dict = Depends(
         stat_key = "reaction_games_played" if data.game_type == "reaction" else "batak_games_played"
         await db.user_stats.update_one({"user_id": user["id"]}, {"$inc": {stat_key: 1}})
 
-    return {"message": "Résultat enregistré", "result_id": result_id, "score": data.score, "is_training": data.is_training}
+    return {
+        "message": "Résultat enregistré",
+        "result_id": result_id,
+        "score": data.score,
+        "is_training": data.is_training,
+    }
 
 
 @router.post("/reaction")
