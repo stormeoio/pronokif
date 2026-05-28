@@ -7,10 +7,12 @@
 import { Suspense, lazy, useCallback, useEffect, useState } from "react";
 import { BrowserRouter, useLocation } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth";
 import { apiClient } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
+import { useLocaleDetect } from "@/lib/useLocaleDetect";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppRouter } from "@/routes";
 import AnimatedBottomNav from "@/components/AnimatedBottomNav";
@@ -56,6 +58,7 @@ const markSplashSeen = () => {
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const { t } = useTranslation();
   const shouldUseLightweightShell = isAutomatedLocalBrowser();
   const isAdminBackOfficeRoute =
     location.pathname.startsWith("/admin") ||
@@ -70,7 +73,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-pk-red focus:text-white focus:rounded-md focus:outline-none"
       >
-        Aller au contenu principal
+        {t("app.skip_to_content")}
       </a>
 
       {/* 3D particle background (ambient, low perf cost) */}
@@ -163,6 +166,8 @@ function useAppPreload(enabled: boolean): boolean {
 export default function App() {
   const [hasStarted, setHasStarted] = useState(hasSeenSplash);
   const appReady = useAppPreload(!hasStarted);
+  // Detect locale from IP + browser language (runs once, caches result)
+  useLocaleDetect();
 
   const handleSplashStart = useCallback(() => {
     markSplashSeen();

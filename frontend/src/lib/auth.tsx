@@ -5,10 +5,13 @@
  * No tokens are stored in localStorage (P0-2 fix). Only the user object
  * is cached in localStorage for instant hydration on reload.
  */
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { apiClient } from "@/lib/api";
+import { setStoredLocale } from "@/i18n";
+import type { Locale } from "@/i18n";
 
 // ------------------------------------------------------------------ types ---
 
@@ -33,7 +36,11 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<User>;
   requestMagicLink: (email: string) => Promise<void>;
   loginWithMagicLink: (token: string) => Promise<User>;
-  register: (email: string, password: string) => Promise<User>;
+  register: (
+    email: string,
+    password: string,
+    opts?: { locale?: string; nationality?: string },
+  ) => Promise<User>;
   logout: () => Promise<void>;
   setUsername: (username: string) => Promise<User>;
   updateUser: (updates: Partial<User>) => void;
@@ -57,6 +64,19 @@ export function useAuth(): AuthContextValue {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { i18n } = useTranslation();
+
+  /** Sync i18n language when a user's locale preference is known. */
+  const syncLocale = useCallback(
+    (u: Record<string, unknown>) => {
+      const locale = (u.locale as string) || "fr";
+      if (locale === "fr" || locale === "en") {
+        setStoredLocale(locale as Locale);
+        i18n.changeLanguage(locale);
+      }
+    },
+    [i18n],
+  );
 
   // On mount: validate session via /auth/me (cookie sent automatically)
   useEffect(() => {
@@ -76,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then((res) => {
         setUser(res.data);
         localStorage.setItem("user", JSON.stringify(res.data));
+        syncLocale(res.data);
       })
       .catch(() => {
         // No valid session — clear cached user
@@ -83,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [syncLocale]);
 
   const login = async (email: string, password: string): Promise<User> => {
     const res = await apiClient.post("/auth/login", { email, password });
@@ -91,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const u = res.data.user;
     setUser(u);
     localStorage.setItem("user", JSON.stringify(u));
+    syncLocale(u);
     return u;
   };
 
@@ -103,11 +125,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const u = res.data.user;
     setUser(u);
     localStorage.setItem("user", JSON.stringify(u));
+    syncLocale(u);
     return u;
   };
 
-  const register = async (email: string, password: string): Promise<User> => {
-    const res = await apiClient.post("/auth/register", { email, password });
+  const register = async (
+    email: string,
+    password: string,
+    opts?: { locale?: string; nationality?: string },
+  ): Promise<User> => {
+    const res = await apiClient.post("/auth/register", {
+      email,
+      password,
+      locale: opts?.locale,
+      nationality: opts?.nationality,
+    });
     const u = res.data.user;
     setUser(u);
     localStorage.setItem("user", JSON.stringify(u));

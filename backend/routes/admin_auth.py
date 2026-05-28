@@ -199,9 +199,9 @@ class TotpVerifyRequest(BaseModel):
 # ── Email helpers ────────────────────────────────────────────────────────────
 
 
-async def _send_magic_link_email(email: str, magic_url: str) -> bool:
+async def _send_magic_link_email(email: str, magic_url: str, lang: str = "fr") -> bool:
     """Send admin magic link via SMTP."""
-    tpl = admin_magic_link_tpl(magic_url, MAGIC_LINK_EXPIRY_MINUTES)
+    tpl = admin_magic_link_tpl(magic_url, MAGIC_LINK_EXPIRY_MINUTES, lang=lang)
     return await send_email(
         email,
         tpl.subject,
@@ -216,9 +216,10 @@ async def _send_invitation_email(
     invite_url: str,
     message: str | None = None,
     league_code: str | None = None,
+    lang: str = "fr",
 ) -> bool:
     """Send invitation email via SMTP."""
-    tpl = invitation_tpl(invite_url, message, league_code)
+    tpl = invitation_tpl(invite_url, message, league_code, lang=lang)
     return await send_email(
         email,
         tpl.subject,
@@ -236,7 +237,7 @@ async def send_magic_link(data: MagicLinkRequest) -> dict:
     """Send a magic link to the admin email."""
     email = data.email.strip().lower()
     if email not in ADMIN_EMAILS:
-        return {"message": "If this address is authorized, a sign-in link has been sent."}
+        return {"message": "Si cette adresse est autorisée, un lien de connexion a été envoyé."}
 
     token = _create_magic_token(email)
 
@@ -250,10 +251,14 @@ async def send_magic_link(data: MagicLinkRequest) -> dict:
 
     magic_url = _build_admin_magic_url(token)
 
-    if not await _send_magic_link_email(email, magic_url):
+    # Look up admin's locale preference for bilingual email
+    admin_user = await db.users.find_one({"email": email}, {"locale": 1, "_id": 0})
+    admin_lang = admin_user.get("locale", "fr") if admin_user else "fr"
+
+    if not await _send_magic_link_email(email, magic_url, lang=admin_lang):
         logger.info(f"[Admin Auth] Magic link for {email}: {magic_url}")
 
-    return {"message": "If this address is authorized, a sign-in link has been sent."}
+    return {"message": "Si cette adresse est autorisée, un lien de connexion a été envoyé."}
 
 
 @router.post("/auth/verify")
@@ -318,7 +323,7 @@ async def verify_2fa_setup(data: TotpVerifyRequest, admin: dict = Depends(get_cu
     """Verify TOTP code to enable 2FA."""
     account = await db.admin_accounts.find_one({"email": admin["email"]})
     if not account or not account.get("totp_pending_secret"):
-        raise HTTPException(status_code=400, detail="No pending 2FA setup")
+        raise HTTPException(status_code=400, detail="Aucune configuration 2FA en attente")
 
     if not _verify_totp(account["totp_pending_secret"], data.code):
         raise HTTPException(status_code=400, detail="Code invalide")
@@ -329,7 +334,7 @@ async def verify_2fa_setup(data: TotpVerifyRequest, admin: dict = Depends(get_cu
          "$unset": {"totp_pending_secret": ""}},
     )
 
-    return {"message": "2FA enabled successfully"}
+    return {"message": "2FA activé avec succès"}
 
 
 @router.post("/auth/2fa/validate")
@@ -341,7 +346,7 @@ async def validate_2fa_login(data: TotpVerifyRequest, request: Request, response
     try:
         payload = jwt.decode(auth[7:], JWT_SECRET, algorithms=[JWT_ALGORITHM])
         if payload.get("type") != "admin_session" or not payload.get("require_2fa"):
-            raise HTTPException(status_code=400, detail="Invalid token for this step")
+            raise HTTPException(status_code=400, detail="Token invalide pour cette étape")
 
         email = payload["sub"].lower()
         account = await db.admin_accounts.find_one({"email": email})

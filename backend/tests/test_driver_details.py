@@ -110,7 +110,7 @@ class TestDriverDetailsAPI:
 
         data = response.json()
         assert "detail" in data
-        assert data["detail"] == "Driver not found"
+        assert data["detail"] == "Pilote introuvable"
 
         print("✓ Invalid driver correctly returns 404")
 

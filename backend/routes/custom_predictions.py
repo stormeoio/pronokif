@@ -45,7 +45,7 @@ async def get_custom_predictions_to_answer(
     if not league or user["id"] not in league.get("members", []):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this league",
+            detail="Tu ne fais pas partie de cette ligue",
         )
 
     predictions = await db.custom_predictions.find({"league_id": league_id, "race_id": race_id}, {"_id": 0}).to_list(
@@ -69,11 +69,11 @@ async def answer_custom_prediction_legacy(
     """Submit an answer through the frontend legacy path."""
     custom_pred = await db.custom_predictions.find_one({"id": prediction_id}, {"_id": 0})
     if not custom_pred:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Custom prediction not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Prono custom introuvable")
 
     league = await db.leagues.find_one({"id": custom_pred["league_id"]}, {"_id": 0})
     if not league or user["id"] not in league.get("members", []):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this league")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tu ne fais pas partie de cette ligue")
 
     await db.custom_prediction_answers.update_one(
         {"prediction_id": prediction_id, "user_id": user["id"]},
@@ -97,9 +97,9 @@ async def set_correct_answer_legacy(
     """Set the correct answer through the frontend legacy path."""
     custom_pred = await db.custom_predictions.find_one({"id": prediction_id}, {"_id": 0})
     if not custom_pred:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Custom prediction not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Prono custom introuvable")
     if custom_pred["created_by"] != user["id"]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only creator can set correct answer")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Seul le créateur peut définir la bonne réponse")
 
     await db.custom_predictions.update_one(
         {"id": prediction_id}, {"$set": {"correct_answer": body.correct_answer}}

@@ -328,7 +328,7 @@ async def _get_admin_race(race_id: str) -> dict:
             static_race,
             ACTIVE_2026_CALENDAR_OVERRIDES.get(race_id, {}).get("round_number", 1),
         )
-    raise HTTPException(status_code=404, detail="Race not found")
+    raise HTTPException(status_code=404, detail="Course introuvable")
 
 
 async def _race_prediction_overview(race_id: str) -> dict:
@@ -482,7 +482,7 @@ async def get_user(user_id: str, admin: dict = Depends(get_current_admin)) -> di
     """Get user detail with stats."""
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
 
     pred_count = await db.predictions.count_documents({"user_id": user_id})
     leagues = await db.leagues.find(
@@ -500,10 +500,10 @@ async def update_user(
     """Update a user."""
     updates = {k: v for k, v in data.model_dump().items() if v is not None}
     if not updates:
-        raise HTTPException(status_code=400, detail="No changes provided")
+        raise HTTPException(status_code=400, detail="Aucune modification fournie")
     result = await db.users.update_one({"id": user_id}, {"$set": updates})
     if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
     return {"message": "User updated"}
 
 
@@ -512,11 +512,11 @@ async def delete_user(user_id: str, admin: dict = Depends(get_current_admin)) ->
     """Delete a user and their data."""
     user = await db.users.find_one({"id": user_id})
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
     if _is_protected_admin_user(user):
         raise HTTPException(
             status_code=403,
-            detail="Cannot delete an administrator account",
+            detail="Impossible de supprimer un compte administrateur",
         )
     await db.users.delete_one({"id": user_id})
     await db.predictions.delete_many({"user_id": user_id})
@@ -571,10 +571,10 @@ async def update_championship(
     """Update a championship."""
     updates = {k: v for k, v in data.model_dump().items() if v is not None}
     if not updates:
-        raise HTTPException(status_code=400, detail="No changes provided")
+        raise HTTPException(status_code=400, detail="Aucune modification fournie")
     result = await db.championships.update_one({"id": champ_id}, {"$set": updates})
     if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Championship not found")
+        raise HTTPException(status_code=404, detail="Championnat introuvable")
     return {"message": "Championship updated"}
 
 
@@ -585,7 +585,7 @@ async def delete_championship(
     """Delete a championship."""
     result = await db.championships.delete_one({"id": champ_id})
     if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Championship not found")
+        raise HTTPException(status_code=404, detail="Championnat introuvable")
     return {"message": "Championship deleted"}
 
 
@@ -764,7 +764,7 @@ async def seed_demo_dataset(
 ) -> dict:
     """Seed a complete demo dataset for local/staging validation."""
     if data.confirm != "SEED_DEMO":
-        raise HTTPException(status_code=400, detail="SEED_DEMO confirmation required")
+        raise HTTPException(status_code=400, detail="Confirmation SEED_DEMO requise")
 
     from seed_demo import seed_demo_data
 
@@ -807,12 +807,12 @@ async def update_race(
     """Update a race event."""
     updates = {k: v for k, v in data.model_dump().items() if v is not None}
     if not updates:
-        raise HTTPException(status_code=400, detail="No changes provided")
+        raise HTTPException(status_code=400, detail="Aucune modification fournie")
     updates["updated_at"] = _now_iso()
     updates["updated_by"] = admin.get("email")
     result = await db.races.update_one({"id": race_id}, {"$set": updates})
     if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Race not found")
+        raise HTTPException(status_code=404, detail="Course introuvable")
     return {"message": "Race updated"}
 
 
@@ -900,7 +900,7 @@ async def delete_race(
     """Delete a race event."""
     result = await db.races.delete_one({"id": race_id})
     if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Race not found")
+        raise HTTPException(status_code=404, detail="Course introuvable")
     return {"message": "Race deleted"}
 
 

@@ -1,18 +1,24 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { ArrowRight, Loader2, Mail, Plus } from "lucide-react";
+import { ArrowRight, ChevronDown, Loader2, Mail, Plus, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import type { User } from "@/lib/auth";
 import { iconProps } from "@/lib/icons";
 import { fadeUp, easing, duration } from "@/lib/motion";
 import { brandAssets } from "@/lib/brand";
 import { BorderGlowButton } from "@/components/ui/border-glow-button";
+import { COUNTRIES, countryFlag } from "@/i18n/countries";
+import { getStoredLocale } from "@/i18n";
+import type { Locale } from "@/i18n";
 
 // ----------------------------------------------------------- component ---
 
 export default function AuthPage() {
+  const { t, i18n } = useTranslation();
+  const locale = (i18n.language || "fr") as Locale;
   const [isLoading, setIsLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [magicSent, setMagicSent] = useState(false);
@@ -22,6 +28,50 @@ export default function AuthPage() {
   const { login, loginWithMagicLink, register, requestMagicLink } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  // ── Nationality picker state ──
+  const [nationality, setNationality] = useState<string>("");
+  const [nationalityOpen, setNationalityOpen] = useState(false);
+  const [nationalitySearch, setNationalitySearch] = useState("");
+  const nationalityRef = useRef<HTMLDivElement>(null);
+
+  // Pre-fill nationality from cached geolocation
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem("pronokif:geo-country");
+      if (cached && !nationality) setNationality(cached);
+    } catch {
+      /* non-critical */
+    }
+  }, [nationality]);
+
+  // Close nationality dropdown on outside click
+  useEffect(() => {
+    if (!nationalityOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (nationalityRef.current && !nationalityRef.current.contains(e.target as Node)) {
+        setNationalityOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [nationalityOpen]);
+
+  const filteredCountries = useMemo(() => {
+    if (!nationalitySearch.trim()) return COUNTRIES;
+    const q = nationalitySearch.toLowerCase();
+    return COUNTRIES.filter(
+      (c) =>
+        c.fr.toLowerCase().includes(q) ||
+        c.en.toLowerCase().includes(q) ||
+        c.code.toLowerCase() === q,
+    );
+  }, [nationalitySearch]);
+
+  const selectedCountry = useMemo(
+    () => COUNTRIES.find((c) => c.code === nationality),
+    [nationality],
+  );
 
   const navigateAfterAuth = useCallback(
     (user: User) => {
@@ -46,17 +96,17 @@ export default function AuthPage() {
     setVerifyingMagic(true);
     loginWithMagicLink(token)
       .then((user) => {
-        toast.success("Connexion magique confirmée !");
+        toast.success(t("auth.magic_link.success"));
         navigateAfterAuth(user);
       })
       .catch((error: unknown) => {
         const message =
           (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-          "Lien magique invalide ou expiré";
+          t("auth.magic_link.invalid");
         toast.error(message);
       })
       .finally(() => setVerifyingMagic(false));
-  }, [loginWithMagicLink, navigateAfterAuth, searchParams]);
+  }, [loginWithMagicLink, navigateAfterAuth, searchParams, t]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>, type: "login" | "register") => {
     e.preventDefault();
@@ -68,15 +118,20 @@ export default function AuthPage() {
 
     try {
       const user =
-        type === "login" ? await login(email, password) : await register(email, password);
+        type === "login"
+          ? await login(email, password)
+          : await register(email, password, {
+              locale: getStoredLocale() ?? locale,
+              nationality: nationality || undefined,
+            });
 
-      toast.success(type === "login" ? "Connexion réussie !" : "Compte créé !");
+      toast.success(type === "login" ? t("auth.login.success") : t("auth.register.success"));
 
       navigateAfterAuth(user);
     } catch (error: unknown) {
       const message =
         (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-        "Une erreur est survenue";
+        t("auth.error.generic");
       toast.error(message);
     } finally {
       setIsLoading(false);
@@ -86,7 +141,7 @@ export default function AuthPage() {
   const handleSendMagicLink = async () => {
     const email = loginEmail.trim();
     if (!email) {
-      toast.error("Entre ton email pour recevoir le lien magique");
+      toast.error(t("auth.magic_link.email_required"));
       return;
     }
 
@@ -94,11 +149,11 @@ export default function AuthPage() {
     try {
       await requestMagicLink(email);
       setMagicSent(true);
-      toast.success("Lien magique envoyé !");
+      toast.success(t("auth.magic_link.send_success"));
     } catch (error: unknown) {
       const message =
         (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-        "Erreur lors de l'envoi du lien magique";
+        t("auth.magic_link.send_error");
       toast.error(message);
     } finally {
       setIsLoading(false);
@@ -166,10 +221,8 @@ export default function AuthPage() {
               draggable={false}
             />
           </div>
-          <p className="text-center text-pk-titane text-[0.75rem] mb-7 leading-relaxed">
-            Fais tes pronos, défie tes potes,
-            <br />
-            vivez la F1 comme jamais.
+          <p className="text-center text-pk-titane text-[0.75rem] mb-7 leading-relaxed whitespace-pre-line">
+            {t("auth.tagline.main")}
           </p>
 
           {verifyingMagic && (
@@ -178,7 +231,7 @@ export default function AuthPage() {
                 border-pk-red/30 bg-pk-red-subtle px-3 py-2 text-[0.75rem] text-pk-piste"
             >
               <Loader2 {...iconProps} size={14} className="animate-spin" />
-              Vérification du lien magique...
+              {t("auth.magic_link.verifying")}
             </div>
           )}
 
@@ -191,7 +244,7 @@ export default function AuthPage() {
                 ${activeTab === "login" ? "text-pk-piste bg-pk-red-subtle" : "text-pk-titane hover:text-pk-piste"}`}
               data-testid="tab-login"
             >
-              Connexion
+              {t("auth.tabs.login")}
               {activeTab === "login" && (
                 <span className="absolute bottom-0 left-[20%] right-[20%] h-0.5 bg-pk-red rounded-sm" />
               )}
@@ -203,7 +256,7 @@ export default function AuthPage() {
                 ${activeTab === "register" ? "text-pk-piste bg-pk-red-subtle" : "text-pk-titane hover:text-pk-piste"}`}
               data-testid="tab-register"
             >
-              Inscription
+              {t("auth.tabs.register")}
               {activeTab === "register" && (
                 <span className="absolute bottom-0 left-[20%] right-[20%] h-0.5 bg-pk-red rounded-sm" />
               )}
@@ -215,12 +268,12 @@ export default function AuthPage() {
             <form onSubmit={(e) => handleSubmit(e, "login")} data-testid="login-form">
               <div className="mb-3.5">
                 <label className="block font-mono text-[0.625rem] uppercase tracking-[0.12em] text-pk-titane mb-1">
-                  Email
+                  {t("auth.form.email_label")}
                 </label>
                 <input
                   name="email"
                   type="email"
-                  placeholder="you.com"
+                  placeholder={t("auth.form.email_placeholder")}
                   required
                   autoComplete="email"
                   value={loginEmail}
@@ -234,7 +287,7 @@ export default function AuthPage() {
               </div>
               <div className="mb-3.5">
                 <label className="block font-mono text-[0.625rem] uppercase tracking-[0.12em] text-pk-titane mb-1">
-                  Mot de passe
+                  {t("auth.form.password_label")}
                 </label>
                 <input
                   name="password"
@@ -255,13 +308,13 @@ export default function AuthPage() {
                     defaultChecked
                     className="w-3.5 h-3.5 accent-pk-red cursor-pointer"
                   />
-                  Se souvenir
+                  {t("auth.form.remember_me")}
                 </label>
                 <Link
                   to="/forgot-password"
                   className="text-[0.6875rem] text-pk-red no-underline hover:underline"
                 >
-                  Oublié ?
+                  {t("auth.form.forgot_password")}
                 </Link>
               </div>
 
@@ -272,7 +325,7 @@ export default function AuthPage() {
                 data-testid="login-submit"
               >
                 <ArrowRight {...iconProps} size={14} strokeWidth={2} />
-                {isLoading ? "Connexion..." : "Se connecter"}
+                {isLoading ? t("auth.login.loading") : t("auth.login.submit")}
               </BorderGlowButton>
 
               <button
@@ -283,7 +336,7 @@ export default function AuthPage() {
                 data-testid="magic-link-submit"
               >
                 <Mail {...iconProps} size={14} strokeWidth={2} />
-                {magicSent ? "Lien envoyé ✓" : "Recevoir un lien magique"}
+                {magicSent ? t("auth.magic_link.sent") : t("auth.magic_link.send")}
               </button>
             </form>
           )}
@@ -293,43 +346,105 @@ export default function AuthPage() {
             <form onSubmit={(e) => handleSubmit(e, "register")} data-testid="register-form">
               <div className="mb-3.5">
                 <label className="block font-mono text-[0.625rem] uppercase tracking-[0.12em] text-pk-titane mb-1">
-                  Pseudo pilote
+                  {t("auth.register.username_label")}
                 </label>
                 <input
                   name="username"
                   type="text"
-                  placeholder="VerstappenFan, LeclercSZN..."
+                  placeholder={t("auth.register.username_placeholder")}
                   className="input-pk w-full"
                 />
               </div>
               <div className="mb-3.5">
                 <label className="block font-mono text-[0.625rem] uppercase tracking-[0.12em] text-pk-titane mb-1">
-                  Email
+                  {t("auth.form.email_label")}
                 </label>
                 <input
                   name="email"
                   type="email"
-                  placeholder="you.com"
+                  placeholder={t("auth.form.email_placeholder")}
                   required
                   autoComplete="email"
                   className="input-pk w-full"
                   data-testid="register-email"
                 />
               </div>
-              <div className="mb-5">
+              <div className="mb-3.5">
                 <label className="block font-mono text-[0.625rem] uppercase tracking-[0.12em] text-pk-titane mb-1">
-                  Mot de passe
+                  {t("auth.form.password_label")}
                 </label>
                 <input
                   name="password"
                   type="password"
-                  placeholder="8 caractères minimum"
+                  placeholder={t("auth.register.password_placeholder")}
                   required
                   minLength={8}
                   autoComplete="new-password"
                   className="input-pk w-full"
                   data-testid="register-password"
                 />
+              </div>
+
+              {/* ── Nationality picker ── */}
+              <div className="mb-5" ref={nationalityRef}>
+                <label className="block font-mono text-[0.625rem] uppercase tracking-[0.12em] text-pk-titane mb-1">
+                  {t("auth.register.nationality_label")}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setNationalityOpen(!nationalityOpen)}
+                  className="input-pk w-full flex items-center justify-between gap-2 text-left"
+                >
+                  {selectedCountry ? (
+                    <span className="flex items-center gap-2 text-pk-piste text-[0.8125rem]">
+                      <span className="text-base leading-none">
+                        {countryFlag(selectedCountry.code)}
+                      </span>
+                      {selectedCountry[locale]}
+                    </span>
+                  ) : (
+                    <span className="text-pk-titane/50 text-[0.8125rem]">
+                      {t("auth.register.nationality_placeholder")}
+                    </span>
+                  )}
+                  <ChevronDown
+                    size={14}
+                    className={`text-pk-titane transition-transform ${nationalityOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {nationalityOpen && (
+                  <div className="absolute z-50 mt-1 w-[calc(100%-3.5rem)] max-h-[220px] overflow-hidden rounded-lg border border-white/[0.08] bg-pk-anthracite/95 backdrop-blur-xl shadow-2xl flex flex-col">
+                    <div className="flex items-center gap-2 px-3 py-2 border-b border-white/[0.06]">
+                      <Search size={13} className="text-pk-titane/50 shrink-0" />
+                      <input
+                        type="text"
+                        value={nationalitySearch}
+                        onChange={(e) => setNationalitySearch(e.target.value)}
+                        placeholder="..."
+                        className="w-full bg-transparent text-[0.8125rem] text-pk-piste outline-none placeholder:text-pk-titane/30"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="overflow-y-auto overscroll-contain">
+                      {filteredCountries.map((c) => (
+                        <button
+                          key={c.code}
+                          type="button"
+                          onClick={() => {
+                            setNationality(c.code);
+                            setNationalityOpen(false);
+                            setNationalitySearch("");
+                          }}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-left text-[0.8125rem] transition-colors
+                            ${c.code === nationality ? "bg-pk-red/10 text-pk-piste" : "text-pk-titane hover:bg-white/[0.04] hover:text-pk-piste"}`}
+                        >
+                          <span className="text-base leading-none">{countryFlag(c.code)}</span>
+                          {c[locale]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <BorderGlowButton
@@ -339,7 +454,7 @@ export default function AuthPage() {
                 data-testid="register-submit"
               >
                 <Plus {...iconProps} size={14} strokeWidth={2} />
-                {isLoading ? "Création..." : "Créer mon compte"}
+                {isLoading ? t("auth.register.loading") : t("auth.register.submit")}
               </BorderGlowButton>
             </form>
           )}
@@ -348,7 +463,7 @@ export default function AuthPage() {
           <div className="flex items-center gap-2.5 my-4">
             <span className="flex-1 h-px bg-white/[0.08]" />
             <span className="font-mono text-[0.625rem] text-pk-titane uppercase tracking-[0.1em]">
-              ou continuer avec
+              {t("auth.social.divider")}
             </span>
             <span className="flex-1 h-px bg-white/[0.08]" />
           </div>
@@ -388,22 +503,22 @@ export default function AuthPage() {
           <p className="text-center mt-4 text-[0.6875rem] text-pk-titane">
             {activeTab === "login" ? (
               <>
-                Nouveau ?{" "}
+                {t("auth.footer.new_user")}{" "}
                 <button
                   onClick={() => setActiveTab("register")}
                   className="text-pk-red font-medium hover:underline"
                 >
-                  Rejoins la course
+                  {t("auth.footer.register_link")}
                 </button>
               </>
             ) : (
               <>
-                Déjà inscrit ?{" "}
+                {t("auth.footer.existing_user")}{" "}
                 <button
                   onClick={() => setActiveTab("login")}
                   className="text-pk-red font-medium hover:underline"
                 >
-                  Se connecter
+                  {t("auth.footer.login_link")}
                 </button>
               </>
             )}
@@ -418,7 +533,8 @@ export default function AuthPage() {
           animate={{ opacity: 0.4, y: 0 }}
           transition={{ duration: duration.long, ease: easing.enter, delay: 0.3 }}
         >
-          Pronostique. Défie. <em className="not-italic text-pk-red">Vis-le.</em>
+          {t("auth.tagline.footer")}{" "}
+          <em className="not-italic text-pk-red">{t("auth.tagline.footer_accent")}</em>
         </motion.p>
       </div>
     </>

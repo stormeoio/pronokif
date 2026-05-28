@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { initSentry } from "@/lib/sentry";
+import "@/i18n"; // i18n must initialize before any component renders
 import "@/index.css";
 import App from "@/App";
 

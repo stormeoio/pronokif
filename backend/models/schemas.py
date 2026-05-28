@@ -13,6 +13,8 @@ from pydantic import BaseModel, EmailStr
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
+    locale: str = "fr"
+    nationality: str | None = None
 
 
 class UserLogin(BaseModel):
@@ -39,6 +41,8 @@ class UserResponse(BaseModel):
     avatar_id: str | None = None
     custom_avatar_url: str | None = None
     email_verified: bool = False
+    locale: str = "fr"
+    nationality: str | None = None
 
 
 class TokenResponse(BaseModel):

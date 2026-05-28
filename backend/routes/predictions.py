@@ -70,24 +70,24 @@ async def create_prediction(data: PredictionCreate, user: dict = Depends(get_cur
     """Create or update a prediction for a race"""
     race = await _get_race(data.race_id)
     if not race:
-        raise HTTPException(status_code=404, detail="Race not found")
+        raise HTTPException(status_code=404, detail="Course introuvable")
 
     predictions_close = get_predictions_close_time(race)
     if datetime.now(UTC) > predictions_close:
-        raise HTTPException(status_code=400, detail="Predictions are closed (15 min before FP1)")
+        raise HTTPException(status_code=400, detail="Pronos fermés (15 min avant les EL1)")
 
     if len(data.quali_top10) != 10 or len(data.race_top10) != 10:
-        raise HTTPException(status_code=400, detail="Top 10 must have exactly 10 drivers")
+        raise HTTPException(status_code=400, detail="Le Top 10 doit contenir exactement 10 pilotes")
 
     if race.get("is_sprint"):
         if not data.sprint_quali_pole:
-            raise HTTPException(status_code=400, detail="Sprint quali pole required for sprint weekend")
+            raise HTTPException(status_code=400, detail="La pole sprint est requise pour un week-end sprint")
         if not data.sprint_quali_top10 or len(data.sprint_quali_top10) != 10:
-            raise HTTPException(status_code=400, detail="Sprint quali top 10 required for sprint weekend")
+            raise HTTPException(status_code=400, detail="Le Top 10 sprint qualifs est requis pour un week-end sprint")
         if not data.sprint_race_winner:
-            raise HTTPException(status_code=400, detail="Sprint race winner required for sprint weekend")
+            raise HTTPException(status_code=400, detail="Le vainqueur sprint est requis pour un week-end sprint")
         if not data.sprint_race_top10 or len(data.sprint_race_top10) != 10:
-            raise HTTPException(status_code=400, detail="Sprint race top 10 required for sprint weekend")
+            raise HTTPException(status_code=400, detail="Le Top 10 course sprint est requis pour un week-end sprint")
 
     now = datetime.now(UTC).isoformat()
     existing = await db.predictions.find_one({"user_id": user["id"], "race_id": data.race_id})
@@ -136,16 +136,16 @@ async def delete_my_prediction(race_id: str, user: dict = Depends(get_current_us
     """Delete user's prediction for a specific race"""
     race = await _get_race(race_id)
     if not race:
-        raise HTTPException(status_code=404, detail="Race not found")
+        raise HTTPException(status_code=404, detail="Course introuvable")
 
     close_time = get_predictions_close_time(race)
     if datetime.now(UTC) >= close_time:
-        raise HTTPException(status_code=400, detail="Predictions are closed, deletion is unavailable")
+        raise HTTPException(status_code=400, detail="Pronos fermés, suppression impossible")
 
     result = await db.predictions.delete_one({"user_id": user["id"], "race_id": race_id})
 
     if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="No prediction found for this race")
+        raise HTTPException(status_code=404, detail="Aucun prono trouvé pour cette course")
 
     return {"message": "Predictions deleted successfully"}
 
@@ -261,17 +261,17 @@ async def save_sprint_prediction(data: SprintPredictionCreate, user: dict = Depe
     """Save sprint predictions separately (closes 15 min before SQ1)"""
     race = await _get_race(data.race_id)
     if not race:
-        raise HTTPException(status_code=404, detail="Race not found")
+        raise HTTPException(status_code=404, detail="Course introuvable")
 
     if not (race.get("is_sprint") or race.get("is_sprint_weekend")):
-        raise HTTPException(status_code=400, detail="This is not a sprint weekend")
+        raise HTTPException(status_code=400, detail="Ce n'est pas un week-end sprint")
 
     sprint_predictions_close = get_sprint_predictions_close_time(race)
     if datetime.now(UTC) > sprint_predictions_close:
-        raise HTTPException(status_code=400, detail="Sprint predictions are closed (15 min before SQ1)")
+        raise HTTPException(status_code=400, detail="Pronos sprint fermés (15 min avant les SQ1)")
 
     if len(data.sprint_quali_top10) != 10 or len(data.sprint_race_top10) != 10:
-        raise HTTPException(status_code=400, detail="Sprint Top 10 must have exactly 10 drivers")
+        raise HTTPException(status_code=400, detail="Le Top 10 sprint doit contenir exactement 10 pilotes")
 
     now = datetime.now(UTC).isoformat()
     existing = await db.predictions.find_one({"user_id": user["id"], "race_id": data.race_id})
@@ -308,14 +308,14 @@ async def save_main_prediction(data: MainPredictionCreate, user: dict = Depends(
     """Save main race predictions separately (closes 15 min before Q1)"""
     race = await _get_race(data.race_id)
     if not race:
-        raise HTTPException(status_code=404, detail="Race not found")
+        raise HTTPException(status_code=404, detail="Course introuvable")
 
     predictions_close = get_predictions_close_time(race)
     if datetime.now(UTC) > predictions_close:
-        raise HTTPException(status_code=400, detail="Predictions are closed (15 min before Q1)")
+        raise HTTPException(status_code=400, detail="Pronos fermés (15 min avant les Q1)")
 
     if len(data.quali_top10) != 10 or len(data.race_top10) != 10:
-        raise HTTPException(status_code=400, detail="Top 10 must have exactly 10 drivers")
+        raise HTTPException(status_code=400, detail="Le Top 10 doit contenir exactement 10 pilotes")
 
     now = datetime.now(UTC).isoformat()
     existing = await db.predictions.find_one({"user_id": user["id"], "race_id": data.race_id})
@@ -355,7 +355,7 @@ async def create_custom_prediction(data: CustomPredictionCreate, user: dict = De
     """Create a custom prediction for a league"""
     league = await db.leagues.find_one({"id": data.league_id}, {"_id": 0})
     if not league or user["id"] not in league["members"]:
-        raise HTTPException(status_code=403, detail="Not a member of this league")
+        raise HTTPException(status_code=403, detail="Tu ne fais pas partie de cette ligue")
 
     prediction_id = str(uuid.uuid4())
     processed_choices = None
@@ -390,7 +390,7 @@ async def get_league_custom_predictions(
     """Get custom predictions for a league and race"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league or user["id"] not in league["members"]:
-        raise HTTPException(status_code=403, detail="Not a member of this league")
+        raise HTTPException(status_code=403, detail="Tu ne fais pas partie de cette ligue")
 
     predictions = await db.custom_predictions.find({"league_id": league_id, "race_id": race_id}, {"_id": 0}).to_list(
         100
@@ -405,7 +405,7 @@ async def answer_custom_prediction(
     """Submit an answer to a custom prediction"""
     custom_pred = await db.custom_predictions.find_one({"id": prediction_id}, {"_id": 0})
     if not custom_pred:
-        raise HTTPException(status_code=404, detail="Custom prediction not found")
+        raise HTTPException(status_code=404, detail="Prono custom introuvable")
 
     await db.custom_prediction_answers.update_one(
         {"prediction_id": prediction_id, "user_id": user["id"]},
@@ -429,9 +429,9 @@ async def set_correct_answer(
     """Set the correct answer for a custom prediction (creator only)"""
     custom_pred = await db.custom_predictions.find_one({"id": prediction_id}, {"_id": 0})
     if not custom_pred:
-        raise HTTPException(status_code=404, detail="Custom prediction not found")
+        raise HTTPException(status_code=404, detail="Prono custom introuvable")
     if custom_pred["created_by"] != user["id"]:
-        raise HTTPException(status_code=403, detail="Only creator can set correct answer")
+        raise HTTPException(status_code=403, detail="Seul le créateur peut définir la bonne réponse")
 
     await db.custom_predictions.update_one(
         {"id": prediction_id}, {"$set": {"correct_answer": body.correct_answer}}

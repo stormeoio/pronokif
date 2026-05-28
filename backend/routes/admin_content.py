@@ -94,7 +94,7 @@ async def send_invitation(
     email = str(data.email).strip().lower()
     existing = await db.invitations.find_one({"email": email})
     if existing and not existing.get("accepted"):
-        raise HTTPException(status_code=400, detail="Invitation already sent to this address")
+        raise HTTPException(status_code=400, detail="Invitation déjà envoyée à cette adresse")
 
     invitation, invite_token = _build_invitation_doc(email, data.message, admin["email"])
     await db.invitations.insert_one(invitation)
@@ -284,7 +284,7 @@ async def update_settings(
     """Update app settings."""
     updates = {k: v for k, v in data.model_dump().items() if v is not None}
     if not updates:
-        raise HTTPException(status_code=400, detail="No changes provided")
+        raise HTTPException(status_code=400, detail="Aucune modification fournie")
 
     await db.app_settings.update_one(
         {"_id": "global"},

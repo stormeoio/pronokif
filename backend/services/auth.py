@@ -43,13 +43,13 @@ PASSWORD_MIN_LENGTH = 8
 def validate_password(password: str) -> str | None:
     """Validate password complexity. Returns error message or None if valid."""
     if len(password) < PASSWORD_MIN_LENGTH:
-        return f"The password must contain at least {PASSWORD_MIN_LENGTH} characters"
+        return f"Le mot de passe doit contenir au moins {PASSWORD_MIN_LENGTH} caractères"
     if not re.search(r"[A-Z]", password):
-        return "The password must contain at least one uppercase letter"
+        return "Le mot de passe doit contenir au moins une majuscule"
     if not re.search(r"[a-z]", password):
-        return "The password must contain at least one lowercase letter"
+        return "Le mot de passe doit contenir au moins une minuscule"
     if not re.search(r"\d", password):
-        return "The password must contain at least one digit"
+        return "Le mot de passe doit contenir au moins un chiffre"
     return None
 
 
@@ -118,45 +118,45 @@ async def get_current_user(request: Request):
     """Dependency to get the current authenticated user from cookie or header."""
     token = _extract_token(request)
     if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+        raise HTTPException(status_code=401, detail="Non authentifié")
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         # Reject refresh tokens used as access tokens
         if payload.get("type") == "refresh":
-            raise HTTPException(status_code=401, detail="Invalid token type")
+            raise HTTPException(status_code=401, detail="Token invalide")
         user_id = payload.get("sub")
         if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
+            raise HTTPException(status_code=401, detail="Token invalide")
         user = await db.users.find_one({"id": user_id}, {"_id": 0})
         if not user:
-            raise HTTPException(status_code=401, detail="User not found")
+            raise HTTPException(status_code=401, detail="Utilisateur introuvable")
         return user
     except jwt.ExpiredSignatureError as exc:
-        raise HTTPException(status_code=401, detail="Token expired") from exc
+        raise HTTPException(status_code=401, detail="Session expirée") from exc
     except jwt.InvalidTokenError as exc:
-        raise HTTPException(status_code=401, detail="Invalid token") from exc
+        raise HTTPException(status_code=401, detail="Token invalide") from exc
 
 
 async def get_user_from_refresh_token(request: Request) -> dict:
     """Extract and validate the refresh token from httpOnly cookie."""
     token = request.cookies.get("refresh_token")
     if not token:
-        raise HTTPException(status_code=401, detail="No refresh token")
+        raise HTTPException(status_code=401, detail="Session expirée, reconnecte-toi")
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         if payload.get("type") != "refresh":
-            raise HTTPException(status_code=401, detail="Invalid token type")
+            raise HTTPException(status_code=401, detail="Token invalide")
         user_id = payload.get("sub")
         if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
+            raise HTTPException(status_code=401, detail="Token invalide")
         user = await db.users.find_one({"id": user_id}, {"_id": 0})
         if not user:
-            raise HTTPException(status_code=401, detail="User not found")
+            raise HTTPException(status_code=401, detail="Utilisateur introuvable")
         return user
     except jwt.ExpiredSignatureError as exc:
-        raise HTTPException(status_code=401, detail="Refresh token expired") from exc
+        raise HTTPException(status_code=401, detail="Session expirée, reconnecte-toi") from exc
     except jwt.InvalidTokenError as exc:
-        raise HTTPException(status_code=401, detail="Invalid refresh token") from exc
+        raise HTTPException(status_code=401, detail="Token invalide") from exc
 
 
 # ── Email verification (P1-3 fix) ───────────────────────────────────────────
@@ -167,11 +167,19 @@ def generate_verification_token() -> str:
     return secrets.token_urlsafe(32)
 
 
-async def send_verification_email(email: str, token: str) -> bool:
+async def _get_user_locale(email: str) -> str:
+    """Look up a user's preferred locale from their profile. Defaults to 'fr'."""
+    user = await db.users.find_one({"email": email}, {"locale": 1, "_id": 0})
+    return user.get("locale", "fr") if user else "fr"
+
+
+async def send_verification_email(email: str, token: str, lang: str | None = None) -> bool:
     """Send email verification link via SMTP, with a dev log fallback."""
+    if lang is None:
+        lang = await _get_user_locale(email)
     frontend_url = os.environ.get("FRONTEND_URL", "https://pronokif.eu").rstrip("/")
     verify_url = f"{frontend_url}/verify-email?token={token}"
-    tpl = verification_tpl(verify_url)
+    tpl = verification_tpl(verify_url, lang=lang)
 
     sent = await send_email(email, tpl.subject, tpl.text, tpl.html_body)
     if not sent and not is_smtp_enabled():
@@ -206,9 +214,10 @@ def create_magic_login_token(user_id: str) -> tuple[str, str]:
 
 async def send_reset_email(email: str, token: str) -> bool:
     """Send password reset link via SMTP, with a dev log fallback."""
+    lang = await _get_user_locale(email)
     frontend_url = os.environ.get("FRONTEND_URL", "https://pronokif.eu").rstrip("/")
     reset_url = f"{frontend_url}/reset-password?token={token}"
-    tpl = password_reset_tpl(reset_url, RESET_TOKEN_EXPIRE_MINUTES)
+    tpl = password_reset_tpl(reset_url, RESET_TOKEN_EXPIRE_MINUTES, lang=lang)
 
     sent = await send_email(email, tpl.subject, tpl.text, tpl.html_body)
     if not sent and not is_smtp_enabled():
@@ -218,9 +227,10 @@ async def send_reset_email(email: str, token: str) -> bool:
 
 async def send_magic_login_email(email: str, token: str) -> bool:
     """Send user magic login link via SMTP, with a dev log fallback."""
+    lang = await _get_user_locale(email)
     frontend_url = os.environ.get("FRONTEND_URL", "https://pronokif.eu").rstrip("/")
     magic_url = f"{frontend_url}/auth?magic_token={token}"
-    tpl = magic_login_tpl(magic_url, MAGIC_LINK_EXPIRE_MINUTES)
+    tpl = magic_login_tpl(magic_url, MAGIC_LINK_EXPIRE_MINUTES, lang=lang)
 
     sent = await send_email(email, tpl.subject, tpl.text, tpl.html_body)
     if not sent and not is_smtp_enabled():

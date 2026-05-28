@@ -182,7 +182,7 @@ async def get_driver(driver_id: str) -> dict:
     """Get a specific driver's info"""
     driver = next((d for d in F1_DRIVERS_2026 if d["id"] == driver_id), None)
     if not driver:
-        raise HTTPException(status_code=404, detail="Driver not found")
+        raise HTTPException(status_code=404, detail="Pilote introuvable")
     return driver
 
 
@@ -215,7 +215,7 @@ async def get_next_race():
 
     if last_payload:
         return RaceResponse(**last_payload)
-    raise HTTPException(status_code=404, detail="Race not found")
+    raise HTTPException(status_code=404, detail="Course introuvable")
 
 
 @router.get("/races/upcoming")
@@ -239,7 +239,7 @@ async def get_race(race_id: str) -> dict:
         now = datetime.now(UTC)
         result_doc = await _race_result_doc(race_id)
         return _race_response_payload(race, result_doc, now)
-    raise HTTPException(status_code=404, detail="Race not found")
+    raise HTTPException(status_code=404, detail="Course introuvable")
 
 
 @router.get("/races/{race_id}/details")
@@ -280,7 +280,7 @@ async def get_race_details(race_id: str) -> dict:
             "sessions": _race_sessions(race),
         }
 
-    raise HTTPException(status_code=404, detail="Race not found")
+    raise HTTPException(status_code=404, detail="Course introuvable")
 
 
 @router.get("/races/{race_id}/prediction-count")

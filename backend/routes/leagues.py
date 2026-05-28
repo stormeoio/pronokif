@@ -63,9 +63,9 @@ async def join_league(data: LeagueJoin, user: dict = Depends(get_current_user)):
     """Join a league with invitation code"""
     league = await db.leagues.find_one({"code": data.code.upper()}, {"_id": 0})
     if not league:
-        raise HTTPException(status_code=404, detail="League not found")
+        raise HTTPException(status_code=404, detail="Ligue introuvable")
     if user["id"] in league["members"]:
-        raise HTTPException(status_code=400, detail="Already a member")
+        raise HTTPException(status_code=400, detail="Tu es déjà membre")
 
     await db.leagues.update_one({"id": league["id"]}, {"$push": {"members": user["id"]}})
     await db.users.update_one({"id": user["id"]}, {"$set": {"current_league_id": league["id"]}})
@@ -120,7 +120,7 @@ async def get_league_by_code(code: str) -> dict:
     """Get league info by invitation code (public endpoint for join links)"""
     league = await db.leagues.find_one({"code": code.upper()}, {"_id": 0})
     if not league:
-        raise HTTPException(status_code=404, detail="League not found")
+        raise HTTPException(status_code=404, detail="Ligue introuvable")
 
     return {
         "id": league["id"],
@@ -136,9 +136,9 @@ async def get_league(league_id: str, user: dict = Depends(get_current_user)):
     """Get league details"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league:
-        raise HTTPException(status_code=404, detail="League not found")
+        raise HTTPException(status_code=404, detail="Ligue introuvable")
     if user["id"] not in league["members"]:
-        raise HTTPException(status_code=403, detail="Not a member")
+        raise HTTPException(status_code=403, detail="Tu ne fais pas partie de cette ligue")
     return LeagueResponse(**league)
 
 
@@ -147,7 +147,7 @@ async def get_leaderboard(league_id: str, user: dict = Depends(get_current_user)
     """Get league leaderboard"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league:
-        raise HTTPException(status_code=404, detail="League not found")
+        raise HTTPException(status_code=404, detail="Ligue introuvable")
 
     entries = await db.leaderboard.find({"league_id": league_id}, {"_id": 0}).to_list(100)
     entries.sort(key=lambda x: x["total_points"], reverse=True)
@@ -178,9 +178,9 @@ async def select_league(league_id: str, user: dict = Depends(get_current_user)) 
     """Select a league as current"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league or user["id"] not in league["members"]:
-        raise HTTPException(status_code=404, detail="League not found or not a member")
+        raise HTTPException(status_code=404, detail="Ligue introuvable ou tu n'en fais pas partie")
     await db.users.update_one({"id": user["id"]}, {"$set": {"current_league_id": league_id}})
-    return {"message": "League selected", "league_id": league_id}
+    return {"message": "Ligue sélectionnée", "league_id": league_id}
 
 
 @router.put("/{league_id}", response_model=LeagueResponse)
@@ -188,10 +188,10 @@ async def update_league(league_id: str, data: LeagueUpdate, user: dict = Depends
     """Update league name and/or description (owner only)"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league:
-        raise HTTPException(status_code=404, detail="League not found")
+        raise HTTPException(status_code=404, detail="Ligue introuvable")
 
     if league["created_by"] != user["id"]:
-        raise HTTPException(status_code=403, detail="Only the league owner can update the league")
+        raise HTTPException(status_code=403, detail="Seul le propriétaire peut modifier la ligue")
 
     update_data = {}
     if data.name is not None and data.name.strip():
@@ -200,7 +200,7 @@ async def update_league(league_id: str, data: LeagueUpdate, user: dict = Depends
         update_data["description"] = data.description.strip() if data.description.strip() else None
 
     if not update_data:
-        raise HTTPException(status_code=400, detail="No data to update")
+        raise HTTPException(status_code=400, detail="Aucune donnée à mettre à jour")
 
     await db.leagues.update_one({"id": league_id}, {"$set": update_data})
     updated_league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
@@ -212,16 +212,16 @@ async def leave_league(league_id: str, user: dict = Depends(get_current_user)) -
     """Leave a league"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league:
-        raise HTTPException(status_code=404, detail="League not found")
+        raise HTTPException(status_code=404, detail="Ligue introuvable")
 
     if user["id"] not in league["members"]:
-        raise HTTPException(status_code=400, detail="You are not a member of this league")
+        raise HTTPException(status_code=400, detail="Tu ne fais pas partie de cette ligue")
 
     if league["created_by"] == user["id"]:
         if len(league["members"]) > 1:
             raise HTTPException(
                 status_code=400,
-                detail="As creator, you must transfer ownership or delete the league first",
+                detail="En tant que créateur, transfère d'abord la propriété ou supprime la ligue",
             )
         else:
             await db.leagues.delete_one({"id": league_id})
@@ -232,7 +232,7 @@ async def leave_league(league_id: str, user: dict = Depends(get_current_user)) -
             if user.get("current_league_id") == league_id:
                 await db.users.update_one({"id": user["id"]}, {"$set": {"current_league_id": None}})
 
-            return {"status": "success", "message": "The league was deleted because you were its only member"}
+            return {"status": "success", "message": "La ligue a été supprimée car tu en étais le seul membre"}
 
     await db.leagues.update_one({"id": league_id}, {"$pull": {"members": user["id"]}})
     await db.leaderboard.delete_one({"league_id": league_id, "user_id": user["id"]})
@@ -243,7 +243,7 @@ async def leave_league(league_id: str, user: dict = Depends(get_current_user)) -
         new_league_id = other_league["id"] if other_league else None
         await db.users.update_one({"id": user["id"]}, {"$set": {"current_league_id": new_league_id}})
 
-    return {"status": "success", "message": "You left the league"}
+    return {"status": "success", "message": "Tu as quitté la ligue"}
 
 
 @router.delete("/{league_id}")
@@ -251,10 +251,10 @@ async def delete_league(league_id: str, user: dict = Depends(get_current_user)) 
     """Delete a league (creator only)"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league:
-        raise HTTPException(status_code=404, detail="League not found")
+        raise HTTPException(status_code=404, detail="Ligue introuvable")
 
     if league["created_by"] != user["id"]:
-        raise HTTPException(status_code=403, detail="Only the creator can delete the league")
+        raise HTTPException(status_code=403, detail="Seul le créateur peut supprimer la ligue")
 
     for member_id in league["members"]:
         member = await db.users.find_one({"id": member_id}, {"_id": 0})
@@ -268,7 +268,7 @@ async def delete_league(league_id: str, user: dict = Depends(get_current_user)) 
     await db.chat_read_status.delete_many({"league_id": league_id})
     await db.leagues.delete_one({"id": league_id})
 
-    return {"status": "success", "message": f"The league .{league['name']}. has been deleted"}
+    return {"status": "success", "message": f"La ligue « {league['name']} » a été supprimée"}
 
 
 @router.post("/{league_id}/transfer")
@@ -278,27 +278,27 @@ async def transfer_league_ownership(
     """Transfer league ownership to another member (creator only)"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league:
-        raise HTTPException(status_code=404, detail="League not found")
+        raise HTTPException(status_code=404, detail="Ligue introuvable")
 
     if league["created_by"] != user["id"]:
-        raise HTTPException(status_code=403, detail="Only the creator can transfer ownership")
+        raise HTTPException(status_code=403, detail="Seul le créateur peut transférer la propriété")
 
     if data.new_owner_id == user["id"]:
-        raise HTTPException(status_code=400, detail="You are already the owner")
+        raise HTTPException(status_code=400, detail="Tu es déjà le propriétaire")
 
     if data.new_owner_id not in league["members"]:
-        raise HTTPException(status_code=400, detail="The new owner must be a league member")
+        raise HTTPException(status_code=400, detail="Le nouveau propriétaire doit être membre de la ligue")
 
     new_owner = await db.users.find_one({"id": data.new_owner_id}, {"_id": 0})
     if not new_owner:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
 
     await db.leagues.update_one({"id": league_id}, {"$set": {"created_by": data.new_owner_id}})
 
     new_owner_name = new_owner.get("username") or new_owner.get("email", "").split("@")[0]
     return {
         "status": "success",
-        "message": f"Ownership has been transferred to {new_owner_name}",
+        "message": f"Propriété transférée à {new_owner_name}",
         "new_owner_id": data.new_owner_id,
     }
 
@@ -311,13 +311,13 @@ async def send_league_message(league_id: str, data: ChatMessage, user: dict = De
     """Send a message to the league chat"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league or user["id"] not in league["members"]:
-        raise HTTPException(status_code=403, detail="Not a member of this league")
+        raise HTTPException(status_code=403, detail="Tu ne fais pas partie de cette ligue")
 
     if not data.content.strip():
-        raise HTTPException(status_code=400, detail="Message cannot be empty")
+        raise HTTPException(status_code=400, detail="Le message ne peut pas être vide")
 
     if len(data.content) > 500:
-        raise HTTPException(status_code=400, detail="Message too long (max 500 characters)")
+        raise HTTPException(status_code=400, detail="Message trop long (max 500 caractères)")
 
     message = {
         "id": str(uuid.uuid4()),
@@ -341,7 +341,7 @@ async def get_league_messages(
     """Get messages from the league chat"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league or user["id"] not in league["members"]:
-        raise HTTPException(status_code=403, detail="Not a member of this league")
+        raise HTTPException(status_code=403, detail="Tu ne fais pas partie de cette ligue")
 
     query = {"league_id": league_id}
     if before:
@@ -356,7 +356,7 @@ async def get_league_members(league_id: str, user: dict = Depends(get_current_us
     """Get all members of a league with their basic info"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league or user["id"] not in league["members"]:
-        raise HTTPException(status_code=403, detail="Not a member of this league")
+        raise HTTPException(status_code=403, detail="Tu ne fais pas partie de cette ligue")
 
     members = []
     for member_id in league["members"]:
@@ -382,7 +382,7 @@ async def mark_league_messages_read(league_id: str, user: dict = Depends(get_cur
     """Mark all messages in a league as read for the current user"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league or user["id"] not in league["members"]:
-        raise HTTPException(status_code=403, detail="Not a member of this league")
+        raise HTTPException(status_code=403, detail="Tu ne fais pas partie de cette ligue")
 
     await db.chat_read_status.update_one(
         {"user_id": user["id"], "league_id": league_id},

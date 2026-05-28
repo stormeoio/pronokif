@@ -33,7 +33,7 @@ async def get_member_details(member_id: str, _admin: dict = Depends(require_admi
     try:
         return await admin_members_service.get_details(member_id)
     except admin_members_service.MemberNotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found") from exc
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Membre introuvable") from exc
 
 
 @router.get("/admin/members/{member_id}/activity")
@@ -42,7 +42,7 @@ async def get_member_activity(member_id: str, _admin: dict = Depends(require_adm
     try:
         return await admin_members_service.get_activity(member_id)
     except admin_members_service.MemberNotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found") from exc
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Membre introuvable") from exc
 
 
 @router.delete("/admin/members/{member_id}")
@@ -53,4 +53,4 @@ async def delete_member(member_id: str, admin: dict = Depends(require_admin)) ->
     except admin_members_service.CannotDeleteSelfError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except admin_members_service.MemberNotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found") from exc
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Membre introuvable") from exc

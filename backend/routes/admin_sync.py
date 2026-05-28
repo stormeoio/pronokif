@@ -29,7 +29,7 @@ async def sync_results_from_openf1(race_id: str, user: dict = Depends(require_ad
     try:
         return await sync_service.sync_one_race(race_id, user["id"])
     except sync_service.RaceNotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Race not found") from exc
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course introuvable") from exc
 
 
 @router.post("/admin/send-reminders")
@@ -44,7 +44,7 @@ async def auto_sync_and_save_results(race_id: str, user: dict = Depends(require_
     try:
         return await sync_service.auto_sync_and_save(race_id, user["id"])
     except sync_service.RaceNotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Race not found") from exc
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course introuvable") from exc
 
 
 @router.post("/admin/sync-all-pending")

@@ -4,6 +4,7 @@
  */
 import { useState, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
 import { Lock, CheckCircle2, XCircle, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { apiClient } from "@/lib/api";
@@ -14,33 +15,23 @@ import { easing, duration, getReducedMotionProps } from "@/lib/motion";
 /* ── Password rules ────────────────────────────────────── */
 
 interface Rule {
-  label: string;
+  i18nKey: string;
   test: (pw: string) => boolean;
 }
 
-const RULES: Rule[] = [
-  { label: "8+ caractères", test: (pw) => pw.length >= 8 },
-  { label: "1 majuscule", test: (pw) => /[A-Z]/.test(pw) },
-  { label: "1 minuscule", test: (pw) => /[a-z]/.test(pw) },
-  { label: "1 chiffre", test: (pw) => /\d/.test(pw) },
+const RULE_DEFS: Rule[] = [
+  { i18nKey: "password.reset.rules.characters", test: (pw) => pw.length >= 8 },
+  { i18nKey: "password.reset.rules.uppercase", test: (pw) => /[A-Z]/.test(pw) },
+  { i18nKey: "password.reset.rules.lowercase", test: (pw) => /[a-z]/.test(pw) },
+  { i18nKey: "password.reset.rules.digit", test: (pw) => /\d/.test(pw) },
 ];
-
-function getStrengthLevel(passed: number): {
-  label: string;
-  color: string;
-  bars: number;
-} {
-  if (passed <= 1) return { label: "Faible", color: "bg-pk-red", bars: 1 };
-  if (passed === 2) return { label: "Moyen", color: "bg-pk-amber", bars: 2 };
-  if (passed === 3) return { label: "Bon", color: "bg-pk-amber", bars: 3 };
-  return { label: "Fort", color: "bg-pk-emerald", bars: 4 };
-}
 
 /* ── Component ─────────────────────────────────────────── */
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
+  const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
 
@@ -51,10 +42,19 @@ export default function ResetPasswordPage() {
   const [status, setStatus] = useState<"form" | "loading" | "success" | "error">(
     token ? "form" : "error",
   );
-  const [error, setError] = useState(token ? "" : "Lien de réinitialisation invalide");
+  const [error, setError] = useState(token ? "" : t("password.reset.invalid_link"));
 
-  const passedRules = useMemo(() => RULES.filter((r) => r.test(password)).length, [password]);
-  const strength = useMemo(() => getStrengthLevel(passedRules), [passedRules]);
+  const passedRules = useMemo(() => RULE_DEFS.filter((r) => r.test(password)).length, [password]);
+
+  const strength = useMemo(() => {
+    if (passedRules <= 1)
+      return { label: t("password.reset.strength.weak"), color: "bg-pk-red", bars: 1 };
+    if (passedRules === 2)
+      return { label: t("password.reset.strength.medium"), color: "bg-pk-amber", bars: 2 };
+    if (passedRules === 3)
+      return { label: t("password.reset.strength.good"), color: "bg-pk-amber", bars: 3 };
+    return { label: t("password.reset.strength.strong"), color: "bg-pk-emerald", bars: 4 };
+  }, [passedRules, t]);
   const passwordsMatch = password.length > 0 && password === confirmPassword;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,11 +62,11 @@ export default function ResetPasswordPage() {
     setError("");
 
     if (!passwordsMatch) {
-      setError("Les mots de passe ne correspondent pas");
+      setError(t("password.reset.mismatch"));
       return;
     }
     if (passedRules < 4) {
-      setError("Le mot de passe ne remplit pas tous les critères");
+      setError(t("password.reset.invalid_criteria"));
       return;
     }
 
@@ -82,7 +82,7 @@ export default function ResetPasswordPage() {
       haptic("error");
       const message =
         (err as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-        "Erreur lors de la réinitialisation";
+        t("password.reset.error");
       setError(message);
       setStatus("form");
     }
@@ -113,15 +113,13 @@ export default function ResetPasswordPage() {
             <div className="w-14 h-14 rounded-full bg-pk-emerald/[0.12] border border-pk-emerald/20 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-6 h-6 text-pk-emerald" />
             </div>
-            <h2 className="font-display text-lg mb-1">Mot de passe modifié</h2>
-            <p className="text-xs text-pk-titane mb-5">
-              Tu peux maintenant te connecter avec ton nouveau mot de passe.
-            </p>
+            <h2 className="font-display text-lg mb-1">{t("password.reset.success_title")}</h2>
+            <p className="text-xs text-pk-titane mb-5">{t("password.reset.success_message")}</p>
             <Link
               to="/auth"
               className="inline-flex items-center justify-center w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm shadow-glow-red active:scale-[0.97] transition-transform"
             >
-              Se connecter
+              {t("password.reset.success_login")}
             </Link>
           </motion.div>
         )}
@@ -132,13 +130,13 @@ export default function ResetPasswordPage() {
             <div className="w-14 h-14 rounded-full bg-pk-red/[0.12] border border-pk-red/20 flex items-center justify-center mx-auto mb-4">
               <XCircle className="w-6 h-6 text-pk-red" />
             </div>
-            <h2 className="font-display text-lg mb-1">Lien invalide</h2>
+            <h2 className="font-display text-lg mb-1">{t("password.reset.invalid_title")}</h2>
             <p className="text-xs text-pk-titane mb-5">{error}</p>
             <Link
               to="/forgot-password"
               className="inline-flex items-center justify-center w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm shadow-glow-red"
             >
-              Demander un nouveau lien
+              {t("password.reset.request_new")}
             </Link>
           </div>
         )}
@@ -150,8 +148,8 @@ export default function ResetPasswordPage() {
               <div className="w-12 h-12 rounded-full bg-pk-red/[0.10] border border-pk-red/20 flex items-center justify-center mx-auto mb-3">
                 <Lock className="w-5 h-5 text-pk-red" />
               </div>
-              <h2 className="font-display text-lg mb-1">Nouveau mot de passe</h2>
-              <p className="text-xs text-pk-titane">Choisis un mot de passe sécurisé.</p>
+              <h2 className="font-display text-lg mb-1">{t("password.reset.title")}</h2>
+              <p className="text-xs text-pk-titane">{t("password.reset.subtitle")}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -162,7 +160,7 @@ export default function ResetPasswordPage() {
                     type={showPw ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Nouveau mot de passe"
+                    placeholder={t("password.reset.password_label")}
                     required
                     minLength={8}
                     className="w-full h-11 px-3.5 pr-10 rounded-lg bg-pk-anthracite border border-white/[0.08] text-sm text-pk-piste placeholder:text-pk-titane/50 focus:outline-none focus:border-pk-red/40 transition-colors"
@@ -206,10 +204,10 @@ export default function ResetPasswordPage() {
                 {/* Rules checklist 2x2 grid */}
                 {password.length > 0 && (
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2">
-                    {RULES.map((rule) => {
+                    {RULE_DEFS.map((rule) => {
                       const passed = rule.test(password);
                       return (
-                        <div key={rule.label} className="flex items-center gap-1.5">
+                        <div key={rule.i18nKey} className="flex items-center gap-1.5">
                           <div
                             className={`w-1 h-1 rounded-full transition-colors ${
                               passed ? "bg-pk-emerald" : "bg-pk-titane/40"
@@ -220,7 +218,7 @@ export default function ResetPasswordPage() {
                               passed ? "text-pk-emerald" : "text-pk-titane"
                             }`}
                           >
-                            {rule.label}
+                            {t(rule.i18nKey)}
                           </span>
                         </div>
                       );
@@ -236,7 +234,7 @@ export default function ResetPasswordPage() {
                     type={showConfirm ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirmer"
+                    placeholder={t("password.reset.confirm_label")}
                     required
                     minLength={8}
                     className="w-full h-11 px-3.5 pr-10 rounded-lg bg-pk-anthracite border border-white/[0.08] text-sm text-pk-piste placeholder:text-pk-titane/50 focus:outline-none focus:border-pk-red/40 transition-colors"
@@ -257,7 +255,7 @@ export default function ResetPasswordPage() {
                       passwordsMatch ? "text-pk-emerald" : "text-pk-red"
                     }`}
                   >
-                    {passwordsMatch ? "Les mots de passe correspondent" : "Ne correspond pas"}
+                    {passwordsMatch ? t("password.reset.match_ok") : t("password.reset.match_fail")}
                   </p>
                 )}
               </div>
@@ -270,7 +268,7 @@ export default function ResetPasswordPage() {
                 className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-50"
                 data-testid="reset-password-submit"
               >
-                {status === "loading" ? "Réinitialisation..." : "Réinitialiser"}
+                {status === "loading" ? t("password.reset.loading") : t("password.reset.submit")}
               </button>
             </form>
 
@@ -280,7 +278,7 @@ export default function ResetPasswordPage() {
                 className="text-xs text-pk-titane hover:text-pk-piste transition-colors inline-flex items-center gap-1"
               >
                 <ArrowLeft className="w-3 h-3" />
-                Retour à la connexion
+                {t("password.forgot.back")}
               </Link>
             </div>
           </>

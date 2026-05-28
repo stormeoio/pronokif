@@ -57,11 +57,11 @@ class BatakResultCreate(BaseModel):
 async def save_minigame_result(data: MinigameResultCreate, user: dict = Depends(get_current_user)) -> dict:
     """Save a mini-game result"""
     if data.game_type not in ["reaction", "batak"]:
-        raise HTTPException(status_code=400, detail="Invalid game type")
+        raise HTTPException(status_code=400, detail="Type de jeu invalide")
 
     league = await db.leagues.find_one({"id": data.league_id}, {"_id": 0})
     if not league or user["id"] not in league["members"]:
-        raise HTTPException(status_code=403, detail="Not a member of this league")
+        raise HTTPException(status_code=403, detail="Tu ne fais pas partie de cette ligue")
 
     # Check attempt limit (3 per competition mode)
     if not data.is_training:
@@ -75,7 +75,7 @@ async def save_minigame_result(data: MinigameResultCreate, user: dict = Depends(
             }
         )
         if existing_attempts >= 3:
-            raise HTTPException(status_code=400, detail="Maximum 3 attempts reached for this race weekend")
+            raise HTTPException(status_code=400, detail="Maximum 3 tentatives atteint pour ce week-end de course")
 
     result_id = str(uuid.uuid4())
     result = {
@@ -107,7 +107,7 @@ async def save_minigame_result(data: MinigameResultCreate, user: dict = Depends(
         stat_key = "reaction_games_played" if data.game_type == "reaction" else "batak_games_played"
         await db.user_stats.update_one({"user_id": user["id"]}, {"$inc": {stat_key: 1}})
 
-    return {"message": "Result saved", "result_id": result_id, "score": data.score, "is_training": data.is_training}
+    return {"message": "Résultat enregistré", "result_id": result_id, "score": data.score, "is_training": data.is_training}
 
 
 @router.post("/reaction")
@@ -144,11 +144,11 @@ async def get_minigame_leaderboard(
 ) -> dict:
     """Get mini-game leaderboard for a specific race weekend"""
     if game_type not in ["reaction", "batak"]:
-        raise HTTPException(status_code=400, detail="Invalid game type")
+        raise HTTPException(status_code=400, detail="Type de jeu invalide")
 
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league or user["id"] not in league["members"]:
-        raise HTTPException(status_code=403, detail="Not a member of this league")
+        raise HTTPException(status_code=403, detail="Tu ne fais pas partie de cette ligue")
 
     results = await db.minigame_results.find(
         {"league_id": league_id, "race_id": race_id, "game_type": game_type, "is_training": False}, {"_id": 0}
@@ -220,7 +220,7 @@ async def get_my_minigame_attempts(
 async def get_global_minigame_leaderboard(game_type: str, user: dict = Depends(get_current_user)) -> dict:
     """Get global mini-game leaderboard (all time best scores)"""
     if game_type not in ["reaction", "batak"]:
-        raise HTTPException(status_code=400, detail="Invalid game type")
+        raise HTTPException(status_code=400, detail="Type de jeu invalide")
 
     stat_field = "best_reaction_time" if game_type == "reaction" else "best_batak_score"
 

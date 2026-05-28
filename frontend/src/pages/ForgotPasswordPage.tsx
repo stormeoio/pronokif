@@ -4,6 +4,7 @@
  */
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
 import { Mail, ArrowLeft, CheckCircle2, ExternalLink } from "lucide-react";
 import { apiClient } from "@/lib/api";
@@ -12,6 +13,7 @@ import { haptic } from "@/lib/haptics";
 import { fadeUp, easing, duration, getReducedMotionProps } from "@/lib/motion";
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "sent">("idle");
   const [error, setError] = useState("");
@@ -37,7 +39,7 @@ export default function ForgotPasswordPage() {
       setResendTimer(60);
     } catch {
       haptic("error");
-      setError("Une erreur est survenue. Réessaye.");
+      setError(t("password.forgot.error"));
       setStatus("idle");
     }
   };
@@ -85,23 +87,22 @@ export default function ForgotPasswordPage() {
             <div className="w-14 h-14 rounded-full bg-pk-emerald/[0.12] border border-pk-emerald/20 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-6 h-6 text-pk-emerald" />
             </div>
-            <h2 className="font-display text-lg mb-1">Email envoyé</h2>
+            <h2 className="font-display text-lg mb-1">{t("password.forgot.success_title")}</h2>
             <p className="text-xs text-pk-titane leading-relaxed mb-5 max-w-[260px] mx-auto">
-              Si un compte existe pour cet email, tu recevras un lien pour réinitialiser ton mot de
-              passe.
+              {t("password.forgot.success_message")}
             </p>
 
             {/* Resend timer */}
             {resendTimer > 0 ? (
               <p className="font-data text-[0.5625rem] text-pk-titane mb-4">
-                Renvoyer dans {resendTimer}s
+                {t("password.forgot.resend_timer", { seconds: resendTimer })}
               </p>
             ) : (
               <button
                 onClick={handleResend}
                 className="font-data text-[0.5625rem] text-pk-red mb-4"
               >
-                Renvoyer l'email
+                {t("password.forgot.resend")}
               </button>
             )}
 
@@ -113,7 +114,7 @@ export default function ForgotPasswordPage() {
               className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm flex items-center justify-center gap-2 shadow-glow-red active:scale-[0.97] transition-transform mb-3"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              Ouvrir ma boîte mail
+              {t("password.forgot.open_mailbox")}
             </button>
 
             <Link
@@ -121,7 +122,7 @@ export default function ForgotPasswordPage() {
               className="text-xs text-pk-titane hover:text-pk-piste transition-colors inline-flex items-center gap-1"
             >
               <ArrowLeft className="w-3 h-3" />
-              Retour à la connexion
+              {t("password.forgot.back")}
             </Link>
           </motion.div>
         ) : (
@@ -130,10 +131,8 @@ export default function ForgotPasswordPage() {
               <div className="w-12 h-12 rounded-full bg-pk-red/[0.10] border border-pk-red/20 flex items-center justify-center mx-auto mb-3">
                 <Mail className="w-5 h-5 text-pk-red" />
               </div>
-              <h2 className="font-display text-lg mb-1">Mot de passe oublié ?</h2>
-              <p className="text-xs text-pk-titane">
-                Entre ton email pour recevoir un lien de réinitialisation.
-              </p>
+              <h2 className="font-display text-lg mb-1">{t("password.forgot.title")}</h2>
+              <p className="text-xs text-pk-titane">{t("password.forgot.subtitle")}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -141,7 +140,7 @@ export default function ForgotPasswordPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you.com"
+                placeholder={t("password.forgot.email_placeholder")}
                 required
                 className="w-full h-11 px-3.5 rounded-lg bg-pk-anthracite border border-white/[0.08] text-sm text-pk-piste placeholder:text-pk-titane/50 focus:outline-none focus:border-pk-red/40 transition-colors"
               />
@@ -154,7 +153,7 @@ export default function ForgotPasswordPage() {
                 className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-50"
                 data-testid="forgot-password-submit"
               >
-                {status === "loading" ? "Envoi..." : "Envoyer le lien"}
+                {status === "loading" ? t("password.forgot.loading") : t("password.forgot.submit")}
               </button>
             </form>
 
@@ -164,7 +163,7 @@ export default function ForgotPasswordPage() {
                 className="text-xs text-pk-titane hover:text-pk-piste transition-colors inline-flex items-center gap-1"
               >
                 <ArrowLeft className="w-3 h-3" />
-                Retour à la connexion
+                {t("password.forgot.back")}
               </Link>
             </div>
           </>

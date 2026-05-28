@@ -14,6 +14,7 @@ import re
 import uuid
 from datetime import UTC, datetime, timedelta
 
+import httpx
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, EmailStr
@@ -137,7 +138,7 @@ async def register(request: Request, data: UserCreate, response: Response):
 
     existing = await db.users.find_one(_user_email_filter(email))
     if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=400, detail="Cet email est déjà utilisé")
 
     # P1-3: generate email verification token
     verification_token = generate_verification_token()
@@ -156,6 +157,8 @@ async def register(request: Request, data: UserCreate, response: Response):
         "created_at": datetime.now(UTC).isoformat(),
         "email_verified": False,
         "email_verification_token": verification_token,
+        "locale": data.locale if data.locale in ("fr", "en") else "fr",
+        "nationality": data.nationality,
     }
     await db.users.insert_one(user)
 
@@ -163,7 +166,8 @@ async def register(request: Request, data: UserCreate, response: Response):
     await db.user_stats.insert_one({"user_id": user_id, **get_default_user_stats()})
 
     # Send verification email (logs URL in dev, sends real email in prod)
-    await send_verification_email(email, verification_token)
+    user_locale = data.locale if data.locale in ("fr", "en") else "fr"
+    await send_verification_email(email, verification_token, lang=user_locale)
 
     # P0-2 + P1-1: set httpOnly cookies
     access_token = create_access_token(user_id)
@@ -183,6 +187,8 @@ async def register(request: Request, data: UserCreate, response: Response):
             avatar_id=None,
             custom_avatar_url=None,
             email_verified=False,
+            locale=user["locale"],
+            nationality=user.get("nationality"),
         ),
     )
 
@@ -197,7 +203,7 @@ async def login(data: UserLogin, request: Request, response: Response):
     email = _normalize_email(data.email)
     user = await db.users.find_one(_user_email_filter(email), {"_id": 0})
     if not user or not verify_password(data.password, user["password_hash"]):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
 
     await _record_login(user, request)
 
@@ -219,6 +225,8 @@ async def login(data: UserLogin, request: Request, response: Response):
             avatar_id=user.get("avatar_id"),
             custom_avatar_url=user.get("custom_avatar_url"),
             email_verified=user.get("email_verified", False),
+            locale=user.get("locale", "fr"),
+            nationality=user.get("nationality"),
         ),
     )
 
@@ -260,7 +268,7 @@ async def send_magic_link(request: Request, data: MagicLinkRequest) -> dict:
         if not sent:
             logger.warning("[Magic Login] Email delivery was not confirmed for %s", email)
 
-    return {"message": "If an account exists for this email, a magic link has been sent."}
+    return {"message": "Si un compte existe pour cet email, un lien magique a été envoyé."}
 
 
 @router.post("/magic-link/verify", response_model=TokenResponse)
@@ -270,23 +278,23 @@ async def verify_magic_link(request: Request, data: MagicLinkVerifyRequest, resp
     try:
         payload = jwt.decode(data.token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         if payload.get("type") != "user_magic_link":
-            raise HTTPException(status_code=400, detail="Invalid link")
+            raise HTTPException(status_code=400, detail="Lien invalide")
 
         user_id = payload.get("sub")
         token_id = payload.get("jti")
         if not user_id or not token_id:
-            raise HTTPException(status_code=400, detail="Invalid link")
+            raise HTTPException(status_code=400, detail="Lien invalide")
 
         link_doc = await db.user_magic_links.find_one(
             {"token_id": token_id, "user_id": user_id, "used": False}
         )
         if not link_doc:
-            raise HTTPException(status_code=400, detail="Link already used or expired")
+            raise HTTPException(status_code=400, detail="Lien déjà utilisé ou expiré")
 
         user = await db.users.find_one({"id": user_id}, {"_id": 0})
         if not user:
             await db.user_magic_links.update_one({"token_id": token_id}, {"$set": {"used": True}})
-            raise HTTPException(status_code=400, detail="Invalid link")
+            raise HTTPException(status_code=400, detail="Lien invalide")
 
         await db.user_magic_links.update_one({"token_id": token_id}, {"$set": {"used": True}})
         await _record_login(user, request)
@@ -316,13 +324,15 @@ async def verify_magic_link(request: Request, data: MagicLinkVerifyRequest, resp
                 avatar_id=user.get("avatar_id"),
                 custom_avatar_url=user.get("custom_avatar_url"),
                 email_verified=True,
+                locale=user.get("locale", "fr"),
+                nationality=user.get("nationality"),
             ),
         )
 
     except jwt.ExpiredSignatureError as exc:
-        raise HTTPException(status_code=400, detail="Expired link") from exc
+        raise HTTPException(status_code=400, detail="Lien expiré") from exc
     except jwt.InvalidTokenError as exc:
-        raise HTTPException(status_code=400, detail="Invalid link") from exc
+        raise HTTPException(status_code=400, detail="Lien invalide") from exc
 
 
 # ── Refresh ──────────────────────────────────────────────────────────────────
@@ -350,6 +360,8 @@ async def refresh_tokens(request: Request, response: Response):
             avatar_id=user.get("avatar_id"),
             custom_avatar_url=user.get("custom_avatar_url"),
             email_verified=user.get("email_verified", False),
+            locale=user.get("locale", "fr"),
+            nationality=user.get("nationality"),
         ),
     )
 
@@ -361,7 +373,7 @@ async def refresh_tokens(request: Request, response: Response):
 async def logout(response: Response):
     """Clear auth cookies."""
     _clear_auth_cookies(response)
-    return {"message": "Logged out"}
+    return {"message": "Déconnecté"}
 
 
 # ── Me ───────────────────────────────────────────────────────────────────────
@@ -381,6 +393,64 @@ async def get_me(user=Depends(get_current_user)):
         avatar_id=user.get("avatar_id"),
         custom_avatar_url=user.get("custom_avatar_url"),
         email_verified=user.get("email_verified", False),
+        locale=user.get("locale", "fr"),
+        nationality=user.get("nationality"),
+    )
+
+
+# ── Geolocation ─────────────────────────────────────────────────────────────
+
+
+@router.get("/geolocate")
+async def geolocate(request: Request):
+    """Detect the client's country from their IP (public, no auth)."""
+    default = {"country_code": "FR", "country": "France"}
+    try:
+        ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "")
+        if ip and "," in ip:
+            ip = ip.split(",")[0].strip()
+        if not ip or ip in ("127.0.0.1", "::1", "localhost"):
+            return default
+        async with httpx.AsyncClient(timeout=5) as client:
+            resp = await client.get(f"http://ip-api.com/json/{ip}?fields=status,countryCode,country")
+            data = resp.json()
+            if data.get("status") == "success":
+                return {"country_code": data["countryCode"], "country": data["country"]}
+        return default
+    except Exception:
+        return default
+
+
+# ── Profile update ──────────────────────────────────────────────────────────
+
+
+class ProfileUpdate(BaseModel):
+    locale: str | None = None
+    nationality: str | None = None
+
+
+@router.patch("/me", response_model=UserResponse)
+async def update_profile(data: ProfileUpdate, user=Depends(get_current_user)):
+    """Mettre a jour le profil (langue, nationalite)."""
+    updates = {k: v for k, v in data.model_dump().items() if v is not None}
+    if updates:
+        if "locale" in updates and updates["locale"] not in ("fr", "en"):
+            raise HTTPException(status_code=400, detail="Langue non supportée")
+        await db.users.update_one({"id": user["id"]}, {"$set": updates})
+    updated = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    return UserResponse(
+        id=updated["id"],
+        email=updated["email"],
+        username=updated.get("username"),
+        created_at=updated["created_at"],
+        current_league_id=updated.get("current_league_id"),
+        xp=updated.get("xp", 0),
+        level=updated.get("level", 1),
+        avatar_id=updated.get("avatar_id"),
+        custom_avatar_url=updated.get("custom_avatar_url"),
+        email_verified=updated.get("email_verified", False),
+        locale=updated.get("locale", "fr"),
+        nationality=updated.get("nationality"),
     )
 
 
@@ -392,7 +462,7 @@ async def set_username(data: UserSetUsername, user=Depends(get_current_user)):
     """Set or update username"""
     existing = await db.users.find_one({"username": data.username, "id": {"$ne": user["id"]}})
     if existing:
-        raise HTTPException(status_code=400, detail="Username already taken")
+        raise HTTPException(status_code=400, detail="Ce pseudo est déjà pris")
     await db.users.update_one({"id": user["id"]}, {"$set": {"username": data.username}})
     return UserResponse(
         id=user["id"],
@@ -402,7 +472,11 @@ async def set_username(data: UserSetUsername, user=Depends(get_current_user)):
         current_league_id=user.get("current_league_id"),
         xp=user.get("xp", 0),
         level=user.get("level", 1),
+        avatar_id=user.get("avatar_id"),
+        custom_avatar_url=user.get("custom_avatar_url"),
         email_verified=user.get("email_verified", False),
+        locale=user.get("locale", "fr"),
+        nationality=user.get("nationality"),
     )
 
 
@@ -417,7 +491,7 @@ async def verify_email(token: str):
         {"_id": 0},
     )
     if not user:
-        raise HTTPException(status_code=400, detail="Invalid or already used verification token")
+        raise HTTPException(status_code=400, detail="Lien de vérification invalide ou déjà utilisé")
 
     await db.users.update_one(
         {"id": user["id"]},
@@ -426,22 +500,22 @@ async def verify_email(token: str):
             "$unset": {"email_verification_token": ""},
         },
     )
-    return {"message": "Email verified successfully"}
+    return {"message": "Email vérifié avec succès"}
 
 
 @router.post("/resend-verification")
 async def resend_verification(user=Depends(get_current_user)):
     """Resend verification email for the current user."""
     if user.get("email_verified"):
-        return {"message": "Email already verified"}
+        return {"message": "Email déjà vérifié"}
 
     new_token = generate_verification_token()
     await db.users.update_one(
         {"id": user["id"]},
         {"$set": {"email_verification_token": new_token}},
     )
-    await send_verification_email(user["email"], new_token)
-    return {"message": "Verification email sent again"}
+    await send_verification_email(user["email"], new_token, lang=user.get("locale", "fr"))
+    return {"message": "Email de vérification renvoyé"}
 
 
 # ── Password reset (P1-4) ──────────────────────────────────────────────────
@@ -476,7 +550,7 @@ async def forgot_password(request: Request, data: ForgotPasswordRequest):
             logger.warning("[Password Reset] Email delivery was not confirmed for %s", email)
 
     # Always return same message (no email enumeration)
-    return {"message": "If an account exists for this email, a reset link has been sent."}
+    return {"message": "Si un compte existe pour cet email, un lien de réinitialisation a été envoyé."}
 
 
 class ResetPasswordData(BaseModel):
@@ -498,12 +572,12 @@ async def reset_password(request: Request, data: ResetPasswordData):
         {"_id": 0},
     )
     if not user:
-        raise HTTPException(status_code=400, detail="Invalid link ou expire")
+        raise HTTPException(status_code=400, detail="Lien invalide ou expiré")
 
     # Check expiration
     expires = user.get("reset_password_expires", "")
     if expires and datetime.fromisoformat(expires) < datetime.now(UTC):
-        raise HTTPException(status_code=400, detail="Expired link, please request a new one")
+        raise HTTPException(status_code=400, detail="Lien expiré, demande un nouveau lien")
 
     # Update password and clear token
     await db.users.update_one(
@@ -514,4 +588,4 @@ async def reset_password(request: Request, data: ResetPasswordData):
         },
     )
 
-    return {"message": "Password reset successfully"}
+    return {"message": "Mot de passe réinitialisé avec succès"}

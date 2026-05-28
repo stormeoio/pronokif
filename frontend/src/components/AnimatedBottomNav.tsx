@@ -4,6 +4,7 @@
  * Broadcast Premium: pk-carbon/red/piste/titane, no kerb stripe.
  */
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Home, Trophy, Target, User, Users, MessageCircle, Flag } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -21,18 +22,18 @@ const PREFETCH_MAP: Record<string, () => Promise<unknown>> = {
   "/profile": () => import("@/pages/profile/ProfilePage"),
 };
 
-interface NavItem {
+interface NavItemDef {
   path: string;
   icon: LucideIcon;
-  label: string;
+  i18nKey: string;
 }
 
-const navItems: NavItem[] = [
-  { path: "/", icon: Home, label: "Accueil" },
-  { path: "/predictions", icon: Target, label: "Pronos" },
-  { path: "/championship", icon: Flag, label: "Champ." },
-  { path: "/league", icon: Users, label: "Ligues" },
-  { path: "/profile", icon: User, label: "Profil" },
+const NAV_DEFS: NavItemDef[] = [
+  { path: "/", icon: Home, i18nKey: "nav.home" },
+  { path: "/predictions", icon: Target, i18nKey: "nav.predictions" },
+  { path: "/championship", icon: Flag, i18nKey: "nav.championship" },
+  { path: "/league", icon: Users, i18nKey: "nav.leagues" },
+  { path: "/profile", icon: User, i18nKey: "nav.profile" },
 ];
 
 const BRAND_RED = "#E10600";
@@ -43,6 +44,7 @@ export default function AnimatedBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [unreadChatCount, setUnreadChatCount] = useState(0);
 
   useEffect(() => {
@@ -60,6 +62,8 @@ export default function AnimatedBottomNav() {
     return () => clearInterval(interval);
   }, [user]);
 
+  const navItems = useMemo(() => NAV_DEFS.map((d) => ({ ...d, label: t(d.i18nKey) })), [t]);
+
   const activeIndex = useMemo(() => {
     const idx = navItems.findIndex(
       (item) =>
@@ -67,7 +71,7 @@ export default function AnimatedBottomNav() {
         (item.path !== "/" && location.pathname.startsWith(item.path)),
     );
     return idx >= 0 ? idx : 0;
-  }, [location.pathname]);
+  }, [location.pathname, navItems]);
 
   const handleTap = (path: string) => {
     haptic("selection");
@@ -78,7 +82,7 @@ export default function AnimatedBottomNav() {
   const prefetchedRef = useRef(new Set<string>());
   const handlePrefetch = useCallback((path: string) => {
     if (prefetchedRef.current.has(path)) return;
-    const loader = PREFETCH_MAP[path];
+    const loader = PREFETCH_MAP[path as keyof typeof PREFETCH_MAP];
     if (loader) {
       prefetchedRef.current.add(path);
       void loader();
@@ -86,7 +90,7 @@ export default function AnimatedBottomNav() {
   }, []);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50" aria-label="Navigation principale">
+    <nav className="fixed bottom-0 left-0 right-0 z-50" aria-label={t("nav.aria_label")}>
       {/* Glass nav bar */}
       <div className="relative h-[72px] bg-pk-carbon/95 backdrop-blur-xl border-t border-white/[0.06]">
         {/* Animated glow indicator */}

@@ -102,8 +102,9 @@ def _render(
     button_label: str,
     fine_print: str,
     code: str | None = None,
-    code_label: str = "TON CODE",  # already FR
+    code_label: str = "TON CODE",
     admin: bool = False,
+    lang: str = "fr",
 ) -> str:
     safe_preheader = html.escape(preheader)
     safe_title = html.escape(title)
@@ -123,6 +124,7 @@ def _render(
 
     admin_badge = ""
     if admin:
+        badge_label = "RACE CONTROL" if lang == "en" else "DIRECTION DE COURSE"
         admin_badge = (
             '<table role="presentation" border="0" cellpadding="0" '
             'cellspacing="0" style="margin:0 0 16px;"><tr>'
@@ -131,11 +133,11 @@ def _render(
             '<span style="font-family:Arial,Helvetica,sans-serif;'
             "font-size:10px;font-weight:700;color:#ffffff;"
             'letter-spacing:2px;text-transform:uppercase;">'
-            "DIRECTION DE COURSE</span></td></tr></table>"
+            f"{badge_label}</span></td></tr></table>"
         )
 
     return f"""<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" lang="fr">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" lang="{lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -232,7 +234,7 @@ a{{color:#E10600;}}
 
 <!-- FOOTER -->
 <tr><td align="center" style="padding:28px 0 0;">
-<p style="margin:0 0 6px;font-family:'Arial Black',Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:2.5px;color:#5F6673;mso-line-height-rule:exactly;line-height:1.4;" class="footer-text">PRONOSTIQUE. DÉFIE. <span style="color:#E10600;">VIBRE.</span></p>
+<p style="margin:0 0 6px;font-family:'Arial Black',Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:2.5px;color:#5F6673;mso-line-height-rule:exactly;line-height:1.4;" class="footer-text">{"PREDICT. CHALLENGE." if lang == "en" else "PRONOSTIQUE. DÉFIE."} <span style="color:#E10600;">{"THRILL." if lang == "en" else "VIBRE."}</span></p>
 <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#3d4350;mso-line-height-rule:exactly;line-height:1.4;" class="footer-text">&copy; 2026 PronoKif</p>
 </td></tr>
 
@@ -250,7 +252,33 @@ a{{color:#E10600;}}
 # ═══════════════════════════════════════════════════════════════════════════
 
 
-def verification(verify_url: str) -> EmailContent:
+def verification(verify_url: str, lang: str = "fr") -> EmailContent:
+    if lang == "en":
+        return EmailContent(
+            subject="Confirm your email — let's go!",
+            text=(
+                "Welcome to the PronoKif paddock!\n\n"
+                "Your account is almost ready. Confirm your email:\n"
+                f"{verify_url}\n\n"
+                "You didn't create a PronoKif account? Ignore this message."
+            ),
+            html_body=_render(
+                preheader="One last click and you're in the paddock.",
+                title="Welcome to the paddock!",
+                paragraphs=[
+                    "Your account is almost ready. One last click to "
+                    "confirm your email, then you can predict, "
+                    "create leagues and aim for the podium.",
+                ],
+                button_url=verify_url,
+                button_label="CONFIRM MY EMAIL",
+                fine_print=(
+                    "You didn't create a PronoKif account? "
+                    "Ignore this message, nothing will happen."
+                ),
+                lang="en",
+            ),
+        )
     return EmailContent(
         subject="Confirme ton email — en piste !",
         text=(
@@ -277,7 +305,33 @@ def verification(verify_url: str) -> EmailContent:
     )
 
 
-def password_reset(reset_url: str, expire_minutes: int = 30) -> EmailContent:
+def password_reset(reset_url: str, expire_minutes: int = 30, lang: str = "fr") -> EmailContent:
+    if lang == "en":
+        return EmailContent(
+            subject="Pit stop — your new password",
+            text=(
+                "PronoKif pit stop\n\n"
+                "Use this link to set a new password:\n"
+                f"{reset_url}\n\n"
+                f"This link expires in {expire_minutes} minutes.\n"
+                "You didn't request a reset? Ignore this message."
+            ),
+            html_body=_render(
+                preheader="A quick pit stop for your password.",
+                title="Pit stop",
+                paragraphs=[
+                    "No worries, even the best make pit stops. "
+                    "Click below to set a new password.",
+                ],
+                button_url=reset_url,
+                button_label="NEW PASSWORD",
+                fine_print=(
+                    f"This link expires in {expire_minutes} minutes. "
+                    "You didn't request this? Ignore this message."
+                ),
+                lang="en",
+            ),
+        )
     return EmailContent(
         subject="Arrêt au stand — ton nouveau mot de passe",
         text=(
@@ -304,7 +358,35 @@ def password_reset(reset_url: str, expire_minutes: int = 30) -> EmailContent:
     )
 
 
-def magic_login(magic_url: str, expire_minutes: int = 15) -> EmailContent:
+def magic_login(magic_url: str, expire_minutes: int = 15, lang: str = "fr") -> EmailContent:
+    if lang == "en":
+        return EmailContent(
+            subject="Your PronoKif paddock pass",
+            text=(
+                "PronoKif express login\n\n"
+                "Open this link to log in without a password:\n"
+                f"{magic_url}\n\n"
+                f"This link expires in {expire_minutes} minutes "
+                "and can only be used once.\n"
+                "You didn't request this link? Ignore this message."
+            ),
+            html_body=_render(
+                preheader="One click and you're in the paddock.",
+                title="Express login",
+                paragraphs=[
+                    "One click and you're in the paddock. "
+                    "No password needed, just the good stuff.",
+                ],
+                button_url=magic_url,
+                button_label="LOG IN",
+                fine_print=(
+                    f"This link expires in {expire_minutes} minutes "
+                    "and can only be used once. "
+                    "You didn't request this link? Ignore this message."
+                ),
+                lang="en",
+            ),
+        )
     return EmailContent(
         subject="Ton pass paddock PronoKif",
         text=(
@@ -333,7 +415,34 @@ def magic_login(magic_url: str, expire_minutes: int = 15) -> EmailContent:
     )
 
 
-def admin_magic_link(magic_url: str, expire_minutes: int = 15) -> EmailContent:
+def admin_magic_link(magic_url: str, expire_minutes: int = 15, lang: str = "fr") -> EmailContent:
+    if lang == "en":
+        return EmailContent(
+            subject="Race Control access — PronoKif",
+            text=(
+                "PronoKif back-office login\n\n"
+                "Open this link to access the back-office:\n"
+                f"{magic_url}\n\n"
+                f"This link expires in {expire_minutes} minutes.\n"
+                "You didn't request this link? Ignore this message."
+            ),
+            html_body=_render(
+                preheader="Your Race Control access is ready.",
+                title="Race Control",
+                paragraphs=[
+                    "Your PronoKif back-office access is ready. "
+                    "One click to enter Race Control.",
+                ],
+                button_url=magic_url,
+                button_label="ACCESS BACK-OFFICE",
+                fine_print=(
+                    f"This link expires in {expire_minutes} minutes. "
+                    "You didn't request this link? Ignore this message."
+                ),
+                admin=True,
+                lang="en",
+            ),
+        )
     return EmailContent(
         subject="Accès Direction de Course — PronoKif",
         text=(
@@ -365,7 +474,43 @@ def invitation(
     invite_url: str,
     personal_message: str | None = None,
     league_code: str | None = None,
+    lang: str = "fr",
 ) -> EmailContent:
+    if lang == "en":
+        paras = [
+            "Join <strong>PronoKif</strong>, the F1 prediction game among friends. "
+            "Make your predictions, challenge your mates and aim for the podium.",
+        ]
+        if personal_message:
+            safe_msg = html.escape(personal_message)
+            paras.append(
+                f'<em style="color:#a1a1aa;">&laquo;&nbsp;{safe_msg}&nbsp;&raquo;</em>'
+            )
+        text_personal = f"\nMessage: {personal_message}\n" if personal_message else ""
+        text_code = f"\nLeague code: {league_code}\n" if league_code else ""
+        return EmailContent(
+            subject="Join the PronoKif paddock",
+            text=(
+                "The paddock awaits!\n\n"
+                "You're invited to join PronoKif, the F1 prediction game "
+                "among friends.\n"
+                f"{text_personal}{text_code}\n"
+                f"Create your account: {invite_url}\n\n"
+                "This invitation expires in 7 days."
+            ),
+            html_body=_render(
+                preheader="You're expected in the PronoKif paddock.",
+                title="The paddock awaits!",
+                paragraphs=paras,
+                button_url=invite_url,
+                button_label="CREATE MY ACCOUNT",
+                fine_print="This invitation expires in 7 days.",
+                code=league_code,
+                code_label="LEAGUE CODE",
+                lang="en",
+            ),
+        )
+
     paras = [
         "Rejoins <strong>PronoKif</strong>, le jeu de pronostics F1 entre potes. "
         "Fais tes pronos, défie tes amis et vise le podium.",

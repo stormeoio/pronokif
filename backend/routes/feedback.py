@@ -47,5 +47,5 @@ async def get_all_feedback(_admin: dict = Depends(require_admin)) -> list[dict]:
 async def mark_feedback_read(feedback_id: str, _admin: dict = Depends(require_admin)) -> dict:
     """Mark a feedback entry as read (admin only)."""
     if not await feedback_service.mark_read(feedback_id):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Feedback not found")
-    return {"message": "Feedback marked as read"}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Feedback introuvable")
+    return {"message": "Feedback marqué comme lu"}
