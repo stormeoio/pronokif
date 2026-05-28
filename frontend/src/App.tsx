@@ -65,6 +65,8 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     location.pathname.startsWith("/admin-bo") ||
     location.pathname.startsWith("/bo-admin");
   const hideNav = isAdminBackOfficeRoute || ["/auth", "/set-username"].includes(location.pathname);
+  // Auth pages use their own video background — skip 3D particles to save GPU
+  const isAuthRoute = location.pathname === "/auth" || isAdminBackOfficeRoute;
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -76,8 +78,8 @@ function AppLayout({ children }: { children: React.ReactNode }) {
         {t("app.skip_to_content")}
       </a>
 
-      {/* 3D particle background (ambient, low perf cost) */}
-      {!shouldUseLightweightShell && (
+      {/* 3D particle background (ambient, low perf cost) — skipped on auth pages (video bg) */}
+      {!shouldUseLightweightShell && !isAuthRoute && (
         <Suspense fallback={null}>
           <ParticleBackground />
         </Suspense>

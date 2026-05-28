@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { ArrowRight, ChevronDown, Loader2, Mail, Plus, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import type { User } from "@/lib/auth";
 import { iconProps } from "@/lib/icons";
-import { fadeUp, easing, duration } from "@/lib/motion";
 import { brandAssets } from "@/lib/brand";
 import { BorderGlowButton } from "@/components/ui/border-glow-button";
 import { COUNTRIES, countryFlag } from "@/i18n/countries";
@@ -164,52 +162,47 @@ export default function AuthPage() {
     <>
       {/* ---- AUTH PAGE ---- */}
       <div className="relative w-full min-h-dvh flex flex-col items-center justify-center px-5 py-8 overflow-hidden">
-        {/* Background layers */}
-        <div
-          className="absolute inset-0 z-0"
-          style={{
-            background: `
-              radial-gradient(ellipse 120% 80% at 50% 100%, rgba(225,6,0,0.06) 0%, transparent 50%),
-              radial-gradient(ellipse 80% 60% at 20% 20%, rgba(225,6,0,0.03) 0%, transparent 50%),
-              linear-gradient(180deg, #0a0c10 0%, #0B0D12 40%, #110a0a 100%)
-            `,
-          }}
+        {/* Video background — splash trailer */}
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover z-0 animate-video-in"
+          src="/video/splash-trailer.mp4"
         />
+        {/* Dark overlay for readability */}
+        <div className="absolute inset-0 z-0 bg-gradient-to-b from-black/65 via-black/50 to-black/70" />
+        {/* Subtle grid texture over video */}
         <div
           className="absolute inset-0 z-0"
           style={{
             backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.008) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.008) 1px,transparent 1px)",
+              "linear-gradient(rgba(255,255,255,0.006) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.006) 1px,transparent 1px)",
             backgroundSize: "80px 80px",
             maskImage: "radial-gradient(ellipse 50% 50% at 50% 50%,black 20%,transparent 80%)",
             WebkitMaskImage:
               "radial-gradient(ellipse 50% 50% at 50% 50%,black 20%,transparent 80%)",
           }}
         />
+        {/* Subtle red glow at bottom edge */}
+        <div
+          className="absolute inset-0 z-[1] pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse 100% 40% at 50% 110%, rgba(225,6,0,0.08), transparent 60%)",
+          }}
+        />
         {/* Grain */}
         <div className="grain" />
 
-        {/* Red glow behind card */}
-        <motion.div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] z-[1] pointer-events-none"
-          style={{
-            background: "radial-gradient(circle,rgba(225,6,0,0.05) 0%,transparent 60%)",
-          }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.2, ease: easing.enter }}
-        />
-
-        {/* ---- GLASS AUTH CARD ---- */}
-        <motion.div
-          className="relative z-10 w-full max-w-[400px]
+        {/* ---- GLASS AUTH CARD — sport reveal ---- */}
+        <div
+          className="relative z-10 w-full max-w-[400px] animate-sport-reveal
             bg-pk-anthracite/80 backdrop-blur-[40px] saturate-[1.3]
             border border-white/[0.08] rounded-xl
             px-7 pt-9 pb-7
             shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.15),0_24px_48px_rgba(0,0,0,0.25)]"
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
           data-testid="auth-card"
         >
           {/* Logo */}
@@ -523,19 +516,16 @@ export default function AuthPage() {
               </>
             )}
           </p>
-        </motion.div>
+        </div>
 
         {/* Bottom tagline */}
-        <motion.p
+        <p
           className="fixed bottom-5 left-0 right-0 text-center z-10
-            font-display text-[0.625rem] tracking-[0.15em] text-pk-titane/40"
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 0.4, y: 0 }}
-          transition={{ duration: duration.long, ease: easing.enter, delay: 0.3 }}
+            font-display text-[0.625rem] tracking-[0.15em] text-pk-titane/40 animate-tagline-in"
         >
           {t("auth.tagline.footer")}{" "}
           <em className="not-italic text-pk-red">{t("auth.tagline.footer_accent")}</em>
-        </motion.p>
+        </p>
       </div>
     </>
   );

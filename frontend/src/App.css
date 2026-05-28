@@ -560,3 +560,81 @@ button:active:not(:disabled) {
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
   background-color: rgba(225, 6, 0, 0.08) !important;
 }
+
+/* ============================================
+   AUTH VIDEO BACKGROUND + SPORT TRANSITIONS
+   ============================================ */
+
+/* Diagonal wipe reveal — extreme sport style */
+@keyframes pk-sport-reveal {
+  0% {
+    clip-path: polygon(0 0, 6% 0, 0 100%, 0 100%);
+    opacity: 0;
+    transform: translateX(-20px) scale(1.03);
+  }
+  45% {
+    clip-path: polygon(0 0, 100% 0, 92% 100%, 0 100%);
+    opacity: 1;
+  }
+  100% {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Red racing stripe sweep — horizontal accent */
+@keyframes pk-stripe-sweep {
+  0% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* Video background fade-in */
+@keyframes pk-video-in {
+  0% {
+    opacity: 0;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Tagline subtle entrance */
+@keyframes pk-tagline-in {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 0.4;
+    transform: translateY(0);
+  }
+}
+
+.animate-sport-reveal {
+  animation: pk-sport-reveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-stripe-sweep {
+  animation: pk-stripe-sweep 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+  transform-origin: left center;
+}
+
+.animate-video-in {
+  animation: pk-video-in 0.8s ease-out both;
+}
+
+.animate-tagline-in {
+  animation: pk-tagline-in 0.6s ease-out 0.3s both;
+}

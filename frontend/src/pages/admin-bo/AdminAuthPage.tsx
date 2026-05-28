@@ -10,7 +10,6 @@
  */
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import {
   Mail,
   Loader2,
@@ -224,18 +223,21 @@ export default function AdminAuthPage() {
   // Branded loading state while checking cookie/device auth
   if (authChecking && !searchParams.has("token")) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center p-4"
-        style={{
-          background:
-            "radial-gradient(circle at 50% -12%, rgba(225,6,0,.16), transparent 34%), linear-gradient(180deg, #0B0D12 0%, #07090D 56%, #0B0D12 100%)",
-        }}
-      >
-        <div className="text-center">
+      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          src="/video/splash-trailer.mp4"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/55 to-black/80" />
+        <div className="text-center relative z-10">
           <img
             src={brandAssets.wordmarkWhiteRed}
             alt="PronoKif"
-            className="mx-auto mb-6 h-8 w-auto max-w-[210px] object-contain"
+            className="mx-auto mb-6 h-8 w-auto max-w-[210px] object-contain drop-shadow-lg"
             draggable={false}
           />
           <Loader2 className="w-8 h-8 text-pk-red animate-spin mx-auto mb-3" />
@@ -246,19 +248,30 @@ export default function AdminAuthPage() {
   }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{
-        background:
-          "radial-gradient(circle at 50% -12%, rgba(225,6,0,.16), transparent 34%), radial-gradient(circle at 0% 34%, rgba(244,244,244,.04), transparent 28%), linear-gradient(180deg, #0B0D12 0%, #07090D 56%, #0B0D12 100%)",
-      }}
-    >
-      <motion.div
-        className="w-full max-w-md"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Video background — splash trailer */}
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover animate-video-in"
+        src="/video/splash-trailer.mp4"
+      />
+      {/* Dark overlay for readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/75" />
+      {/* Subtle red glow at bottom edge */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 100% 40% at 50% 110%, rgba(225,6,0,0.1), transparent 60%)",
+        }}
+      />
+      {/* Grain texture */}
+      <div className="grain" />
+
+      <div className="w-full max-w-md relative z-10 animate-sport-reveal">
         <div className="bg-pk-surface/80 backdrop-blur-xl border border-white/[0.08] rounded-xl overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,.5)]">
           {/* Header */}
           <div className="border-b border-pk-red/25 bg-gradient-to-r from-pk-red/12 to-transparent p-6">
@@ -423,9 +436,10 @@ export default function AdminAuthPage() {
             <span className="text-[10px] text-pk-titane/40 font-data">DIRECTION DE COURSE</span>
           </div>
 
-          <div className="h-2 bg-gradient-to-r from-pk-red via-pk-red/60 to-pk-red" />
+          {/* Racing stripe accent — animated sweep */}
+          <div className="h-1.5 bg-gradient-to-r from-pk-red via-pk-red/80 to-pk-red animate-stripe-sweep" />
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
