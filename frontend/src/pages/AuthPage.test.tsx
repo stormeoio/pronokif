@@ -3,11 +3,17 @@
  *
  * Covers: tab rendering, form fields, login/register submission, error handling.
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { AuthContext } from "@/lib/auth";
+
+// Force i18n to French for deterministic test output
+import i18n from "@/i18n";
+beforeAll(async () => {
+  await i18n.changeLanguage("fr");
+});
 
 vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
@@ -28,9 +34,12 @@ function renderAuthPage(authOverrides = {}) {
     loading: false,
     login: vi.fn().mockResolvedValue({ username: "max33", current_league_id: "lg-1" }),
     register: vi.fn().mockResolvedValue({ username: null, current_league_id: null }),
+    requestMagicLink: vi.fn().mockResolvedValue(undefined),
+    loginWithMagicLink: vi.fn().mockResolvedValue({ username: null }),
     logout: vi.fn(),
     setUsername: vi.fn(),
     updateUser: vi.fn(),
+    resendVerification: vi.fn().mockResolvedValue(undefined),
     ...authOverrides,
   };
 
