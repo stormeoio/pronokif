@@ -1,300 +1,352 @@
 """
-PRONOKIF - Admin Back-Office: Content & Settings.
+PRONOKIF - Admin Back-Office: Dashboard.
 
-Invitations, media uploads, app settings, dashboard stats.
+Business operations cockpit and dashboard stats.
 
 Endpoints:
-  POST   /admin-bo/invitations         - send email invitation
-  POST   /admin-bo/invitations/batch   - send multiple email invitations
-  GET    /admin-bo/invitations         - list sent invitations
-
-  POST   /admin-bo/media/upload        - upload media
-  GET    /admin-bo/media               - list media
-  GET    /admin-bo/media/:id/file      - serve media file
-  DELETE /admin-bo/media/:id           - delete media
-
-  GET    /admin-bo/settings            - get app settings
-  PUT    /admin-bo/settings            - update app settings
-
+  GET    /admin-bo/business/operations - business-first operations cockpit
   GET    /admin-bo/stats               - dashboard statistics
 """
 
 from __future__ import annotations
 
-import base64
-import os
-import secrets
-import uuid
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from fastapi.responses import Response
-from pydantic import BaseModel, EmailStr, Field
+from fastapi import APIRouter, Depends
 
-from config import db, logger
-from routes.admin_auth import _send_invitation_email, get_current_admin
+from config import db
+from routes.admin_auth import get_current_admin
+from services.race_calendar import (
+    has_complete_race_results,
+    race_timing_payload,
+    race_with_circuit_timezone,
+)
 
 router = APIRouter(prefix="/admin-bo", tags=["admin-backoffice-content"])
 
 
-# ═══════════════════════════════════════ INVITATIONS ══════════════════════════
+def _completion_rate(done: int, total: int) -> int:
+    if total <= 0:
+        return 0
+    return min(100, round((done / total) * 100))
 
 
-class InvitationSend(BaseModel):
-    email: EmailStr
-    message: str | None = None
-
-
-class InvitationBatchSend(BaseModel):
-    emails: list[EmailStr] = Field(..., min_length=1, max_length=100)
-    message: str | None = None
-
-
-def _dedupe_invitation_emails(emails: list[EmailStr]) -> tuple[list[str], list[dict]]:
-    seen: set[str] = set()
-    unique: list[str] = []
-    skipped: list[dict] = []
-
-    for email in emails:
-        normalized = str(email).strip().lower()
-        if normalized in seen:
-            skipped.append({"email": normalized, "reason": "duplicate in batch"})
-            continue
-        seen.add(normalized)
-        unique.append(normalized)
-
-    return unique, skipped
-
-
-def _build_invitation_doc(email: str, message: str | None, admin_email: str) -> tuple[dict, str]:
-    invite_token = secrets.token_urlsafe(32)
-    invitation = {
-        "id": str(uuid.uuid4()),
-        "email": email,
-        "message": message,
-        "token": invite_token,
-        "sent_by": admin_email,
-        "accepted": False,
-        "created_at": datetime.now(UTC).isoformat(),
-        "expires_at": (datetime.now(UTC) + timedelta(days=7)).isoformat(),
-    }
-    return invitation, invite_token
-
-
-def _build_invitation_url(invite_token: str) -> str:
-    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173").rstrip("/")
-    return f"{frontend_url}/auth?invite={invite_token}"
-
-
-@router.post("/invitations")
-async def send_invitation(
-    data: InvitationSend, admin: dict = Depends(get_current_admin)
+def _business_action_item(
+    *,
+    item_id: str,
+    severity: str,
+    area: str,
+    title: str,
+    description: str,
+    target_tab: str,
+    entity_id: str | None = None,
+    metric: int | str | None = None,
 ) -> dict:
-    """Send an email invitation to create an account."""
-    email = str(data.email).strip().lower()
-    existing = await db.invitations.find_one({"email": email})
-    if existing and not existing.get("accepted"):
-        raise HTTPException(status_code=400, detail="Invitation déjà envoyée à cette adresse")
-
-    invitation, invite_token = _build_invitation_doc(email, data.message, admin["email"])
-    await db.invitations.insert_one(invitation)
-
-    invite_url = _build_invitation_url(invite_token)
-
-    if not await _send_invitation_email(email, invite_url, data.message):
-        logger.info(f"[Invitation] Link for {email}: {invite_url}")
-
-    return {"message": "Invitation sent", "id": invitation["id"]}
-
-
-@router.post("/invitations/batch")
-async def send_invitations_batch(
-    data: InvitationBatchSend, admin: dict = Depends(get_current_admin)
-) -> dict:
-    """Send multiple email invitations to create accounts."""
-    emails, skipped = _dedupe_invitation_emails(data.emails)
-    created: list[dict] = []
-    failed: list[dict] = []
-
-    for email in emails:
-        existing = await db.invitations.find_one({"email": email})
-        if existing and not existing.get("accepted"):
-            skipped.append({"email": email, "reason": "invitation already pending"})
-            continue
-
-        invitation, invite_token = _build_invitation_doc(email, data.message, admin["email"])
-        await db.invitations.insert_one(invitation)
-
-        invite_url = _build_invitation_url(invite_token)
-        try:
-            email_sent = await _send_invitation_email(email, invite_url, data.message)
-        except Exception as exc:
-            logger.exception("[Invitation] Failed to email %s", email)
-            failed.append({"email": email, "reason": str(exc) or "SMTP error"})
-            continue
-
-        if not email_sent:
-            logger.info(f"[Invitation] Link for {email}: {invite_url}")
-
-        created.append(
-            {
-                "email": email,
-                "id": invitation["id"],
-                "email_sent": email_sent,
-            }
-        )
-
     return {
-        "message": "Invitations traitees",
-        "total": len(data.emails),
-        "sent": len(created),
-        "created": created,
-        "skipped": skipped,
-        "failed": failed,
-    }
-
-
-@router.get("/invitations")
-async def list_invitations(admin: dict = Depends(get_current_admin)) -> list[dict]:
-    """List all sent invitations."""
-    return await db.invitations.find(
-        {}, {"_id": 0, "token": 0}
-    ).sort("created_at", -1).to_list(200)
-
-
-# ═══════════════════════════════════════ MEDIA ════════════════════════════════
-
-
-@router.post("/media/upload")
-async def upload_media(
-    file: UploadFile = File(...),
-    entity_type: str = "general",
-    entity_id: str = "",
-    admin: dict = Depends(get_current_admin),
-) -> dict:
-    """Upload a media file (image/thumbnail)."""
-    allowed_types = ["image/jpeg", "image/png", "image/webp", "image/svg+xml", "image/gif"]
-    if file.content_type not in allowed_types:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Type de fichier non supporte: {file.content_type}",
-        )
-
-    content = await file.read()
-    if len(content) > 5 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="Fichier trop volumineux (max 5 Mo)")
-
-    file_id = str(uuid.uuid4())
-    ext = file.filename.split(".")[-1] if file.filename and "." in file.filename else "png"
-    filename = f"{file_id}.{ext}"
-
-    media_doc = {
-        "id": file_id,
-        "filename": filename,
-        "original_name": file.filename,
-        "content_type": file.content_type,
-        "size": len(content),
-        "data": base64.b64encode(content).decode("utf-8"),
-        "entity_type": entity_type,
+        "id": item_id,
+        "severity": severity,
+        "area": area,
+        "title": title,
+        "description": description,
+        "target_tab": target_tab,
         "entity_id": entity_id,
-        "uploaded_by": admin["email"],
-        "created_at": datetime.now(UTC).isoformat(),
+        "metric": metric,
     }
-    await db.media.insert_one(media_doc)
-
-    return {"id": file_id, "filename": filename, "url": f"/api/admin-bo/media/{file_id}/file"}
 
 
-@router.get("/media")
-async def list_media(
-    entity_type: str | None = None,
-    admin: dict = Depends(get_current_admin),
-) -> list[dict]:
-    """List all uploaded media."""
-    query = {}
-    if entity_type:
-        query["entity_type"] = entity_type
-    return await db.media.find(
-        query, {"_id": 0, "data": 0}
-    ).sort("created_at", -1).to_list(200)
+def _business_ops_summary(action_items: list[dict]) -> dict:
+    critical_count = len([item for item in action_items if item.get("severity") == "critical"])
+    warning_count = len([item for item in action_items if item.get("severity") == "warning"])
+    info_count = len([item for item in action_items if item.get("severity") == "info"])
+    score = max(0, 100 - critical_count * 18 - warning_count * 7 - info_count * 2)
+    return {
+        "business_score": score,
+        "attention_count": len(action_items),
+        "critical_count": critical_count,
+        "warning_count": warning_count,
+        "info_count": info_count,
+    }
 
 
-@router.get("/media/{media_id}/file")
-async def get_media_file(media_id: str) -> Response:
-    """Serve a media file by ID."""
-    media = await db.media.find_one({"id": media_id})
-    if not media:
-        raise HTTPException(status_code=404, detail="Fichier non trouve")
-
-    content = base64.b64decode(media["data"])
-    return Response(content=content, media_type=media["content_type"])
-
-
-@router.delete("/media/{media_id}")
-async def delete_media(
-    media_id: str, admin: dict = Depends(get_current_admin)
+def _race_ops_payload(
+    race: dict,
+    *,
+    total_users: int,
+    submitted: int,
+    scored: int,
+    has_results: bool,
 ) -> dict:
-    """Delete a media file."""
-    result = await db.media.delete_one({"id": media_id})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Fichier non trouve")
-    return {"message": "Fichier supprime"}
+    missing = 0 if race.get("is_cancelled") else max(total_users - submitted, 0)
+    scoring_pending = max(submitted - scored, 0) if has_results else 0
+    return {
+        "id": race.get("id"),
+        "name": race.get("name"),
+        "round_number": race.get("round_number"),
+        "status": race.get("status"),
+        "race_start_at": race.get("race_start_at"),
+        "predictions_close_at": race.get("predictions_close_at"),
+        "content_status": race.get("content_status") or "draft",
+        "submitted_predictions": submitted,
+        "missing_predictions": missing,
+        "completion_rate": _completion_rate(submitted, total_users),
+        "scored_predictions": scored,
+        "scoring_pending": scoring_pending,
+        "scoring_coverage_rate": _completion_rate(scored, submitted),
+        "has_results": has_results,
+    }
 
 
-# ═══════════════════════════════════════ SETTINGS ═════════════════════════════
-
-
-class AppSettings(BaseModel):
-    app_name: str | None = None
-    app_description: str | None = None
-    primary_color: str | None = None
-    accent_color: str | None = None
-    logo_url: str | None = None
-    favicon_url: str | None = None
-    maintenance_mode: bool | None = None
-    registration_open: bool | None = None
-    max_leagues_per_user: int | None = None
-    current_season: int | None = None
-
-
-@router.get("/settings")
-async def get_settings(admin: dict = Depends(get_current_admin)) -> dict:
-    """Get app settings."""
-    settings = await db.app_settings.find_one({"_id": "global"})
-    if not settings:
-        settings = {
-            "app_name": "Pronokif",
-            "app_description": "F1 prediction game",
-            "primary_color": "#f97316",
-            "accent_color": "#06b6d4",
-            "maintenance_mode": False,
-            "registration_open": True,
-            "max_leagues_per_user": 5,
-            "current_season": 2025,
-        }
-    else:
-        del settings["_id"]
-    return settings
-
-
-@router.put("/settings")
-async def update_settings(
-    data: AppSettings, admin: dict = Depends(get_current_admin)
-) -> dict:
-    """Update app settings."""
-    updates = {k: v for k, v in data.model_dump().items() if v is not None}
-    if not updates:
-        raise HTTPException(status_code=400, detail="Aucune modification fournie")
-
-    await db.app_settings.update_one(
-        {"_id": "global"},
-        {"$set": updates},
-        upsert=True,
+def _sort_business_items(items: list[dict]) -> list[dict]:
+    order = {"critical": 0, "warning": 1, "info": 2}
+    return sorted(
+        items,
+        key=lambda item: (
+            order.get(item.get("severity"), 9),
+            item.get("area", ""),
+            item.get("id", ""),
+        ),
     )
-    return {"message": "Parametres mis a jour"}
 
 
 # ═══════════════════════════════════════ STATS DASHBOARD ══════════════════════
+
+
+async def _race_business_operations(now: datetime) -> tuple[list[dict], list[dict]]:
+    races = await db.races.find({}, {"_id": 0}).sort("date", 1).to_list(200)
+    active_user_ids = await db.users.distinct("id", {"is_banned": {"$ne": True}})
+    total_users = len(active_user_ids)
+    action_items: list[dict] = []
+    race_rows: list[dict] = []
+
+    for raw_race in races:
+        race = race_with_circuit_timezone(raw_race)
+        result_doc = await db.race_results.find_one({"race_id": race["id"]}, {"_id": 0, "results": 1})
+        has_results = False if race.get("is_cancelled") else has_complete_race_results(result_doc)
+        race.update(race_timing_payload(race, now=now, has_results=has_results))
+        submitted = (
+            await db.predictions.count_documents({"race_id": race["id"], "user_id": {"$in": active_user_ids}})
+            if total_users
+            else 0
+        )
+        scored = await db.prediction_scores.count_documents(
+            {"score_type": "official_race", "race_id": race["id"]}
+        )
+        payload = _race_ops_payload(
+            race,
+            total_users=total_users,
+            submitted=submitted,
+            scored=scored,
+            has_results=has_results,
+        )
+        race_rows.append(payload)
+
+        if race.get("is_cancelled"):
+            continue
+
+        status = payload["status"]
+        if status == "finished" and not has_results:
+            action_items.append(
+                _business_action_item(
+                    item_id=f"race-results:{race['id']}",
+                    severity="critical",
+                    area="courses",
+                    title="Résultats officiels manquants",
+                    description=f"{race.get('name')} est terminée mais aucun résultat complet n'est enregistré.",
+                    target_tab="races",
+                    entity_id=race["id"],
+                    metric="Résultats",
+                )
+            )
+        if payload["scoring_pending"] > 0:
+            action_items.append(
+                _business_action_item(
+                    item_id=f"race-scoring:{race['id']}",
+                    severity="critical",
+                    area="scoring",
+                    title="Scoring incomplet",
+                    description=(
+                        f"{payload['scoring_pending']} pronostic(s) restent sans score officiel "
+                        f"pour {race.get('name')}."
+                    ),
+                    target_tab="scoring",
+                    entity_id=race["id"],
+                    metric=payload["scoring_pending"],
+                )
+            )
+
+        close_at = None
+        if payload.get("predictions_close_at"):
+            close_at = datetime.fromisoformat(str(payload["predictions_close_at"]))
+        reminder_window = (
+            status == "upcoming"
+            and close_at
+            and now <= close_at <= now + timedelta(days=3)
+            and payload["missing_predictions"] > 0
+        )
+        if reminder_window:
+            action_items.append(
+                _business_action_item(
+                    item_id=f"race-reminders:{race['id']}",
+                    severity="warning",
+                    area="courses",
+                    title="Relances pronostics à prévoir",
+                    description=(
+                        f"{payload['missing_predictions']} joueur(s) n'ont pas encore "
+                        f"pronostiqué {race.get('name')}."
+                    ),
+                    target_tab="races",
+                    entity_id=race["id"],
+                    metric=payload["completion_rate"],
+                )
+            )
+        if status == "upcoming" and close_at and now <= close_at <= now + timedelta(days=14):
+            content_status = str(payload.get("content_status") or "draft")
+            if content_status not in {"ready", "published"}:
+                action_items.append(
+                    _business_action_item(
+                        item_id=f"race-content:{race['id']}",
+                        severity="warning",
+                        area="courses",
+                        title="Contenu GP à préparer",
+                        description=f"L'angle éditorial de {race.get('name')} est encore en brouillon.",
+                        target_tab="races",
+                        entity_id=race["id"],
+                        metric=content_status,
+                    )
+                )
+
+    relevant_races = [
+        race
+        for race in race_rows
+        if race.get("status") in {"upcoming", "in_progress", "finished"}
+    ]
+    return relevant_races[:8], action_items
+
+
+async def _business_operations_payload() -> dict:
+    now = datetime.now(UTC)
+    race_rows, action_items = await _race_business_operations(now)
+
+    unread_feedbacks = await db.feedback.count_documents({"read": False})
+    urgent_feedbacks = await db.feedback.count_documents(
+        {
+            "priority": {"$in": ["urgent", "high"]},
+            "status": {"$nin": ["resolved", "wont_fix"]},
+        }
+    )
+    if urgent_feedbacks:
+        action_items.append(
+            _business_action_item(
+                item_id="feedbacks:urgent",
+                severity="warning",
+                area="support",
+                title="Retours prioritaires à traiter",
+                description=f"{urgent_feedbacks} retour(s) urgent/haut sont encore ouverts.",
+                target_tab="feedbacks",
+                metric=urgent_feedbacks,
+            )
+        )
+    elif unread_feedbacks:
+        action_items.append(
+            _business_action_item(
+                item_id="feedbacks:unread",
+                severity="info",
+                area="support",
+                title="Retours non lus",
+                description=f"{unread_feedbacks} retour(s) utilisateurs attendent une lecture.",
+                target_tab="feedbacks",
+                metric=unread_feedbacks,
+            )
+        )
+
+    now_iso = now.isoformat()
+    expired_invitations = await db.invitations.count_documents(
+        {"accepted": {"$ne": True}, "revoked": {"$ne": True}, "expires_at": {"$lt": now_iso}}
+    )
+    pending_invitations = await db.invitations.count_documents(
+        {"accepted": {"$ne": True}, "revoked": {"$ne": True}, "expires_at": {"$gte": now_iso}}
+    )
+    if expired_invitations:
+        action_items.append(
+            _business_action_item(
+                item_id="invitations:expired",
+                severity="info",
+                area="growth",
+                title="Invitations expirées",
+                description=f"{expired_invitations} invitation(s) peuvent être relancées ou nettoyées.",
+                target_tab="invitations",
+                metric=expired_invitations,
+            )
+        )
+
+    unresolved_custom_predictions = await db.custom_predictions.count_documents(
+        {"correct_answer": {"$exists": False}}
+    )
+    if unresolved_custom_predictions:
+        action_items.append(
+            _business_action_item(
+                item_id="custom-predictions:unsettled",
+                severity="info",
+                area="ligues",
+                title="Pronostics custom non scorés",
+                description=f"{unresolved_custom_predictions} prono(s) custom attendent une réponse officielle.",
+                target_tab="leagues",
+                metric=unresolved_custom_predictions,
+            )
+        )
+
+    knowledge_pending = await db.knowledge_documents.count_documents(
+        {"embedding.status": {"$nin": ["ready", "manual"]}}
+    )
+    if knowledge_pending:
+        action_items.append(
+            _business_action_item(
+                item_id="knowledge:embeddings",
+                severity="info",
+                area="rag",
+                title="Base RAG à indexer",
+                description=f"{knowledge_pending} document(s) de connaissance n'ont pas encore d'embedding prêt.",
+                target_tab="knowledge",
+                metric=knowledge_pending,
+            )
+        )
+
+    legal_drafts = await db.legal_pages.count_documents({"status": {"$ne": "published"}})
+    if legal_drafts:
+        action_items.append(
+            _business_action_item(
+                item_id="legal:drafts",
+                severity="info",
+                area="legal",
+                title="Pages légales non publiées",
+                description=f"{legal_drafts} page(s) légales sont encore en brouillon ou revue.",
+                target_tab="legal",
+                metric=legal_drafts,
+            )
+        )
+
+    sorted_items = _sort_business_items(action_items)
+    return {
+        "summary": _business_ops_summary(sorted_items),
+        "generated_at": now_iso,
+        "action_items": sorted_items[:20],
+        "next_races": race_rows[:5],
+        "metrics": {
+            "unread_feedbacks": unread_feedbacks,
+            "urgent_feedbacks": urgent_feedbacks,
+            "pending_invitations": pending_invitations,
+            "expired_invitations": expired_invitations,
+            "unresolved_custom_predictions": unresolved_custom_predictions,
+            "knowledge_pending": knowledge_pending,
+            "legal_drafts": legal_drafts,
+        },
+    }
+
+
+@router.get("/business/operations")
+async def get_business_operations(admin: dict = Depends(get_current_admin)) -> dict:
+    """Return a business-first admin cockpit with actionable operations priorities."""
+    return await _business_operations_payload()
 
 
 @router.get("/stats")
@@ -302,20 +354,48 @@ async def get_dashboard_stats(admin: dict = Depends(get_current_admin)) -> dict:
     """Get admin dashboard statistics."""
     total_users = await db.users.count_documents({})
     total_predictions = await db.predictions.count_documents({})
+    locked_predictions = await db.predictions.count_documents({"locked": True})
+    predictions_to_review = await db.predictions.count_documents(
+        {"review_status": {"$in": ["in_review", "needs_review", "flagged"]}}
+    )
     total_leagues = await db.leagues.count_documents({})
     total_races = await db.races.count_documents({})
+    total_championships = await db.championships.count_documents({})
+    total_knowledge_entities = await db.knowledge_entities.count_documents({})
+    total_knowledge_documents = await db.knowledge_documents.count_documents({})
     unread_feedbacks = await db.feedback.count_documents({"read": False})
     pending_invitations = await db.invitations.count_documents({"accepted": False})
+    total_activity_logs = await db.admin_activity_logs.count_documents({})
 
     week_ago = (datetime.now(UTC) - timedelta(days=7)).isoformat()
+    day_ago = (datetime.now(UTC) - timedelta(days=1)).isoformat()
     new_users_week = await db.users.count_documents({"created_at": {"$gte": week_ago}})
+    predictions_week = await db.predictions.count_documents({"created_at": {"$gte": week_ago}})
+    predictions_day = await db.predictions.count_documents({"created_at": {"$gte": day_ago}})
+    activity_day = await db.admin_activity_logs.count_documents({"created_at": {"$gte": day_ago}})
+    recent_activity_logs = (
+        await db.admin_activity_logs.find({}, {"_id": 0})
+        .sort("created_at", -1)
+        .limit(5)
+        .to_list(5)
+    )
 
     return {
         "total_users": total_users,
         "total_predictions": total_predictions,
+        "locked_predictions": locked_predictions,
+        "predictions_to_review": predictions_to_review,
+        "predictions_week": predictions_week,
+        "predictions_day": predictions_day,
         "total_leagues": total_leagues,
         "total_races": total_races,
+        "total_championships": total_championships,
+        "total_knowledge_entities": total_knowledge_entities,
+        "total_knowledge_documents": total_knowledge_documents,
         "unread_feedbacks": unread_feedbacks,
         "pending_invitations": pending_invitations,
+        "total_activity_logs": total_activity_logs,
+        "activity_day": activity_day,
+        "recent_activity_logs": recent_activity_logs,
         "new_users_week": new_users_week,
     }

@@ -37,10 +37,21 @@ from middleware.security import install as install_security
 
 # Route modules — one router per business domain.
 from routes.admin_auth import router as admin_auth_router
+from routes.admin_activity_logs import router as admin_activity_logs_router
+from routes.admin_championships import router as admin_championships_router
 from routes.admin_content import router as admin_content_router
-from routes.admin_data import router as admin_data_router
+from routes.admin_feedbacks import router as admin_feedbacks_router
+from routes.admin_invitations import router as admin_invitations_router
+from routes.admin_knowledge import router as admin_knowledge_router
+from routes.admin_legal_pages import router as admin_legal_pages_router
+from routes.admin_leagues import router as admin_leagues_router
 from routes.admin_members import router as admin_members_router
+from routes.admin_media import router as admin_media_router
+from routes.admin_predictions import router as admin_predictions_router
+from routes.admin_races import router as admin_races_router
+from routes.admin_settings import router as admin_settings_router
 from routes.admin_sync import router as admin_sync_router
+from routes.admin_users import router as admin_users_router
 from routes.auth import router as auth_router
 from routes.avatars import router as avatars_router
 from routes.custom_predictions import router as custom_predictions_router
@@ -48,6 +59,7 @@ from routes.drivers import router as drivers_router
 from routes.feedback import router as feedback_router
 from routes.health import root_router, router as health_router
 from routes.leaderboards import router as leaderboards_router
+from routes.legal import router as legal_router
 from routes.leagues import router as leagues_router
 from routes.minigames import router as minigames_router
 from routes.notifications import router as notifications_router
@@ -59,49 +71,14 @@ from services.email import get_smtp_settings
 from services.indexes import ensure_indexes
 from services.sync import auto_sync_loop
 
-app = FastAPI(title="PRONOKIF API", description="F1 Predictions Game API")
-
-app.include_router(root_router)
-
-# Mount every domain router under /api. Keep this list alphabetical so
-# diffs stay clean as new domains arrive.
-for _router in (
-    admin_auth_router,
-    admin_content_router,
-    admin_data_router,
-    admin_members_router,
-    admin_sync_router,
-    auth_router,
-    avatars_router,
-    custom_predictions_router,
-    drivers_router,
-    feedback_router,
-    health_router,
-    leaderboards_router,
-    leagues_router,
-    minigames_router,
-    notifications_router,
-    predictions_router,
-    profile_router,
-    races_router,
-    results_router,
-):
-    app.include_router(_router, prefix="/api")
-
-# Security stack: strict CORS, security response headers, opt-in slowapi
-# rate limiting. See backend/middleware/security.py.
-install_security(app)
-
-
 # ==================== AUTO-SYNC SCHEDULER ====================
 # The loop body lives in services.sync.auto_sync_loop. Lifecycle stays
-# bound to the FastAPI app instance because @app.on_event needs the
-# concrete app object, not a service module.
+# bound to the FastAPI app instance through lifespan.
 auto_sync_task: asyncio.Task | None = None
 
 
-@app.on_event("startup")
-async def startup_event() -> None:
+@contextlib.asynccontextmanager
+async def lifespan(_app: FastAPI):
     global auto_sync_task
     await ensure_indexes()
     smtp_settings = get_smtp_settings()
@@ -119,12 +96,62 @@ async def startup_event() -> None:
     auto_sync_task = asyncio.create_task(auto_sync_loop())
     logger.info("[Auto-Sync] Background synchronization task started")
 
+    try:
+        yield
+    finally:
+        if auto_sync_task is not None:
+            auto_sync_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await auto_sync_task
+            auto_sync_task = None
+        client.close()
 
-@app.on_event("shutdown")
-async def shutdown_event() -> None:
-    global auto_sync_task
-    if auto_sync_task is not None:
-        auto_sync_task.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await auto_sync_task
-    client.close()
+
+app = FastAPI(
+    title="PRONOKIF API",
+    description="F1 Predictions Game API",
+    lifespan=lifespan,
+)
+
+app.include_router(root_router)
+
+# Mount every domain router under /api. Keep this list alphabetical so
+# diffs stay clean as new domains arrive.
+for _router in (
+    admin_auth_router,
+    admin_activity_logs_router,
+    admin_championships_router,
+    admin_content_router,
+    admin_feedbacks_router,
+    admin_invitations_router,
+    admin_knowledge_router,
+    admin_legal_pages_router,
+    admin_leagues_router,
+    admin_members_router,
+    admin_media_router,
+    admin_predictions_router,
+    admin_races_router,
+    admin_settings_router,
+    admin_sync_router,
+    admin_users_router,
+    auth_router,
+    avatars_router,
+    custom_predictions_router,
+    drivers_router,
+    feedback_router,
+    health_router,
+    leaderboards_router,
+    legal_router,
+    leagues_router,
+    minigames_router,
+    notifications_router,
+    predictions_router,
+    profile_router,
+    races_router,
+    results_router,
+):
+    app.include_router(_router, prefix="/api")
+
+# Security stack: strict CORS, security response headers, opt-in slowapi
+# rate limiting. See backend/middleware/security.py.
+install_security(app)

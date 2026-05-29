@@ -11,6 +11,8 @@ from config import db
 from data.f1_data import F1_CIRCUITS, F1_DRIVERS_2026
 from models.schemas import DriverResponse, RaceResponse
 from services.auth import get_current_user
+from services.championships import with_championship_link
+from services.circuit_maps import get_effective_circuit_image_url, get_effective_circuit_map
 from services.race_calendar import (
     active_2026_races,
     has_complete_race_results,
@@ -47,14 +49,18 @@ def _session_datetime(race: dict, date_key: str, time_key: str) -> str | None:
 
 async def _calendar_races() -> list[dict]:
     races = await db.races.find({"season": 2026}, {"_id": 0}).sort("date", 1).to_list(200)
-    return [race_with_circuit_timezone(race) for race in (races or active_2026_races())]
+    return [
+        with_championship_link(race_with_circuit_timezone(race))
+        for race in (races or active_2026_races())
+    ]
 
 
 async def _find_calendar_race(race_id: str) -> dict | None:
     race = await db.races.find_one({"id": race_id}, {"_id": 0})
     if race:
-        return race_with_circuit_timezone(race)
-    return next((r for r in active_2026_races() if r["id"] == race_id), None)
+        return with_championship_link(race_with_circuit_timezone(race))
+    static_race = next((r for r in active_2026_races() if r["id"] == race_id), None)
+    return with_championship_link(static_race) if static_race else None
 
 
 async def _race_result_doc(race_id: str) -> dict | None:
@@ -73,6 +79,8 @@ def _race_response_payload(race: dict, result_doc: dict | None, now: datetime) -
     response = {
         "id": race["id"],
         "name": race.get("name", "Course"),
+        "championship_id": race.get("championship_id"),
+        "season": race.get("season"),
         "circuit": race.get("circuit") or "Circuit a definir",
         "country": race.get("country") or "",
         "date": start_at or str(race.get("date", "")),
@@ -253,23 +261,29 @@ async def get_race_details(race_id: str) -> dict:
         timing = race_timing_payload(race, now=now, has_results=has_results)
         circuit_name = race.get("circuit") or "Circuit a definir"
         circuit_info = F1_CIRCUITS.get(circuit_name, {})
+        circuit_map = await get_effective_circuit_map(circuit_name)
         circuit = {
             "name": circuit_name,
             "full_name": circuit_info.get("full_name", circuit_name),
             "length_km": circuit_info.get("length_km"),
             "turns": circuit_info.get("turns"),
             "laps": circuit_info.get("laps"),
+            "map_status": "interactive_seeded" if circuit_map else "static_fallback",
+            "map_image_url": await get_effective_circuit_image_url(circuit_name),
         }
 
         return {
             "id": race["id"],
             "name": race.get("name", "Course"),
+            "championship_id": race.get("championship_id"),
+            "season": race.get("season"),
             "circuit": circuit,
             "circuit_name": circuit_name,
             "circuit_full_name": circuit["full_name"],
             "circuit_length_km": circuit["length_km"],
             "circuit_turns": circuit["turns"],
             "circuit_laps": circuit["laps"],
+            "circuit_map": circuit_map,
             "country": race.get("country") or "",
             "status": timing["status"],
             "is_sprint_weekend": bool(race.get("is_sprint_weekend") or race.get("is_sprint")),

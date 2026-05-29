@@ -17,6 +17,7 @@ breaking change.
 
 from __future__ import annotations
 
+import uuid
 from datetime import UTC, datetime
 from typing import Any
 
@@ -24,6 +25,11 @@ from fastapi import Depends, HTTPException, status
 
 from config import db
 from services.auth import get_current_user, send_user_notification
+from services.championships import championship_context_for_race_id
+from services.league_membership import (
+    current_leaderboard_position,
+    ensure_leaderboard_entry,
+)
 from services.race_calendar import active_2026_races
 from services.scoring import calculate_points
 
@@ -92,27 +98,106 @@ async def get_admin_detail(race_id: str) -> dict | None:
 # ---------- Write path: results + scoring batch -------------------------
 
 
-async def set_official_and_score(*, race_id: str, results: dict, entered_by: str) -> int:
+def official_score_payload(
+    *,
+    prediction: dict,
+    race_id: str,
+    points: dict,
+    championship_context: dict,
+    scored_at: str,
+    scored_by: str,
+) -> dict:
+    """Build the persisted official score snapshot for one prediction."""
+    return {
+        "score_type": "official_race",
+        "prediction_id": prediction.get("id"),
+        "race_id": race_id,
+        "user_id": prediction["user_id"],
+        **championship_context,
+        "points_total": int(points.get("total") or 0),
+        "xp_awarded": int(points.get("xp_earned") or 0),
+        "breakdown": {
+            "quali_pole": int(points.get("quali_pole") or 0),
+            "quali_top10": int(points.get("quali_top10") or 0),
+            "sprint_quali_top10": int(points.get("sprint_quali_top10") or 0),
+            "sprint_race_top10": int(points.get("sprint_race_top10") or 0),
+            "race_winner": int(points.get("race_winner") or 0),
+            "race_top10": int(points.get("race_top10") or 0),
+            "bonus": int(points.get("bonus") or 0),
+        },
+        "details": points.get("details") or [],
+        "scored_at": scored_at,
+        "scored_by": scored_by,
+    }
+
+
+def official_score_delta(previous_score: dict | None, next_score: dict) -> dict:
+    """Return point and XP deltas against a previous persisted score."""
+    return {
+        "points_delta": int(next_score.get("points_total") or 0) - int((previous_score or {}).get("points_total") or 0),
+        "xp_delta": int(next_score.get("xp_awarded") or 0) - int((previous_score or {}).get("xp_awarded") or 0),
+    }
+
+
+async def _upsert_official_score(score: dict) -> dict | None:
+    prediction_id = score.get("prediction_id")
+    query = (
+        {"score_type": "official_race", "prediction_id": prediction_id}
+        if prediction_id
+        else {"score_type": "official_race", "race_id": score["race_id"], "user_id": score["user_id"]}
+    )
+    previous_score = await db.prediction_scores.find_one(query, {"_id": 0})
+    await db.prediction_scores.update_one(
+        query,
+        {
+            "$set": score,
+            "$setOnInsert": {
+                "id": str(uuid.uuid4()),
+                "created_at": score["scored_at"],
+            },
+        },
+        upsert=True,
+    )
+    return previous_score
+
+
+def _results_notification_message(race_name: str, points_delta: int, points_total: int) -> str:
+    if points_delta == points_total:
+        return f"Résultats {race_name}: +{points_total} pts!"
+    sign = "+" if points_delta > 0 else ""
+    return f"Correction {race_name}: {sign}{points_delta} pts, total course {points_total} pts."
+
+
+async def set_official_and_score(
+    *,
+    race_id: str,
+    results: dict,
+    entered_by: str,
+    auto_synced: bool = False,
+) -> int:
     """Upsert official results then score every prediction for the race.
 
     Side effects per matched prediction:
-      - increment user.xp
-      - bump user.level on XP threshold + notify
-      - notify the user of points earned
-      - increment league leaderboard total_points + last_race_points
-        and snapshot previous_position
+      - persist one official score snapshot per prediction
+      - apply only XP and leaderboard deltas vs. the previous snapshot
+      - update level and notifications only when the delta changes state
+      - lock all predictions for the race
     Finally locks all predictions for the race.
 
     Returns the number of predictions processed.
     """
+    championship_context = await championship_context_for_race_id(race_id)
+    now = datetime.now(UTC).isoformat()
     await db.race_results.update_one(
         {"race_id": race_id},
         {
             "$set": {
                 "race_id": race_id,
+                **championship_context,
                 "results": results,
                 "entered_by": entered_by,
-                "entered_at": datetime.now(UTC).isoformat(),
+                "entered_at": now,
+                "auto_synced": auto_synced,
             }
         },
         upsert=True,
@@ -125,48 +210,83 @@ async def set_official_and_score(*, race_id: str, results: dict, entered_by: str
     for pred in predictions:
         points = calculate_points(pred, results)
         user_id = pred["user_id"]
+        score = official_score_payload(
+            prediction=pred,
+            race_id=race_id,
+            points=points,
+            championship_context=championship_context,
+            scored_at=now,
+            scored_by=entered_by,
+        )
+        previous_score = await _upsert_official_score(score)
+        delta = official_score_delta(previous_score, score)
+        points_delta = delta["points_delta"]
+        xp_delta = delta["xp_delta"]
 
-        await db.users.update_one({"id": user_id}, {"$inc": {"xp": points["xp_earned"]}})
+        update_prediction_query = {"id": pred["id"]} if pred.get("id") else {"user_id": user_id, "race_id": race_id}
+        await db.predictions.update_one(
+            update_prediction_query,
+            {
+                "$set": {
+                    "locked": True,
+                    **championship_context,
+                    "official_score": {
+                        "points_total": score["points_total"],
+                        "xp_awarded": score["xp_awarded"],
+                        "points_delta": points_delta,
+                        "xp_delta": xp_delta,
+                        "scored_at": now,
+                    },
+                }
+            },
+        )
 
+        if xp_delta:
+            await db.users.update_one({"id": user_id}, {"$inc": {"xp": xp_delta}})
         user_data = await db.users.find_one({"id": user_id}, {"_id": 0})
         if not user_data:
             continue
 
-        new_xp = user_data.get("xp", 0) + points["xp_earned"]
-        new_level = (new_xp // 100) + 1
-        if new_level > user_data.get("level", 1):
+        stored_xp = int(user_data.get("xp", 0) or 0)
+        new_xp = max(stored_xp, 0)
+        if stored_xp < 0:
+            await db.users.update_one({"id": user_id}, {"$set": {"xp": 0}})
+        new_level = max((new_xp // 100) + 1, 1)
+        if new_level != user_data.get("level", 1):
             await db.users.update_one({"id": user_id}, {"$set": {"level": new_level}})
-            await send_user_notification(user_id, f"Niveau {new_level} atteint !", "level_up")
+            if new_level > user_data.get("level", 1):
+                await send_user_notification(user_id, f"Niveau {new_level} atteint !", "level_up")
 
-        await send_user_notification(
-            user_id,
-            f"Results {race_name}: +{points['total']} pts!",
-            "results",
-        )
+        if points_delta:
+            await send_user_notification(
+                user_id,
+                _results_notification_message(race_name, points_delta, score["points_total"]),
+                "results",
+            )
 
         leagues = await db.leagues.find({"members": user_id}, {"_id": 0}).to_list(100)
         for league in leagues:
-            entry = await db.leaderboard.find_one({"league_id": league["id"], "user_id": user_id})
-            if not entry:
-                continue
-            all_entries = await db.leaderboard.find({"league_id": league["id"]}, {"_id": 0}).to_list(100)
-            all_entries.sort(key=lambda x: x["total_points"], reverse=True)
-            current_pos = next(
-                (i + 1 for i, e in enumerate(all_entries) if e["user_id"] == user_id),
-                len(all_entries),
-            )
-            await db.leaderboard.update_one(
-                {"id": entry["id"]},
-                {
-                    "$inc": {"total_points": points["total"]},
-                    "$set": {
-                        "last_race_points": points["total"],
-                        "previous_position": current_pos,
-                    },
-                },
-            )
+            entry = await ensure_leaderboard_entry(league, user_id)
+            current_pos = await current_leaderboard_position(league, user_id)
+            leaderboard_set = {
+                **championship_context,
+                "previous_position": current_pos,
+                "updated_at": now,
+            }
+            if points_delta:
+                leaderboard_set["last_race_points"] = score["points_total"]
+            update_payload: dict[str, Any] = {"$set": leaderboard_set}
+            if points_delta:
+                update_payload["$inc"] = {
+                    "total_points": points_delta,
+                    "official_prediction_points": points_delta,
+                }
+            await db.leaderboard.update_one({"id": entry["id"]}, update_payload)
 
-    await db.predictions.update_many({"race_id": race_id}, {"$set": {"locked": True}})
+    await db.predictions.update_many(
+        {"race_id": race_id},
+        {"$set": {"locked": True, **championship_context}},
+    )
     return len(predictions)
 
 

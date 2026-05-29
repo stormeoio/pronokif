@@ -15,6 +15,7 @@ class UserCreate(BaseModel):
     password: str
     locale: str = "fr"
     nationality: str | None = None
+    invite_token: str | None = None
 
 
 class UserLogin(BaseModel):
@@ -57,6 +58,8 @@ class TokenResponse(BaseModel):
 class LeagueCreate(BaseModel):
     name: str
     description: str | None = None
+    championship_id: str | None = None
+    season: int | None = None
 
 
 class LeagueJoin(BaseModel):
@@ -76,6 +79,9 @@ class LeagueResponse(BaseModel):
     members: list[str]
     created_at: str
     description: str | None = None
+    championship_id: str | None = None
+    championship_ids: list[str] | None = None
+    season: int | None = None
 
 
 class TransferOwnershipRequest(BaseModel):
@@ -142,6 +148,8 @@ class PredictionResponse(BaseModel):
     id: str
     user_id: str
     race_id: str
+    championship_id: str | None = None
+    season: int | None = None
     quali_pole: str
     quali_top10: list[str]
     sprint_quali_top10: list[str] | None = None
@@ -202,6 +210,8 @@ class CustomPredictionResponse(BaseModel):
 class RaceResponse(BaseModel):
     id: str
     name: str
+    championship_id: str | None = None
+    season: int | None = None
     circuit: str
     country: str
     date: str

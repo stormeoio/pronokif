@@ -19,6 +19,11 @@ from models.schemas import (
     TransferOwnershipRequest,
 )
 from services.auth import generate_league_code, get_current_user
+from services.league_membership import (
+    ensure_leaderboard_entry,
+    leaderboard_query_for_league,
+    league_championship_fields,
+)
 
 router = APIRouter(prefix="/leagues", tags=["Leagues"])
 
@@ -40,21 +45,13 @@ async def create_league(data: LeagueCreate, user: dict = Depends(get_current_use
         "code": code,
         "created_by": user["id"],
         "members": [user["id"]],
+        **league_championship_fields(championship_id=data.championship_id, season=data.season),
         "created_at": datetime.now(UTC).isoformat(),
         "description": data.description,
     }
     await db.leagues.insert_one(league)
     await db.users.update_one({"id": user["id"]}, {"$set": {"current_league_id": league_id}})
-    await db.leaderboard.insert_one(
-        {
-            "id": str(uuid.uuid4()),
-            "league_id": league_id,
-            "user_id": user["id"],
-            "total_points": 0,
-            "last_race_points": 0,
-            "previous_position": 1,
-        }
-    )
+    await ensure_leaderboard_entry(league, user["id"], previous_position=1)
     return LeagueResponse(**{k: v for k, v in league.items() if k != "_id"})
 
 
@@ -69,16 +66,10 @@ async def join_league(data: LeagueJoin, user: dict = Depends(get_current_user)):
 
     await db.leagues.update_one({"id": league["id"]}, {"$push": {"members": user["id"]}})
     await db.users.update_one({"id": user["id"]}, {"$set": {"current_league_id": league["id"]}})
-    await db.leaderboard.insert_one(
-        {
-            "id": str(uuid.uuid4()),
-            "league_id": league["id"],
-            "user_id": user["id"],
-            "total_points": 0,
-            "last_race_points": 0,
-            "previous_position": len(league["members"]) + 1,
-        }
-    )
+    league.setdefault("championship_id", league_championship_fields()["championship_id"])
+    league.setdefault("championship_ids", league_championship_fields()["championship_ids"])
+    league.setdefault("season", league_championship_fields()["season"])
+    await ensure_leaderboard_entry(league, user["id"], previous_position=len(league["members"]) + 1)
     league["members"].append(user["id"])
     return LeagueResponse(**league)
 
@@ -143,13 +134,21 @@ async def get_league(league_id: str, user: dict = Depends(get_current_user)):
 
 
 @router.get("/{league_id}/leaderboard", response_model=list[LeaderboardEntry])
-async def get_leaderboard(league_id: str, user: dict = Depends(get_current_user)):
+async def get_leaderboard(
+    league_id: str,
+    championship_id: str | None = None,
+    user: dict = Depends(get_current_user),
+):
     """Get league leaderboard"""
     league = await db.leagues.find_one({"id": league_id}, {"_id": 0})
     if not league:
         raise HTTPException(status_code=404, detail="Ligue introuvable")
+    if user["id"] not in league.get("members", []):
+        raise HTTPException(status_code=403, detail="Tu ne fais pas partie de cette ligue")
 
-    entries = await db.leaderboard.find({"league_id": league_id}, {"_id": 0}).to_list(100)
+    entries = await db.leaderboard.find(
+        leaderboard_query_for_league(league, championship_id=championship_id), {"_id": 0}
+    ).to_list(100)
     entries.sort(key=lambda x: x["total_points"], reverse=True)
 
     result = []

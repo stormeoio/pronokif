@@ -18,6 +18,7 @@ from pydantic import BaseModel
 
 from config import db
 from services.auth import get_current_user
+from services.custom_prediction_scoring import settle_custom_prediction
 
 router = APIRouter(tags=["custom-predictions"])
 
@@ -70,6 +71,8 @@ async def answer_custom_prediction_legacy(
     custom_pred = await db.custom_predictions.find_one({"id": prediction_id}, {"_id": 0})
     if not custom_pred:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Prono custom introuvable")
+    if custom_pred.get("correct_answer") is not None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ce prono custom est déjà scoré")
 
     league = await db.leagues.find_one({"id": custom_pred["league_id"]}, {"_id": 0})
     if not league or user["id"] not in league.get("members", []):
@@ -81,6 +84,10 @@ async def answer_custom_prediction_legacy(
             "$set": {
                 "prediction_id": prediction_id,
                 "user_id": user["id"],
+                "league_id": custom_pred["league_id"],
+                "race_id": custom_pred["race_id"],
+                "championship_id": custom_pred.get("championship_id"),
+                "season": custom_pred.get("season"),
                 "answer": body.answer,
                 "answered_at": datetime.now(UTC).isoformat(),
             }
@@ -104,29 +111,9 @@ async def set_correct_answer_legacy(
             detail="Seul le créateur peut définir la bonne réponse",
         )
 
-    await db.custom_predictions.update_one(
-        {"id": prediction_id}, {"$set": {"correct_answer": body.correct_answer}}
+    summary = await settle_custom_prediction(
+        custom_pred,
+        correct_answer=body.correct_answer,
+        scored_by=user["id"],
     )
-
-    answers = await db.custom_prediction_answers.find({"prediction_id": prediction_id}, {"_id": 0}).to_list(1000)
-    for answer in answers:
-        user_answer = answer.get("answer")
-        correct = body.correct_answer
-        is_correct = False
-
-        if custom_pred.get("multiple_choice"):
-            if isinstance(user_answer, list) and isinstance(correct, list):
-                is_correct = any(item in correct for item in user_answer)
-            elif isinstance(user_answer, list):
-                is_correct = correct in user_answer
-        else:
-            is_correct = user_answer == correct
-
-        if is_correct:
-            await db.leaderboard.update_one(
-                {"league_id": custom_pred["league_id"], "user_id": answer["user_id"]},
-                {"$inc": {"total_points": 2}},
-            )
-            await db.users.update_one({"id": answer["user_id"]}, {"$inc": {"xp": 10}})
-
-    return {"message": "Correct answer set and points calculated"}
+    return {"message": "Correct answer set and points calculated", **summary}

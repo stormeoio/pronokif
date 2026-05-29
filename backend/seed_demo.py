@@ -30,6 +30,14 @@ from config import db, logger
 from data.avatars import DEFAULT_AVATARS, DRIVER_AVATARS, TEAM_AVATARS
 from data.f1_data import F1_CIRCUITS, F1_DRIVERS_2026
 from features import get_default_user_stats, get_level_from_xp
+from services.championships import (
+    F1_2026_CHAMPIONSHIP_ID,
+    F1_2026_CHAMPIONSHIP_SLUG,
+    F1_2026_SEASON,
+    f1_2026_championship_from_races,
+    race_championship_link,
+)
+from services.knowledge_seed import seed_f1_2026_knowledge
 from services.race_calendar import (
     CANCELLED_2026_RACE_IDS,
     active_2026_races,
@@ -146,7 +154,8 @@ def _race_doc(race: dict, index: int) -> dict[str, Any]:
 
     doc = {
         "id": race["id"],
-        "season": 2026,
+        "season": F1_2026_SEASON,
+        **race_championship_link({"season": F1_2026_SEASON, **race}, championship_id=F1_2026_CHAMPIONSHIP_ID),
         "round_number": race.get("round_number", index),
         "name": race["name"],
         "circuit": race["circuit"],
@@ -242,17 +251,28 @@ async def _cleanup_demo_data() -> None:
 
 
 async def _seed_championships() -> None:
-    championships = [
-        {
-            "id": "championship-f1-2026",
-            "name": "PronoKif F1 2026",
-            "season": 2026,
-            "description": "Championnat principal demo base sur le calendrier F1 2026.",
-            "thumbnail_url": "/images/branding/pronokif-logo11.png",
-            "is_active": True,
+    races = active_2026_races()
+    f1_2026 = {
+        **f1_2026_championship_from_races(races),
+        "slug": F1_2026_CHAMPIONSHIP_SLUG,
+        "name": "PronoKif F1 2026",
+        "name_translations": {
+            "fr": "PronoKif F1 2026",
+            "en": "PronoKif F1 2026",
         },
+        "description": "Championnat principal demo base sur le calendrier F1 2026.",
+        "description_translations": {
+            "fr": "Championnat principal demo base sur le calendrier F1 2026.",
+            "en": "Main demo championship based on the 2026 F1 calendar.",
+        },
+        "thumbnail_url": "/images/races/australia-2026.webp",
+    }
+    championships = [
+        f1_2026,
         {
             "id": "championship-sprint-2026",
+            "slug": "sprint-masters-2026",
+            "series": "formula_1_sprint",
             "name": "Sprint Masters 2026",
             "season": 2026,
             "description": "Demo challenge for sprint weekends and mini-games.",
@@ -417,7 +437,8 @@ async def _seed_results(races: list[dict]) -> dict[str, dict]:
             "id": _stable_id("race-result", race["id"]),
             "race_id": race["id"],
             "race_name": race["name"],
-            "season": 2026,
+            "season": F1_2026_SEASON,
+            "championship_id": F1_2026_CHAMPIONSHIP_ID,
             "results": results,
             "source": "demo",
             "status": "complete",
@@ -499,6 +520,8 @@ async def _seed_predictions(
                 "id": _stable_id("prediction", f"{user['id']}:{race['id']}"),
                 "user_id": user["id"],
                 "race_id": race["id"],
+                "season": F1_2026_SEASON,
+                "championship_id": F1_2026_CHAMPIONSHIP_ID,
                 **payload,
                 "created_at": _iso(created_at),
                 "updated_at": _iso(created_at + timedelta(minutes=10)),
@@ -545,6 +568,8 @@ async def _seed_leaderboards(
                 "id": _stable_id("leaderboard", f"{league['id']}:{user_id}"),
                 "league_id": league["id"],
                 "user_id": user_id,
+                "season": F1_2026_SEASON,
+                "championship_id": F1_2026_CHAMPIONSHIP_ID,
                 "username": user.get("username") or user.get("email"),
                 "avatar_id": user.get("avatar_id"),
                 "custom_avatar_url": user.get("custom_avatar_url"),
@@ -627,6 +652,8 @@ async def _seed_custom_predictions(leagues: list[dict], races: list[dict], users
                 {
                     "id": custom_id,
                     "race_id": race["id"],
+                    "season": F1_2026_SEASON,
+                    "championship_id": F1_2026_CHAMPIONSHIP_ID,
                     "league_id": league["id"],
                     "created_by": creator_id,
                     "question": question,
@@ -675,6 +702,8 @@ async def _seed_minigames(leagues: list[dict], users_by_id: dict[str, dict]) -> 
                     "score": reaction_score + attempt * 6,
                     "league_id": primary_league["id"],
                     "race_id": race_id,
+                    "season": F1_2026_SEASON,
+                    "championship_id": F1_2026_CHAMPIONSHIP_ID,
                     "is_training": False,
                     "created_at": _iso(REFERENCE_DATE - timedelta(hours=attempt, minutes=member_index)),
                     "demo_seeded": True,
@@ -689,6 +718,8 @@ async def _seed_minigames(leagues: list[dict], users_by_id: dict[str, dict]) -> 
                     "score": batak_score - attempt + 1,
                     "league_id": primary_league["id"],
                     "race_id": race_id,
+                    "season": F1_2026_SEASON,
+                    "championship_id": F1_2026_CHAMPIONSHIP_ID,
                     "is_training": False,
                     "created_at": _iso(REFERENCE_DATE - timedelta(hours=attempt + 1, minutes=member_index)),
                     "demo_seeded": True,
@@ -713,6 +744,8 @@ async def _seed_minigames(leagues: list[dict], users_by_id: dict[str, dict]) -> 
                     "score": score,
                     "league_id": primary_league["id"],
                     "race_id": race_id,
+                    "season": F1_2026_SEASON,
+                    "championship_id": F1_2026_CHAMPIONSHIP_ID,
                     "created_at": _iso(REFERENCE_DATE - timedelta(hours=5, minutes=member_index)),
                     "demo_seeded": True,
                     "seed_source": DEMO_SOURCE,
@@ -924,6 +957,7 @@ async def seed_demo_data() -> dict[str, int]:
     await _cleanup_demo_data()
     races = await _seed_calendar()
     await _seed_championships()
+    knowledge_summary = await seed_f1_2026_knowledge(actor="demo-seed")
     host_users = await _load_host_users()
     demo_users, demo_users_by_key = await _seed_demo_users()
     leagues = await _seed_leagues(host_users, demo_users_by_key)
@@ -971,6 +1005,8 @@ async def seed_demo_data() -> dict[str, int]:
         "notifications": await db.notifications.count_documents({}),
         "feedback": await db.feedback.count_documents({}),
         "media": await db.media.count_documents({}),
+        "knowledge_entities": knowledge_summary["entities"]["total"],
+        "knowledge_documents": knowledge_summary["documents"]["total"],
     }
     return summary
 

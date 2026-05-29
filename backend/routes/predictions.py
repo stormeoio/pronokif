@@ -18,6 +18,8 @@ from models.schemas import (
     SprintPredictionCreate,
 )
 from services.auth import get_current_user
+from services.championships import championship_context_for_race_id, with_championship_link
+from services.custom_prediction_scoring import settle_custom_prediction
 from services.predictions import count_individual_predictions  # re-export for backward compat
 from services.race_calendar import (
     active_2026_races,
@@ -49,13 +51,17 @@ def get_sprint_predictions_close_time(race: dict):
 async def _get_race(race_id: str) -> dict | None:
     race = await db.races.find_one({"id": race_id}, {"_id": 0})
     if race:
-        return race_with_circuit_timezone(race)
-    return next((r for r in active_2026_races() if r["id"] == race_id), None)
+        return with_championship_link(race_with_circuit_timezone(race))
+    static_race = next((r for r in active_2026_races() if r["id"] == race_id), None)
+    return with_championship_link(static_race) if static_race else None
 
 
 async def _calendar_races() -> list[dict]:
     races = await db.races.find({"season": 2026}, {"_id": 0}).to_list(200)
-    return [race_with_circuit_timezone(race) for race in (races or active_2026_races())]
+    return [
+        with_championship_link(race_with_circuit_timezone(race))
+        for race in (races or active_2026_races())
+    ]
 
 
 # count_individual_predictions moved to services/predictions.py (S1 lot 3 dedup).
@@ -93,6 +99,8 @@ async def create_prediction(data: PredictionCreate, user: dict = Depends(get_cur
     existing = await db.predictions.find_one({"user_id": user["id"], "race_id": data.race_id})
 
     prediction_data = {
+        "season": race.get("season", 2026),
+        "championship_id": race.get("championship_id"),
         "quali_pole": data.quali_pole,
         "quali_top10": data.quali_top10,
         "sprint_quali_pole": data.sprint_quali_pole if race.get("is_sprint") else None,
@@ -277,6 +285,8 @@ async def save_sprint_prediction(data: SprintPredictionCreate, user: dict = Depe
     existing = await db.predictions.find_one({"user_id": user["id"], "race_id": data.race_id})
 
     sprint_data = {
+        "season": race.get("season", 2026),
+        "championship_id": race.get("championship_id"),
         "sprint_quali_pole": data.sprint_quali_pole,
         "sprint_quali_top10": data.sprint_quali_top10,
         "sprint_race_winner": data.sprint_race_winner,
@@ -321,6 +331,8 @@ async def save_main_prediction(data: MainPredictionCreate, user: dict = Depends(
     existing = await db.predictions.find_one({"user_id": user["id"], "race_id": data.race_id})
 
     main_data = {
+        "season": race.get("season", 2026),
+        "championship_id": race.get("championship_id"),
         "quali_pole": data.quali_pole,
         "quali_top10": data.quali_top10,
         "race_winner": data.race_winner,
@@ -370,6 +382,7 @@ async def create_custom_prediction(data: CustomPredictionCreate, user: dict = De
     custom_pred = {
         "id": prediction_id,
         "race_id": data.race_id,
+        **await championship_context_for_race_id(data.race_id),
         "league_id": data.league_id,
         "created_by": user["id"],
         "question": data.question,
@@ -406,6 +419,11 @@ async def answer_custom_prediction(
     custom_pred = await db.custom_predictions.find_one({"id": prediction_id}, {"_id": 0})
     if not custom_pred:
         raise HTTPException(status_code=404, detail="Prono custom introuvable")
+    if custom_pred.get("correct_answer") is not None:
+        raise HTTPException(status_code=400, detail="Ce prono custom est déjà scoré")
+    league = await db.leagues.find_one({"id": custom_pred["league_id"]}, {"_id": 0})
+    if not league or user["id"] not in league.get("members", []):
+        raise HTTPException(status_code=403, detail="Tu ne fais pas partie de cette ligue")
 
     await db.custom_prediction_answers.update_one(
         {"prediction_id": prediction_id, "user_id": user["id"]},
@@ -413,6 +431,10 @@ async def answer_custom_prediction(
             "$set": {
                 "prediction_id": prediction_id,
                 "user_id": user["id"],
+                "league_id": custom_pred["league_id"],
+                "race_id": custom_pred["race_id"],
+                "championship_id": custom_pred.get("championship_id"),
+                "season": custom_pred.get("season"),
                 "answer": body.answer,
                 "answered_at": datetime.now(UTC).isoformat(),
             }
@@ -433,31 +455,9 @@ async def set_correct_answer(
     if custom_pred["created_by"] != user["id"]:
         raise HTTPException(status_code=403, detail="Seul le créateur peut définir la bonne réponse")
 
-    await db.custom_predictions.update_one(
-        {"id": prediction_id}, {"$set": {"correct_answer": body.correct_answer}}
+    summary = await settle_custom_prediction(
+        custom_pred,
+        correct_answer=body.correct_answer,
+        scored_by=user["id"],
     )
-
-    answers = await db.custom_prediction_answers.find({"prediction_id": prediction_id}, {"_id": 0}).to_list(1000)
-    correct = body.correct_answer
-
-    for ans in answers:
-        user_answer = ans.get("answer")
-        is_correct = False
-
-        if custom_pred["multiple_choice"]:
-            if isinstance(user_answer, list) and isinstance(correct, list):
-                is_correct = any(a in correct for a in user_answer)
-            elif isinstance(user_answer, list):
-                is_correct = correct in user_answer
-        else:
-            is_correct = user_answer == correct
-
-        if is_correct:
-            league = await db.leagues.find_one({"id": custom_pred["league_id"]}, {"_id": 0})
-            if league:
-                await db.leaderboard.update_one(
-                    {"league_id": league["id"], "user_id": ans["user_id"]}, {"$inc": {"total_points": 2}}
-                )
-                await db.users.update_one({"id": ans["user_id"]}, {"$inc": {"xp": 10}})
-
-    return {"message": "Correct answer set and points calculated"}
+    return {"message": "Correct answer set and points calculated", **summary}

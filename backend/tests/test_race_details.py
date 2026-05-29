@@ -5,20 +5,62 @@ Tests for:
 - /api/races/{race_id}/details - Get race details with circuit info and session schedule
 """
 
-import os
+from types import SimpleNamespace
 
 import pytest
-import requests
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
+from routes import races as race_routes
+from services import circuit_maps as circuit_map_service
+
+
+class _FakeCursor:
+    def __init__(self, documents: list[dict]) -> None:
+        self.documents = documents
+
+    def sort(self, _field: str, _direction: int):
+        return self
+
+    async def to_list(self, _limit: int) -> list[dict]:
+        return list(self.documents)
+
+
+class _FakeCollection:
+    def __init__(self, documents: list[dict] | None = None) -> None:
+        self.documents = list(documents or [])
+
+    def find(self, _query: dict, _projection: dict | None = None) -> _FakeCursor:
+        return _FakeCursor(self.documents)
+
+    async def find_one(self, query: dict, _projection: dict | None = None) -> dict | None:
+        for document in self.documents:
+            if all(document.get(key) == value for key, value in query.items()):
+                return dict(document)
+        return None
 
 
 @pytest.fixture(scope="module")
 def api_client():
-    """Shared requests session"""
-    session = requests.Session()
-    session.headers.update({"Content-Type": "application/json"})
-    return session
+    """Hermetic test client using the static 2026 calendar fallback."""
+    fake_db = SimpleNamespace(
+        races=_FakeCollection(),
+        race_results=_FakeCollection(),
+        circuit_maps=_FakeCollection(),
+    )
+    original_race_db = race_routes.db
+    original_circuit_map_db = circuit_map_service.db
+    race_routes.db = fake_db
+    circuit_map_service.db = fake_db
+
+    app = FastAPI()
+    app.include_router(race_routes.router, prefix="/api")
+
+    try:
+        yield TestClient(app)
+    finally:
+        race_routes.db = original_race_db
+        circuit_map_service.db = original_circuit_map_db
 
 
 class TestUpcomingRacesEndpoint:
@@ -26,7 +68,7 @@ class TestUpcomingRacesEndpoint:
 
     def test_upcoming_races_returns_list(self, api_client):
         """Test that endpoint returns a list of races"""
-        response = api_client.get(f"{BASE_URL}/api/races/upcoming")
+        response = api_client.get("/api/races/upcoming")
         assert response.status_code == 200
         races = response.json()
         assert isinstance(races, list)
@@ -35,7 +77,7 @@ class TestUpcomingRacesEndpoint:
 
     def test_upcoming_races_has_required_fields(self, api_client):
         """Test that each race has all required fields for slider"""
-        response = api_client.get(f"{BASE_URL}/api/races/upcoming")
+        response = api_client.get("/api/races/upcoming")
         races = response.json()
 
         required_fields = [
@@ -59,17 +101,17 @@ class TestUpcomingRacesEndpoint:
 
     def test_upcoming_races_status_values(self, api_client):
         """Test that status field has valid values"""
-        response = api_client.get(f"{BASE_URL}/api/races/upcoming")
+        response = api_client.get("/api/races/upcoming")
         races = response.json()
 
-        valid_statuses = ["upcoming", "in_progress", "finished"]
+        valid_statuses = ["upcoming", "in_progress", "finished", "cancelled"]
         for race in races:
             assert race["status"] in valid_statuses, f"Invalid status: {race['status']}"
         print("✅ All races have valid status values")
 
     def test_can_predict_matches_status(self, api_client):
         """Test that can_predict is False for non-upcoming races"""
-        response = api_client.get(f"{BASE_URL}/api/races/upcoming")
+        response = api_client.get("/api/races/upcoming")
         races = response.json()
 
         for race in races:
@@ -80,7 +122,7 @@ class TestUpcomingRacesEndpoint:
 
     def test_sprint_weekends_marked_correctly(self, api_client):
         """Test that sprint weekends have is_sprint_weekend=True"""
-        response = api_client.get(f"{BASE_URL}/api/races/upcoming")
+        response = api_client.get("/api/races/upcoming")
         races = response.json()
 
         # Known sprint weekends in 2026: China, Miami, Austria, Austin, Brazil, Qatar
@@ -97,7 +139,7 @@ class TestRaceDetailsEndpoint:
 
     def test_race_details_returns_circuit_info(self, api_client):
         """Test that race details include circuit information"""
-        response = api_client.get(f"{BASE_URL}/api/races/australia-2026/details")
+        response = api_client.get("/api/races/australia-2026/details")
         assert response.status_code == 200
         data = response.json()
 
@@ -117,6 +159,10 @@ class TestRaceDetailsEndpoint:
         assert circuit["length_km"] == 5.278
         assert circuit["turns"] == 14
         assert circuit["laps"] == 58
+        assert circuit["map_status"] == "interactive_seeded"
+        assert circuit["map_image_url"]
+        assert data["circuit_map"]["key"] == "albert-park"
+        assert data["circuit_map"]["features"][0]["label"]["fr"]
 
         print(
             f"✅ Circuit info: {circuit['full_name']} - {circuit['length_km']}km, {circuit['turns']} turns, {circuit['laps']} laps"
@@ -124,7 +170,7 @@ class TestRaceDetailsEndpoint:
 
     def test_race_details_returns_sessions(self, api_client):
         """Test that race details include session schedule"""
-        response = api_client.get(f"{BASE_URL}/api/races/australia-2026/details")
+        response = api_client.get("/api/races/australia-2026/details")
         data = response.json()
 
         assert "sessions" in data
@@ -142,7 +188,7 @@ class TestRaceDetailsEndpoint:
 
     def test_standard_weekend_has_fp1_fp2_fp3(self, api_client):
         """Test that standard weekend has FP1, FP2, FP3, QUALI, COURSE"""
-        response = api_client.get(f"{BASE_URL}/api/races/australia-2026/details")
+        response = api_client.get("/api/races/australia-2026/details")
         data = response.json()
 
         sessions = data["sessions"]
@@ -163,7 +209,7 @@ class TestRaceDetailsEndpoint:
 
     def test_sprint_weekend_has_sq_and_sprint(self, api_client):
         """Test that sprint weekend has FP1, SQ, SPRINT, QUALI, COURSE (no FP2/FP3)"""
-        response = api_client.get(f"{BASE_URL}/api/races/china-2026/details")
+        response = api_client.get("/api/races/china-2026/details")
         data = response.json()
 
         assert data["is_sprint_weekend"] == True, "China GP should be sprint weekend"
@@ -186,7 +232,7 @@ class TestRaceDetailsEndpoint:
 
     def test_sessions_sorted_by_datetime(self, api_client):
         """Test that sessions are sorted chronologically"""
-        response = api_client.get(f"{BASE_URL}/api/races/australia-2026/details")
+        response = api_client.get("/api/races/australia-2026/details")
         data = response.json()
 
         sessions = data["sessions"]
@@ -198,7 +244,7 @@ class TestRaceDetailsEndpoint:
 
     def test_race_not_found_returns_404(self, api_client):
         """Test that non-existent race returns 404"""
-        response = api_client.get(f"{BASE_URL}/api/races/nonexistent-race/details")
+        response = api_client.get("/api/races/nonexistent-race/details")
         assert response.status_code == 404
         print("✅ Non-existent race correctly returns 404")
 
@@ -212,7 +258,7 @@ class TestRaceDetailsEndpoint:
         ]
 
         for race_id, circuit_name, expected_length, expected_turns, expected_laps in circuits_to_test:
-            response = api_client.get(f"{BASE_URL}/api/races/{race_id}/details")
+            response = api_client.get(f"/api/races/{race_id}/details")
             if response.status_code == 200:
                 data = response.json()
                 assert data["circuit"]["name"] == circuit_name
@@ -230,7 +276,7 @@ class TestSessionTimeFormats:
 
     def test_session_datetime_is_iso_format(self, api_client):
         """Test that session datetime is in ISO 8601 format"""
-        response = api_client.get(f"{BASE_URL}/api/races/australia-2026/details")
+        response = api_client.get("/api/races/australia-2026/details")
         data = response.json()
 
         for session in data["sessions"]:
@@ -243,7 +289,7 @@ class TestSessionTimeFormats:
 
     def test_session_names_in_french(self, api_client):
         """Test that session names are in French"""
-        response = api_client.get(f"{BASE_URL}/api/races/australia-2026/details")
+        response = api_client.get("/api/races/australia-2026/details")
         data = response.json()
 
         french_names = {

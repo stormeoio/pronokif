@@ -2,7 +2,7 @@
 PRONOKIF - Admin Back-Office: Authentication & 2FA.
 
 Magic link auth + optional TOTP 2FA for whitelisted admin emails.
-Exports `get_current_admin` dependency used by admin_data and admin_content.
+Exports `get_current_admin` dependency used by admin back-office routers.
 
 Endpoints:
   POST /api/admin-bo/auth/magic-link     - send magic link email

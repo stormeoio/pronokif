@@ -33,6 +33,7 @@ from config import (
 from features import get_default_user_stats
 from middleware.security import limiter
 from models.schemas import ForgotPasswordRequest, TokenResponse, UserCreate, UserLogin, UserResponse, UserSetUsername
+from services.admin_invitations import invitation_registration_error
 from services.auth import (
     MAGIC_LINK_EXPIRE_MINUTES,
     RESET_TOKEN_EXPIRE_MINUTES,
@@ -141,10 +142,18 @@ async def register(request: Request, data: UserCreate, response: Response):
     if existing:
         raise HTTPException(status_code=400, detail="Cet email est déjà utilisé")
 
+    invitation = None
+    if data.invite_token:
+        invitation = await db.invitations.find_one({"token": data.invite_token}, {"_id": 0})
+        invitation_error = invitation_registration_error(invitation, email=email)
+        if invitation_error:
+            raise HTTPException(status_code=400, detail=invitation_error)
+
     # P1-3: generate email verification token
     verification_token = generate_verification_token()
 
     user_id = str(uuid.uuid4())
+    created_at = datetime.now(UTC).isoformat()
     user = {
         "id": user_id,
         "email": email,
@@ -155,13 +164,29 @@ async def register(request: Request, data: UserCreate, response: Response):
         "level": 1,
         "avatar_id": None,
         "custom_avatar_url": None,
-        "created_at": datetime.now(UTC).isoformat(),
+        "created_at": created_at,
         "email_verified": False,
         "email_verification_token": verification_token,
         "locale": data.locale if data.locale in ("fr", "en") else "fr",
         "nationality": data.nationality,
+        "invitation_id": invitation.get("id") if invitation else None,
+        "invited_by": invitation.get("sent_by") if invitation else None,
     }
     await db.users.insert_one(user)
+
+    if invitation:
+        await db.invitations.update_one(
+            {"id": invitation["id"]},
+            {
+                "$set": {
+                    "accepted": True,
+                    "accepted_at": created_at,
+                    "accepted_by_user_id": user_id,
+                    "updated_at": created_at,
+                },
+                "$unset": {"token": ""},
+            },
+        )
 
     # Create default stats
     await db.user_stats.insert_one({"user_id": user_id, **get_default_user_stats()})

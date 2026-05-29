@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from config import db
 from services.auth import get_current_user
+from services.championships import championship_context_for_race_id
 
 router = APIRouter(prefix="/minigames", tags=["Mini-Games"])
 
@@ -85,6 +86,7 @@ async def save_minigame_result(data: MinigameResultCreate, user: dict = Depends(
         "score": data.score,
         "league_id": data.league_id,
         "race_id": data.race_id,
+        **await championship_context_for_race_id(data.race_id),
         "is_training": data.is_training,
         "created_at": datetime.now(UTC).isoformat(),
     }

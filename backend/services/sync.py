@@ -15,16 +15,14 @@ Custom exceptions:
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from typing import Any
 
 import httpx
 
-from config import JOLPICA_API, OPENF1_API, db, logger
+from config import JOLPICA_API, OPENF1_API, logger
 from data.f1_data import F1_DRIVERS_2026
-from services.auth import send_user_notification
 from services.race_calendar import syncable_2026_races
-from services.scoring import calculate_points
+from services.results import set_official_and_score
 
 AUTO_SYNC_INTERVAL_HOURS = 1
 DNF_STATUSES = [
@@ -562,54 +560,12 @@ async def auto_sync_and_save(race_id: str, user_id: str) -> dict:
             "bonus": fetched_data["bonus"],
         }
 
-        await db.race_results.update_one(
-            {"race_id": race_id},
-            {
-                "$set": {
-                    "race_id": race_id,
-                    "results": results,
-                    "entered_by": user_id,
-                    "entered_at": datetime.now(UTC).isoformat(),
-                    "auto_synced": True,
-                }
-            },
-            upsert=True,
+        points_calculated = await set_official_and_score(
+            race_id=race_id,
+            results=results,
+            entered_by=user_id,
+            auto_synced=True,
         )
-
-        predictions = await db.predictions.find(
-            {"race_id": race_id}, {"_id": 0}
-        ).to_list(1000)
-        points_calculated = 0
-        for pred in predictions:
-            points = calculate_points(pred, results)
-            await db.users.update_one(
-                {"id": pred["user_id"]},
-                {"$inc": {"xp": points["xp_earned"]}},
-            )
-
-            user_data = await db.users.find_one(
-                {"id": pred["user_id"]}, {"_id": 0}
-            )
-            if user_data:
-                new_xp = user_data.get("xp", 0) + points["xp_earned"]
-                new_level = (new_xp // 100) + 1
-                if new_level > user_data.get("level", 1):
-                    await db.users.update_one(
-                        {"id": pred["user_id"]},
-                        {"$set": {"level": new_level}},
-                    )
-                    await send_user_notification(
-                        pred["user_id"],
-                        f"Niveau {new_level} atteint !",
-                        "level_up",
-                    )
-
-                await send_user_notification(
-                    pred["user_id"],
-                    f"Resultats {race['name']}: +{points['total']} pts!",
-                    "results",
-                )
-                points_calculated += 1
 
         success_items = _build_success_items(fetched_data)
 
