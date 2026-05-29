@@ -1,0 +1,27 @@
+{
+  "name": "pronokif-knowledge-mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server exposing PronoKif F1 2026 knowledge and RAG tools.",
+  "type": "module",
+  "bin": {
+    "pronokif-knowledge-mcp-server": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "dotenv": "^16.5.0",
+    "mongodb": "^6.16.0",
+    "zod": "^3.25.20"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

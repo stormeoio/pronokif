@@ -1,0 +1,30 @@
+<evaluation>
+  <qa_pair>
+    <question>Quel outil MCP utiliser pour retrouver les documents RAG liés au circuit de Madrid ?</question>
+    <answer>pronokif_search_knowledge</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Quel outil MCP renvoie le graphe d'entités autour d'une course comme madrid-2026 ?</question>
+    <answer>pronokif_get_race_context</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Quel outil MCP doit produire un brief de pronostic pour une course F1 2026 ?</question>
+    <answer>pronokif_build_prediction_brief</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Quel identifiant de championnat est utilisé par défaut dans le serveur MCP PronoKif ?</question>
+    <answer>championship-f1-2026</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Quelle ressource MCP permet de lire le contexte JSON de madrid-2026 ?</question>
+    <answer>pronokif://races/madrid-2026/context</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Quel outil MCP renvoie le contexte technique et pilotes d'une écurie comme mclaren ?</question>
+    <answer>pronokif_get_team_context</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Quelle ressource MCP permet de lire le contexte JSON du pilote norris ?</question>
+    <answer>pronokif://drivers/norris/context</answer>
+  </qa_pair>
+</evaluation>
