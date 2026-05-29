@@ -1,7 +1,8 @@
 # Pronokif CD — trigger StormDeploy on push to main.
 #
-# Required GitHub secret:
+# Required GitHub secrets:
 #   STORMDEPLOY_WEBHOOK_SECRET — HMAC secret configured on the StormDeploy app
+#   STORMEO_DEPLOY_TOKEN       — GitHub PAT with push access to stormeoio/pronokif
 #
 # Optional GitHub variable:
 #   STORMDEPLOY_WEBHOOK_URL — defaults to the production Pronokif StormDeploy webhook
@@ -57,6 +58,19 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync deploy mirror (stormeoio/pronokif)
+        env:
+          STORMEO_DEPLOY_TOKEN: ${{ secrets.STORMEO_DEPLOY_TOKEN }}
+        run: |
+          if [ -z "$STORMEO_DEPLOY_TOKEN" ]; then
+            echo "::warning::STORMEO_DEPLOY_TOKEN not set — skipping mirror sync"
+          else
+            git remote add stormeo "https://x-access-token:${STORMEO_DEPLOY_TOKEN}@github.com/stormeoio/pronokif.git"
+            git push stormeo main --force-with-lease 2>&1 || echo "::warning::Mirror sync failed (non-blocking)"
+          fi
 
       - name: Trigger signed StormDeploy webhook
         env:
