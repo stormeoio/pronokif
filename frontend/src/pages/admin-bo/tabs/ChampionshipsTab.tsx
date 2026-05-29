@@ -2,8 +2,8 @@
  * Admin Championships CRUD tab.
  */
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit2, Trash2, Loader2, Trophy } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, Edit2, Trash2, Loader2, Trophy, RefreshCw, Flag, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { adminApi } from "../adminApi";
 import { Button } from "@/components/ui/button";
@@ -17,17 +17,41 @@ interface Championship {
   thumbnail_url?: string;
   is_active: boolean;
   created_at: string;
+  races_count?: number;
+  active_races_count?: number;
+  cancelled_races_count?: number;
+  linked_counts?: {
+    races: number;
+    predictions: number;
+    race_results: number;
+    custom_predictions: number;
+    minigame_results: number;
+    leaderboard_entries: number;
+  };
 }
 
 export default function ChampionshipsTab() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Championship | null>(null);
-  const [form, setForm] = useState({ name: "", season: 2025, description: "", is_active: true });
+  const [form, setForm] = useState({ name: "", season: 2026, description: "", is_active: true });
 
   const { data: championships = [], isLoading } = useQuery({
     queryKey: ["admin-bo", "championships"],
     queryFn: () => adminApi.championships.list(),
+  });
+
+  const seedMutation = useMutation({
+    mutationFn: () => adminApi.championships.seedF12026(),
+    onSuccess: (data) => {
+      toast.success(
+        `F1 2026 lié : ${data.inserted} course(s) ajoutée(s), ${data.updated} mise(s) à jour`,
+      );
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "championships"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "races"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "stats"] });
+    },
+    onError: () => toast.error("Impossible de synchroniser le championnat F1 2026"),
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,7 +66,7 @@ export default function ChampionshipsTab() {
       }
       setShowForm(false);
       setEditing(null);
-      setForm({ name: "", season: 2025, description: "", is_active: true });
+      setForm({ name: "", season: 2026, description: "", is_active: true });
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "championships"] });
     } catch {
       toast.error("Erreur");
@@ -73,20 +97,38 @@ export default function ChampionshipsTab() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <h2 className="font-heading text-2xl text-white uppercase tracking-tight">Championnats</h2>
-        <Button
-          onClick={() => {
-            setShowForm(!showForm);
-            setEditing(null);
-            setForm({ name: "", season: 2025, description: "", is_active: true });
-          }}
-          className="btn-racing text-xs"
-          size="sm"
-        >
-          <Plus className="w-4 h-4 mr-1" />
-          Nouveau
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => seedMutation.mutate()}
+            disabled={seedMutation.isPending}
+            variant="ghost"
+            className="text-cyan-400 hover:text-cyan-300 text-xs"
+            size="sm"
+            data-testid="seed-f1-2026-championship"
+          >
+            {seedMutation.isPending ? (
+              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4 mr-1" />
+            )}
+            Seed F1 2026
+          </Button>
+          <Button
+            onClick={() => {
+              setShowForm(!showForm);
+              setEditing(null);
+              setForm({ name: "", season: 2026, description: "", is_active: true });
+            }}
+            className="btn-racing text-xs"
+            size="sm"
+            data-testid="new-championship"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Nouveau
+          </Button>
+        </div>
       </div>
 
       {/* Form */}
@@ -160,40 +202,77 @@ export default function ChampionshipsTab() {
       ) : (
         <div className="space-y-3">
           {championships.map((champ: Championship) => (
-            <div key={champ.id} className="card-arcade p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {champ.thumbnail_url ? (
-                  <img
-                    src={champ.thumbnail_url}
-                    alt=""
-                    className="w-10 h-10 rounded-lg object-cover"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                    <Trophy className="w-5 h-5 text-purple-400" />
+            <div key={champ.id} className="card-arcade p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  {champ.thumbnail_url ? (
+                    <img
+                      src={champ.thumbnail_url}
+                      alt=""
+                      className="w-10 h-10 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                      <Trophy className="w-5 h-5 text-purple-400" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-body text-white text-sm">{champ.name}</p>
+                    <p className="font-body text-xs text-gray-500">
+                      Saison {champ.season}
+                      {!champ.is_active && <span className="ml-2 text-red-400">(inactif)</span>}
+                    </p>
+                    {champ.description && (
+                      <p className="mt-1 line-clamp-2 font-body text-xs text-gray-500">
+                        {champ.description}
+                      </p>
+                    )}
                   </div>
-                )}
-                <div>
-                  <p className="font-body text-white text-sm">{champ.name}</p>
-                  <p className="font-body text-xs text-gray-500">
-                    Saison {champ.season}
-                    {!champ.is_active && <span className="ml-2 text-red-400">(inactif)</span>}
-                  </p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleEdit(champ)}
+                    className="p-2 text-gray-400 hover:text-cyan-400 rounded"
+                    data-testid={`edit-championship-${champ.id}`}
+                    title="Modifier"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(champ.id, champ.name)}
+                    className="p-2 text-gray-400 hover:text-red-400 rounded"
+                    data-testid={`delete-championship-${champ.id}`}
+                    title="Supprimer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => handleEdit(champ)}
-                  className="p-2 text-gray-400 hover:text-cyan-400 rounded"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDelete(champ.id, champ.name)}
-                  className="p-2 text-gray-400 hover:text-red-400 rounded"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+              <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-4">
+                <div className="rounded-md border border-white/10 bg-black/30 p-3">
+                  <Flag className="mb-2 h-4 w-4 text-cyan-400" />
+                  <p className="font-data text-lg text-white">{champ.races_count ?? 0}</p>
+                  <p className="font-body text-[10px] uppercase text-gray-500">Courses</p>
+                </div>
+                <div className="rounded-md border border-white/10 bg-black/30 p-3">
+                  <Trophy className="mb-2 h-4 w-4 text-green-400" />
+                  <p className="font-data text-lg text-white">{champ.active_races_count ?? 0}</p>
+                  <p className="font-body text-[10px] uppercase text-gray-500">Actives</p>
+                </div>
+                <div className="rounded-md border border-white/10 bg-black/30 p-3">
+                  <ClipboardList className="mb-2 h-4 w-4 text-orange-400" />
+                  <p className="font-data text-lg text-white">
+                    {champ.linked_counts?.predictions ?? 0}
+                  </p>
+                  <p className="font-body text-[10px] uppercase text-gray-500">Pronostics</p>
+                </div>
+                <div className="rounded-md border border-white/10 bg-black/30 p-3">
+                  <RefreshCw className="mb-2 h-4 w-4 text-pk-red" />
+                  <p className="font-data text-lg text-white">
+                    {champ.linked_counts?.race_results ?? 0}
+                  </p>
+                  <p className="font-body text-[10px] uppercase text-gray-500">Résultats</p>
+                </div>
               </div>
             </div>
           ))}

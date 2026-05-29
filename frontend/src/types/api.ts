@@ -4,6 +4,7 @@
  * Keep this file in sync with the backend Pydantic models.
  * Types are used by the typed `api` helpers in lib/api.ts.
  */
+import type { CircuitMapData } from "@/lib/circuitMaps";
 
 // ═══════════════════════════════════════ AUTH ═══════════════════════════════════
 
@@ -91,6 +92,8 @@ export interface LeagueMember {
 export interface Race {
   id: string;
   name: string;
+  championship_id?: string | null;
+  season?: number | null;
   circuit: string;
   country: string;
   date: string;
@@ -119,6 +122,7 @@ export interface Race {
 export interface RaceDetails extends Race {
   sessions?: RaceSession[];
   circuit_info?: CircuitInfo;
+  circuit_map?: CircuitMapData | null;
   can_predict?: boolean;
   can_predict_sprint?: boolean;
 }
@@ -135,6 +139,8 @@ export interface CircuitInfo {
   laps: number;
   turns: number;
   drs_zones: number;
+  map_status?: "interactive_seeded" | "static_fallback";
+  map_image_url?: string | null;
   lap_record?: string;
   lap_record_holder?: string;
 }
@@ -233,6 +239,8 @@ export interface Prediction {
   id: string;
   user_id: string;
   race_id: string;
+  championship_id?: string | null;
+  season?: number | null;
   quali_pole: string;
   quali_top10: string[];
   sprint_quali_top10: string[] | null;

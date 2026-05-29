@@ -1,12 +1,15 @@
 {
-  "name": "PronoKif - F1 Predictions",
+  "id": "/",
+  "name": "PronoKif - Pronostics F1",
   "short_name": "PronoKif",
-  "description": "Formula 1 prediction game with friends",
+  "description": "Jeu de pronostics Formule 1 entre amis, ligues privées et back-office.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
   "background_color": "#0B0D12",
   "theme_color": "#0B0D12",
-  "lang": "en",
+  "lang": "fr",
   "orientation": "portrait",
   "icons": [
     {
@@ -20,7 +23,36 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-pronokif-v1-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "categories": ["games", "sports"]
+  "categories": ["games", "sports"],
+  "shortcuts": [
+    {
+      "name": "Back-office",
+      "short_name": "Admin",
+      "description": "Ouvrir la Direction de Course",
+      "url": "/admin",
+      "icons": [{ "src": "/icons/icon-pronokif-v1-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Calendrier F1",
+      "short_name": "Calendrier",
+      "description": "Voir les courses et pronostics",
+      "url": "/predictions",
+      "icons": [{ "src": "/icons/icon-pronokif-v1-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mentions légales",
+      "short_name": "Mentions",
+      "description": "Consulter les informations légales",
+      "url": "/mentions-legales",
+      "icons": [{ "src": "/icons/icon-pronokif-v1-192.png", "sizes": "192x192" }]
+    }
+  ]
 }

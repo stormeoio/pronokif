@@ -26,6 +26,7 @@ export default function AuthPage() {
   const { login, loginWithMagicLink, register, requestMagicLink } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get("invite") || undefined;
 
   // ── Nationality picker state ──
   const [nationality, setNationality] = useState<string>("");
@@ -85,6 +86,12 @@ export default function AuthPage() {
   );
 
   useEffect(() => {
+    if (inviteToken) {
+      setActiveTab("register");
+    }
+  }, [inviteToken]);
+
+  useEffect(() => {
     const token = searchParams.get("magic_token");
     if (!token || consumedMagicTokenRef.current === token) {
       return;
@@ -121,6 +128,7 @@ export default function AuthPage() {
           : await register(email, password, {
               locale: getStoredLocale() ?? locale,
               nationality: nationality || undefined,
+              inviteToken,
             });
 
       toast.success(type === "login" ? t("auth.login.success") : t("auth.register.success"));

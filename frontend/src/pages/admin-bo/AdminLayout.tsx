@@ -5,8 +5,11 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  Activity,
   BarChart3,
+  Calculator,
   LayoutDashboard,
+  Database,
   Users,
   Trophy,
   Flag,
@@ -20,14 +23,17 @@ import {
   X,
   Smartphone,
   Map,
+  Route,
   Network,
   PanelRightOpen,
   PanelRightClose,
   Shield,
+  Scale,
 } from "lucide-react";
 import DashboardTab from "./tabs/DashboardTab";
 import UsersTab from "./tabs/UsersTab";
 import PredictionsTab from "./tabs/PredictionsTab";
+import ScoringTab from "./tabs/ScoringTab";
 import LeaguesTab from "./tabs/LeaguesTab";
 import ChampionshipsTab from "./tabs/ChampionshipsTab";
 import RacesTab from "./tabs/RacesTab";
@@ -37,6 +43,10 @@ import MediaTab from "./tabs/MediaTab";
 import SettingsTab from "./tabs/SettingsTab";
 import RoadmapTab from "./tabs/RoadmapTab";
 import AuditTab from "./tabs/AuditTab";
+import KnowledgeTab from "./tabs/KnowledgeTab";
+import LegalPwaTab from "./tabs/LegalPwaTab";
+import ActivityLogsTab from "./tabs/ActivityLogsTab";
+import CircuitMapsTab from "./tabs/CircuitMapsTab";
 import PreviewPanel from "./PreviewPanel";
 import { adminApi } from "./adminApi";
 import { Button } from "@/components/ui/button";
@@ -48,12 +58,17 @@ type AdminTabKey =
   | "dashboard"
   | "users"
   | "predictions"
+  | "scoring"
   | "leagues"
   | "championships"
   | "races"
+  | "circuitMaps"
   | "feedbacks"
   | "invitations"
   | "media"
+  | "knowledge"
+  | "legal"
+  | "activity"
   | "audit"
   | "roadmap"
   | "settings";
@@ -69,12 +84,17 @@ const NAV_ITEMS: NavItem[] = [
   { key: "dashboard", label: "Tableau de bord", icon: LayoutDashboard, section: "general" },
   { key: "users", label: "Utilisateurs", icon: Users, section: "general" },
   { key: "predictions", label: "Pronostics", icon: BarChart3, section: "general" },
+  { key: "scoring", label: "Scores", icon: Calculator, section: "general" },
   { key: "leagues", label: "Ligues", icon: Network, section: "general" },
   { key: "championships", label: "Championnats", icon: Trophy, section: "general" },
   { key: "races", label: "Courses", icon: Flag, section: "general" },
+  { key: "circuitMaps", label: "Cartes circuits", icon: Route, section: "general" },
   { key: "feedbacks", label: "Retours", icon: MessageSquare, section: "general" },
   { key: "invitations", label: "Invitations", icon: Mail, section: "general" },
   { key: "media", label: "Médias", icon: Image, section: "general" },
+  { key: "activity", label: "Activité", icon: Activity, section: "general" },
+  { key: "knowledge", label: "Base RAG", icon: Database, section: "dev" },
+  { key: "legal", label: "Légal & PWA", icon: Scale, section: "dev" },
   { key: "audit", label: "Audit", icon: Shield, section: "dev" },
   { key: "roadmap", label: "Feuille de route", icon: Map, section: "dev" },
   { key: "settings", label: "Paramètres", icon: Settings, section: "general" },
@@ -144,18 +164,28 @@ export default function AdminLayout() {
         return <UsersTab />;
       case "predictions":
         return <PredictionsTab />;
+      case "scoring":
+        return <ScoringTab />;
       case "leagues":
         return <LeaguesTab />;
       case "championships":
         return <ChampionshipsTab />;
       case "races":
         return <RacesTab />;
+      case "circuitMaps":
+        return <CircuitMapsTab currentAdminEmail={adminEmail} />;
       case "feedbacks":
         return <FeedbacksTab />;
       case "invitations":
         return <InvitationsTab />;
       case "media":
         return <MediaTab />;
+      case "activity":
+        return <ActivityLogsTab />;
+      case "knowledge":
+        return <KnowledgeTab currentAdminEmail={adminEmail} />;
+      case "legal":
+        return <LegalPwaTab />;
       case "settings":
         return <SettingsTab />;
       case "audit":

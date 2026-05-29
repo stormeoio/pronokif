@@ -439,7 +439,18 @@ export default function AdminAuthPage() {
               <ArrowLeft className="w-3.5 h-3.5" />
               Retour à l'app
             </Link>
-            <span className="text-[10px] text-pk-titane/40 font-data">DIRECTION DE COURSE</span>
+            <div className="flex items-center gap-3">
+              <Link
+                to="/mentions-legales"
+                className="text-[10px] text-pk-titane/50 hover:text-pk-piste"
+              >
+                Mentions
+              </Link>
+              <Link to="/cgu" className="text-[10px] text-pk-titane/50 hover:text-pk-piste">
+                CGU
+              </Link>
+              <span className="text-[10px] text-pk-titane/40 font-data">DIRECTION DE COURSE</span>
+            </div>
           </div>
 
           {/* Racing stripe accent — animated sweep */}

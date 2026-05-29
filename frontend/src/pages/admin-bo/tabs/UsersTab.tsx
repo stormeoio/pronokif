@@ -4,14 +4,19 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Activity,
+  BarChart3,
   Search,
   Trash2,
+  Download,
   Edit2,
+  Eye,
   Ban,
   ChevronLeft,
   ChevronRight,
   Loader2,
   MailPlus,
+  Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { adminApi } from "../adminApi";
@@ -35,11 +40,66 @@ function parseInviteEmails(input: string) {
   };
 }
 
+function formatDateTime(value: unknown) {
+  if (!value) return "—";
+  return new Date(String(value)).toLocaleString("fr-FR", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function UserStatTile({
+  icon: Icon,
+  label,
+  value,
+  tone = "text-white",
+}: {
+  icon: typeof BarChart3;
+  label: string;
+  value: unknown;
+  tone?: string;
+}) {
+  return (
+    <div className="card-arcade border-l-4 border-pk-red p-3">
+      <Icon className="mb-2 h-4 w-4 text-pk-red" />
+      <p className="font-data text-[10px] uppercase tracking-[0.16em] text-gray-500">{label}</p>
+      <p className={`mt-1 font-data text-xl ${tone}`}>{String(value ?? 0)}</p>
+    </div>
+  );
+}
+
+type UserAnalyticsRow = {
+  user_id: string;
+  email?: string;
+  username?: string;
+  created_at?: string;
+  predictions_count: number;
+  complete_predictions: number;
+  total_points: number;
+  average_points: number;
+  leagues_count: number;
+  last_prediction_at?: string;
+};
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export default function UsersTab() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [editingUser, setEditingUser] = useState<Record<string, unknown> | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [inviteInput, setInviteInput] = useState("");
   const [inviteMessage, setInviteMessage] = useState("");
   const limit = 20;
@@ -51,8 +111,19 @@ export default function UsersTab() {
     queryFn: () => adminApi.users.list({ search, skip: page * limit, limit }),
   });
 
+  const { data: analytics } = useQuery({
+    queryKey: ["admin-bo", "users", "analytics", search],
+    queryFn: () => adminApi.users.analytics({ search }),
+  });
+
   const users = data?.users ?? [];
   const total = data?.total ?? 0;
+
+  const selectedUserStats = useQuery({
+    queryKey: ["admin-bo", "users", selectedUserId, "stats"],
+    queryFn: () => adminApi.users.stats(String(selectedUserId)),
+    enabled: !!selectedUserId,
+  });
 
   const batchInviteMutation = useMutation({
     mutationFn: () =>
@@ -86,6 +157,16 @@ export default function UsersTab() {
     },
   });
 
+  const exportMutation = useMutation({
+    mutationFn: () => adminApi.users.exportCsv({ search, export_limit: 5000 }),
+    onSuccess: (blob: Blob) => {
+      downloadBlob(blob, "pronokif-users.csv");
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "activity-logs"] });
+      toast.success("Export CSV généré");
+    },
+    onError: () => toast.error("Export CSV impossible"),
+  });
+
   const handleBatchInvite = (e: React.FormEvent) => {
     e.preventDefault();
     if (inviteEmails.invalid.length > 0) {
@@ -104,7 +185,9 @@ export default function UsersTab() {
     try {
       await adminApi.users.delete(userId);
       toast.success("Utilisateur supprimé");
+      if (selectedUserId === userId) setSelectedUserId(null);
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "activity-logs"] });
     } catch {
       toast.error("Erreur lors de la suppression");
     }
@@ -115,6 +198,7 @@ export default function UsersTab() {
       await adminApi.users.update(userId, { is_banned: !currentlyBanned });
       toast.success(currentlyBanned ? "Utilisateur débanni" : "Utilisateur banni");
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "activity-logs"] });
     } catch {
       toast.error("Erreur");
     }
@@ -130,16 +214,87 @@ export default function UsersTab() {
       toast.success("Utilisateur mis à jour");
       setEditingUser(null);
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "activity-logs"] });
+      if (selectedUserId === editingUser.id) {
+        queryClient.invalidateQueries({ queryKey: ["admin-bo", "users", selectedUserId, "stats"] });
+      }
     } catch {
       toast.error("Erreur lors de la mise à jour");
     }
   };
 
+  const selectedStats = selectedUserStats.data?.stats ?? {};
+  const selectedUser =
+    selectedUserStats.data?.user ??
+    users.find((user: Record<string, unknown>) => user.id === selectedUserId);
+  const analyticsSummary = analytics?.summary ?? {};
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="font-heading text-2xl text-white uppercase tracking-tight">Utilisateurs</h2>
-        <span className="font-data text-sm text-gray-500">{total} au total</span>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-heading text-2xl text-white uppercase tracking-tight">
+            Utilisateurs
+          </h2>
+          <p className="font-body text-xs text-gray-500">
+            Cohortes, stats de participation et gestion des comptes.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => exportMutation.mutate()}
+            disabled={exportMutation.isPending}
+            className="text-xs text-gray-300 hover:text-white"
+          >
+            {exportMutation.isPending ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-1 h-4 w-4" />
+            )}
+            Export CSV
+          </Button>
+          <span className="font-data text-sm text-gray-500">{total} au total</span>
+        </div>
+      </div>
+
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+        <UserStatTile
+          icon={BarChart3}
+          label="Filtrés"
+          value={analyticsSummary.users_count ?? total}
+        />
+        <UserStatTile
+          icon={BarChart3}
+          label="Avec pronos"
+          value={analyticsSummary.users_with_predictions}
+          tone="text-emerald-400"
+        />
+        <UserStatTile
+          icon={BarChart3}
+          label="Sans prono"
+          value={analyticsSummary.users_without_predictions}
+          tone="text-amber-400"
+        />
+        <UserStatTile
+          icon={Trophy}
+          label="Points"
+          value={analyticsSummary.total_points}
+          tone="text-orange-400"
+        />
+        <UserStatTile
+          icon={Activity}
+          label="Moy. pronos"
+          value={analyticsSummary.average_predictions_per_user}
+          tone="text-cyan-400"
+        />
+        <UserStatTile
+          icon={Ban}
+          label="Bannis"
+          value={analyticsSummary.banned_users}
+          tone="text-red-300"
+        />
       </div>
 
       {/* Batch invitations */}
@@ -208,6 +363,67 @@ export default function UsersTab() {
         />
       </div>
 
+      {!!analytics && (
+        <div className="mb-4 grid gap-4 lg:grid-cols-2">
+          <section className="card-arcade p-4">
+            <h3 className="mb-3 font-heading text-xs uppercase text-white">Top joueurs</h3>
+            <div className="space-y-2">
+              {((analytics.top_users ?? []) as UserAnalyticsRow[]).slice(0, 5).map((user) => (
+                <div
+                  key={user.user_id}
+                  className="flex items-center justify-between gap-3 border-b border-white/5 pb-2 last:border-0 last:pb-0"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-body text-sm text-gray-200">
+                      {user.username ?? user.email ?? user.user_id}
+                    </p>
+                    <p className="font-body text-[11px] text-gray-500">
+                      {user.complete_predictions}/{user.predictions_count} complets ·{" "}
+                      {user.leagues_count} ligue{user.leagues_count > 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  <span className="shrink-0 font-data text-xs text-orange-400">
+                    {user.total_points} pts
+                  </span>
+                </div>
+              ))}
+              {(analytics.top_users ?? []).length === 0 && (
+                <p className="font-body text-xs text-gray-500">Aucun joueur scoré.</p>
+              )}
+            </div>
+          </section>
+
+          <section className="card-arcade p-4">
+            <h3 className="mb-3 font-heading text-xs uppercase text-white">
+              Utilisateurs sans pronostic
+            </h3>
+            <div className="space-y-2">
+              {((analytics.inactive_users ?? []) as UserAnalyticsRow[]).slice(0, 5).map((user) => (
+                <div
+                  key={user.user_id}
+                  className="flex items-center justify-between gap-3 border-b border-white/5 pb-2 last:border-0 last:pb-0"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-body text-sm text-gray-200">
+                      {user.username ?? user.email ?? user.user_id}
+                    </p>
+                    <p className="font-body text-[11px] text-gray-500">
+                      Inscrit le {formatDateTime(user.created_at)}
+                    </p>
+                  </div>
+                  <span className="shrink-0 font-data text-xs text-amber-300">0 prono</span>
+                </div>
+              ))}
+              {(analytics.inactive_users ?? []).length === 0 && (
+                <p className="font-body text-xs text-gray-500">
+                  Tous les utilisateurs filtrés ont au moins un pronostic.
+                </p>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+
       {/* Edit Modal */}
       {editingUser && (
         <div className="card-arcade p-4 mb-4 border border-orange-500/30">
@@ -242,6 +458,153 @@ export default function UsersTab() {
             </Button>
           </div>
         </div>
+      )}
+
+      {selectedUserId && (
+        <section className="card-arcade mb-4 border border-cyan-500/25 p-4">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="font-heading text-sm uppercase text-cyan-400">
+                Statistiques utilisateur
+              </h3>
+              <p className="font-body text-xs text-gray-500">
+                {String(selectedUser?.username ?? "Utilisateur")} ·{" "}
+                {String(selectedUser?.email ?? selectedUserId)}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setSelectedUserId(null)}
+              className="text-xs text-gray-400"
+            >
+              Fermer
+            </Button>
+          </div>
+
+          {selectedUserStats.isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-5 w-5 animate-spin text-cyan-400" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+                <UserStatTile
+                  icon={BarChart3}
+                  label="Pronos"
+                  value={selectedStats.predictions_count}
+                />
+                <UserStatTile
+                  icon={BarChart3}
+                  label="Complets"
+                  value={selectedStats.complete_predictions}
+                  tone="text-emerald-400"
+                />
+                <UserStatTile
+                  icon={Trophy}
+                  label="Points"
+                  value={selectedStats.total_points}
+                  tone="text-orange-400"
+                />
+                <UserStatTile
+                  icon={Trophy}
+                  label="Moyenne"
+                  value={selectedStats.average_points}
+                  tone="text-cyan-400"
+                />
+                <UserStatTile
+                  icon={Activity}
+                  label="Ligues"
+                  value={selectedStats.leagues_count}
+                  tone="text-purple-300"
+                />
+                <UserStatTile
+                  icon={Activity}
+                  label="Logs"
+                  value={(selectedStats.recent_activity ?? []).length}
+                  tone="text-red-300"
+                />
+              </div>
+
+              {selectedStats.best_race && (
+                <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+                  <p className="font-data text-[10px] uppercase tracking-[0.16em] text-gray-500">
+                    Meilleur Grand Prix
+                  </p>
+                  <p className="mt-1 font-body text-sm text-white">
+                    {selectedStats.best_race.race_name ?? selectedStats.best_race.race_id} ·{" "}
+                    <span className="font-data text-orange-400">
+                      {selectedStats.best_race.points} pts
+                    </span>
+                  </p>
+                </div>
+              )}
+
+              <div className="grid gap-4 lg:grid-cols-2">
+                <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+                  <h4 className="mb-3 font-heading text-xs uppercase text-white">
+                    Derniers pronostics
+                  </h4>
+                  <div className="space-y-2">
+                    {(selectedStats.recent_predictions ?? [])
+                      .slice(0, 6)
+                      .map((prediction: Record<string, unknown>) => (
+                        <div
+                          key={String(prediction.id ?? `${prediction.race_id}`)}
+                          className="flex items-center justify-between gap-3 border-b border-white/5 pb-2 last:border-0 last:pb-0"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate font-body text-sm text-gray-200">
+                              {String(prediction.race_name ?? prediction.race_id ?? "Course")}
+                            </p>
+                            <p className="font-body text-[11px] text-gray-500">
+                              {formatDateTime(prediction.updated_at ?? prediction.created_at)}
+                            </p>
+                          </div>
+                          <span className="shrink-0 font-data text-xs text-orange-400">
+                            {prediction.score_preview
+                              ? `${(prediction.score_preview as { total?: number }).total ?? 0} pts`
+                              : prediction.is_complete
+                                ? "complet"
+                                : "incomplet"}
+                          </span>
+                        </div>
+                      ))}
+                    {(selectedStats.recent_predictions ?? []).length === 0 && (
+                      <p className="font-body text-xs text-gray-500">Aucun pronostic.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+                  <h4 className="mb-3 font-heading text-xs uppercase text-white">
+                    Activité admin récente
+                  </h4>
+                  <div className="space-y-2">
+                    {(selectedStats.recent_activity ?? [])
+                      .slice(0, 6)
+                      .map((log: Record<string, unknown>) => (
+                        <div
+                          key={String(log.id)}
+                          className="border-b border-white/5 pb-2 last:border-0 last:pb-0"
+                        >
+                          <p className="font-body text-sm text-gray-200">
+                            {String(log.action ?? "activité")}
+                          </p>
+                          <p className="font-body text-[11px] text-gray-500">
+                            {String(log.actor_email ?? "admin")} · {formatDateTime(log.created_at)}
+                          </p>
+                        </div>
+                      ))}
+                    {(selectedStats.recent_activity ?? []).length === 0 && (
+                      <p className="font-body text-xs text-gray-500">Aucun log admin.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
       )}
 
       {/* Table */}
@@ -291,6 +654,13 @@ export default function UsersTab() {
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => setSelectedUserId(user.id as string)}
+                          className="p-1.5 text-gray-400 hover:text-cyan-400 rounded"
+                          title="Détails"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
                         <button
                           onClick={() => setEditingUser(user)}
                           className="p-1.5 text-gray-400 hover:text-cyan-400 rounded"

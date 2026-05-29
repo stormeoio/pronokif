@@ -40,9 +40,16 @@ const isAdminRoute = () =>
   window.location.pathname.startsWith("/admin-bo") ||
   window.location.pathname.startsWith("/bo-admin");
 
+const isPublicLegalRoute = (pathname = window.location.pathname) =>
+  pathname.startsWith("/legal/") ||
+  ["/mentions-legales", "/cgu", "/conditions-generales-utilisation", "/confidentialite"].includes(
+    pathname,
+  );
+
 const hasSeenSplash = () => {
   if (isAutomatedLocalBrowser()) return true;
   if (isAdminRoute()) return true;
+  if (isPublicLegalRoute()) return true;
 
   try {
     return window.sessionStorage.getItem(SPLASH_SEEN_KEY) === "true";
@@ -69,7 +76,10 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/admin-bo") ||
     location.pathname.startsWith("/bo-admin");
-  const hideNav = isAdminBackOfficeRoute || ["/auth", "/set-username"].includes(location.pathname);
+  const hideNav =
+    isAdminBackOfficeRoute ||
+    isPublicLegalRoute(location.pathname) ||
+    ["/auth", "/set-username"].includes(location.pathname);
   // Auth pages use their own video background — skip 3D particles to save GPU
   const isAuthRoute = location.pathname === "/auth" || isAdminBackOfficeRoute;
 

@@ -35,6 +35,7 @@ const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
 const VerifyEmailPage = lazy(() => import("@/pages/VerifyEmailPage"));
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
+const LegalPage = lazy(() => import("@/pages/LegalPage"));
 // AdminAuthPage is NOT lazy — it's a critical entry point that must never
 // show a blank screen. Small bundle cost, massive UX win.
 import AdminAuthPage from "@/pages/admin-bo/AdminAuthPage";
@@ -154,6 +155,11 @@ export function AppRouter() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/mentions-legales" element={<LegalPage slug="mentions-legales" />} />
+      <Route path="/cgu" element={<LegalPage slug="cgu" />} />
+      <Route path="/conditions-generales-utilisation" element={<Navigate to="/cgu" replace />} />
+      <Route path="/confidentialite" element={<LegalPage slug="confidentialite" />} />
+      <Route path="/legal/:slug" element={<LegalPage />} />
 
       {/* Admin Back-Office (separate auth) */}
       <Route path="/admin/auth" element={<AdminAuthPage />} />

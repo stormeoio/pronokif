@@ -20,6 +20,7 @@ import {
   Plus,
   Radio,
   RefreshCw,
+  RotateCcw,
   Search,
   Sparkles,
   Timer,
@@ -40,6 +41,7 @@ type RaceContentStatus = "draft" | "ready" | "published";
 interface Race {
   id: string;
   name: string;
+  championship_id?: string | null;
   circuit?: string;
   country?: string;
   date: string;
@@ -62,6 +64,10 @@ interface Race {
   submitted_predictions?: number;
   missing_predictions?: number;
   completion_rate?: number;
+  scored_predictions?: number;
+  scoring_pending?: number;
+  scoring_coverage_rate?: number;
+  has_scoring_gaps?: boolean;
   content_status?: RaceContentStatus;
   track_profile?: string;
   story_angle?: string;
@@ -72,6 +78,14 @@ interface Race {
   cancellation_impact?: string | null;
   user_content_idea?: string;
   editorial?: RaceEditorial;
+}
+
+interface Championship {
+  id: string;
+  name: string;
+  season: number;
+  is_active: boolean;
+  races_count?: number;
 }
 
 interface AdminUserSummary {
@@ -103,6 +117,10 @@ interface RaceOverview {
   complete_count: number;
   missing_count: number;
   completion_rate: number;
+  scored_predictions: number;
+  scoring_pending: number;
+  scoring_coverage_rate: number;
+  has_scoring_gaps: boolean;
   predictions_close_at?: string | null;
   predictions: PredictionEntry[];
   missing_users: AdminUserSummary[];
@@ -151,6 +169,7 @@ const emptyForm = {
   is_test_race: false,
   round_number: 1,
   season: 2026,
+  championship_id: "championship-f1-2026",
   thumbnail_url: "",
   content_status: "draft" as RaceContentStatus,
   track_profile: "",
@@ -270,15 +289,29 @@ export default function RacesTab() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Race | null>(null);
   const [selectedRaceId, setSelectedRaceId] = useState<string | null>(null);
+  const [selectedChampionshipId, setSelectedChampionshipId] = useState("all");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "upcoming" | "finished" | "cancelled" | "in_progress"
   >("all");
   const [search, setSearch] = useState("");
   const [form, setForm] = useState(emptyForm);
 
+  const { data: championships = [] } = useQuery({
+    queryKey: ["admin-bo", "championships"],
+    queryFn: () => adminApi.championships.list(),
+  });
+
+  const championshipList = useMemo(
+    () => (Array.isArray(championships) ? (championships as Championship[]) : []),
+    [championships],
+  );
+
   const { data: races = [], isLoading } = useQuery({
-    queryKey: ["admin-bo", "races"],
-    queryFn: () => adminApi.races.list(),
+    queryKey: ["admin-bo", "races", selectedChampionshipId],
+    queryFn: () =>
+      adminApi.races.list({
+        championship_id: selectedChampionshipId === "all" ? undefined : selectedChampionshipId,
+      }),
   });
 
   const raceList = useMemo(() => (Array.isArray(races) ? races : []), [races]);
@@ -308,8 +341,23 @@ export default function RacesTab() {
       (race: Race) => !race.is_cancelled && race.status !== "finished",
     );
 
-    return { total, cancelled, finished, live, upcoming, averageCoverage, nextRace };
-  }, [raceList]);
+    const selectedChampionship =
+      selectedChampionshipId === "all"
+        ? null
+        : championshipList.find((championship) => championship.id === selectedChampionshipId) ||
+          null;
+
+    return {
+      total,
+      cancelled,
+      finished,
+      live,
+      upcoming,
+      averageCoverage,
+      nextRace,
+      selectedChampionship,
+    };
+  }, [championshipList, raceList, selectedChampionshipId]);
 
   const filteredRaces = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -340,6 +388,7 @@ export default function RacesTab() {
     onSuccess: (data) => {
       toast.success(`${data.inserted} course(s) ajoutée(s), ${data.existing} déjà présente(s)`);
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "races"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "championships"] });
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "stats"] });
     },
     onError: () => toast.error("Impossible de peupler le calendrier"),
@@ -355,6 +404,27 @@ export default function RacesTab() {
       overviewQuery.refetch();
     },
     onError: () => toast.error("Impossible d'envoyer les rappels"),
+  });
+
+  const rescoreMutation = useMutation({
+    mutationFn: (raceId: string) => adminApi.scoring.rescoreRace(raceId),
+    onSuccess: (data: { race_name?: string; predictions_processed?: number }, scoredRaceId) => {
+      toast.success(`${data.predictions_processed ?? 0} pronostic(s) rescored`);
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "races"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "scoring"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "predictions"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "leagues"] });
+      queryClient.invalidateQueries({
+        queryKey: ["admin-bo", "races", scoredRaceId, "predictions-overview"],
+      });
+      if (selectedRaceId === scoredRaceId) overviewQuery.refetch();
+    },
+    onError: (error: unknown) => {
+      const message =
+        (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
+        "Impossible de relancer le scoring";
+      toast.error(message);
+    },
   });
 
   const resetForm = () => {
@@ -388,6 +458,8 @@ export default function RacesTab() {
       race_duration_minutes: duration,
       is_test_race: true,
       round_number: phase === "upcoming" ? 901 : phase === "in_progress" ? 902 : 903,
+      championship_id:
+        selectedChampionshipId === "all" ? "championship-f1-2026" : selectedChampionshipId,
       thumbnail_url: "",
     });
   };
@@ -399,6 +471,7 @@ export default function RacesTab() {
         ...form,
         round_number: Number(form.round_number),
         season: Number(form.season),
+        championship_id: form.championship_id || undefined,
         race_time: form.race_time || undefined,
         quali_time: form.quali_time || undefined,
         quali_date: form.quali_date || undefined,
@@ -446,6 +519,7 @@ export default function RacesTab() {
       is_test_race: Boolean(race.is_test_race),
       round_number: race.round_number || 1,
       season: race.season,
+      championship_id: race.championship_id || "championship-f1-2026",
       thumbnail_url: race.thumbnail_url || "",
       content_status: race.content_status || race.editorial?.content_status || "draft",
       track_profile: race.track_profile || race.editorial?.track_profile || "",
@@ -472,6 +546,12 @@ export default function RacesTab() {
     }
   };
 
+  const handleRescore = (race: Race) => {
+    if (race.is_cancelled || !race.has_results || rescoreMutation.isPending) return;
+    if (!confirm(`Relancer le scoring de ${race.name} ?`)) return;
+    rescoreMutation.mutate(race.id);
+  };
+
   const selectedRace = raceList.find((race: Race) => race.id === selectedRaceId);
   const overview = overviewQuery.data;
   const editorial = overview?.editorial || selectedRace?.editorial;
@@ -484,6 +564,11 @@ export default function RacesTab() {
           <p className="font-body text-xs text-gray-500">
             Calendrier éditorial, suivi des pronostics et rappels aux joueurs.
           </p>
+          {seasonStats.selectedChampionship && (
+            <p className="mt-1 font-data text-[10px] uppercase tracking-[0.16em] text-cyan-400">
+              {seasonStats.selectedChampionship.name}
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           <Button
@@ -579,6 +664,23 @@ export default function RacesTab() {
             </p>
           </div>
           <div className="flex min-w-[260px] items-center gap-2">
+            <select
+              value={selectedChampionshipId}
+              onChange={(e) => {
+                setSelectedChampionshipId(e.target.value);
+                setSelectedRaceId(null);
+              }}
+              className="h-10 rounded-md border border-white/10 bg-gray-900 px-3 text-xs text-white"
+              aria-label="Filtrer par championnat"
+              data-testid="race-championship-filter"
+            >
+              <option value="all">Tous les championnats</option>
+              {championshipList.map((championship) => (
+                <option key={championship.id} value={championship.id}>
+                  {championship.name}
+                </option>
+              ))}
+            </select>
             <Search className="h-4 w-4 text-gray-500" />
             <Input
               value={search}
@@ -705,6 +807,20 @@ export default function RacesTab() {
               placeholder="Saison"
               className="bg-gray-900 border-gray-700 text-white"
             />
+            <select
+              value={form.championship_id}
+              onChange={(e) => setForm({ ...form, championship_id: e.target.value })}
+              className="h-10 rounded-md border border-gray-700 bg-gray-900 px-3 text-sm text-white"
+              aria-label="Championnat"
+              data-testid="race-form-championship"
+            >
+              <option value="">Sans championnat</option>
+              {championshipList.map((championship) => (
+                <option key={championship.id} value={championship.id}>
+                  {championship.name}
+                </option>
+              ))}
+            </select>
             <Input
               value={form.thumbnail_url}
               onChange={(e) => setForm({ ...form, thumbnail_url: e.target.value })}
@@ -921,6 +1037,11 @@ export default function RacesTab() {
                               Résultats
                             </span>
                           )}
+                          {race.has_scoring_gaps && (
+                            <span className="text-[10px] text-amber-300 bg-amber-500/15 px-1 rounded">
+                              Scoring incomplet
+                            </span>
+                          )}
                         </p>
                         <p className="font-body text-xs text-gray-500">
                           {race.circuit && `${race.circuit} • `}
@@ -946,6 +1067,15 @@ export default function RacesTab() {
                               </span>
                               <span>pronos</span>
                               <span className="text-orange-400">{race.completion_rate ?? 0}%</span>
+                              {race.has_results && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-green-400">
+                                    {race.scored_predictions ?? 0}
+                                  </span>
+                                  <span>scorés</span>
+                                </>
+                              )}
                             </>
                           )}
                         </div>
@@ -966,6 +1096,20 @@ export default function RacesTab() {
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
+                      {race.has_results && !race.is_cancelled && (
+                        <button
+                          onClick={() => handleRescore(race)}
+                          disabled={rescoreMutation.isPending}
+                          className="p-2 text-gray-400 hover:text-amber-300 disabled:opacity-50 rounded"
+                          title="Relancer le scoring"
+                        >
+                          {rescoreMutation.isPending && rescoreMutation.variables === race.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <RotateCcw className="w-4 h-4" />
+                          )}
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDelete(race.id, race.name)}
                         className="p-2 text-gray-400 hover:text-red-400 rounded"
@@ -1023,23 +1167,43 @@ export default function RacesTab() {
                     )}
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  disabled={
-                    selectedRace.is_cancelled ||
-                    !overview?.missing_count ||
-                    reminderMutation.isPending
-                  }
-                  onClick={() => reminderMutation.mutate()}
-                  className="btn-racing text-xs"
-                >
-                  {reminderMutation.isPending ? (
-                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                  ) : (
-                    <Mail className="w-4 h-4 mr-1" />
-                  )}
-                  Envoyer un rappel
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    disabled={
+                      selectedRace.is_cancelled ||
+                      !overview?.missing_count ||
+                      reminderMutation.isPending
+                    }
+                    onClick={() => reminderMutation.mutate()}
+                    className="btn-racing text-xs"
+                  >
+                    {reminderMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    ) : (
+                      <Mail className="w-4 h-4 mr-1" />
+                    )}
+                    Envoyer un rappel
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={
+                      selectedRace.is_cancelled ||
+                      !selectedRace.has_results ||
+                      rescoreMutation.isPending
+                    }
+                    onClick={() => handleRescore(selectedRace)}
+                    className="text-xs text-amber-300 hover:text-amber-200"
+                  >
+                    {rescoreMutation.isPending && rescoreMutation.variables === selectedRace.id ? (
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    ) : (
+                      <RotateCcw className="w-4 h-4 mr-1" />
+                    )}
+                    Rescore
+                  </Button>
+                </div>
               </div>
 
               <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
@@ -1210,7 +1374,7 @@ export default function RacesTab() {
                 </div>
               )}
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div className="bg-black/30 border border-white/10 rounded-md p-3">
                   <Users className="w-4 h-4 text-cyan-400 mb-2" />
                   <p className="font-data text-xl text-white">{overview?.submitted_count ?? 0}</p>
@@ -1226,7 +1390,29 @@ export default function RacesTab() {
                   <p className="font-data text-xl text-white">{overview?.completion_rate ?? 0}%</p>
                   <p className="font-body text-[10px] text-gray-500">Couverture</p>
                 </div>
+                <div className="bg-black/30 border border-white/10 rounded-md p-3">
+                  <RotateCcw className="w-4 h-4 text-amber-300 mb-2" />
+                  <p className="font-data text-xl text-white">
+                    {overview?.scored_predictions ?? selectedRace.scored_predictions ?? 0}
+                  </p>
+                  <p className="font-body text-[10px] text-gray-500">
+                    Scorés (
+                    {overview?.scoring_coverage_rate ?? selectedRace.scoring_coverage_rate ?? 0}%)
+                  </p>
+                </div>
               </div>
+
+              {(overview?.has_scoring_gaps || selectedRace.has_scoring_gaps) && (
+                <div className="rounded-md border border-amber-500/25 bg-amber-500/10 p-3">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-300" />
+                    <p className="font-body text-sm text-amber-100">
+                      {overview?.scoring_pending ?? selectedRace.scoring_pending ?? 0} pronostic(s)
+                      restent sans score officiel.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="rounded-md border border-white/10 bg-black/30 p-3">
                 <div className="mb-2 flex items-center gap-2">

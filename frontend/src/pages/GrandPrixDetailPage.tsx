@@ -8,7 +8,6 @@ import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   ChevronLeft,
-  MapPin,
   Calendar,
   Clock,
   Flag,
@@ -21,62 +20,11 @@ import {
   CornerDownRight,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import type { CircuitMapData } from "@/lib/circuitMaps";
 import { haptic } from "@/lib/haptics";
-import { fadeUp, staggerContainer, easing, duration, getReducedMotionProps } from "@/lib/motion";
+import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
+import { CircuitMap } from "@/components/CircuitMap";
 import { EmptyFullPage } from "@/components/EmptyState";
-
-/* ── Circuit track maps ──────────────────────────────────── */
-
-const CIRCUIT_IMAGES: Record<string, string> = {
-  "Albert Park":
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Albert_Park_Circuit_2021.svg/400px-Albert_Park_Circuit_2021.svg.png",
-  Shanghai:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Shanghai_International_Racing_Circuit_track_map.svg/400px-Shanghai_International_Racing_Circuit_track_map.svg.png",
-  Suzuka:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Suzuka_circuit_map--2005.svg/400px-Suzuka_circuit_map--2005.svg.png",
-  Sakhir:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Bahrain_International_Circuit--Grand_Prix_Layout.svg/400px-Bahrain_International_Circuit--Grand_Prix_Layout.svg.png",
-  Jeddah:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Jeddah_Street_Circuit_2021.svg/400px-Jeddah_Street_Circuit_2021.svg.png",
-  Miami:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Miami_International_Autodrome_track_map.svg/400px-Miami_International_Autodrome_track_map.svg.png",
-  Imola:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Imola_2009.svg/400px-Imola_2009.svg.png",
-  Monaco:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Monte_Carlo_Formula_1_track_map.svg/400px-Monte_Carlo_Formula_1_track_map.svg.png",
-  Barcelona:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d2/Circuit_Catalunya_2021.svg/400px-Circuit_Catalunya_2021.svg.png",
-  Montreal:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Circuit_Gilles_Villeneuve.svg/400px-Circuit_Gilles_Villeneuve.svg.png",
-  "Red Bull Ring":
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Circuit_Red_Bull_Ring.svg/400px-Circuit_Red_Bull_Ring.svg.png",
-  Silverstone:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Circuit_Silverstone_2020.svg/400px-Circuit_Silverstone_2020.svg.png",
-  "Spa-Francorchamps":
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Circuit_de_Spa-Francorchamps_2022.svg/400px-Circuit_de_Spa-Francorchamps_2022.svg.png",
-  Hungaroring:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Hungaroring.svg/400px-Hungaroring.svg.png",
-  Zandvoort:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Circuit_Zandvoort_layout_2020.svg/400px-Circuit_Zandvoort_layout_2020.svg.png",
-  Monza:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Autodromo_Nazionale_Monza_track_map.svg/400px-Autodromo_Nazionale_Monza_track_map.svg.png",
-  "Marina Bay":
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Marina_Bay_Circuit_2023.svg/400px-Marina_Bay_Circuit_2023.svg.png",
-  COTA: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Circuit_of_the_Americas_track_map.svg/400px-Circuit_of_the_Americas_track_map.svg.png",
-  "Hermanos Rodríguez":
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Aut%C3%B3dromo_Hermanos_Rodr%C3%ADguez_2015.svg/400px-Aut%C3%B3dromo_Hermanos_Rodr%C3%ADguez_2015.svg.png",
-  Interlagos:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Aut%C3%B3dromo_Jos%C3%A9_Carlos_Pace_%28AKA_Interlagos%29_track_map.svg/400px-Aut%C3%B3dromo_Jos%C3%A9_Carlos_Pace_%28AKA_Interlagos%29_track_map.svg.png",
-  "Las Vegas":
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Las_Vegas_Street_Circuit_2023.svg/400px-Las_Vegas_Street_Circuit_2023.svg.png",
-  Lusail:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Lusail_International_Circuit_Formula_One_layout_2023.svg/400px-Lusail_International_Circuit_Formula_One_layout_2023.svg.png",
-  "Yas Marina":
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Yas_Marina_Circuit_2021.svg/400px-Yas_Marina_Circuit_2021.svg.png",
-  Baku: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Baku_Formula_One_circuit_map.svg/400px-Baku_Formula_One_circuit_map.svg.png",
-  Madrid:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Madrid_Grand_Prix_circuit.svg/400px-Madrid_Grand_Prix_circuit.svg.png",
-};
 
 /* ── Country flags ────────────────────────────────────────── */
 
@@ -309,6 +257,11 @@ export default function GrandPrixDetailPage() {
     };
   }, [raceDetails]);
 
+  const circuitMapData = useMemo(() => {
+    if (!raceDetails) return null;
+    return (raceDetails.circuit_map as CircuitMapData | null | undefined) ?? null;
+  }, [raceDetails]);
+
   const sessions = useMemo(() => {
     if (!raceDetails) return [];
     return parseSessions(raceDetails);
@@ -321,8 +274,6 @@ export default function GrandPrixDetailPage() {
   const countdown = useCountdown(nextSession?.datetime || null);
 
   const countryFlag = raceDetails ? COUNTRY_FLAGS[raceDetails.country as string] || "🏁" : "🏁";
-
-  const circuitImage = CIRCUIT_IMAGES[circuitName];
 
   const isFinished = raceDetails?.status === "finished";
   const isUpcoming = raceDetails?.status === "upcoming";
@@ -464,38 +415,13 @@ export default function GrandPrixDetailPage() {
               ) : null}
 
               {/* Circuit map */}
-              <motion.div
-                variants={fadeUp}
-                className="bg-pk-surface border border-white/[0.08] rounded-lg overflow-hidden mb-3"
-              >
-                <div className="relative h-44 bg-pk-anthracite flex items-center justify-center">
-                  {circuitImage ? (
-                    <img
-                      src={circuitImage}
-                      alt={`Circuit ${circuitFullName}`}
-                      className="w-full h-full object-contain p-6 filter invert opacity-80"
-                      data-testid="circuit-image"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center">
-                      <Route className="w-12 h-12 text-pk-titane/40 mb-2" />
-                      <p className="text-xs text-pk-titane">{circuitName}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-3.5">
-                  <p className="font-bold text-[0.8125rem]" data-testid="circuit-name">
-                    {circuitFullName}
-                  </p>
-                  <p className="text-[0.625rem] text-pk-titane flex items-center gap-1 mt-0.5">
-                    <MapPin className="w-3 h-3" />
-                    {raceDetails.country as string}
-                  </p>
-                </div>
+              <motion.div variants={fadeUp} className="mb-3">
+                <CircuitMap
+                  circuitName={circuitName}
+                  circuitFullName={circuitFullName}
+                  country={raceDetails.country as string}
+                  mapData={circuitMapData}
+                />
               </motion.div>
 
               {/* Circuit stats grid */}

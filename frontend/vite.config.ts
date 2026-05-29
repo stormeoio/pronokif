@@ -29,6 +29,7 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: "autoUpdate",
+        manifestFilename: "manifest.webmanifest",
         includeAssets: [
           "icons/favicon-pronokif-v1-16.png",
           "icons/favicon-pronokif-v1-32.png",
@@ -37,11 +38,14 @@ export default defineConfig(({ mode }) => {
           "icons/icon-pronokif-v1-512.png",
         ],
         manifest: {
+          id: "/",
           name: "PronoKif - Pronostics F1",
           short_name: "PronoKif",
-          description: "Jeu de pronostics Formule 1 entre amis",
+          description: "Jeu de pronostics Formule 1 entre amis, ligues privées et back-office.",
           start_url: "/",
+          scope: "/",
           display: "standalone",
+          display_override: ["window-controls-overlay", "standalone", "browser"],
           background_color: "#0B0D12",
           theme_color: "#0B0D12",
           lang: "fr",
@@ -59,16 +63,46 @@ export default defineConfig(({ mode }) => {
               type: "image/png",
               purpose: "any",
             },
+            {
+              src: "/icons/icon-pronokif-v1-512.png",
+              sizes: "512x512",
+              type: "image/png",
+              purpose: "maskable",
+            },
           ],
           categories: ["games", "sports"],
+          shortcuts: [
+            {
+              name: "Back-office",
+              short_name: "Admin",
+              description: "Ouvrir la Direction de Course",
+              url: "/admin",
+              icons: [{ src: "/icons/icon-pronokif-v1-192.png", sizes: "192x192" }],
+            },
+            {
+              name: "Calendrier F1",
+              short_name: "Calendrier",
+              description: "Voir les courses et pronostics",
+              url: "/predictions",
+              icons: [{ src: "/icons/icon-pronokif-v1-192.png", sizes: "192x192" }],
+            },
+            {
+              name: "Mentions légales",
+              short_name: "Mentions",
+              description: "Consulter les informations légales",
+              url: "/mentions-legales",
+              icons: [{ src: "/icons/icon-pronokif-v1-192.png", sizes: "192x192" }],
+            },
+          ],
         },
         workbox: {
           globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
           globIgnores: ["**/logo-pronokif-icone-black-red.svg"],
           navigateFallback: "/index.html",
+          navigateFallbackDenylist: [/^\/api\//],
           runtimeCaching: [
             {
-              urlPattern: /^https:\/\/.*\/api\//,
+              urlPattern: /^https?:\/\/.*\/api\//,
               handler: "NetworkFirst",
               options: {
                 cacheName: "api-cache",
@@ -84,11 +118,11 @@ export default defineConfig(({ mode }) => {
               },
             },
             {
-              urlPattern: /^https:\/\/static\.prod-images\./,
+              urlPattern: /^https?:\/\/.*\/images\/races\//,
               handler: "CacheFirst",
               options: {
-                cacheName: "static-images",
-                expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                cacheName: "race-images",
+                expiration: { maxEntries: 40, maxAgeSeconds: 60 * 60 * 24 * 30 },
               },
             },
           ],
