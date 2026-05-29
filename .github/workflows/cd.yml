@@ -70,7 +70,7 @@ jobs:
             echo "::warning::STORMEO_DEPLOY_TOKEN not set — skipping mirror sync"
           else
             git remote add stormeo "https://x-access-token:${STORMEO_DEPLOY_TOKEN}@github.com/stormeoio/pronokif.git"
-            git push stormeo main --force-with-lease 2>&1 || echo "::warning::Mirror sync failed (non-blocking)"
+            git push stormeo main --force 2>&1 || echo "::warning::Mirror sync failed (non-blocking)"
           fi
 
       - name: Trigger signed StormDeploy webhook
