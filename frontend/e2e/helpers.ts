@@ -123,19 +123,26 @@ export const TEST_MISSIONS = {
 
 /**
  * Mock the auth state so the app thinks user is logged in.
- * Sets localStorage token + user + intercepts /auth/me endpoint.
+ * Sets cached user state + intercepts session endpoints.
  */
 export async function loginAsTestUser(page: Page) {
   const userJson = JSON.stringify(TEST_USER);
 
-  // Set auth token AND user before navigation (auth.tsx checks both)
+  // Set cached user before navigation; auth.tsx validates the cookie-backed session.
   await page.addInitScript((user) => {
-    localStorage.setItem("token", "e2e-fake-jwt-token");
     localStorage.setItem("user", user);
     sessionStorage.setItem("pronokif:splash-seen", "true");
   }, userJson);
 
   // Mock auth verification
+  await page.route("**/api/auth/session", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ user: TEST_USER }),
+    }),
+  );
+
   await page.route("**/api/auth/me", (route) =>
     route.fulfill({
       status: 200,
@@ -151,6 +158,14 @@ export async function loginAsTestUser(page: Page) {
 export async function mockDashboardAPIs(page: Page) {
   await page.route("**/api/**", (route) => {
     const path = new URL(route.request().url()).pathname;
+
+    if (path.endsWith("/auth/session")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ user: TEST_USER }),
+      });
+    }
 
     if (path.endsWith("/auth/me")) {
       return route.fulfill({

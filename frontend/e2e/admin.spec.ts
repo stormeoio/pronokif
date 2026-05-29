@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { mockDashboardAPIs } from "./helpers";
 
 const ADMIN_USER = {
@@ -60,6 +61,10 @@ const TEST_FEEDBACK = [
   },
 ];
 
+async function selectAdminTab(page: Page, name: string | RegExp) {
+  await page.getByRole("button", { name, exact: typeof name === "string" }).click();
+}
+
 test.describe("Admin panel", () => {
   test.beforeEach(async ({ page }) => {
     // Admin-specific auth mock
@@ -102,6 +107,26 @@ test.describe("Admin panel", () => {
       }),
     );
 
+    await page.route("**/api/admin-bo/business/operations", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          summary: {
+            business_score: 86,
+            attention_count: 1,
+            critical_count: 0,
+            warning_count: 1,
+            info_count: 0,
+          },
+          generated_at: "2026-05-29T14:00:00Z",
+          action_items: [],
+          next_races: [],
+          metrics: {},
+        }),
+      }),
+    );
+
     await page.route("**/api/admin-bo/users*", (route) =>
       route.fulfill({
         status: 200,
@@ -126,7 +151,7 @@ test.describe("Admin panel", () => {
       }),
     );
 
-    await page.route("**/api/admin-bo/invitations", (route) => {
+    await page.route("**/api/admin-bo/invitations*", (route) => {
       if (route.request().method() === "POST") {
         return route.fulfill({
           status: 200,
@@ -138,16 +163,20 @@ test.describe("Admin panel", () => {
       return route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([
-          {
-            id: "inv-1",
-            email: "future@test.fr",
-            sent_by: ADMIN_USER.email,
-            accepted: false,
-            created_at: "2026-05-10T14:00:00Z",
-            expires_at: "2026-06-10T14:00:00Z",
-          },
-        ]),
+        body: JSON.stringify({
+          invitations: [
+            {
+              id: "inv-1",
+              email: "future@test.fr",
+              sent_by: ADMIN_USER.email,
+              accepted: false,
+              status: "pending",
+              created_at: "2026-05-10T14:00:00Z",
+              expires_at: "2026-06-10T14:00:00Z",
+            },
+          ],
+          total: 1,
+        }),
       });
     });
   });
@@ -158,17 +187,15 @@ test.describe("Admin panel", () => {
 
     await expect(page).toHaveURL("/admin");
     // Should not show error boundary
-    await expect(page.getByText(/incident en piste/i)).not.toBeVisible();
+    await expect(page.getByText(/une erreur est survenue/i)).not.toBeVisible();
+    await expect(page.getByRole("button", { name: "Utilisateurs", exact: true })).toBeVisible();
   });
 
   test("users tab shows member list", async ({ page }) => {
     await page.goto("/admin");
     await page.waitForLoadState("networkidle");
 
-    await page
-      .locator("aside nav")
-      .getByRole("button", { name: "Utilisateurs", exact: true })
-      .click();
+    await selectAdminTab(page, "Utilisateurs");
 
     await expect(page.getByText("SpeedKing")).toBeVisible({ timeout: 10000 });
     await expect(page.getByText("RaceQueen")).toBeVisible();
@@ -179,39 +206,34 @@ test.describe("Admin panel", () => {
     await page.goto("/admin");
     await page.waitForLoadState("networkidle");
 
-    await page.locator("aside nav").getByRole("button", { name: "Retours", exact: true }).click();
+    await selectAdminTab(page, "Retours");
 
     await expect(page.getByText("Le classement ne se met pas a jour")).toBeVisible({
       timeout: 10000,
     });
-    await expect(page.getByText("Bug")).toBeVisible();
-    await expect(page.getByText("Suggestion")).toBeVisible();
+    await expect(page.getByText("Bug", { exact: true })).toBeVisible();
+    await expect(page.getByText("Suggestion", { exact: true })).toBeVisible();
   });
 
   test("invitation form validates required fields", async ({ page }) => {
     await page.goto("/admin");
     await page.waitForLoadState("networkidle");
 
-    await page
-      .locator("aside nav")
-      .getByRole("button", { name: "Invitations", exact: true })
-      .click();
+    await selectAdminTab(page, "Invitations");
 
     const sendBtn = page.getByRole("button", { name: /envoyer l'invitation/i });
     await expect(sendBtn).toBeVisible({ timeout: 10000 });
-    await expect(sendBtn).toBeDisabled();
+    await sendBtn.click();
+    await expect(page.getByText("Renseignez une adresse email")).toBeVisible();
   });
 
   test("invitation send button enables when form is filled", async ({ page }) => {
     await page.goto("/admin");
     await page.waitForLoadState("networkidle");
 
-    await page
-      .locator("aside nav")
-      .getByRole("button", { name: "Invitations", exact: true })
-      .click();
+    await selectAdminTab(page, "Invitations");
 
-    await page.getByPlaceholder("email.com").fill("new@test.fr");
+    await page.getByTestId("invitation-email").fill("new@test.fr");
 
     const sendBtn = page.getByRole("button", { name: /envoyer l'invitation/i });
     await expect(sendBtn).toBeEnabled();

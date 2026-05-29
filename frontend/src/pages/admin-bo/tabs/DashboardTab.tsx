@@ -218,6 +218,15 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
       target: "activity",
     },
   ];
+  const operationSummary = operations?.summary ?? {
+    business_score: 0,
+    attention_count: 0,
+    critical_count: 0,
+    warning_count: 0,
+    info_count: 0,
+  };
+  const actionItems = operations?.action_items ?? [];
+  const nextRaces = operations?.next_races ?? [];
 
   return (
     <div>
@@ -243,9 +252,9 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
           ) : (
             <div className="text-right">
               <p
-                className={`font-data text-3xl tabular-nums ${scoreTone(operations?.summary.business_score ?? 0)}`}
+                className={`font-data text-3xl tabular-nums ${scoreTone(operationSummary.business_score)}`}
               >
-                {operations?.summary.business_score ?? 0}
+                {operationSummary.business_score}
               </p>
               <p className="font-data text-[10px] uppercase tracking-[0.16em] text-gray-500">
                 score métier
@@ -258,18 +267,18 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
           <div className="p-4">
             <div className="mb-3 flex flex-wrap gap-2">
               <span className="rounded-sm border border-red-500/25 bg-red-500/10 px-2 py-1 font-data text-xs text-red-300">
-                {operations?.summary.critical_count ?? 0} critique
+                {operationSummary.critical_count} critique
               </span>
               <span className="rounded-sm border border-yellow-500/25 bg-yellow-500/10 px-2 py-1 font-data text-xs text-yellow-300">
-                {operations?.summary.warning_count ?? 0} warning
+                {operationSummary.warning_count} warning
               </span>
               <span className="rounded-sm border border-cyan-500/25 bg-cyan-500/10 px-2 py-1 font-data text-xs text-cyan-300">
-                {operations?.summary.info_count ?? 0} info
+                {operationSummary.info_count} info
               </span>
             </div>
 
             <div className="divide-y divide-white/[0.06]">
-              {(operations?.action_items ?? []).slice(0, 6).map((item) => (
+              {actionItems.slice(0, 6).map((item) => (
                 <button
                   key={item.id}
                   type="button"
@@ -292,7 +301,7 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
                   <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-gray-600 transition-transform group-hover:translate-x-0.5 group-hover:text-gray-300" />
                 </button>
               ))}
-              {!operationsLoading && (operations?.action_items ?? []).length === 0 && (
+              {!operationsLoading && actionItems.length === 0 && (
                 <div className="flex items-center gap-3 py-6">
                   <CheckCircle2 className="h-5 w-5 text-green-300" />
                   <p className="font-body text-sm text-gray-300">
@@ -309,7 +318,7 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
               <h4 className="font-heading text-sm uppercase text-white">Prochains GP</h4>
             </div>
             <div className="divide-y divide-white/[0.06]">
-              {(operations?.next_races ?? []).slice(0, 5).map((race) => (
+              {nextRaces.slice(0, 5).map((race) => (
                 <button
                   key={race.id}
                   type="button"
@@ -331,7 +340,7 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
                   </p>
                 </button>
               ))}
-              {!operationsLoading && (operations?.next_races ?? []).length === 0 && (
+              {!operationsLoading && nextRaces.length === 0 && (
                 <p className="py-6 font-body text-sm text-gray-500">Aucun GP actif à surveiller.</p>
               )}
             </div>
