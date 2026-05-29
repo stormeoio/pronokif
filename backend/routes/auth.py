@@ -42,6 +42,7 @@ from services.auth import (
     generate_reset_token,
     generate_verification_token,
     get_current_user,
+    get_optional_current_user,
     get_user_from_refresh_token,
     hash_password,
     send_magic_login_email,
@@ -395,6 +396,34 @@ async def get_me(user=Depends(get_current_user)):
         email_verified=user.get("email_verified", False),
         locale=user.get("locale", "fr"),
         nationality=user.get("nationality"),
+    )
+
+
+class SessionResponse(BaseModel):
+    user: UserResponse | None
+
+
+@router.get("/session", response_model=SessionResponse)
+async def get_session(request: Request):
+    """Return current session state without raising 401 for anonymous visitors."""
+    user = await get_optional_current_user(request)
+    if not user:
+        return SessionResponse(user=None)
+    return SessionResponse(
+        user=UserResponse(
+            id=user["id"],
+            email=user["email"],
+            username=user.get("username"),
+            created_at=user["created_at"],
+            current_league_id=user.get("current_league_id"),
+            xp=user.get("xp", 0),
+            level=user.get("level", 1),
+            avatar_id=user.get("avatar_id"),
+            custom_avatar_url=user.get("custom_avatar_url"),
+            email_verified=user.get("email_verified", False),
+            locale=user.get("locale", "fr"),
+            nationality=user.get("nationality"),
+        )
     )
 
 

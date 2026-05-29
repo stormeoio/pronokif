@@ -60,6 +60,7 @@ export const apiClient = axios.create({
 
 const REFRESH_EXCLUDED_PATHS = [
   "/auth/me",
+  "/auth/session",
   "/auth/login",
   "/auth/register",
   "/auth/refresh",

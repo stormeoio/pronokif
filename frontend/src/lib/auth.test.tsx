@@ -45,8 +45,8 @@ function renderInProvider(ui: React.ReactElement) {
 }
 
 describe("AuthProvider", () => {
-  it("shows no user when /auth/me fails (no valid cookie session)", async () => {
-    mockedApi.get.mockRejectedValue(new Error("401"));
+  it("shows no user when /auth/session fails (no valid cookie session)", async () => {
+    mockedApi.get.mockResolvedValue({ data: { user: null } });
 
     renderInProvider(<AuthConsumer />);
 
@@ -55,9 +55,9 @@ describe("AuthProvider", () => {
     });
   });
 
-  it("validates session via /auth/me on mount (cookie-based)", async () => {
+  it("validates session via /auth/session on mount (cookie-based)", async () => {
     const freshUser = { id: "1", email: "test@test.com", username: "tester" };
-    mockedApi.get.mockResolvedValue({ data: freshUser });
+    mockedApi.get.mockResolvedValue({ data: { user: freshUser } });
 
     renderInProvider(<AuthConsumer />);
 
@@ -65,8 +65,8 @@ describe("AuthProvider", () => {
       expect(screen.getByText("Hello tester")).toBeInTheDocument();
     });
 
-    // Should have called /auth/me to validate cookie session
-    expect(mockedApi.get).toHaveBeenCalledWith("/auth/me");
+    // Should have called /auth/session to validate cookie session
+    expect(mockedApi.get).toHaveBeenCalledWith("/auth/session");
   });
 
   it("uses cached user for instant hydration, then validates with backend", async () => {
@@ -74,7 +74,7 @@ describe("AuthProvider", () => {
     const freshUser = { id: "1", email: "test@test.com", username: "fresh" };
     localStorage.setItem("user", JSON.stringify(cachedUser));
 
-    mockedApi.get.mockResolvedValue({ data: freshUser });
+    mockedApi.get.mockResolvedValue({ data: { user: freshUser } });
 
     renderInProvider(<AuthConsumer />);
 
@@ -89,10 +89,10 @@ describe("AuthProvider", () => {
     });
   });
 
-  it("clears cached user when /auth/me fails", async () => {
+  it("clears cached user when /auth/session has no user", async () => {
     localStorage.setItem("user", JSON.stringify({ id: "1", email: "x@x.com" }));
 
-    mockedApi.get.mockRejectedValue(new Error("401"));
+    mockedApi.get.mockResolvedValue({ data: { user: null } });
 
     renderInProvider(<AuthConsumer />);
 
@@ -112,7 +112,7 @@ describe("AuthProvider", () => {
       },
     };
     mockedApi.post.mockResolvedValue(loginResponse);
-    mockedApi.get.mockRejectedValue(new Error("401")); // initial /auth/me fails
+    mockedApi.get.mockResolvedValue({ data: { user: null } }); // initial /auth/session has no user
 
     renderInProvider(<AuthConsumer />);
 
@@ -129,7 +129,7 @@ describe("AuthProvider", () => {
 
 describe("ProtectedRoute", () => {
   it("redirects to /auth when no user", async () => {
-    mockedApi.get.mockRejectedValue(new Error("401"));
+    mockedApi.get.mockResolvedValue({ data: { user: null } });
 
     render(
       <MemoryRouter initialEntries={["/protected"]}>
@@ -157,7 +157,7 @@ describe("ProtectedRoute", () => {
   it("renders children when user session is valid", async () => {
     const validUser = { id: "1", email: "test@test.com", username: "tester" };
     localStorage.setItem("user", JSON.stringify(validUser));
-    mockedApi.get.mockResolvedValue({ data: validUser });
+    mockedApi.get.mockResolvedValue({ data: { user: validUser } });
 
     render(
       <MemoryRouter initialEntries={["/protected"]}>

@@ -30,6 +30,10 @@ export interface User {
   [key: string]: unknown; // allow extra fields from backend
 }
 
+interface SessionResponse {
+  user: User | null;
+}
+
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
@@ -78,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [i18n],
   );
 
-  // On mount: validate session via /auth/me (cookie sent automatically)
+  // On mount: validate session without emitting a 401 for anonymous visitors.
   useEffect(() => {
     // Instant hydration from cached user object (not a token!)
     const savedUser = localStorage.getItem("user");
@@ -92,11 +96,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Validate session with backend (cookie-based)
     apiClient
-      .get("/auth/me")
+      .get<SessionResponse>("/auth/session")
       .then((res) => {
-        setUser(res.data);
-        localStorage.setItem("user", JSON.stringify(res.data));
-        syncLocale(res.data);
+        if (!res.data.user) {
+          localStorage.removeItem("user");
+          setUser(null);
+          return;
+        }
+        setUser(res.data.user);
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+        syncLocale(res.data.user);
       })
       .catch(() => {
         // No valid session — clear cached user

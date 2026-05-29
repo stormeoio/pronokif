@@ -137,6 +137,14 @@ async def get_current_user(request: Request):
         raise HTTPException(status_code=401, detail="Token invalide") from exc
 
 
+async def get_optional_current_user(request: Request):
+    """Return the authenticated user when present, otherwise None without raising."""
+    try:
+        return await get_current_user(request)
+    except HTTPException:
+        return None
+
+
 async def get_user_from_refresh_token(request: Request) -> dict:
     """Extract and validate the refresh token from httpOnly cookie."""
     token = request.cookies.get("refresh_token")

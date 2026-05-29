@@ -149,10 +149,11 @@ function useAppPreload(enabled: boolean): boolean {
     Promise.allSettled([
       // Warm auth session + cache user object for AuthProvider instant hydration
       apiClient
-        .get("/auth/me")
+        .get("/auth/session")
         .then((res) => {
+          if (!res.data.user) return;
           try {
-            localStorage.setItem("user", JSON.stringify(res.data));
+            localStorage.setItem("user", JSON.stringify(res.data.user));
           } catch {
             /* non-critical */
           }
