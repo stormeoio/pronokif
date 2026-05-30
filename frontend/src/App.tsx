@@ -9,7 +9,7 @@ import { BrowserRouter, useLocation } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Toaster } from "sonner";
-import { AuthProvider } from "@/lib/auth";
+import { AuthProvider, useAuth } from "@/lib/auth";
 import { apiClient } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useLocaleDetect } from "@/lib/useLocaleDetect";
@@ -21,6 +21,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import PageTransition from "@/components/PageTransition";
 import EmailVerificationBanner from "@/components/EmailVerificationBanner";
 import SplashScreen from "@/components/SplashScreen";
+import AppDeepSearch from "@/components/search/AppDeepSearch";
 import { brandAssets } from "@/lib/brand";
 import "@/App.css";
 
@@ -71,13 +72,18 @@ const markSplashSeen = () => {
 function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { t } = useTranslation();
+  const { user } = useAuth();
   const shouldUseLightweightShell = isAutomatedLocalBrowser();
   const isAdminBackOfficeRoute =
     location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/admin-bo") ||
     location.pathname.startsWith("/bo-admin");
+  const isPredictionDetailRoute = /^\/predictions\/[^/]+/.test(location.pathname);
+  const isJoinInvitationRoute = /^\/join\/[^/]+/.test(location.pathname);
   const hideNav =
     isAdminBackOfficeRoute ||
+    isPredictionDetailRoute ||
+    isJoinInvitationRoute ||
     isPublicLegalRoute(location.pathname) ||
     ["/auth", "/set-username"].includes(location.pathname);
   // Auth pages use their own video background — skip 3D particles to save GPU
@@ -130,6 +136,8 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Scroll to top FAB on long pages */}
       {!hideNav && <ScrollToTop />}
+
+      <AppDeepSearch enabled={!isAdminBackOfficeRoute && !!user} />
     </div>
   );
 }

@@ -79,6 +79,7 @@ function TestRouter() {
 
 beforeEach(() => {
   mockAuthState = { user: mockUser, loading: false };
+  localStorage.clear();
 });
 
 describe("PageLoader", () => {
@@ -115,6 +116,18 @@ describe("AppRouter", () => {
   it("redirects /auth to / for authenticated user", async () => {
     renderRoute("/auth");
     expect(await screen.findByText("DashboardPage")).toBeInTheDocument();
+  });
+
+  it("redirects /auth to pending league invitation for authenticated user", async () => {
+    localStorage.setItem("pendingJoinCode", "abc123");
+    renderRoute("/auth");
+    expect(await screen.findByText("JoinLeaguePage")).toBeInTheDocument();
+  });
+
+  it("renders /join/:code publicly for unauthenticated users", async () => {
+    mockAuthState = { user: null as any, loading: false };
+    renderRoute("/join/ABC123");
+    expect(await screen.findByText("JoinLeaguePage")).toBeInTheDocument();
   });
 
   it("renders protected route /predictions", async () => {

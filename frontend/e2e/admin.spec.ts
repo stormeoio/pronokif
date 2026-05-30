@@ -202,11 +202,12 @@ test.describe("Admin panel", () => {
     await expect(page.getByText("non défini")).toBeVisible(); // null username
   });
 
-  test("feedbacks tab shows messages with categories", async ({ page }) => {
+  test("devops beta tab shows feedback messages with categories", async ({ page }) => {
     await page.goto("/admin");
     await page.waitForLoadState("networkidle");
 
-    await selectAdminTab(page, "Retours");
+    await selectAdminTab(page, "DevOps");
+    await expect(page.getByTestId("devops-tab-beta")).toBeVisible();
 
     await expect(page.getByText("Le classement ne se met pas a jour")).toBeVisible({
       timeout: 10000,

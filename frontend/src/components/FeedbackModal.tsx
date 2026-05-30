@@ -4,6 +4,7 @@
  */
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
   X,
@@ -26,7 +27,7 @@ interface FeedbackModalProps {
 const CATEGORIES = [
   {
     id: "bug",
-    label: "Signaler un bug",
+    labelKey: "feedback.categories.bug",
     icon: Bug,
     color: "text-pk-red",
     bgColor: "bg-pk-red-subtle",
@@ -34,7 +35,7 @@ const CATEGORIES = [
   },
   {
     id: "suggestion",
-    label: "Suggestion",
+    labelKey: "feedback.categories.suggestion",
     icon: Lightbulb,
     color: "text-pk-amber",
     bgColor: "bg-pk-amber/[0.1]",
@@ -42,7 +43,7 @@ const CATEGORIES = [
   },
   {
     id: "feedback",
-    label: "Retour d'exp.",
+    labelKey: "feedback.categories.feedback",
     icon: MessageSquare,
     color: "text-pk-info",
     bgColor: "bg-pk-info/[0.1]",
@@ -51,6 +52,7 @@ const CATEGORIES = [
 ];
 
 export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
+  const { t } = useTranslation();
   const [category, setCategory] = useState("feedback");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -64,7 +66,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     if (!trimmedMessage || sending) return;
 
     if (trimmedMessage.length > 2000) {
-      toast.error("Message trop long (max 2000 caractères)");
+      toast.error(t("feedback.max_length_error"));
       return;
     }
 
@@ -77,14 +79,14 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       });
 
       setSent(true);
-      toast.success("Message envoyé !");
+      toast.success(t("feedback.success_toast"));
       setTimeout(() => {
         handleClose();
       }, 2000);
     } catch (error: unknown) {
       console.error("Feedback submit error:", error);
       const err = error as { response?: { data?: { detail?: string } } };
-      const errorMessage = err.response?.data?.detail || "Erreur lors de l'envoi. Réessaye.";
+      const errorMessage = err.response?.data?.detail || t("feedback.error_toast");
       toast.error(errorMessage);
       setSending(false);
     }
@@ -124,8 +126,8 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
               <HelpCircle className="w-5 h-5 text-pk-info" />
             </div>
             <div>
-              <h2 className="font-display text-sm text-pk-info">Aider l'administrateur</h2>
-              <p className="font-data text-[0.5625rem] text-pk-titane">Votre avis compte !</p>
+              <h2 className="font-display text-sm text-pk-info">{t("feedback.title")}</h2>
+              <p className="font-data text-[0.5625rem] text-pk-titane">{t("feedback.subtitle")}</p>
             </div>
           </div>
           <button
@@ -144,8 +146,10 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
             <div className="w-16 h-16 bg-pk-emerald/[0.1] rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-8 h-8 text-pk-emerald" />
             </div>
-            <h3 className="font-display text-lg text-pk-emerald mb-2">Merci !</h3>
-            <p className="text-sm text-pk-titane">Ton message a été envoyé à l'administrateur.</p>
+            <h3 className="font-display text-lg text-pk-emerald mb-2">
+              {t("feedback.thanks_title")}
+            </h3>
+            <p className="text-sm text-pk-titane">{t("feedback.thanks_message")}</p>
           </div>
         ) : (
           /* Form */
@@ -153,17 +157,17 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
             {/* Info Text */}
             <div className="bg-pk-info/[0.06] border border-pk-info/20 rounded-lg p-4">
               <p className="text-sm text-pk-piste/80">
-                Aide-moi à améliorer l'appli ! Partage tes
-                <span className="text-pk-info"> retours</span>, tes
-                <span className="text-pk-red"> bugs</span> et tes
-                <span className="text-pk-amber"> suggestions</span>.
+                {t("feedback.intro_prefix")}
+                <span className="text-pk-info">{t("feedback.intro_feedback")}</span>,
+                <span className="text-pk-red">{t("feedback.intro_bugs")}</span>,
+                <span className="text-pk-amber">{t("feedback.intro_suggestions")}</span>.
               </p>
             </div>
 
             {/* Category Selection */}
             <div>
               <p className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-2">
-                Catégorie
+                {t("feedback.category_label")}
               </p>
               <div className="grid grid-cols-3 gap-2">
                 {CATEGORIES.map((cat) => {
@@ -190,7 +194,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                       <p
                         className={`font-data text-[0.5625rem] text-center ${isSelected ? cat.color : "text-pk-titane"}`}
                       >
-                        {cat.label}
+                        {t(cat.labelKey)}
                       </p>
                     </button>
                   );
@@ -201,17 +205,17 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
             {/* Message */}
             <div>
               <p className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-2">
-                Votre message
+                {t("feedback.message_label")}
               </p>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder={
                   category === "bug"
-                    ? "Décris le problème rencontré..."
+                    ? t("feedback.placeholders.bug")
                     : category === "suggestion"
-                      ? "Quelle fonctionnalité aimerais-tu voir ?"
-                      : "Partage ton expérience..."
+                      ? t("feedback.placeholders.suggestion")
+                      : t("feedback.placeholders.feedback")
                 }
                 maxLength={2000}
                 rows={5}
@@ -219,7 +223,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                 data-testid="feedback-message"
               />
               <p className="font-data text-[0.5625rem] text-pk-titane/60 mt-1 text-right">
-                {message.length}/2000 caractères
+                {t("feedback.char_count", { count: message.length })}
               </p>
             </div>
 
@@ -234,12 +238,12 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
               {sending ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Envoi...
+                  {t("feedback.sending")}
                 </>
               ) : (
                 <>
                   <Send className="w-5 h-5" />
-                  Envoyer mon message
+                  {t("feedback.submit")}
                 </>
               )}
             </button>

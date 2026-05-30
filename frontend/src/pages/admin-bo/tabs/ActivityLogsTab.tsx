@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { adminApi } from "../adminApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { UserIdentity } from "@/components/users/UserIdentity";
 
 type ActivityLog = {
   id: string;
@@ -15,6 +16,12 @@ type ActivityLog = {
   action?: string;
   entity_type?: string;
   entity_id?: string;
+  user_id?: string;
+  user_email?: string;
+  user_username?: string;
+  user_avatar_id?: string | null;
+  user_custom_avatar_url?: string | null;
+  user_level?: number | null;
   metadata?: Record<string, unknown>;
   created_at?: string;
 };
@@ -145,6 +152,8 @@ export default function ActivityLogsTab() {
             <option value="user">Utilisateurs</option>
             <option value="race">Courses</option>
             <option value="championship">Championnats</option>
+            <option value="circuit_map">Cartes circuits</option>
+            <option value="knowledge_entity">Entités RAG</option>
           </select>
           <select
             value={action}
@@ -163,6 +172,8 @@ export default function ActivityLogsTab() {
             <option value="prediction.batch.set_review_status">Batch revue</option>
             <option value="user.update">Utilisateur modifié</option>
             <option value="race.reminders">Relance course</option>
+            <option value="circuit_map.update">Carte circuit modifiée</option>
+            <option value="circuit_map.reset">Carte circuit réinitialisée</option>
           </select>
           <Button
             variant="ghost"
@@ -209,10 +220,35 @@ export default function ActivityLogsTab() {
                     </td>
                     <td className="p-3 font-body text-gray-300">{log.actor_email ?? "—"}</td>
                     <td className="p-3">
-                      <p className="font-body text-gray-200">{log.entity_type ?? "—"}</p>
-                      <p className="max-w-[220px] truncate font-data text-[11px] text-gray-500">
-                        {log.entity_id ?? "—"}
-                      </p>
+                      {log.user_id ? (
+                        <div className="space-y-1">
+                          <UserIdentity
+                            user={{
+                              id: log.user_id,
+                              username: log.user_username,
+                              email: log.user_email,
+                              avatar_id: log.user_avatar_id,
+                              custom_avatar_url: log.user_custom_avatar_url,
+                              level: log.user_level,
+                            }}
+                            surface="admin"
+                            size="sm"
+                            showEmail
+                            className="max-w-[260px]"
+                            data-testid={`activity-log-user-${log.id}`}
+                          />
+                          <p className="max-w-[220px] truncate font-data text-[10px] uppercase tracking-[0.12em] text-gray-600">
+                            {log.entity_type ?? "user"} · {log.entity_id ?? log.user_id}
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="font-body text-gray-200">{log.entity_type ?? "—"}</p>
+                          <p className="max-w-[220px] truncate font-data text-[11px] text-gray-500">
+                            {log.entity_id ?? "—"}
+                          </p>
+                        </>
+                      )}
                     </td>
                     <td className="max-w-[360px] truncate p-3 font-body text-xs text-gray-500">
                       {metadataSummary(log.metadata)}

@@ -6,6 +6,29 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import type { LeaderboardEntry } from "@/types/api";
+
+function asFiniteNumber(value: unknown, fallback: number | null = 0): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+}
+
+function getLeaderboardEntries(payload: unknown): LeaderboardEntry[] {
+  if (Array.isArray(payload)) return payload as LeaderboardEntry[];
+
+  if (payload && typeof payload === "object") {
+    const maybeWrapped = payload as { leaderboard?: unknown };
+    if (Array.isArray(maybeWrapped.leaderboard)) {
+      return maybeWrapped.leaderboard as LeaderboardEntry[];
+    }
+  }
+
+  return [];
+}
 
 export function useProfileData(userId: string, currentLeagueId: string | null) {
   const leaguesQuery = useQuery({
@@ -25,10 +48,10 @@ export function useProfileData(userId: string, currentLeagueId: string | null) {
   });
 
   const globalLbQuery = useQuery({
-    queryKey: ["/leaderboard/global"],
+    queryKey: ["/leaderboard/global", "profile-position"],
     queryFn: async () => {
       const data = await api.leaderboard.global();
-      return data.my_position ?? null;
+      return asFiniteNumber(data.my_position, null);
     },
   });
 
@@ -41,14 +64,16 @@ export function useProfileData(userId: string, currentLeagueId: string | null) {
     queryKey: ["/leagues/leaderboard", currentLeagueId],
     queryFn: async () => {
       const data = await api.leagues.leaderboard(currentLeagueId!);
-      const myEntry = data.find((e) => e.user_id === userId);
-      return myEntry?.total_points ?? null;
+      const entries = getLeaderboardEntries(data);
+      const myEntry = entries.find((e) => e.user_id === userId);
+      return asFiniteNumber(myEntry?.total_points, null);
     },
     enabled: !!currentLeagueId,
   });
 
   const history = historyQuery.data ?? { history: [], summary: {} };
-  const totalPoints = leagueLeaderboardQuery.data ?? history.summary?.total_points ?? 0;
+  const totalPoints =
+    leagueLeaderboardQuery.data ?? asFiniteNumber(history.summary?.total_points, 0) ?? 0;
 
   const loading =
     leaguesQuery.isLoading ||
@@ -60,7 +85,7 @@ export function useProfileData(userId: string, currentLeagueId: string | null) {
     loading,
     leagues: leaguesQuery.data ?? [],
     avatars: avatarsQuery.data ?? null,
-    globalPosition: globalLbQuery.data ?? null,
+    globalPosition: asFiniteNumber(globalLbQuery.data, null),
     pointsHistory: history,
     stats: {
       totalPredictions: statsQuery.data?.total_predictions ?? 0,

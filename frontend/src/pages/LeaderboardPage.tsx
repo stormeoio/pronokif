@@ -17,17 +17,10 @@ import {
   Plus,
 } from "lucide-react";
 import { toast } from "sonner";
-import { iconSmall } from "@/lib/icons";
-import {
-  fadeUp,
-  slideInLeft,
-  staggerContainer,
-  STAGGER_DELAY,
-  easing,
-  duration,
-} from "@/lib/motion";
+import { fadeUp, slideInLeft, staggerContainer } from "@/lib/motion";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { UserIdentity } from "@/components/users/UserIdentity";
 
 // ----------------------------------------------------------- types ---
 
@@ -45,6 +38,8 @@ interface LeaderboardEntry {
   last_race_points: number;
   position: number;
   position_change: number;
+  avatar_id?: string | null;
+  custom_avatar_url?: string | null;
 }
 
 // ----------------------------------------------------------- component ---
@@ -307,27 +302,23 @@ export default function LeaderboardPage() {
               <span className="font-mono text-[0.875rem] font-bold text-pk-titane w-7 text-center flex-shrink-0">
                 {entry.position}
               </span>
-              {/* Avatar */}
-              <div
-                className={`w-8 h-8 rounded-full flex-shrink-0
-                  bg-pk-anthracite flex items-center justify-center
-                  font-display text-[0.625rem]
-                  border-[1.5px] ${isMe ? "border-pk-red" : "border-white/[0.08]"}`}
+              <UserIdentity
+                user={{
+                  ...entry,
+                  username: isMe ? `${entry.username} (toi)` : entry.username,
+                }}
+                size="sm"
+                linked={false}
+                className="flex-1"
+                textClassName="text-[0.8125rem] font-medium"
+                data-testid={`leaderboard-row-user-${entry.user_id}`}
               >
-                {entry.username.slice(0, 2).toUpperCase()}
-              </div>
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <p className="text-[0.8125rem] font-medium truncate">
-                  {entry.username}
-                  {isMe && <span className="text-pk-red ml-1 text-[0.6875rem]">(toi)</span>}
-                </p>
                 {entry.last_race_points > 0 && (
-                  <p className="font-mono text-[0.5625rem] text-pk-emerald">
+                  <span className="mt-0.5 block font-mono text-[0.5625rem] text-pk-emerald">
                     +{entry.last_race_points} dernier GP
-                  </p>
+                  </span>
                 )}
-              </div>
+              </UserIdentity>
               {/* Points */}
               <span className="font-mono text-[0.9375rem] font-bold w-[52px] text-right flex-shrink-0">
                 {entry.total_points}
@@ -429,15 +420,16 @@ function PodiumSlot({
       role="button"
       tabIndex={0}
     >
-      <div
-        className={`${c.avatarSize} rounded-full
-          bg-pk-anthracite flex items-center justify-center
-          font-display border-2 ${c.avatar} mb-1`}
-      >
-        {entry.username.slice(0, 2).toUpperCase()}
-      </div>
       <span className="text-[1.125rem] mb-0.5">{medal}</span>
-      <p className="font-medium text-[0.6875rem] text-center leading-tight">{entry.username}</p>
+      <UserIdentity
+        user={entry}
+        layout="vertical"
+        size={tier === "gold" ? "md" : "sm"}
+        linked={false}
+        className="mb-1 max-w-full"
+        textClassName="font-medium text-[0.6875rem] leading-tight max-w-[86px]"
+        data-testid={`leaderboard-podium-user-${entry.user_id}`}
+      />
       <p className={`font-mono text-[0.75rem] font-bold mt-0.5 ${c.pts}`}>{entry.total_points}</p>
       <p className="font-mono text-[0.4375rem] text-pk-titane uppercase">pts</p>
     </motion.div>

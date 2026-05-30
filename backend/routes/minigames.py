@@ -31,6 +31,7 @@ class MinigameLeaderboardEntry(BaseModel):
     user_id: str
     username: str
     avatar_id: str | None = None
+    custom_avatar_url: str | None = None
     best_score: float
     attempts_used: int
     position: int
@@ -186,6 +187,7 @@ async def get_minigame_leaderboard(
                     "user_id": uid,
                     "username": user_data.get("username", "Anonymous"),
                     "avatar_id": user_data.get("avatar_id"),
+                    "custom_avatar_url": user_data.get("custom_avatar_url"),
                     "best_score": best_score,
                     "attempts_used": user_attempts.get(uid, 0),
                 }
@@ -242,6 +244,7 @@ async def get_global_minigame_leaderboard(game_type: str, user: dict = Depends(g
                     "user_id": s["user_id"],
                     "username": user_data.get("username", "Anonymous"),
                     "avatar_id": user_data.get("avatar_id"),
+                    "custom_avatar_url": user_data.get("custom_avatar_url"),
                     "best_score": s[stat_field],
                     "attempts_used": 0,
                 }

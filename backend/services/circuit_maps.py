@@ -16,6 +16,19 @@ CIRCUIT_MAP_REVIEW_STATUSES = {"", "draft", "in_review", "needs_source", "approv
 CIRCUIT_FEATURE_KINDS = {"start", "corner", "sector", "drs"}
 CIRCUIT_ZONE_KINDS = {"sector", "drs"}
 REQUIRED_LOCALES = ("fr", "en")
+SVG_PATH_ARITY = {
+    "M": 2,
+    "L": 2,
+    "H": 1,
+    "V": 1,
+    "C": 6,
+    "S": 4,
+    "Q": 4,
+    "T": 2,
+    "A": 7,
+    "Z": 0,
+}
+SVG_PATH_TOKEN_RE = re.compile(r"[a-zA-Z]|[-+]?(?:\d*\.\d+|\d+)(?:[eE][-+]?\d+)?")
 
 
 def _now_iso() -> str:
@@ -59,23 +72,73 @@ def _view_box_errors(value: Any) -> list[str]:
     return []
 
 
+def _svg_path_errors(value: Any, field: str) -> list[str]:
+    """Lightweight SVG path validation for admin-authored circuit maps."""
+    path = str(value or "").strip()
+    if not path:
+        return [f"{field} est requis"]
+
+    tokens = SVG_PATH_TOKEN_RE.findall(path.replace(",", " "))
+    if not tokens:
+        return [f"{field} doit contenir un path SVG"]
+
+    index = 0
+    current_command = ""
+    while index < len(tokens):
+        token = tokens[index]
+        if token.isalpha():
+            command = token.upper()
+            if command not in SVG_PATH_ARITY:
+                return [f"{field} contient une commande SVG invalide: {token}"]
+            current_command = command
+            index += 1
+            if command == "Z":
+                continue
+        elif not current_command:
+            return [f"{field} doit commencer par une commande SVG"]
+
+        expected = SVG_PATH_ARITY[current_command]
+        if expected == 0:
+            return [f"{field} contient des coordonnées après la commande {current_command}"]
+        if index + expected > len(tokens):
+            return [f"{field} est incomplet pour la commande {current_command}"]
+        segment = tokens[index : index + expected]
+        if any(part.isalpha() for part in segment):
+            return [f"{field} est incomplet pour la commande {current_command}"]
+        if any(_coerce_float(part) is None for part in segment):
+            return [f"{field} contient une coordonnée invalide"]
+        index += expected
+
+    return []
+
+
 def _validate_map_data(map_data: dict[str, Any]) -> list[str]:
     errors = []
     if not str(map_data.get("fallbackImageUrl") or "").strip():
         errors.append("fallbackImageUrl est requis")
     errors.extend(_view_box_errors(map_data.get("viewBox")))
+    if str(map_data.get("trackPath") or "").strip():
+        errors.extend(_svg_path_errors(map_data.get("trackPath"), "trackPath"))
+    if str(map_data.get("racingLinePath") or "").strip():
+        errors.extend(_svg_path_errors(map_data.get("racingLinePath"), "racingLinePath"))
 
     features = map_data.get("features")
     if not isinstance(features, list):
         errors.append("features doit être un tableau")
         features = []
+    feature_ids: set[str] = set()
+    feature_by_id: dict[str, dict[str, Any]] = {}
     for index, feature in enumerate(features):
         prefix = f"features[{index}]"
         if not isinstance(feature, dict):
             errors.append(f"{prefix} doit être un objet")
             continue
-        if not str(feature.get("id") or "").strip():
+        feature_id = str(feature.get("id") or "").strip()
+        if not feature_id:
             errors.append(f"{prefix}.id est requis")
+        else:
+            feature_ids.add(feature_id)
+            feature_by_id[feature_id] = feature
         if feature.get("kind") not in CIRCUIT_FEATURE_KINDS:
             errors.append(f"{prefix}.kind est invalide")
         x = _coerce_float(feature.get("x"))
@@ -86,6 +149,24 @@ def _validate_map_data(map_data: dict[str, Any]) -> list[str]:
             errors.append(f"{prefix}.y doit être un nombre positif")
         errors.extend(_localized_text_errors(feature.get("label"), f"{prefix}.label"))
         errors.extend(_localized_text_errors(feature.get("note"), f"{prefix}.note"))
+
+    requires_first_corner = bool(str(map_data.get("trackPath") or "").strip()) or bool(features)
+    first_corner = map_data.get("firstCorner")
+    if requires_first_corner:
+        if not isinstance(first_corner, dict):
+            errors.append("firstCorner est requis pour identifier le premier virage")
+        else:
+            hotspot_id = str(first_corner.get("hotspotId") or "").strip()
+            if not hotspot_id:
+                errors.append("firstCorner.hotspotId est requis")
+            elif hotspot_id not in feature_ids:
+                errors.append("firstCorner.hotspotId doit pointer vers un hotspot de features")
+            else:
+                feature = feature_by_id.get(hotspot_id) or {}
+                if feature.get("kind") != "corner" or feature.get("turn") != 1:
+                    errors.append("firstCorner.hotspotId doit pointer vers un virage turn=1")
+            errors.extend(_localized_text_errors(first_corner.get("label"), "firstCorner.label"))
+            errors.extend(_localized_text_errors(first_corner.get("note"), "firstCorner.note"))
 
     zones = map_data.get("zones")
     if not isinstance(zones, list):
@@ -100,8 +181,7 @@ def _validate_map_data(map_data: dict[str, Any]) -> list[str]:
             errors.append(f"{prefix}.id est requis")
         if zone.get("kind") not in CIRCUIT_ZONE_KINDS:
             errors.append(f"{prefix}.kind est invalide")
-        if not str(zone.get("path") or "").strip():
-            errors.append(f"{prefix}.path est requis")
+        errors.extend(_svg_path_errors(zone.get("path"), f"{prefix}.path"))
         errors.extend(_localized_text_errors(zone.get("label"), f"{prefix}.label"))
         errors.extend(_localized_text_errors(zone.get("note"), f"{prefix}.note"))
     return errors
@@ -110,11 +190,22 @@ def _validate_map_data(map_data: dict[str, Any]) -> list[str]:
 def _map_quality_report(map_data: dict[str, Any]) -> dict[str, Any]:
     features = map_data.get("features") if isinstance(map_data.get("features"), list) else []
     zones = map_data.get("zones") if isinstance(map_data.get("zones"), list) else []
-    translation_errors = [
-        error
-        for error in _validate_map_data({**map_data, "fallbackImageUrl": "ok", "viewBox": "0 0 420 280"})
-        if ".label." in error or ".note." in error
-    ]
+    feature_by_id = {
+        str(feature.get("id")): feature
+        for feature in features
+        if isinstance(feature, dict) and str(feature.get("id") or "").strip()
+    }
+    first_corner = map_data.get("firstCorner") if isinstance(map_data.get("firstCorner"), dict) else {}
+    first_corner_hotspot_id = str(first_corner.get("hotspotId") or "").strip()
+    first_corner_feature = feature_by_id.get(first_corner_hotspot_id)
+    has_first_corner = bool(
+        first_corner_feature
+        and first_corner_feature.get("kind") == "corner"
+        and first_corner_feature.get("turn") == 1
+    )
+    validation_errors = _validate_map_data({**map_data, "fallbackImageUrl": "ok", "viewBox": "0 0 420 280"})
+    translation_errors = [error for error in validation_errors if ".label." in error or ".note." in error]
+    path_errors = [error for error in validation_errors if "path" in error or "Path" in error]
     warnings = []
     if not str(map_data.get("fallbackImageUrl") or "").strip():
         warnings.append("Image fallback manquante")
@@ -124,16 +215,75 @@ def _map_quality_report(map_data: dict[str, Any]) -> dict[str, Any]:
         warnings.append("Aucun point interactif")
     if not zones:
         warnings.append("Aucune zone DRS/secteur")
+    if str(map_data.get("trackPath") or "").strip() and not has_first_corner:
+        warnings.append("Premier virage non identifié")
     if translation_errors:
         warnings.append("Traductions fr/en incomplètes")
+    if path_errors:
+        warnings.append("Path SVG invalide")
     return {
         "is_interactive": bool(str(map_data.get("trackPath") or "").strip()),
         "has_fallback_image": bool(str(map_data.get("fallbackImageUrl") or "").strip()),
+        "has_first_corner": has_first_corner,
+        "first_corner_hotspot_id": first_corner_hotspot_id,
         "features_count": len(features),
         "zones_count": len(zones),
         "missing_translations": len(translation_errors),
+        "path_errors": len(path_errors),
         "warnings": warnings,
         "ready_for_public": not warnings,
+    }
+
+
+def _review_priority(record: dict[str, Any]) -> dict[str, Any]:
+    quality = record.get("quality_report") or {}
+    review_status = record.get("review_status") or ""
+    if review_status == "approved" and quality.get("ready_for_public"):
+        return {
+            "level": "done",
+            "label": "Publié",
+            "reason": "Carte validée et publiable",
+        }
+    if quality.get("path_errors"):
+        return {
+            "level": "blocked",
+            "label": "Path SVG",
+            "reason": "Corriger les paths SVG avant validation",
+        }
+    if quality.get("missing_translations"):
+        return {
+            "level": "blocked",
+            "label": "i18n",
+            "reason": "Compléter les traductions fr/en",
+        }
+    if quality.get("is_interactive") and not quality.get("has_first_corner"):
+        return {
+            "level": "blocked",
+            "label": "Premier virage",
+            "reason": "Identifier le premier virage pour les statistiques pilotes",
+        }
+    if not quality.get("is_interactive"):
+        return {
+            "level": "blocked",
+            "label": "À tracer",
+            "reason": "Ajouter le tracé SVG interactif",
+        }
+    if review_status in {"", "draft", "needs_source"}:
+        return {
+            "level": "review",
+            "label": "À revoir",
+            "reason": "Carte prête à relire puis approuver",
+        }
+    if review_status == "in_review":
+        return {
+            "level": "review",
+            "label": "En revue",
+            "reason": "Relecture admin en cours",
+        }
+    return {
+        "level": "review",
+        "label": "À qualifier",
+        "reason": "Statut métier à préciser",
     }
 
 
@@ -160,7 +310,7 @@ def _seed_record(circuit_name: str) -> dict[str, Any]:
     map_data = seeded_map or _minimal_map_data(circuit_name)
     circuit_info = F1_CIRCUITS.get(circuit_name, {})
     has_interactive_path = bool(map_data.get("trackPath"))
-    return {
+    record = {
         "key": str(map_data.get("key") or _slug(circuit_name)),
         "circuit_name": circuit_name,
         "full_name": circuit_info.get("full_name", circuit_name),
@@ -173,6 +323,8 @@ def _seed_record(circuit_name: str) -> dict[str, Any]:
         "map_data": map_data,
         "quality_report": _map_quality_report(map_data),
     }
+    record["review_priority"] = _review_priority(record)
+    return record
 
 
 def _all_seed_records() -> list[dict[str, Any]]:
@@ -228,7 +380,7 @@ def _apply_override(seed: dict[str, Any], override: dict[str, Any] | None) -> di
         override.get("map_data") or seed.get("map_data"),
     )
     has_interactive_path = bool(map_data.get("trackPath"))
-    return {
+    record = {
         **seed,
         **{
             key: override.get(key, seed.get(key))
@@ -248,6 +400,8 @@ def _apply_override(seed: dict[str, Any], override: dict[str, Any] | None) -> di
         "map_data": map_data,
         "quality_report": _map_quality_report(map_data),
     }
+    record["review_priority"] = _review_priority(record)
+    return record
 
 
 async def _sync_knowledge_entity(record: dict[str, Any], actor: str | None) -> None:
@@ -276,6 +430,10 @@ async def list_circuit_map_records(
     *,
     q: str = "",
     review_status: str | None = None,
+    priority: str | None = None,
+    owner: str | None = None,
+    source: str | None = None,
+    current_admin_email: str | None = None,
     skip: int = 0,
     limit: int = 50,
 ) -> dict[str, Any]:
@@ -287,6 +445,25 @@ async def list_circuit_map_records(
     records = [_apply_override(seed, overrides.get(seed["key"])) for seed in _all_seed_records()]
     if review_status is not None and review_status != "all":
         records = [record for record in records if (record.get("review_status") or "") == review_status]
+    if priority and priority != "all":
+        records = [
+            record for record in records if record.get("review_priority", {}).get("level") == priority
+        ]
+    if owner and owner != "all":
+        if owner == "mine" and current_admin_email:
+            records = [
+                record
+                for record in records
+                if str(record.get("owner_admin_email") or "").lower() == current_admin_email.lower()
+            ]
+        elif owner == "unassigned":
+            records = [record for record in records if not str(record.get("owner_admin_email") or "").strip()]
+        elif owner == "assigned":
+            records = [record for record in records if str(record.get("owner_admin_email") or "").strip()]
+        elif owner not in {"mine", "unassigned", "assigned"}:
+            records = []
+    if source and source != "all":
+        records = [record for record in records if record.get("source") == source]
     records = [record for record in records if _record_matches(record, q.strip())]
 
     summary = {
@@ -295,7 +472,39 @@ async def list_circuit_map_records(
         "admin_overrides": len([record for record in records if record.get("source") == "admin"]),
         "approved": len([record for record in records if record.get("review_status") == "approved"]),
         "needs_review": len([record for record in records if record.get("review_status") != "approved"]),
+        "ready_for_public": len(
+            [record for record in records if record.get("quality_report", {}).get("ready_for_public")]
+        ),
+        "first_corner_ready": len(
+            [record for record in records if record.get("quality_report", {}).get("has_first_corner")]
+        ),
+        "missing_first_corner": len(
+            [
+                record
+                for record in records
+                if record.get("quality_report", {}).get("is_interactive")
+                and not record.get("quality_report", {}).get("has_first_corner")
+            ]
+        ),
+        "blocked": len(
+            [record for record in records if record.get("review_priority", {}).get("level") == "blocked"]
+        ),
+        "in_review": len(
+            [record for record in records if record.get("review_priority", {}).get("level") == "review"]
+        ),
+        "owned_by_me": len(
+            [
+                record
+                for record in records
+                if current_admin_email
+                and str(record.get("owner_admin_email") or "").lower() == current_admin_email.lower()
+            ]
+        ),
+        "unassigned": len([record for record in records if not str(record.get("owner_admin_email") or "").strip()]),
+        "total_features": sum(len(record.get("map_data", {}).get("features", [])) for record in records),
+        "total_zones": sum(len(record.get("map_data", {}).get("zones", [])) for record in records),
     }
+    summary["coverage_percent"] = round((summary["interactive"] / len(records)) * 100) if records else 0
     total = len(records)
     return {"items": records[skip : skip + limit], "total": total, "summary": summary}
 
@@ -376,4 +585,18 @@ async def update_circuit_map_record(
     record = _apply_override(seed, stored or payload)
     await _sync_knowledge_entity(record, actor)
     record["upserted"] = bool(result.upserted_id)
+    return record
+
+
+async def reset_circuit_map_record(key: str, *, actor: str | None = None) -> dict[str, Any] | None:
+    seed = next((record for record in _all_seed_records() if record["key"] == key), None)
+    if not seed:
+        return None
+
+    result = await db.circuit_maps.delete_one({"key": key})
+    record = _apply_override(seed, None)
+    record["reset"] = bool(getattr(result, "deleted_count", 0))
+    record["updated_at"] = _now_iso()
+    record["updated_by"] = actor
+    await _sync_knowledge_entity(record, actor)
     return record

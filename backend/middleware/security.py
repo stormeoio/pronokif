@@ -83,6 +83,13 @@ def _with_dev_loopback_aliases(origins: list[str], environment: str) -> list[str
     return with_aliases
 
 
+def _dev_loopback_origin_regex(environment: str) -> str | None:
+    """Allow Vite's alternate local ports in dev without weakening production CORS."""
+    if environment.lower() not in {"development", "dev", "local"}:
+        return None
+    return r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
+
+
 def install_cors(app: FastAPI) -> None:
     """Install a strict CORS middleware on the app."""
     environment = os.environ.get("ENVIRONMENT", "development")
@@ -105,6 +112,7 @@ def install_cors(app: FastAPI) -> None:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
+        allow_origin_regex=_dev_loopback_origin_regex(environment),
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type", "Accept"],

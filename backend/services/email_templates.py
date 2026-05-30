@@ -521,6 +521,55 @@ def invitation(
     )
 
 
+def feedback_reply(reply: str, original_message: str | None = None, lang: str = "fr") -> EmailContent:
+    safe_reply = html.escape(reply).replace("\n", "<br>")
+    original = (original_message or "").strip()
+
+    if lang == "en":
+        original_text = f"\n\nYour original message:\n{original}" if original else ""
+        paragraphs = [
+            "The PronoKif team replied to your beta feedback:",
+            f'<span style="color:#F4F4F4;">{safe_reply}</span>',
+        ]
+        return EmailContent(
+            subject="PronoKif replied to your beta feedback",
+            text=(
+                "PronoKif beta feedback\n\n"
+                "The team replied to your message:\n\n"
+                f"{reply}{original_text}\n\n"
+                "Thanks for helping improve the paddock."
+            ),
+            html_body=_render(
+                preheader="The team replied to your beta feedback.",
+                title="Beta feedback",
+                paragraphs=paragraphs,
+                fine_print="Thanks for helping improve the PronoKif paddock.",
+                lang="en",
+            ),
+        )
+
+    original_text = f"\n\nTon message initial :\n{original}" if original else ""
+    paragraphs = [
+        "L'équipe PronoKif a répondu à ton retour bêta :",
+        f'<span style="color:#F4F4F4;">{safe_reply}</span>',
+    ]
+    return EmailContent(
+        subject="PronoKif a répondu à ton retour bêta",
+        text=(
+            "Retour bêta PronoKif\n\n"
+            "L'équipe a répondu à ton message :\n\n"
+            f"{reply}{original_text}\n\n"
+            "Merci de nous aider à améliorer le paddock."
+        ),
+        html_body=_render(
+            preheader="L'équipe a répondu à ton retour bêta.",
+            title="Retour bêta",
+            paragraphs=paragraphs,
+            fine_print="Merci de nous aider à améliorer le paddock PronoKif.",
+        ),
+    )
+
+
 # ── Admin launch announcement (festive, always-dark) ─────────────────────
 
 
@@ -714,4 +763,3 @@ a{{color:#E10600;text-decoration:none;}}
         ),
         html_body=html_body,
     )
-

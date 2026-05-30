@@ -14,6 +14,7 @@ import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { haptic } from "@/lib/haptics";
 import { brandAssets } from "@/lib/brand";
+import { getPendingJoinPath } from "@/lib/pendingJoin";
 import { fadeUp, staggerContainer, easing, duration, getReducedMotionProps } from "@/lib/motion";
 
 /* ── Emoji avatars (fallback before real selection) ───── */
@@ -51,7 +52,7 @@ export default function SetUsernamePage() {
       await setUsername(username);
       haptic("success");
       toast.success(t("username.success"));
-      navigate("/league");
+      navigate(getPendingJoinPath() ?? "/league");
     } catch (error: unknown) {
       const message =
         (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||

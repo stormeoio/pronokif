@@ -39,6 +39,7 @@ async def build_global(*, current_user_id: str, limit: int = 100) -> dict:
                 "user_id": "$_id",
                 "username": {"$ifNull": ["$user.username", "Anonymous"]},
                 "avatar_id": "$user.avatar_id",
+                "custom_avatar_url": "$user.custom_avatar_url",
                 "total_points": 1,
                 "level": {"$ifNull": ["$user.level", 1]},
                 "xp": {"$ifNull": ["$user.xp", 0]},
@@ -54,7 +55,7 @@ async def build_global(*, current_user_id: str, limit: int = 100) -> dict:
     zero_point_users = (
         await db.users.find(
             {"username": {"$ne": None}, "id": {"$nin": list(ranked_user_ids)}},
-            {"_id": 0, "id": 1, "username": 1, "avatar_id": 1, "level": 1, "xp": 1},
+            {"_id": 0, "id": 1, "username": 1, "avatar_id": 1, "custom_avatar_url": 1, "level": 1, "xp": 1},
         ).to_list(10000)
     )
     for u in zero_point_users:
@@ -63,6 +64,7 @@ async def build_global(*, current_user_id: str, limit: int = 100) -> dict:
                 "user_id": u["id"],
                 "username": u.get("username", "Anonymous"),
                 "avatar_id": u.get("avatar_id"),
+                "custom_avatar_url": u.get("custom_avatar_url"),
                 "total_points": 0,
                 "level": u.get("level", 1),
                 "xp": u.get("xp", 0),
@@ -110,7 +112,7 @@ async def build_race_weekend(*, race_id: str, league_id: str | None = None) -> d
     pred_user_ids = list({p["user_id"] for p in predictions})
     user_docs = await db.users.find(
         {"id": {"$in": pred_user_ids}},
-        {"_id": 0, "id": 1, "username": 1, "avatar_id": 1},
+        {"_id": 0, "id": 1, "username": 1, "avatar_id": 1, "custom_avatar_url": 1},
     ).to_list(len(pred_user_ids))
     user_map = {u["id"]: u for u in user_docs}
 
@@ -130,6 +132,7 @@ async def build_race_weekend(*, race_id: str, league_id: str | None = None) -> d
                 "user_id": uid,
                 "username": user_data.get("username", "Anonymous"),
                 "avatar_id": user_data.get("avatar_id"),
+                "custom_avatar_url": user_data.get("custom_avatar_url"),
                 "race_points": points["total"],
             }
         )

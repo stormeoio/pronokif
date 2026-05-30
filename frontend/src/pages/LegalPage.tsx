@@ -2,11 +2,13 @@ import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, FileText, Scale } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { apiClient } from "@/lib/api";
 import { brandAssets } from "@/lib/brand";
 import {
   fallbackLegalPage,
   legalContentBlocks,
+  LEGAL_PAGE_LABELS,
   LEGAL_PAGE_LINKS,
   type LegalPageContent,
 } from "@/lib/legalContent";
@@ -15,21 +17,23 @@ type LegalPageProps = {
   slug?: string;
 };
 
-async function fetchLegalPage(slug: string): Promise<LegalPageContent> {
+async function fetchLegalPage(slug: string, locale: string): Promise<LegalPageContent> {
   const response = await apiClient.get<LegalPageContent>(`/legal/pages/${slug}`, {
-    params: { locale: "fr" },
+    params: { locale },
   });
   return response.data;
 }
 
 export default function LegalPage({ slug: slugOverride }: LegalPageProps) {
   const params = useParams();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language?.startsWith("en") ? "en" : "fr";
   const slug = slugOverride || params.slug || "mentions-legales";
-  const fallback = fallbackLegalPage(slug);
+  const fallback = fallbackLegalPage(slug, locale);
 
   const { data } = useQuery({
-    queryKey: ["legal-page", slug],
-    queryFn: () => fetchLegalPage(slug),
+    queryKey: ["legal-page", slug, locale],
+    queryFn: () => fetchLegalPage(slug, locale),
     retry: 1,
     staleTime: 1000 * 60 * 10,
   });
@@ -58,7 +62,7 @@ export default function LegalPage({ slug: slugOverride }: LegalPageProps) {
             className="inline-flex items-center gap-2 rounded-md border border-white/[0.08] px-3 py-2 font-body text-xs text-pk-titane transition-colors hover:border-white/[0.15] hover:text-pk-piste"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Retour
+            {t("predictions.back")}
           </Link>
         </div>
       </header>
@@ -67,7 +71,7 @@ export default function LegalPage({ slug: slugOverride }: LegalPageProps) {
         <div className="mb-8">
           <div className="mb-3 inline-flex items-center gap-2 rounded-sm border border-pk-red/25 bg-pk-red/10 px-2.5 py-1 font-data text-[10px] uppercase text-pk-red">
             <Scale className="h-3.5 w-3.5" />
-            Documents publics
+            {locale === "en" ? "Public documents" : "Documents publics"}
           </div>
           <h1 className="font-heading text-3xl uppercase tracking-tight text-pk-piste md:text-4xl">
             {page.title}
@@ -76,9 +80,11 @@ export default function LegalPage({ slug: slugOverride }: LegalPageProps) {
             {page.summary}
           </p>
           <p className="mt-3 font-data text-[10px] uppercase text-pk-titane/70">
-            Version {page.version}
+            {locale === "en" ? "Version" : "Version"} {page.version}
             {page.updated_at
-              ? ` · Mise à jour ${new Date(page.updated_at).toLocaleDateString("fr-FR")}`
+              ? ` · ${
+                  locale === "en" ? "Updated" : "Mise à jour"
+                } ${new Date(page.updated_at).toLocaleDateString(locale === "en" ? "en-US" : "fr-FR")}`
               : ""}
           </p>
         </div>
@@ -100,7 +106,7 @@ export default function LegalPage({ slug: slugOverride }: LegalPageProps) {
                     }`}
                   >
                     <FileText className="h-3.5 w-3.5" />
-                    {link.label}
+                    {LEGAL_PAGE_LABELS[link.slug]?.[locale] || link.label}
                   </Link>
                 );
               })}

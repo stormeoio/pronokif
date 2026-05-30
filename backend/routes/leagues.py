@@ -163,6 +163,8 @@ async def get_leaderboard(
             LeaderboardEntry(
                 user_id=entry["user_id"],
                 username=username,
+                avatar_id=user_data.get("avatar_id") if user_data else None,
+                custom_avatar_url=user_data.get("custom_avatar_url") if user_data else None,
                 total_points=entry["total_points"],
                 last_race_points=entry.get("last_race_points", 0),
                 position=position,

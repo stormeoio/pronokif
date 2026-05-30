@@ -2,7 +2,7 @@
  * api.ts utility functions — unit tests.
  */
 import { describe, it, expect } from "vitest";
-import { getApiError, getApiStatus } from "./api";
+import { getApiError, getApiStatus, resolveBackendUrl } from "./api";
 
 describe("getApiError", () => {
   it("returns detail from axios error response", () => {
@@ -39,5 +39,21 @@ describe("getApiStatus", () => {
 
   it("returns undefined when response is missing", () => {
     expect(getApiStatus({})).toBeUndefined();
+  });
+});
+
+describe("resolveBackendUrl", () => {
+  it("keeps localhost when the app is also on localhost", () => {
+    expect(resolveBackendUrl("http://localhost:8000", "localhost")).toBe("http://localhost:8000");
+  });
+
+  it("aligns localhost backend to 127.0.0.1 when the app is opened on 127.0.0.1", () => {
+    expect(resolveBackendUrl("http://localhost:8000", "127.0.0.1")).toBe("http://127.0.0.1:8000");
+  });
+
+  it("does not rewrite production hosts", () => {
+    expect(resolveBackendUrl("https://api.pronokif.com", "pronokif.eu")).toBe(
+      "https://api.pronokif.com",
+    );
   });
 });

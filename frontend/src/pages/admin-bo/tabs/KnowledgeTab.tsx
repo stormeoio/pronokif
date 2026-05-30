@@ -1,7 +1,8 @@
 /**
  * Admin knowledge base tab.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BookOpen,
@@ -106,8 +107,9 @@ function typeLabel(type: string) {
 
 export default function KnowledgeTab({ currentAdminEmail = "" }: KnowledgeTabProps) {
   const queryClient = useQueryClient();
-  const [query, setQuery] = useState("");
-  const [entityType, setEntityType] = useState("");
+  const [searchParams] = useSearchParams();
+  const [query, setQuery] = useState(() => searchParams.get("q") || "");
+  const [entityType, setEntityType] = useState(() => searchParams.get("entity_type") || "");
   const [briefKind, setBriefKind] = useState<BriefKind>("race");
   const [briefEntityId, setBriefEntityId] = useState("madrid-2026");
   const [editingEntityId, setEditingEntityId] = useState<string | null>(null);
@@ -127,6 +129,15 @@ export default function KnowledgeTab({ currentAdminEmail = "" }: KnowledgeTabPro
     owner_admin_email: "",
     admin_notes: "",
   });
+
+  useEffect(() => {
+    const nextQuery = searchParams.get("q") || "";
+    const nextEntityType = searchParams.get("entity_type") || "";
+    if (nextQuery) {
+      setQuery(nextQuery);
+    }
+    setEntityType(nextEntityType);
+  }, [searchParams]);
 
   const params = useMemo(
     () => ({

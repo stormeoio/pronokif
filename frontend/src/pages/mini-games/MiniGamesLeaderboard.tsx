@@ -4,13 +4,14 @@
  */
 import { motion } from "framer-motion";
 import { Medal, Users, Crown } from "lucide-react";
-import { AvatarDisplay } from "../../components/AvatarDisplay";
 import { staggerContainer, fadeUp } from "@/lib/motion";
+import { UserIdentity } from "@/components/users/UserIdentity";
 
 interface LeaderboardEntry {
   user_id: string;
   username: string;
   avatar_id?: string;
+  custom_avatar_url?: string | null;
   best_score: number;
   position?: number;
 }
@@ -22,7 +23,6 @@ interface MiniGamesLeaderboardProps {
   userId?: string;
   leagueLeaderboard: LeaderboardEntry[];
   globalLeaderboard: LeaderboardEntry[];
-  getAvatarById: (id: string | undefined) => any;
 }
 
 export function MiniGamesLeaderboard({
@@ -32,7 +32,6 @@ export function MiniGamesLeaderboard({
   userId,
   leagueLeaderboard,
   globalLeaderboard,
-  getAvatarById,
 }: MiniGamesLeaderboardProps) {
   const scoreColor = activeTab === "reaction" ? "text-pk-amber" : "text-pk-info";
   const formatScore = (score: number) => (activeTab === "reaction" ? `${score}ms` : `${score} pts`);
@@ -67,7 +66,6 @@ export function MiniGamesLeaderboard({
                 userId={userId}
                 scoreColor={scoreColor}
                 formatScore={formatScore}
-                getAvatarById={getAvatarById}
               />
             )}
           </div>
@@ -86,7 +84,6 @@ export function MiniGamesLeaderboard({
               userId={userId}
               scoreColor={scoreColor}
               formatScore={formatScore}
-              getAvatarById={getAvatarById}
             />
           )}
         </div>
@@ -102,13 +99,11 @@ function LeaderboardList({
   userId,
   scoreColor,
   formatScore,
-  getAvatarById,
 }: {
   entries: LeaderboardEntry[];
   userId?: string;
   scoreColor: string;
   formatScore: (s: number) => string;
-  getAvatarById: (id: string | undefined) => any;
 }) {
   return (
     <motion.div
@@ -140,11 +135,12 @@ function LeaderboardList({
             {entry.position ?? i + 1}
           </div>
 
-          {/* Avatar */}
-          <AvatarDisplay avatar={getAvatarById(entry.avatar_id)} size="sm" />
-
-          {/* Name */}
-          <span className="text-sm flex-1 truncate">{entry.username}</span>
+          <UserIdentity
+            user={entry}
+            size="sm"
+            className="flex-1"
+            data-testid={`minigame-leaderboard-user-${entry.user_id}`}
+          />
 
           {/* Score */}
           <span className={`font-data text-sm ${scoreColor}`}>{formatScore(entry.best_score)}</span>

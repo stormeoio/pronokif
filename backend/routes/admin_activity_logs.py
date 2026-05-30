@@ -15,6 +15,47 @@ from services.admin_csv import csv_response
 router = APIRouter(prefix="/admin-bo", tags=["admin-backoffice-activity"])
 
 
+def _activity_user_id(log: dict) -> str | None:
+    metadata = log.get("metadata") if isinstance(log.get("metadata"), dict) else {}
+    user_id = metadata.get("user_id")
+    if not user_id and log.get("entity_type") == "user":
+        user_id = log.get("entity_id")
+    return str(user_id) if user_id else None
+
+
+async def _enrich_logs_user_identity(logs: list[dict]) -> list[dict]:
+    user_ids = sorted({user_id for log in logs if (user_id := _activity_user_id(log))})
+    if not user_ids:
+        return logs
+
+    users = await db.users.find(
+        {"id": {"$in": user_ids}},
+        {
+            "_id": 0,
+            "id": 1,
+            "email": 1,
+            "username": 1,
+            "avatar_id": 1,
+            "custom_avatar_url": 1,
+            "level": 1,
+        },
+    ).to_list(len(user_ids))
+    users_by_id = {user["id"]: user for user in users}
+
+    for log in logs:
+        user_id = _activity_user_id(log)
+        user = users_by_id.get(user_id or "")
+        if not user:
+            continue
+        log["user_id"] = user.get("id")
+        log["user_email"] = user.get("email")
+        log["user_username"] = user.get("username")
+        log["user_avatar_id"] = user.get("avatar_id")
+        log["user_custom_avatar_url"] = user.get("custom_avatar_url")
+        log["user_level"] = user.get("level")
+    return logs
+
+
 @router.get("/activity-logs/export")
 async def export_activity_logs_csv(
     actor_email: str | None = None,
@@ -40,6 +81,7 @@ async def export_activity_logs_csv(
         .sort("created_at", -1)
         .to_list(limit)
     )
+    logs = await _enrich_logs_user_identity(logs)
     rows = [
         {
             "id": log.get("id"),
@@ -48,6 +90,7 @@ async def export_activity_logs_csv(
             "action": log.get("action"),
             "entity_type": log.get("entity_type"),
             "entity_id": log.get("entity_id"),
+            "user": log.get("user_username") or log.get("user_email") or log.get("user_id"),
             "metadata": log.get("metadata"),
         }
         for log in logs
@@ -70,6 +113,7 @@ async def export_activity_logs_csv(
             ("action", "Action"),
             ("entity_type", "Type entité"),
             ("entity_id", "ID entité"),
+            ("user", "Joueur"),
             ("metadata", "Métadonnées"),
         ],
     )
@@ -104,4 +148,5 @@ async def list_activity_logs(
         .sort("created_at", -1)
         .to_list(limit)
     )
+    logs = await _enrich_logs_user_identity(logs)
     return {"logs": logs, "total": total, "skip": skip, "limit": limit}

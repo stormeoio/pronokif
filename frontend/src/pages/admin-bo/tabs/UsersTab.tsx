@@ -1,7 +1,8 @@
 /**
  * Admin Users management tab.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
@@ -12,10 +13,13 @@ import {
   Edit2,
   Eye,
   Ban,
+  Bell,
   ChevronLeft,
   ChevronRight,
   Loader2,
   MailPlus,
+  MessageCircle,
+  Send,
   Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -23,6 +27,7 @@ import { adminApi } from "../adminApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { UserIdentity } from "@/components/users/UserIdentity";
 
 const EMAIL_SPLIT_PATTERN = /[\s,;]+/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -74,6 +79,8 @@ type UserAnalyticsRow = {
   user_id: string;
   email?: string;
   username?: string;
+  avatar_id?: string | null;
+  custom_avatar_url?: string | null;
   created_at?: string;
   predictions_count: number;
   complete_predictions: number;
@@ -94,17 +101,58 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+function userIdentityFromRecord(user: Record<string, unknown>, fallbackId?: string | null) {
+  return {
+    id: String(user.id ?? user.user_id ?? fallbackId ?? ""),
+    user_id: String(user.user_id ?? user.id ?? fallbackId ?? ""),
+    username: (user.username ?? user.user_username ?? null) as string | null,
+    user_username: (user.user_username ?? user.username ?? null) as string | null,
+    email: (user.email ?? user.user_email ?? null) as string | null,
+    user_email: (user.user_email ?? user.email ?? null) as string | null,
+    avatar_id: (user.avatar_id ?? null) as string | null,
+    custom_avatar_url: (user.custom_avatar_url ?? null) as string | null,
+    level: (user.level ?? null) as number | null,
+  };
+}
+
 export default function UsersTab() {
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [editingUser, setEditingUser] = useState<Record<string, unknown> | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [inviteInput, setInviteInput] = useState("");
   const [inviteMessage, setInviteMessage] = useState("");
+  const [leagueInvite, setLeagueInvite] = useState({
+    league_id: "",
+    message: "",
+    send_email: true,
+    send_notification: true,
+    add_member: false,
+  });
   const limit = 20;
 
   const inviteEmails = useMemo(() => parseInviteEmails(inviteInput), [inviteInput]);
+
+  useEffect(() => {
+    const userId = searchParams.get("user");
+    if (userId && userId !== selectedUserId) {
+      setSelectedUserId(userId);
+    }
+  }, [searchParams, selectedUserId]);
+
+  const selectUser = (userId: string | null) => {
+    setSelectedUserId(userId);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("tab", "users");
+    if (userId) {
+      nextParams.set("user", userId);
+    } else {
+      nextParams.delete("user");
+    }
+    setSearchParams(nextParams, { replace: true });
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-bo", "users", search, page],
@@ -123,6 +171,11 @@ export default function UsersTab() {
     queryKey: ["admin-bo", "users", selectedUserId, "stats"],
     queryFn: () => adminApi.users.stats(String(selectedUserId)),
     enabled: !!selectedUserId,
+  });
+
+  const leagueOptionsQuery = useQuery({
+    queryKey: ["admin-bo", "leagues", "user-invite-options"],
+    queryFn: () => adminApi.leagues.list({ limit: 100 }),
   });
 
   const batchInviteMutation = useMutation({
@@ -167,6 +220,56 @@ export default function UsersTab() {
     onError: () => toast.error("Export CSV impossible"),
   });
 
+  const resendMagicLinkMutation = useMutation({
+    mutationFn: () => {
+      if (!selectedUserId) throw new Error("User id missing");
+      return adminApi.users.resendMagicLink(selectedUserId);
+    },
+    onSuccess: (result) => {
+      toast.success(
+        result.email_sent
+          ? "Lien magique envoyé au joueur"
+          : "Lien magique généré, email non confirmé",
+      );
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "users", selectedUserId, "stats"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "activity-logs"] });
+    },
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { detail?: string } } };
+      toast.error(e.response?.data?.detail || "Impossible de renvoyer le lien magique");
+    },
+  });
+
+  const leagueInviteMutation = useMutation({
+    mutationFn: () => {
+      if (!selectedUserId) throw new Error("User id missing");
+      return adminApi.users.inviteToLeague(selectedUserId, {
+        league_id: leagueInvite.league_id,
+        message: leagueInvite.message.trim() || undefined,
+        send_email: leagueInvite.send_email,
+        send_notification: leagueInvite.send_notification,
+        add_member: leagueInvite.add_member,
+      });
+    },
+    onSuccess: (result) => {
+      if (result.member_added) {
+        toast.success("Joueur ajouté à la ligue");
+      } else if (result.email_sent || result.notification_sent) {
+        toast.success("Invitation ligue envoyée");
+      } else {
+        toast.warning("Invitation préparée, aucun canal confirmé");
+      }
+      setLeagueInvite((prev) => ({ ...prev, message: "" }));
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "users", selectedUserId, "stats"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "leagues"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "activity-logs"] });
+    },
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { detail?: string } } };
+      toast.error(e.response?.data?.detail || "Impossible d'envoyer l'invitation ligue");
+    },
+  });
+
   const handleBatchInvite = (e: React.FormEvent) => {
     e.preventDefault();
     if (inviteEmails.invalid.length > 0) {
@@ -178,6 +281,19 @@ export default function UsersTab() {
       return;
     }
     batchInviteMutation.mutate();
+  };
+
+  const handleLeagueInvite = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!leagueInvite.league_id) {
+      toast.error("Sélectionnez une ligue");
+      return;
+    }
+    if (!leagueInvite.send_email && !leagueInvite.send_notification && !leagueInvite.add_member) {
+      toast.error("Choisissez au moins un canal ou l'ajout direct");
+      return;
+    }
+    leagueInviteMutation.mutate();
   };
 
   const handleDelete = async (userId: string, username: string) => {
@@ -228,6 +344,11 @@ export default function UsersTab() {
     selectedUserStats.data?.user ??
     users.find((user: Record<string, unknown>) => user.id === selectedUserId);
   const analyticsSummary = analytics?.summary ?? {};
+  const leagueOptions = leagueOptionsQuery.data?.leagues ?? [];
+  const selectedIdentity = userIdentityFromRecord(
+    (selectedUser ?? {}) as Record<string, unknown>,
+    selectedUserId,
+  );
 
   return (
     <div>
@@ -374,9 +495,14 @@ export default function UsersTab() {
                   className="flex items-center justify-between gap-3 border-b border-white/5 pb-2 last:border-0 last:pb-0"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-body text-sm text-gray-200">
-                      {user.username ?? user.email ?? user.user_id}
-                    </p>
+                    <UserIdentity
+                      user={user}
+                      surface="admin"
+                      size="sm"
+                      showEmail
+                      className="max-w-full"
+                      data-testid={`admin-top-user-${user.user_id}`}
+                    />
                     <p className="font-body text-[11px] text-gray-500">
                       {user.complete_predictions}/{user.predictions_count} complets ·{" "}
                       {user.leagues_count} ligue{user.leagues_count > 1 ? "s" : ""}
@@ -404,9 +530,14 @@ export default function UsersTab() {
                   className="flex items-center justify-between gap-3 border-b border-white/5 pb-2 last:border-0 last:pb-0"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-body text-sm text-gray-200">
-                      {user.username ?? user.email ?? user.user_id}
-                    </p>
+                    <UserIdentity
+                      user={user}
+                      surface="admin"
+                      size="sm"
+                      showEmail
+                      className="max-w-full"
+                      data-testid={`admin-inactive-user-${user.user_id}`}
+                    />
                     <p className="font-body text-[11px] text-gray-500">
                       Inscrit le {formatDateTime(user.created_at)}
                     </p>
@@ -463,23 +594,44 @@ export default function UsersTab() {
       {selectedUserId && (
         <section className="card-arcade mb-4 border border-cyan-500/25 p-4">
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h3 className="font-heading text-sm uppercase text-cyan-400">
-                Statistiques utilisateur
-              </h3>
-              <p className="font-body text-xs text-gray-500">
-                {String(selectedUser?.username ?? "Utilisateur")} ·{" "}
-                {String(selectedUser?.email ?? selectedUserId)}
-              </p>
+            <div className="min-w-0">
+              <h3 className="mb-2 font-heading text-sm uppercase text-cyan-400">Fiche joueur</h3>
+              <UserIdentity
+                user={selectedIdentity}
+                surface="admin"
+                size="md"
+                showEmail
+                showLevel
+                linked={false}
+                className="max-w-full"
+                data-testid="admin-selected-user-identity"
+              />
             </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setSelectedUserId(null)}
-              className="text-xs text-gray-400"
-            >
-              Fermer
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => resendMagicLinkMutation.mutate()}
+                disabled={resendMagicLinkMutation.isPending}
+                className="text-xs text-emerald-300"
+                data-testid="admin-user-resend-magic-link"
+              >
+                {resendMagicLinkMutation.isPending ? (
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                ) : (
+                  <MailPlus className="mr-1 h-4 w-4" />
+                )}
+                Lien magique
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => selectUser(null)}
+                className="text-xs text-gray-400"
+              >
+                Fermer
+              </Button>
+            </div>
           </div>
 
           {selectedUserStats.isLoading ? (
@@ -525,6 +677,85 @@ export default function UsersTab() {
                   tone="text-red-300"
                 />
               </div>
+
+              <form
+                onSubmit={handleLeagueInvite}
+                className="rounded-md border border-emerald-500/20 bg-emerald-500/[0.04] p-3"
+              >
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h4 className="font-heading text-xs uppercase text-emerald-300">
+                      Invitation ligue manuelle
+                    </h4>
+                    <p className="font-body text-[11px] text-gray-500">
+                      Envoie un code de ligue, une notification, ou ajoute directement le joueur.
+                    </p>
+                  </div>
+                  <Send className="h-4 w-4 text-emerald-300" />
+                </div>
+                <div className="grid gap-3 lg:grid-cols-[220px_1fr_auto]">
+                  <select
+                    value={leagueInvite.league_id}
+                    onChange={(event) =>
+                      setLeagueInvite((prev) => ({ ...prev, league_id: event.target.value }))
+                    }
+                    className="h-10 rounded-sm border border-gray-700 bg-gray-900 px-3 font-body text-sm text-white"
+                    data-testid="admin-user-league-invite-select"
+                  >
+                    <option value="">Choisir une ligue</option>
+                    {leagueOptions.map((league: Record<string, unknown>) => (
+                      <option key={String(league.id)} value={String(league.id)}>
+                        {String(league.name ?? league.code ?? league.id)}
+                      </option>
+                    ))}
+                  </select>
+                  <Input
+                    value={leagueInvite.message}
+                    onChange={(event) =>
+                      setLeagueInvite((prev) => ({ ...prev, message: event.target.value }))
+                    }
+                    placeholder="Message optionnel"
+                    className="border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
+                    data-testid="admin-user-league-invite-message"
+                  />
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={!leagueInvite.league_id || leagueInviteMutation.isPending}
+                    className="btn-racing text-xs"
+                    data-testid="admin-user-league-invite-submit"
+                  >
+                    {leagueInviteMutation.isPending ? (
+                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="mr-1 h-4 w-4" />
+                    )}
+                    Envoyer
+                  </Button>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-3 font-body text-xs text-gray-400">
+                  {[
+                    ["send_email", "Email"],
+                    ["send_notification", "Notification"],
+                    ["add_member", "Ajouter directement"],
+                  ].map(([key, label]) => (
+                    <label key={key} className="inline-flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(leagueInvite[key as keyof typeof leagueInvite])}
+                        onChange={(event) =>
+                          setLeagueInvite((prev) => ({
+                            ...prev,
+                            [key]: event.target.checked,
+                          }))
+                        }
+                        className="h-4 w-4 rounded border-white/20 bg-gray-900 text-pk-red focus:ring-pk-red/40"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </form>
 
               {selectedStats.best_race && (
                 <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
@@ -602,6 +833,120 @@ export default function UsersTab() {
                   </div>
                 </div>
               </div>
+
+              <div className="grid gap-4 xl:grid-cols-4 lg:grid-cols-2">
+                <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+                  <h4 className="mb-3 flex items-center gap-2 font-heading text-xs uppercase text-white">
+                    <Trophy className="h-4 w-4 text-orange-400" />
+                    Scores
+                  </h4>
+                  <div className="space-y-2">
+                    {(selectedStats.leaderboard_entries ?? [])
+                      .slice(0, 6)
+                      .map((entry: Record<string, unknown>) => (
+                        <div
+                          key={String(`${entry.league_id}-${entry.championship_id ?? "main"}`)}
+                          className="border-b border-white/5 pb-2 last:border-0 last:pb-0"
+                        >
+                          <p className="truncate font-body text-sm text-gray-200">
+                            {String(entry.league_name ?? entry.league_id ?? "Ligue")}
+                          </p>
+                          <p className="font-data text-[11px] text-orange-400">
+                            {String(entry.total_points ?? 0)} pts · dernier GP{" "}
+                            {String(entry.last_race_points ?? 0)}
+                          </p>
+                        </div>
+                      ))}
+                    {(selectedStats.leaderboard_entries ?? []).length === 0 && (
+                      <p className="font-body text-xs text-gray-500">Aucun score ligue.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+                  <h4 className="mb-3 flex items-center gap-2 font-heading text-xs uppercase text-white">
+                    <Bell className="h-4 w-4 text-cyan-400" />
+                    Notifications
+                  </h4>
+                  <div className="space-y-2">
+                    {(selectedStats.notifications ?? [])
+                      .slice(0, 6)
+                      .map((notification: Record<string, unknown>) => (
+                        <div
+                          key={String(notification.id)}
+                          className="border-b border-white/5 pb-2 last:border-0 last:pb-0"
+                        >
+                          <p className="truncate font-body text-sm text-gray-200">
+                            {String(notification.title ?? "Notification")}
+                          </p>
+                          <p className="font-body text-[11px] text-gray-500">
+                            {notification.is_read ? "lue" : "non lue"} ·{" "}
+                            {formatDateTime(notification.created_at)}
+                          </p>
+                        </div>
+                      ))}
+                    {(selectedStats.notifications ?? []).length === 0 && (
+                      <p className="font-body text-xs text-gray-500">Aucune notification.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+                  <h4 className="mb-3 flex items-center gap-2 font-heading text-xs uppercase text-white">
+                    <MessageCircle className="h-4 w-4 text-emerald-400" />
+                    Discussions
+                  </h4>
+                  <div className="space-y-2">
+                    {(selectedStats.support_messages ?? [])
+                      .slice(0, 6)
+                      .map((message: Record<string, unknown>) => (
+                        <div
+                          key={String(message.id)}
+                          className="border-b border-white/5 pb-2 last:border-0 last:pb-0"
+                        >
+                          <p className="line-clamp-2 font-body text-sm text-gray-200">
+                            {String(message.content ?? "Message")}
+                          </p>
+                          <p className="font-body text-[11px] text-gray-500">
+                            {String(message.league_name ?? message.league_id ?? "Ligue")} ·{" "}
+                            {formatDateTime(message.created_at)}
+                          </p>
+                        </div>
+                      ))}
+                    {(selectedStats.support_messages ?? []).length === 0 && (
+                      <p className="font-body text-xs text-gray-500">Aucun message de ligue.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+                  <h4 className="mb-3 flex items-center gap-2 font-heading text-xs uppercase text-white">
+                    <MessageCircle className="h-4 w-4 text-amber-400" />
+                    Feedbacks
+                  </h4>
+                  <div className="space-y-2">
+                    {(selectedStats.feedbacks ?? [])
+                      .slice(0, 6)
+                      .map((feedback: Record<string, unknown>) => (
+                        <div
+                          key={String(feedback.id)}
+                          className="border-b border-white/5 pb-2 last:border-0 last:pb-0"
+                        >
+                          <p className="line-clamp-2 font-body text-sm text-gray-200">
+                            {String(feedback.message ?? "Feedback")}
+                          </p>
+                          <p className="font-body text-[11px] text-gray-500">
+                            {String(feedback.category ?? "feedback")} ·{" "}
+                            {formatDateTime(feedback.created_at)}
+                          </p>
+                        </div>
+                      ))}
+                    {(selectedStats.feedbacks ?? []).length === 0 && (
+                      <p className="font-body text-xs text-gray-500">Aucun feedback.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </section>
@@ -632,12 +977,15 @@ export default function UsersTab() {
                     key={user.id as string}
                     className="border-b border-gray-800/50 hover:bg-white/5"
                   >
-                    <td className="p-3 text-white font-body">
-                      {user.username ? (
-                        String(user.username)
-                      ) : (
-                        <span className="text-gray-600 italic">non défini</span>
-                      )}
+                    <td className="p-3 font-body text-white">
+                      <UserIdentity
+                        user={userIdentityFromRecord(user)}
+                        surface="admin"
+                        size="sm"
+                        showLevel
+                        className="max-w-[240px]"
+                        data-testid={`admin-user-row-identity-${String(user.id)}`}
+                      />
                       {!!user.is_banned && (
                         <span className="ml-2 text-xs text-red-400 bg-red-500/20 px-1 rounded">
                           banni
@@ -655,7 +1003,7 @@ export default function UsersTab() {
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button
-                          onClick={() => setSelectedUserId(user.id as string)}
+                          onClick={() => selectUser(user.id as string)}
                           className="p-1.5 text-gray-400 hover:text-cyan-400 rounded"
                           title="Détails"
                         >

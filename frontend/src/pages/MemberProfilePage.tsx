@@ -2,7 +2,7 @@
  * MemberProfilePage — View another user's profile.
  * Broadcast Premium theme: glass header, pk-* stat cards.
  */
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "framer-motion";
 import {
@@ -17,12 +17,11 @@ import {
   Users,
   Flag,
 } from "lucide-react";
-import { AvatarDisplay } from "../components/AvatarDisplay";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
-import type { AvatarsResponse } from "@/types/api";
 import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
 import { EmptyFullPage } from "@/components/EmptyState";
+import { UserIdentity } from "@/components/users/UserIdentity";
 
 /* ── Types ─────────────────────────────────────────────── */
 
@@ -114,19 +113,8 @@ export default function MemberProfilePage() {
     enabled: !!userId,
   });
 
-  const { data: avatars = {} as AvatarsResponse, isLoading: avatarsLoading } =
-    useQuery<AvatarsResponse>({
-      queryKey: ["/avatars"],
-      queryFn: () => api.avatars.list(),
-      staleTime: 5 * 60_000,
-    });
-
-  const loading = profileLoading || avatarsLoading;
+  const loading = profileLoading;
   const error = profileError ? "Impossible de charger le profil" : null;
-
-  const getAvatarById = (avatarId: string | undefined) => {
-    return avatars?.all?.find((a: { id: string }) => a.id === avatarId) || null;
-  };
 
   const formatDate = (isoString: string | undefined) => {
     if (!isoString) return "N/A";
@@ -179,7 +167,20 @@ export default function MemberProfilePage() {
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <h1 className="font-display text-lg truncate">{profile.username}</h1>
+          <UserIdentity
+            user={{
+              id: userId,
+              username: profile.username,
+              avatar_id: profile.avatar_id,
+              custom_avatar_url: profile.custom_avatar_url,
+              level: profile.level,
+            }}
+            linked={false}
+            size="sm"
+            className="min-w-0 flex-1"
+            textClassName="font-display text-lg"
+            data-testid="member-profile-header-user"
+          />
           {isOwnProfile && (
             <span className="font-data text-[0.5rem] px-1.5 py-0.5 rounded bg-pk-red/20 text-pk-red">
               Toi
@@ -200,31 +201,32 @@ export default function MemberProfilePage() {
           variants={fadeUp}
           className="bg-pk-surface border border-white/[0.08] rounded-lg p-5"
         >
-          <div className="flex items-center gap-4">
-            <div className="ring-2 ring-pk-red/30 rounded-full p-0.5">
-              <AvatarDisplay
-                avatar={getAvatarById(profile.avatar_id)}
-                customUrl={profile.custom_avatar_url}
-                size="lg"
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="font-display text-xl truncate">{profile.username}</h2>
-              <div className="flex items-center gap-2.5 mt-1.5">
-                <span className="font-data text-[0.5625rem] px-2 py-0.5 rounded-full bg-pk-info/[0.12] border border-pk-info/20 text-pk-info">
-                  Niv. {profile.level}
-                </span>
-                <span className="flex items-center gap-1 font-data text-[0.5625rem] text-pk-amber">
-                  <Zap className="w-3 h-3" />
-                  {profile.xp} XP
-                </span>
-              </div>
-              <p className="font-data text-[0.5625rem] text-pk-titane mt-1.5 flex items-center gap-1">
+          <UserIdentity
+            user={{
+              id: userId,
+              username: profile.username,
+              avatar_id: profile.avatar_id,
+              custom_avatar_url: profile.custom_avatar_url,
+              level: profile.level,
+            }}
+            linked={false}
+            size="xl"
+            showLevel
+            className="w-full"
+            textClassName="font-display text-xl"
+            data-testid="member-profile-card-user"
+          >
+            <span className="mt-1.5 flex flex-wrap items-center gap-2.5">
+              <span className="flex items-center gap-1 font-data text-[0.5625rem] text-pk-amber">
+                <Zap className="w-3 h-3" />
+                {profile.xp} XP
+              </span>
+              <span className="font-data text-[0.5625rem] text-pk-titane flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
                 Membre depuis {formatDate(profile.created_at)}
-              </p>
-            </div>
-          </div>
+              </span>
+            </span>
+          </UserIdentity>
         </motion.div>
 
         {/* Stats Grid */}

@@ -4,9 +4,10 @@
  */
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Crown, Zap, User } from "lucide-react";
+import { Zap } from "lucide-react";
 import { haptic } from "@/lib/haptics";
 import { fadeUp, staggerContainer } from "@/lib/motion";
+import { UserIdentity } from "@/components/users/UserIdentity";
 import type { LeagueMember as LeagueMemberType, LeaderboardEntry } from "@/types/api";
 
 /* ── Types ─────────────────────────────────────────────── */
@@ -16,7 +17,6 @@ interface LeagueMembersProps {
   leaderboard: LeaderboardEntry[];
   userId: string;
   ownerId: string;
-  getAvatar: (member: LeagueMemberType) => string | null;
 }
 
 /* ── Component ─────────────────────────────────────────── */
@@ -26,7 +26,6 @@ export default function LeagueMembers({
   leaderboard,
   userId,
   ownerId,
-  getAvatar,
 }: LeagueMembersProps) {
   const navigate = useNavigate();
 
@@ -40,7 +39,6 @@ export default function LeagueMembers({
       {members.map((member) => {
         const isMe = member.id === userId;
         const isMemberOwner = ownerId === member.id;
-        const avatar = getAvatar(member);
         const lbEntry = leaderboard.find((e) => e.user_id === member.id);
 
         return (
@@ -57,34 +55,17 @@ export default function LeagueMembers({
             data-testid={`member-row-${member.id}`}
           >
             <div className="flex items-center gap-3">
-              {/* Avatar */}
-              <div className="w-10 h-10 rounded-lg overflow-hidden bg-pk-anthracite flex-shrink-0 relative">
-                {avatar ? (
-                  <img
-                    src={avatar}
-                    alt={member.username ?? "membre"}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <User className="w-4.5 h-4.5 text-pk-titane" />
-                  </div>
-                )}
-                {isMemberOwner && (
-                  <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-pk-amber rounded-full flex items-center justify-center">
-                    <Crown className="w-2.5 h-2.5 text-white" />
-                  </div>
-                )}
-              </div>
-
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <p className={`font-display text-sm truncate ${isMe ? "text-pk-red" : ""}`}>
-                    {member.username ?? "Anonyme"}
-                  </p>
+                  <UserIdentity
+                    user={member}
+                    size="md"
+                    linked={false}
+                    className="flex-1"
+                    textClassName={isMe ? "text-pk-red" : ""}
+                    data-testid={`league-member-identity-${member.id}`}
+                  />
                   {isMe && (
                     <span className="font-data text-[0.5rem] bg-pk-red/20 text-pk-red px-1 py-0.5 rounded uppercase">
                       Toi

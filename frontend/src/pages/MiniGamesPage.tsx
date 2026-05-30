@@ -53,7 +53,6 @@ export default function MiniGamesPage() {
     globalBatakLeaderboard,
     handleReactionSubmit,
     handleBatakSubmit,
-    getAvatarById,
   } = useMiniGamesData();
 
   const handleTabChange = (tab: "reaction" | "batak") => {
@@ -239,7 +238,6 @@ export default function MiniGamesPage() {
             userId={user?.id}
             leagueLeaderboard={leagueLeaderboard}
             globalLeaderboard={globalLeaderboard}
-            getAvatarById={getAvatarById}
           />
         </motion.div>
       </motion.div>

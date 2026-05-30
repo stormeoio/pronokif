@@ -20,12 +20,20 @@ import { api } from "@/lib/api";
 
 const mockApi = api as any;
 
-function createWrapper() {
-  const qc = new QueryClient({
-    defaultOptions: { queries: { retry: false, gcTime: 0 } },
-  });
+function createWrapper(queryClient?: QueryClient) {
+  const qc =
+    queryClient ??
+    new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
   return ({ children }: { children: React.ReactNode }) =>
     createElement(QueryClientProvider, { client: qc }, children);
+}
+
+function createQueryClient() {
+  return new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
 }
 
 beforeEach(() => {
@@ -60,6 +68,22 @@ describe("useProfileData", () => {
     expect(result.current.globalPosition).toBe(5);
   });
 
+  it("does not reuse dashboard cached global leaderboard object as globalPosition", async () => {
+    const queryClient = createQueryClient();
+    queryClient.setQueryData(["/leaderboard/global"], {
+      leaderboard: [],
+      my_position: 9,
+      total_players: 12,
+    });
+
+    const { result } = renderHook(() => useProfileData("u1", "l1"), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => expect(result.current.globalPosition).toBe(5));
+  });
+
   it("returns totalPoints from league leaderboard when available", async () => {
     const { result } = renderHook(() => useProfileData("u1", "l1"), {
       wrapper: createWrapper(),
@@ -67,6 +91,39 @@ describe("useProfileData", () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     await waitFor(() => expect(result.current.stats.totalPoints).toBe(100));
+  });
+
+  it("accepts wrapped leaderboard responses when computing totalPoints", async () => {
+    mockApi.leagues.leaderboard.mockResolvedValue({
+      leaderboard: [
+        { user_id: "u1", total_points: 140 },
+        { user_id: "u2", total_points: 80 },
+      ],
+      my_position: 1,
+      total_players: 2,
+    });
+
+    const { result } = renderHook(() => useProfileData("u1", "l1"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => expect(result.current.stats.totalPoints).toBe(140));
+  });
+
+  it("does not expose malformed total_points objects to the UI", async () => {
+    mockApi.leagues.leaderboard.mockResolvedValue([]);
+    mockApi.predictions.pointsHistory.mockResolvedValue({
+      history: [],
+      summary: { total_points: { leaderboard: [], my_position: null, total_players: 0 } },
+    });
+
+    const { result } = renderHook(() => useProfileData("u1", null), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.stats.totalPoints).toBe(0);
   });
 
   it("falls back to history summary when no leagueId", async () => {

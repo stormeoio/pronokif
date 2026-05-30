@@ -44,3 +44,24 @@ def test_dev_cors_adds_127_alias_when_env_lists_localhost(monkeypatch):
 
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:3000"
+
+
+def test_dev_cors_allows_loopback_alternate_vite_port(monkeypatch):
+    monkeypatch.setenv("CORS_ORIGINS", "http://localhost:3000")
+    monkeypatch.setenv("ENVIRONMENT", "development")
+
+    app = FastAPI()
+    install_cors(app)
+
+    client = TestClient(app)
+    response = client.options(
+        "/api/auth/register",
+        headers={
+            "Origin": "http://127.0.0.1:3001",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:3001"

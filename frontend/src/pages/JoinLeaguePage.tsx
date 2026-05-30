@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { haptic } from "@/lib/haptics";
 import { brandAssets } from "@/lib/brand";
+import { clearPendingJoinCode, savePendingJoinCode } from "@/lib/pendingJoin";
 import { fadeUp, easing, duration, getReducedMotionProps } from "@/lib/motion";
 
 /* ── Types ─────────────────────────────────────────────── */
@@ -123,7 +124,7 @@ export default function JoinLeaguePage() {
 
   const handleJoin = async () => {
     if (!user) {
-      localStorage.setItem("pendingJoinCode", code || "");
+      savePendingJoinCode(code);
       navigate("/auth");
       return;
     }
@@ -132,7 +133,8 @@ export default function JoinLeaguePage() {
     haptic("medium");
     try {
       const res = await api.leagues.join({ code: code!.toUpperCase() });
-      updateUser({ ...user, current_league_id: res.id });
+      updateUser({ current_league_id: res.id });
+      clearPendingJoinCode();
       haptic("success");
       toast.success(`Tu as rejoint "${res.name}" !`);
       navigate("/");
@@ -178,7 +180,10 @@ export default function JoinLeaguePage() {
         title="Déjà membre !"
         description={`Tu fais déjà partie de ${league?.name}.`}
         actionLabel="Aller au tableau de bord"
-        onAction={() => navigate("/")}
+        onAction={() => {
+          clearPendingJoinCode();
+          navigate("/");
+        }}
       />
     );
   }

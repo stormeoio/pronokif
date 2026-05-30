@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { AlertTriangle, Timer, Flag, X, Zap } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { Driver } from "./DriverPicker";
 import { haptic } from "@/lib/haptics";
 import { fadeUp, easing, duration } from "@/lib/motion";
@@ -35,6 +36,8 @@ export default function BonusPanel({
   dnfDrivers,
   setDnfDrivers,
 }: BonusPanelProps) {
+  const { t } = useTranslation();
+
   return (
     <motion.div
       className="space-y-4 pt-4 border-t border-white/[0.08]"
@@ -46,16 +49,19 @@ export default function BonusPanel({
       <div className="flex items-center gap-2">
         <Zap size={16} strokeWidth={1.5} className="text-pk-amber" />
         <h3 className="font-display text-[0.875rem] uppercase">
-          Questions Bonus{activeTab === "sprint" ? " Sprint" : ""}
+          {t("predictions.form.bonus.title")}
+          {activeTab === "sprint" ? ` ${t("predictions.sprint")}` : ""}
         </h3>
-        <span className="font-mono text-[0.5625rem] text-pk-titane">+50 pts</span>
+        <span className="font-mono text-[0.5625rem] text-pk-titane">
+          {t("predictions.form.bonus.points")}
+        </span>
       </div>
 
       {/* Safety Car */}
       <div className="flex items-center justify-between p-3 bg-white/[0.03] border border-white/[0.06] rounded-md">
         <div className="flex items-center gap-2">
           <AlertTriangle size={16} strokeWidth={1.5} className="text-pk-amber" />
-          <span className="text-[0.8125rem]">Safety Car</span>
+          <span className="text-[0.8125rem]">{t("predictions.form.bonus.safety_car")}</span>
         </div>
         <div className="flex gap-1.5">
           <button
@@ -71,7 +77,7 @@ export default function BonusPanel({
                   : "bg-white/[0.03] border border-white/[0.08] text-pk-titane hover:text-pk-piste"
               }`}
           >
-            Oui
+            {t("predictions.form.bonus.yes")}
           </button>
           <button
             onClick={() => {
@@ -86,7 +92,7 @@ export default function BonusPanel({
                   : "bg-white/[0.03] border border-white/[0.08] text-pk-titane hover:text-pk-piste"
               }`}
           >
-            Non
+            {t("predictions.form.bonus.no")}
           </button>
         </div>
       </div>
@@ -102,12 +108,12 @@ export default function BonusPanel({
       >
         <div className="flex items-center gap-2">
           <Timer size={16} strokeWidth={1.5} className="text-pk-amber" />
-          <span className="text-[0.8125rem]">Meilleur tour</span>
+          <span className="text-[0.8125rem]">{t("predictions.form.bonus.fastest_lap")}</span>
         </div>
         <span className="font-mono text-[0.75rem] text-pk-red">
           {fastestLap
-            ? drivers.find((d) => d.id === fastestLap)?.name || "Sélectionné"
-            : "Sélectionner →"}
+            ? drivers.find((d) => d.id === fastestLap)?.name || t("predictions.form.bonus.selected")
+            : t("predictions.form.bonus.select")}
         </span>
       </button>
 
@@ -122,12 +128,13 @@ export default function BonusPanel({
       >
         <div className="flex items-center gap-2">
           <Flag size={16} strokeWidth={1.5} className="text-pk-emerald" />
-          <span className="text-[0.8125rem]">Leader au virage 1</span>
+          <span className="text-[0.8125rem]">{t("predictions.form.bonus.first_corner")}</span>
         </div>
         <span className="font-mono text-[0.75rem] text-pk-red">
           {firstCorner
-            ? drivers.find((d) => d.id === firstCorner)?.name || "Sélectionné"
-            : "Sélectionner →"}
+            ? drivers.find((d) => d.id === firstCorner)?.name ||
+              t("predictions.form.bonus.selected")
+            : t("predictions.form.bonus.select")}
         </span>
       </button>
 
@@ -135,7 +142,7 @@ export default function BonusPanel({
       <div className="p-3 bg-white/[0.03] border border-white/[0.06] rounded-md space-y-2.5">
         <div className="flex items-center gap-2">
           <X size={16} strokeWidth={1.5} className="text-pk-red" />
-          <span className="text-[0.8125rem]">Abandons</span>
+          <span className="text-[0.8125rem]">{t("predictions.form.bonus.dnf")}</span>
         </div>
         <div className="flex gap-1.5">
           <button
@@ -152,7 +159,7 @@ export default function BonusPanel({
                   : "bg-white/[0.03] border border-white/[0.08] text-pk-titane hover:text-pk-piste"
               }`}
           >
-            Pas d'abandon
+            {t("predictions.form.bonus.no_dnf")}
           </button>
           <button
             onClick={() => {
@@ -168,7 +175,9 @@ export default function BonusPanel({
                   : "bg-white/[0.03] border border-white/[0.08] text-pk-titane hover:text-pk-piste"
               }`}
           >
-            {dnfDrivers.length > 0 ? `${dnfDrivers.length} pilote(s)` : "Sélectionner →"}
+            {dnfDrivers.length > 0
+              ? t("predictions.form.bonus.drivers_count", { count: dnfDrivers.length })
+              : t("predictions.form.bonus.select")}
           </button>
         </div>
       </div>

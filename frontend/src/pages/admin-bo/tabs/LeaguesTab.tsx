@@ -26,11 +26,14 @@ import { adminApi } from "../adminApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { UserIdentity } from "@/components/users/UserIdentity";
 
 type LeagueMember = {
   user_id: string;
   email?: string | null;
   username?: string | null;
+  avatar_id?: string | null;
+  custom_avatar_url?: string | null;
   is_owner?: boolean;
   total_points?: number;
   last_race_points?: number;
@@ -48,6 +51,8 @@ type League = {
   members_count?: number;
   owner_email?: string | null;
   owner_username?: string | null;
+  owner_avatar_id?: string | null;
+  owner_custom_avatar_url?: string | null;
   messages_count?: number;
   total_points?: number;
   average_points?: number;
@@ -587,12 +592,22 @@ export default function LeaguesTab() {
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <h3 className="font-heading text-sm uppercase text-white">Membres</h3>
-                <p className="font-body text-xs text-gray-500">
-                  {selectedLeague?.owner_username ??
-                    selectedLeague?.owner_email ??
-                    selectedLeague?.created_by ??
-                    "—"}
-                </p>
+                {selectedLeague ? (
+                  <UserIdentity
+                    user={{
+                      id: selectedLeague.created_by,
+                      username: selectedLeague.owner_username,
+                      email: selectedLeague.owner_email,
+                      avatar_id: selectedLeague.owner_avatar_id,
+                      custom_avatar_url: selectedLeague.owner_custom_avatar_url,
+                    }}
+                    surface="admin"
+                    size="sm"
+                    showEmail
+                    className="mt-1 max-w-[260px]"
+                    data-testid="admin-selected-league-owner"
+                  />
+                ) : null}
               </div>
               <Crown className="h-5 w-5 text-amber-400" />
             </div>
@@ -628,9 +643,20 @@ export default function LeaguesTab() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       {member.is_owner && <Crown className="h-3.5 w-3.5 shrink-0 text-amber-400" />}
-                      <p className="truncate font-body text-sm text-gray-200">
-                        {memberLabel(member)}
-                      </p>
+                      <UserIdentity
+                        user={{
+                          id: member.user_id,
+                          username: member.username,
+                          email: member.email,
+                          avatar_id: member.avatar_id,
+                          custom_avatar_url: member.custom_avatar_url,
+                        }}
+                        surface="admin"
+                        size="sm"
+                        showEmail
+                        className="max-w-[220px]"
+                        data-testid={`admin-league-member-${member.user_id}`}
+                      />
                     </div>
                     <p className="font-data text-[11px] text-gray-500">
                       {formatNumber(member.total_points)} pts · {member.user_id}
@@ -726,7 +752,20 @@ export default function LeaguesTab() {
                       </p>
                     </td>
                     <td className="p-3 font-body text-gray-400">
-                      {league.owner_username ?? league.owner_email ?? league.created_by ?? "—"}
+                      <UserIdentity
+                        user={{
+                          id: league.created_by,
+                          username: league.owner_username,
+                          email: league.owner_email,
+                          avatar_id: league.owner_avatar_id,
+                          custom_avatar_url: league.owner_custom_avatar_url,
+                        }}
+                        surface="admin"
+                        size="sm"
+                        showEmail
+                        className="max-w-[220px]"
+                        data-testid={`admin-league-owner-${league.id}`}
+                      />
                     </td>
                     <td className="p-3 font-body text-xs text-gray-500">
                       {formatDate(league.created_at)}

@@ -150,7 +150,15 @@ async def _race_prediction_overview(race_id: str) -> dict:
     users = await (
         db.users.find(
             {"is_banned": {"$ne": True}},
-            {"_id": 0, "id": 1, "email": 1, "username": 1, "created_at": 1},
+            {
+                "_id": 0,
+                "id": 1,
+                "email": 1,
+                "username": 1,
+                "avatar_id": 1,
+                "custom_avatar_url": 1,
+                "created_at": 1,
+            },
         )
         .sort("created_at", -1)
         .to_list(1000)

@@ -56,6 +56,7 @@ function renderAuthPage(authOverrides = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  localStorage.clear();
 });
 
 describe("AuthPage", () => {
@@ -72,13 +73,98 @@ describe("AuthPage", () => {
     expect(screen.getByTestId("login-submit")).toBeInTheDocument();
   });
 
-  it("register form has email and password fields", async () => {
+  it("register form has username, email and password fields", async () => {
     renderAuthPage();
     const user = userEvent.setup();
     await user.click(screen.getByTestId("tab-register"));
 
+    expect(screen.getByTestId("register-username")).toBeInTheDocument();
     expect(screen.getByTestId("register-email")).toBeInTheDocument();
     expect(screen.getByTestId("register-password")).toBeInTheDocument();
+  });
+
+  it("sends username during registration and navigates to league onboarding", async () => {
+    const auth = renderAuthPage({
+      register: vi.fn().mockResolvedValue({ username: "PilotFlow", current_league_id: null }),
+    });
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("tab-register"));
+
+    fireEvent.change(screen.getByTestId("register-username"), {
+      target: { value: "PilotFlow" },
+    });
+    fireEvent.change(screen.getByTestId("register-email"), {
+      target: { value: "pilot@pronokif.com" },
+    });
+    fireEvent.change(screen.getByTestId("register-password"), {
+      target: { value: "Password123!" },
+    });
+    fireEvent.submit(screen.getByTestId("register-form"));
+
+    await waitFor(() => {
+      expect(auth.register).toHaveBeenCalledWith(
+        "pilot@pronokif.com",
+        "Password123!",
+        expect.objectContaining({ username: "PilotFlow" }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("/league");
+    });
+  });
+
+  it("keeps a pending league invitation visible during auth", async () => {
+    localStorage.setItem("pendingJoinCode", "abc123");
+    renderAuthPage();
+
+    expect(await screen.findByTestId("auth-pending-invite")).toHaveTextContent("ABC123");
+    expect(screen.getByTestId("register-form")).toBeInTheDocument();
+  });
+
+  it("navigates to pending league invitation after registration", async () => {
+    localStorage.setItem("pendingJoinCode", "abc123");
+    const auth = renderAuthPage({
+      register: vi.fn().mockResolvedValue({ username: "PilotFlow", current_league_id: null }),
+    });
+
+    fireEvent.change(await screen.findByTestId("register-username"), {
+      target: { value: "PilotFlow" },
+    });
+    fireEvent.change(screen.getByTestId("register-email"), {
+      target: { value: "pilot@pronokif.com" },
+    });
+    fireEvent.change(screen.getByTestId("register-password"), {
+      target: { value: "Password123!" },
+    });
+    fireEvent.submit(screen.getByTestId("register-form"));
+
+    await waitFor(() => {
+      expect(auth.register).toHaveBeenCalled();
+      expect(mockNavigate).toHaveBeenCalledWith("/join/ABC123");
+    });
+  });
+
+  it("navigates to pending league invitation after login", async () => {
+    localStorage.setItem("pendingJoinCode", "abc123");
+    const auth = renderAuthPage({
+      login: vi.fn().mockResolvedValue({ username: "max33", current_league_id: "lg-1" }),
+    });
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("tab-login"));
+
+    fireEvent.change(screen.getByTestId("login-email"), {
+      target: { value: "test@pronokif.com" },
+    });
+    fireEvent.change(screen.getByTestId("login-password"), {
+      target: { value: "password123" },
+    });
+    fireEvent.submit(screen.getByTestId("login-form"));
+
+    await waitFor(() => {
+      expect(auth.login).toHaveBeenCalledWith("test@pronokif.com", "password123");
+      expect(mockNavigate).toHaveBeenCalledWith("/join/ABC123");
+    });
   });
 
   it("calls login on form submit and navigates to home", async () => {

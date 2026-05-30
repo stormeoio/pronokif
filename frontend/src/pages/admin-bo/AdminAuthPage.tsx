@@ -8,7 +8,7 @@
  * "Remember device" stores a long-lived token in localStorage that
  * can re-create a session without a new magic link (90 days).
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import {
   Mail,
@@ -94,6 +94,7 @@ export default function AdminAuthPage() {
   const [partialToken, setPartialToken] = useState("");
   const [rememberDevice, setRememberDevice] = useState(!!getDeviceToken());
   const [error, setError] = useState("");
+  const verifiedTokenRef = useRef<string | null>(null);
 
   /** Store device token from API response if remember was checked. */
   const handleDeviceToken = useCallback((resData: Record<string, unknown>) => {
@@ -105,6 +106,11 @@ export default function AdminAuthPage() {
   // Check auth: cookie → device token → show login form
   useEffect(() => {
     const tryAuth = async () => {
+      if (searchParams.has("token")) {
+        setAuthChecking(false);
+        return;
+      }
+
       // 1. Try cookie-based session
       try {
         await adminApi.me();
@@ -145,7 +151,7 @@ export default function AdminAuthPage() {
     };
 
     tryAuth();
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   const verifyMagicLink = useCallback(
     async (token: string) => {
@@ -174,7 +180,8 @@ export default function AdminAuthPage() {
   // Handle magic link token from URL
   useEffect(() => {
     const token = searchParams.get("token");
-    if (token) {
+    if (token && verifiedTokenRef.current !== token) {
+      verifiedTokenRef.current = token;
       setAuthChecking(false);
       verifyMagicLink(token);
     }

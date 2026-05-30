@@ -52,6 +52,31 @@ def test_admin_magic_url_uses_dedicated_admin_frontend_url(monkeypatch):
     assert magic_url == "https://admin.example.com?token=admin-token"
 
 
+def test_admin_magic_url_uses_local_request_origin_in_dev(monkeypatch):
+    monkeypatch.delenv("ADMIN_FRONTEND_URL", raising=False)
+    monkeypatch.setenv("ENVIRONMENT", "development")
+    monkeypatch.setenv("FRONTEND_URL", "http://localhost:5173")
+
+    class Request:
+        headers = {"origin": "http://127.0.0.1:3001"}
+
+    magic_url = admin_auth_routes._build_admin_magic_url("admin-token", Request())
+
+    assert magic_url == "http://127.0.0.1:3001/admin?token=admin-token"
+
+
+def test_admin_magic_url_keeps_configured_admin_url_over_local_origin(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "development")
+    monkeypatch.setenv("ADMIN_FRONTEND_URL", "https://admin.example.com")
+
+    class Request:
+        headers = {"origin": "http://127.0.0.1:3001"}
+
+    magic_url = admin_auth_routes._build_admin_magic_url("admin-token", Request())
+
+    assert magic_url == "https://admin.example.com?token=admin-token"
+
+
 @pytest.mark.asyncio
 async def test_send_magic_login_email_uses_frontend_magic_link(monkeypatch):
     calls: list[tuple[str, str, str, str | None]] = []

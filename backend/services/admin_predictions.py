@@ -137,6 +137,8 @@ def score_ledger_row(
         "user_id": row.get("user_id"),
         "user_email": user.get("email"),
         "user_username": user.get("username"),
+        "user_avatar_id": user.get("avatar_id"),
+        "user_custom_avatar_url": user.get("custom_avatar_url"),
         "race_id": row.get("race_id"),
         "race_name": race.get("name"),
         "league_id": row.get("league_id"),
@@ -203,7 +205,7 @@ async def score_ledger_rows(
 
     users = await db.users.find(
         {"id": {"$in": list(user_ids)}} if user_ids else {"id": {"$in": []}},
-        {"_id": 0, "id": 1, "email": 1, "username": 1},
+        {"_id": 0, "id": 1, "email": 1, "username": 1, "avatar_id": 1, "custom_avatar_url": 1},
     ).to_list(len(user_ids) or 1)
     races = await db.races.find(
         {"id": {"$in": list(race_ids)}} if race_ids else {"id": {"$in": []}},
@@ -333,11 +335,15 @@ def prediction_admin_payload(
             "id": user_doc.get("id") or prediction.get("user_id"),
             "email": user_doc.get("email"),
             "username": user_doc.get("username"),
+            "avatar_id": user_doc.get("avatar_id"),
+            "custom_avatar_url": user_doc.get("custom_avatar_url"),
             "level": user_doc.get("level"),
             "xp": user_doc.get("xp"),
         },
         "user_email": user_doc.get("email"),
         "user_username": user_doc.get("username"),
+        "user_avatar_id": user_doc.get("avatar_id"),
+        "user_custom_avatar_url": user_doc.get("custom_avatar_url"),
         "race": {
             "id": race_doc.get("id") or prediction.get("race_id"),
             "name": race_doc.get("name"),
@@ -433,6 +439,8 @@ def prediction_analytics_from_payloads(predictions: list[dict]) -> dict:
                 "user_id": user_id,
                 "user_email": prediction.get("user_email"),
                 "user_username": prediction.get("user_username"),
+                "user_avatar_id": prediction.get("user_avatar_id"),
+                "user_custom_avatar_url": prediction.get("user_custom_avatar_url"),
                 "predictions_count": 0,
                 "complete_predictions": 0,
                 "scored_predictions": 0,
@@ -508,7 +516,16 @@ async def enrich_prediction_docs(predictions: list[dict]) -> list[dict]:
     if user_ids:
         users = await db.users.find(
             {"id": {"$in": user_ids}},
-            {"_id": 0, "id": 1, "email": 1, "username": 1, "level": 1, "xp": 1},
+            {
+                "_id": 0,
+                "id": 1,
+                "email": 1,
+                "username": 1,
+                "avatar_id": 1,
+                "custom_avatar_url": 1,
+                "level": 1,
+                "xp": 1,
+            },
         ).to_list(len(user_ids))
         users_by_id = {user["id"]: user for user in users}
 

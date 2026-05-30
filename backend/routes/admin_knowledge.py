@@ -16,7 +16,11 @@ from config import db
 from routes.admin_auth import get_current_admin
 from services.admin_activity import log_backoffice_activity
 from services.championships import F1_2026_CHAMPIONSHIP_ID
-from services.circuit_maps import list_circuit_map_records, update_circuit_map_record
+from services.circuit_maps import (
+    list_circuit_map_records,
+    reset_circuit_map_record,
+    update_circuit_map_record,
+)
 from services.knowledge_seed import (
     build_driver_brief,
     build_prediction_brief,
@@ -154,6 +158,9 @@ async def get_knowledge_documents(
 async def get_circuit_maps(
     q: str = "",
     review_status: str | None = None,
+    priority: str | None = None,
+    owner: str | None = None,
+    source: str | None = None,
     skip: int = 0,
     limit: int = 50,
     admin: dict = Depends(get_current_admin),
@@ -162,6 +169,10 @@ async def get_circuit_maps(
     return await list_circuit_map_records(
         q=q,
         review_status=review_status,
+        priority=priority,
+        owner=owner,
+        source=source,
+        current_admin_email=admin.get("email"),
         skip=skip,
         limit=min(max(limit, 1), 100),
     )
@@ -202,6 +213,26 @@ async def update_circuit_map(
         },
     )
     return {"message": "Carte circuit mise à jour", "item": record}
+
+
+@router.delete("/circuit-maps/{map_key}")
+async def reset_circuit_map(
+    map_key: str,
+    admin: dict = Depends(get_current_admin),
+) -> dict:
+    """Remove the admin override and restore the seeded circuit map definition."""
+    record = await reset_circuit_map_record(map_key, actor=admin.get("email"))
+    if not record:
+        raise HTTPException(status_code=404, detail="Carte circuit introuvable")
+    await log_backoffice_activity(
+        admin,
+        db_handle=db,
+        action="circuit_map.reset",
+        entity_type="circuit_map",
+        entity_id=map_key,
+        metadata={"source": record.get("source"), "reset": record.get("reset")},
+    )
+    return {"message": "Carte circuit réinitialisée", "item": record}
 
 
 @router.get("/knowledge/search")

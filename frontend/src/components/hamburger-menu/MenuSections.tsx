@@ -4,6 +4,7 @@
  */
 import { motion } from "framer-motion";
 import { Shield, FileText, Mail, BookOpen, ExternalLink } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { SectionHeader } from "./MenuHelpers";
 
 // Re-export extracted content components
@@ -12,50 +13,18 @@ export { ScoringContent } from "./ScoringContent";
 
 // Tutorial Content
 export function TutorialContent() {
-  const steps = [
-    {
-      title: "1. Crée ou rejoins une ligue",
-      description:
-        "Appuie sur l'onglet Ligues en bas de l'écran. Tu peux créer ta propre ligue et inviter tes potes avec un code, ou rejoindre une ligue existante.",
-    },
-    {
-      title: "2. Fais tes pronostics",
-      description:
-        "Avant chaque Grand Prix, va dans l'onglet Pronos. Prédi la pole position, le top 10 des qualifications, le vainqueur, le top 10 de la course, et les bonus.",
-    },
-    {
-      title: "3. Week-end Sprint",
-      description:
-        "Lors d'un week-end Sprint, tu as deux séries de pronostics : une pour le sprint (ferme avant SQ1) et une pour la course principale (ferme avant Q1).",
-    },
-    {
-      title: "4. Bonus",
-      description:
-        "N'oublie pas les paris bonus : Safety Car (oui/non), pilotes abandons (DNF), meilleur tour, et leader au premier virage. Ils peuvent rapporter gros.",
-    },
-    {
-      title: "5. Marque des points",
-      description:
-        "Après chaque course, les résultats sont saisis et tes points sont calculés automatiquement. Consulte l'historique de ton profil pour les détails.",
-    },
-    {
-      title: "6. Mini-jeux",
-      description:
-        "Joue aux mini-jeux (Réaction et Batak) pour gagner des points bonus et défier tes potes. Le meilleur joueur de chaque ligue gagne +2 points !",
-    },
-    {
-      title: "7. Classement",
-      description:
-        "Suis le classement de ta ligue et le classement général. Bats tes potes et deviens le champion de la saison.",
-    },
-  ];
+  const { t } = useTranslation();
+  const steps = t("menu.tutorial.steps", { returnObjects: true }) as {
+    title: string;
+    description: string;
+  }[];
 
   return (
     <div className="space-y-4">
       <SectionHeader
         icon={BookOpen}
-        title="Tutoriel"
-        subtitle="Comment jouer à PRONOKIF"
+        title={t("menu.tutorial.title")}
+        subtitle={t("menu.tutorial.subtitle")}
         color="bg-pk-info"
       />
       <motion.div
@@ -81,54 +50,68 @@ export function TutorialContent() {
 
 // Privacy Content
 export function PrivacyContent() {
+  const { t } = useTranslation();
+  const collectedItems = t("menu.privacy.collected_items", { returnObjects: true }) as string[];
+  const usageItems = t("menu.privacy.usage_items", { returnObjects: true }) as string[];
+  const securityItems = t("menu.privacy.security_items", { returnObjects: true }) as string[];
+  const rightsItems = t("menu.privacy.rights_items", { returnObjects: true }) as string[];
+
   return (
     <div className="space-y-4">
       <SectionHeader
         icon={Shield}
-        title="Confidentialité"
-        subtitle="Protection des données"
+        title={t("menu.privacy.title")}
+        subtitle={t("menu.privacy.subtitle")}
         color="bg-pk-emerald"
       />
       <div className="space-y-4 text-sm text-pk-piste/80 leading-relaxed">
         <section>
-          <h4 className="font-display text-xs text-pk-emerald mb-2">Données collectées</h4>
-          <p>PRONOKIF ne collecte que les données nécessaires au fonctionnement de l'appli :</p>
+          <h4 className="font-display text-xs text-pk-emerald mb-2">
+            {t("menu.privacy.collected_title")}
+          </h4>
+          <p>{t("menu.privacy.collected_intro")}</p>
           <ul className="list-disc list-inside mt-2 space-y-1 text-pk-titane">
-            <li>Adresse email (pour l'authentification)</li>
-            <li>Pseudo (pour l'affichage au classement)</li>
-            <li>Pronostics et scores de jeu</li>
-            <li>Appartenances aux ligues</li>
+            {collectedItems.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
           </ul>
         </section>
         <section>
-          <h4 className="font-display text-xs text-pk-emerald mb-2">Utilisation des données</h4>
-          <p>Tes données sont utilisées exclusivement pour :</p>
+          <h4 className="font-display text-xs text-pk-emerald mb-2">
+            {t("menu.privacy.usage_title")}
+          </h4>
+          <p>{t("menu.privacy.usage_intro")}</p>
           <ul className="list-disc list-inside mt-2 space-y-1 text-pk-titane">
-            <li>Gérer ton compte et tes pronostics</li>
-            <li>Calculer et afficher les classements</li>
-            <li>Permettre les interactions entre membres (chat, ligues)</li>
+            {usageItems.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
           </ul>
         </section>
         <section>
-          <h4 className="font-display text-xs text-pk-emerald mb-2">Sécurité</h4>
-          <p>Tes données sont protégées :</p>
+          <h4 className="font-display text-xs text-pk-emerald mb-2">
+            {t("menu.privacy.security_title")}
+          </h4>
+          <p>{t("menu.privacy.security_intro")}</p>
           <ul className="list-disc list-inside mt-2 space-y-1 text-pk-titane">
-            <li>Mots de passe chiffrés (bcrypt)</li>
-            <li>Connexion sécurisée (HTTPS)</li>
-            <li>Aucune donnée vendue à des tiers</li>
+            {securityItems.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
           </ul>
         </section>
         <section>
-          <h4 className="font-display text-xs text-pk-emerald mb-2">Tes droits</h4>
-          <p>Conformément au RGPD, tu peux :</p>
+          <h4 className="font-display text-xs text-pk-emerald mb-2">
+            {t("menu.privacy.rights_title")}
+          </h4>
+          <p>{t("menu.privacy.rights_intro")}</p>
           <ul className="list-disc list-inside mt-2 space-y-1 text-pk-titane">
-            <li>Accéder à tes données personnelles</li>
-            <li>Demander des modifications ou la suppression</li>
-            <li>Exporter tes données</li>
+            {rightsItems.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
           </ul>
           <p className="mt-2 text-pk-titane">
-            Contacte-nous à <span className="text-pk-emerald">pronokif@gmail.com</span> pour exercer
-            tes droits.
+            {t("menu.privacy.contact_prefix")}{" "}
+            <span className="text-pk-emerald">pronokif@gmail.com</span>{" "}
+            {t("menu.privacy.contact_suffix")}
           </p>
         </section>
       </div>
@@ -138,51 +121,51 @@ export function PrivacyContent() {
 
 // Legal Content
 export function LegalContent() {
+  const { t } = useTranslation();
+  const termsItems = t("menu.legal.terms_items", { returnObjects: true }) as string[];
+
   return (
     <div className="space-y-4">
       <SectionHeader
         icon={FileText}
-        title="Mentions légales"
-        subtitle="Informations juridiques"
+        title={t("menu.legal.title")}
+        subtitle={t("menu.legal.subtitle")}
         color="bg-pk-amber"
       />
       <div className="space-y-4 text-sm text-pk-piste/80 leading-relaxed">
         <section>
-          <h4 className="font-display text-xs text-pk-amber mb-2">Éditeur de l'appli</h4>
-          <p>
-            PRONOKIF est une appli de jeu gratuite et non commerciale, créée par un passionné de
-            Formule 1.
-          </p>
+          <h4 className="font-display text-xs text-pk-amber mb-2">
+            {t("menu.legal.publisher_title")}
+          </h4>
+          <p>{t("menu.legal.publisher_text")}</p>
           <p className="mt-2 text-pk-titane">
-            Contact : <span className="text-pk-amber">pronokif@gmail.com</span>
+            {t("menu.legal.contact_label")}{" "}
+            <span className="text-pk-amber">pronokif@gmail.com</span>
           </p>
         </section>
         <section>
-          <h4 className="font-display text-xs text-pk-amber mb-2">Hébergement</h4>
-          <p>L'application est hébergée sur la plateforme Emergent.</p>
+          <h4 className="font-display text-xs text-pk-amber mb-2">
+            {t("menu.legal.hosting_title")}
+          </h4>
+          <p>{t("menu.legal.hosting_text")}</p>
         </section>
         <section>
-          <h4 className="font-display text-xs text-pk-amber mb-2">Propriété intellectuelle</h4>
-          <p>
-            PRONOKIF n'est pas affilié à la Formule 1, la FIA ou FOM. Les marques, logos et noms de
-            pilotes/écuries appartiennent à leurs propriétaires respectifs.
-          </p>
-          <p className="mt-2">Les visuels et le code de l'appli sont la propriété de l'éditeur.</p>
+          <h4 className="font-display text-xs text-pk-amber mb-2">{t("menu.legal.ip_title")}</h4>
+          <p>{t("menu.legal.ip_text")}</p>
+          <p className="mt-2">{t("menu.legal.ip_owner")}</p>
         </section>
         <section>
-          <h4 className="font-display text-xs text-pk-amber mb-2">Responsabilité</h4>
-          <p>
-            PRONOKIF est un jeu de pronostics sans enjeu financier. L'éditeur décline toute
-            responsabilité quant à l'utilisation de l'appli.
-          </p>
+          <h4 className="font-display text-xs text-pk-amber mb-2">
+            {t("menu.legal.liability_title")}
+          </h4>
+          <p>{t("menu.legal.liability_text")}</p>
         </section>
         <section>
-          <h4 className="font-display text-xs text-pk-amber mb-2">Conditions d'utilisation</h4>
+          <h4 className="font-display text-xs text-pk-amber mb-2">{t("menu.legal.terms_title")}</h4>
           <ul className="list-disc list-inside space-y-1 text-pk-titane">
-            <li>L'application est gratuite et le restera</li>
-            <li>L'inscription implique l'acceptation des règles</li>
-            <li>Tout comportement inapproprié peut entraîner une exclusion</li>
-            <li>L'administrateur se réserve le droit de modifier les règles</li>
+            {termsItems.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
           </ul>
         </section>
       </div>
@@ -192,20 +175,25 @@ export function LegalContent() {
 
 // Contact Content
 export function ContactContent() {
+  const { t } = useTranslation();
   const handleEmailClick = () => {
     window.location.href = "mailto:pronokif@gmail.com?subject=Contact PRONOKIF";
   };
 
   return (
     <div className="space-y-4">
-      <SectionHeader icon={Mail} title="Contact" subtitle="Écris-nous" color="bg-pk-red" />
+      <SectionHeader
+        icon={Mail}
+        title={t("menu.contact.title")}
+        subtitle={t("menu.contact.subtitle")}
+        color="bg-pk-red"
+      />
       <div className="space-y-4">
-        <p className="text-sm text-pk-piste/80 leading-relaxed">
-          Une question, une suggestion ou un bug à signaler ? N'hésite pas à contacter
-          l'administrateur de PRONOKIF.
-        </p>
+        <p className="text-sm text-pk-piste/80 leading-relaxed">{t("menu.contact.intro")}</p>
         <div className="bg-white/[0.04] rounded-lg p-4 border border-pk-red/20">
-          <p className="font-data text-[0.5625rem] text-pk-titane mb-2">Adresse email</p>
+          <p className="font-data text-[0.5625rem] text-pk-titane mb-2">
+            {t("menu.contact.email_label")}
+          </p>
           <p className="font-data text-lg text-pk-red">pronokif@gmail.com</p>
         </div>
         <button
@@ -213,12 +201,13 @@ export function ContactContent() {
           className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm shadow-glow-red active:scale-[0.97] transition-transform flex items-center justify-center gap-2"
           data-testid="contact-email-btn"
         >
-          <Mail className="w-5 h-5" /> Envoyer un email <ExternalLink className="w-4 h-4" />
+          <Mail className="w-5 h-5" /> {t("menu.contact.send_email")}{" "}
+          <ExternalLink className="w-4 h-4" />
         </button>
         <div className="bg-white/[0.04] rounded-lg p-3 border border-white/[0.08]">
           <p className="text-xs text-pk-titane">
-            Tu peux aussi utiliser le bouton <span className="text-pk-info">?</span> en haut à
-            droite de l'écran pour envoyer un retour rapide directement depuis l'appli.
+            {t("menu.contact.quick_feedback_prefix")} <span className="text-pk-info">?</span>{" "}
+            {t("menu.contact.quick_feedback_suffix")}
           </p>
         </div>
       </div>

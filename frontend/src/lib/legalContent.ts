@@ -41,8 +41,42 @@ export const FALLBACK_LEGAL_PAGES: Record<string, LegalPageContent> = {
   },
 };
 
-export function fallbackLegalPage(slug: string): LegalPageContent {
-  return FALLBACK_LEGAL_PAGES[slug] || FALLBACK_LEGAL_PAGES["mentions-legales"];
+export const FALLBACK_LEGAL_PAGES_EN: Record<string, LegalPageContent> = {
+  "mentions-legales": {
+    slug: "mentions-legales",
+    title: "Legal notice",
+    summary: "Publisher identification, hosting, intellectual property, and contact.",
+    version: "2026.05",
+    content:
+      "Publisher\nPronoKif is an independent prediction app around Formula 1, published by the PronoKif team. Complete publisher administrative information must be finalized before public launch.\n\nContact\nFor any service-related request, you can write to contact@pronokif.eu.\n\nHosting\nThe service is hosted by the technical infrastructure configured for PronoKif. Full hosting provider details must be specified before publication.\n\nIntellectual property\nPronoKif trademarks, logos, interfaces, text, visuals, and software elements are protected. Unauthorized reproduction is prohibited.\n\nIndependence\nPronoKif is not affiliated with, sponsored by, or approved by Formula 1, the FIA, teams, or official Formula 1 rights holders.",
+  },
+  cgu: {
+    slug: "cgu",
+    title: "Terms of use",
+    summary: "Access, usage, prediction, league, and moderation rules.",
+    version: "2026.05",
+    content:
+      "Purpose\nThese terms govern access to and use of PronoKif, an F1 prediction service for friends, private leagues, and playful rankings.\n\nUser account\nUsers agree to provide accurate information, keep access confidential, and avoid creating accounts to bypass game rules.\n\nPredictions and rankings\nPredictions must be entered before the deadlines shown in the app. Scores, mini-games, and rankings may be recalculated in case of data, calendar, or official result errors.\n\nBehavior\nLeague exchanges must remain respectful. PronoKif may moderate, suspend, or delete content or accounts in case of abuse, fraud, or behavior against the spirit of the game.\n\nAvailability\nThe service is provided as is. Interruptions may occur for maintenance, deployment, correction, or technical incidents.\n\nChanges to terms\nThese terms may be updated. The applicable version is the one published in the app at the time of use.",
+  },
+  confidentialite: {
+    slug: "confidentialite",
+    title: "Privacy policy",
+    summary: "Collected data, purposes, security, cookies, and user rights.",
+    version: "2026.05",
+    content:
+      "Collected data\nPronoKif may process account information, predictions, leagues, messages, game statistics, preferences, and technical data required for the service to work.\n\nPurposes\nThis data is used to create accounts, display rankings, calculate scores, secure access, send useful notifications, and improve the experience.\n\nSecurity\nSessions use httpOnly cookies and administrator access is protected by magic link and, where applicable, two-factor authentication.\n\nRetention\nData is kept for as long as necessary for service operation, security, and possible legal obligations.\n\nRights\nYou can request access, correction, or deletion of your data by contacting contact@pronokif.eu.\n\nCookies and PWA\nThe app may use session cookies, local storage, and a service worker to maintain the session, remember certain choices, and provide a PWA experience.",
+  },
+};
+
+export const LEGAL_PAGE_LABELS: Record<string, Record<string, string>> = {
+  "mentions-legales": { fr: "Mentions légales", en: "Legal notice" },
+  cgu: { fr: "CGU", en: "Terms" },
+  confidentialite: { fr: "Confidentialité", en: "Privacy" },
+};
+
+export function fallbackLegalPage(slug: string, locale = "fr"): LegalPageContent {
+  const pages = locale === "en" ? FALLBACK_LEGAL_PAGES_EN : FALLBACK_LEGAL_PAGES;
+  return pages[slug] || pages["mentions-legales"];
 }
 
 export function legalContentBlocks(content: string): Array<{ title: string; body: string }> {

@@ -24,6 +24,7 @@ import struct
 import time
 import uuid
 from datetime import UTC, datetime, timedelta
+from urllib.parse import urlsplit, urlunsplit
 
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -57,14 +58,46 @@ def _frontend_url() -> str:
     return os.environ.get("FRONTEND_URL", "https://pronokif.eu").rstrip("/")
 
 
-def _admin_frontend_url() -> str:
+def _is_dev_environment() -> bool:
+    return os.environ.get("ENVIRONMENT", "development").lower() in {"development", "dev", "local"}
+
+
+def _loopback_origin(value: str | None) -> str | None:
+    if not value:
+        return None
+    try:
+        parsed = urlsplit(value)
+    except ValueError:
+        return None
+    if parsed.scheme not in {"http", "https"}:
+        return None
+    if parsed.hostname not in {"localhost", "127.0.0.1"}:
+        return None
+    netloc = parsed.hostname
+    if parsed.port:
+        netloc = f"{parsed.hostname}:{parsed.port}"
+    return urlunsplit((parsed.scheme, netloc, "", "", "")).rstrip("/")
+
+
+def _admin_frontend_url(request: Request | None = None) -> str:
     """Return the public admin base URL without a trailing slash."""
-    return os.environ.get("ADMIN_FRONTEND_URL", f"{_frontend_url()}/admin").rstrip("/")
+    configured = os.environ.get("ADMIN_FRONTEND_URL")
+    if configured:
+        return configured.rstrip("/")
+
+    if request and _is_dev_environment():
+        origin = _loopback_origin(request.headers.get("origin"))
+        referer = _loopback_origin(request.headers.get("referer"))
+        local_origin = origin or referer
+        if local_origin:
+            return f"{local_origin}/admin"
+
+    return f"{_frontend_url()}/admin".rstrip("/")
 
 
-def _build_admin_magic_url(token: str) -> str:
+def _build_admin_magic_url(token: str, request: Request | None = None) -> str:
     """Build the frontend URL that consumes an admin magic link token."""
-    return f"{_admin_frontend_url()}?token={token}"
+    return f"{_admin_frontend_url(request)}?token={token}"
 
 
 # ── JWT helpers ──────────────────────────────────────────────────────────────
@@ -278,7 +311,7 @@ async def _send_invitation_email(
 
 
 @router.post("/auth/magic-link")
-async def send_magic_link(data: MagicLinkRequest) -> dict:
+async def send_magic_link(data: MagicLinkRequest, request: Request) -> dict:
     """Send a magic link to the admin email."""
     email = data.email.strip().lower()
     if email not in ADMIN_EMAILS:
@@ -294,7 +327,7 @@ async def send_magic_link(data: MagicLinkRequest) -> dict:
         "expires_at": datetime.now(UTC) + timedelta(minutes=MAGIC_LINK_EXPIRY_MINUTES),
     })
 
-    magic_url = _build_admin_magic_url(token)
+    magic_url = _build_admin_magic_url(token, request)
 
     # Admin back-office is French-only — always send admin emails in French
     if not await _send_magic_link_email(email, magic_url, lang="fr"):

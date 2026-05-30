@@ -3,8 +3,9 @@
  * Auth via httpOnly cookie (set by backend on login).
  */
 import axios from "axios";
+import { resolveBackendUrl } from "@/lib/api";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const BACKEND_URL = resolveBackendUrl();
 
 const api = axios.create({
   baseURL: `${BACKEND_URL}/api/admin-bo`,
@@ -53,6 +54,17 @@ export const adminApi = {
     stats: (id: string) => api.get(`/users/${id}/stats`).then((r) => r.data),
     activity: (id: string, params?: { skip?: number; limit?: number }) =>
       api.get(`/users/${id}/activity`, { params }).then((r) => r.data),
+    resendMagicLink: (id: string) => api.post(`/users/${id}/magic-link`, {}).then((r) => r.data),
+    inviteToLeague: (
+      id: string,
+      data: {
+        league_id: string;
+        message?: string;
+        send_email?: boolean;
+        send_notification?: boolean;
+        add_member?: boolean;
+      },
+    ) => api.post(`/users/${id}/league-invitation`, data).then((r) => r.data),
     update: (id: string, data: Record<string, unknown>) =>
       api.put(`/users/${id}`, data).then((r) => r.data),
     delete: (id: string) => api.delete(`/users/${id}`).then((r) => r.data),
@@ -126,10 +138,19 @@ export const adminApi = {
 
   // Circuit maps
   circuitMaps: {
-    list: (params?: { q?: string; review_status?: string; skip?: number; limit?: number }) =>
-      api.get("/circuit-maps", { params }).then((r) => r.data),
+    list: (params?: {
+      q?: string;
+      review_status?: string;
+      priority?: string;
+      owner?: string;
+      source?: string;
+      skip?: number;
+      limit?: number;
+    }) => api.get("/circuit-maps", { params }).then((r) => r.data),
     update: (key: string, data: Record<string, unknown>) =>
       api.put(`/circuit-maps/${encodeURIComponent(key)}`, data).then((r) => r.data),
+    reset: (key: string) =>
+      api.delete(`/circuit-maps/${encodeURIComponent(key)}`).then((r) => r.data),
   },
 
   // Legal / PWA publishing
@@ -138,6 +159,28 @@ export const adminApi = {
     list: (params?: { locale?: string }) => api.get("/legal-pages", { params }).then((r) => r.data),
     update: (slug: string, data: Record<string, unknown>) =>
       api.put(`/legal-pages/${encodeURIComponent(slug)}`, data).then((r) => r.data),
+  },
+
+  // Translation registry
+  translations: {
+    registry: (params?: {
+      source?: string;
+      q?: string;
+      locale?: "fr" | "en";
+      missing_only?: boolean;
+      limit?: number;
+    }) => api.get("/translations/registry", { params }).then((r) => r.data),
+    update: (
+      source: string,
+      documentId: string,
+      data: { field: string; locale: "fr" | "en"; value: string },
+    ) =>
+      api
+        .put(
+          `/translations/registry/${encodeURIComponent(source)}/${encodeURIComponent(documentId)}`,
+          data,
+        )
+        .then((r) => r.data),
   },
 
   // Races
@@ -289,6 +332,7 @@ export const adminApi = {
       read_status?: string;
       status?: string;
       priority?: string;
+      owner?: string;
     }) => api.get("/feedbacks", { params }).then((r) => r.data),
     analytics: (params?: {
       q?: string;
@@ -296,6 +340,7 @@ export const adminApi = {
       read_status?: string;
       status?: string;
       priority?: string;
+      owner?: string;
     }) => api.get("/feedbacks/analytics", { params }).then((r) => r.data),
     exportCsv: (params?: {
       q?: string;
@@ -303,17 +348,21 @@ export const adminApi = {
       read_status?: string;
       status?: string;
       priority?: string;
+      owner?: string;
       export_limit?: number;
     }) => api.get("/feedbacks/export", { params, responseType: "blob" }).then((r) => r.data),
     update: (id: string, data: Record<string, unknown>) =>
       api.put(`/feedbacks/${id}`, data).then((r) => r.data),
+    reply: (id: string, data: { reply: string; status?: string; mark_read?: boolean }) =>
+      api.post(`/feedbacks/${id}/reply`, data).then((r) => r.data),
     markRead: (id: string) => api.put(`/feedbacks/${id}/read`, {}).then((r) => r.data),
     markUnread: (id: string) => api.put(`/feedbacks/${id}/unread`, {}).then((r) => r.data),
     batch: (data: {
       ids: string[];
-      action: "mark_read" | "mark_unread" | "delete" | "set_status" | "set_priority";
+      action: "mark_read" | "mark_unread" | "delete" | "set_status" | "set_priority" | "assign";
       status?: string;
       priority?: string;
+      assigned_to?: string;
     }) => api.post("/feedbacks/batch", data).then((r) => r.data),
     delete: (id: string) => api.delete(`/feedbacks/${id}`).then((r) => r.data),
   },

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { api, getApiError } from "@/lib/api";
 import { haptic } from "@/lib/haptics";
+import { UserIdentity } from "@/components/users/UserIdentity";
 
 /* ── Types ─────────────────────────────────────────────── */
 
@@ -29,6 +30,8 @@ interface SettingsLeague {
 interface SettingsMember {
   id: string;
   username?: string;
+  avatar_id?: string | null;
+  custom_avatar_url?: string | null;
   level?: number;
 }
 
@@ -214,15 +217,20 @@ export default function LeagueSettings({
                             : "bg-white/[0.02] border-white/[0.08] hover:border-white/[0.14]"
                         }`}
                       >
-                        <div className="w-9 h-9 rounded-full bg-pk-anthracite flex items-center justify-center font-display text-sm">
-                          {(member.username ?? "?").charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-display text-sm">{member.username ?? "Sans pseudo"}</p>
-                          <p className="font-data text-[0.5625rem] text-pk-titane">
-                            Niveau {member.level ?? 1}
-                          </p>
-                        </div>
+                        <UserIdentity
+                          user={{
+                            id: member.id,
+                            username: member.username ?? "Sans pseudo",
+                            avatar_id: member.avatar_id,
+                            custom_avatar_url: member.custom_avatar_url,
+                            level: member.level,
+                          }}
+                          linked={false}
+                          size="md"
+                          showLevel
+                          className="min-w-0 flex-1"
+                          textClassName="font-display text-sm"
+                        />
                         {selectedNewOwner === member.id && (
                           <Check className="w-4 h-4 text-pk-info" />
                         )}

@@ -1,13 +1,13 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft, Crown, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { AvatarDisplay } from "../components/AvatarDisplay";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { haptic } from "@/lib/haptics";
 import { fadeUp, staggerContainer, easing, duration, getReducedMotionProps } from "@/lib/motion";
+import { UserIdentity } from "@/components/users/UserIdentity";
 
 /* ── Types ─────────────────────────────────────────────── */
 
@@ -15,6 +15,7 @@ interface LeaderboardEntry {
   user_id: string;
   username: string;
   avatar_id?: string;
+  custom_avatar_url?: string | null;
   total_points: number;
   position: number;
   level: number;
@@ -137,24 +138,10 @@ export default function GlobalLeaderboardPage() {
     queryFn: () => api.leaderboard.global(100),
   });
 
-  const { data: avatars, isLoading: avatarsLoading } = useQuery({
-    queryKey: ["/avatars"],
-    queryFn: () => api.avatars.list(),
-    staleTime: 5 * 60_000,
-  });
-
-  const loading = lbLoading || avatarsLoading;
+  const loading = lbLoading;
   const leaderboard = (lbData?.leaderboard || []) as unknown as LeaderboardEntry[];
   const myPosition: number | null = lbData?.my_position || null;
   const totalPlayers: number = lbData?.total_players || 0;
-
-  const getAvatarById = useCallback(
-    (avatarId: string | null | undefined) => {
-      if (!avatarId) return null;
-      return avatars?.all?.find((a: { id: string }) => a.id === avatarId) || null;
-    },
-    [avatars],
-  );
 
   if (loading) return <LeaderboardSkeleton />;
 
@@ -215,15 +202,7 @@ export default function GlobalLeaderboardPage() {
             variants={fadeUp}
             className="flex items-center gap-3 p-3.5 bg-pk-surface border border-white/[0.08] rounded-lg mb-4"
           >
-            <AvatarDisplay
-              avatar={getAvatarById(user.avatar_id)}
-              customUrl={user.custom_avatar_url}
-              size="md"
-            />
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-sm truncate">{user.username}</p>
-              <p className="font-data text-[0.5rem] text-pk-titane">Ta position</p>
-            </div>
+            <UserIdentity user={user} size="md" linked={false} className="flex-1" />
             <div className="text-right">
               <motion.p
                 className="font-data text-2xl font-bold text-pk-red"
@@ -272,8 +251,13 @@ export default function GlobalLeaderboardPage() {
                     </motion.div>
                   )}
 
-                  <AvatarDisplay avatar={getAvatarById(entry.avatar_id)} size={cfg.avatarSize} />
-                  <p className="font-bold text-xs mt-1.5 truncate max-w-[72px]">{entry.username}</p>
+                  <UserIdentity
+                    user={entry}
+                    size={cfg.avatarSize}
+                    linked={false}
+                    className="flex-col gap-1.5 text-center"
+                    data-testid={`global-podium-user-${entry.user_id}`}
+                  />
                   <p className={`font-data text-[0.5625rem] ${cfg.textColor}`}>
                     {entry.total_points} pts
                   </p>
@@ -313,21 +297,15 @@ export default function GlobalLeaderboardPage() {
                     {entry.position}
                   </span>
 
-                  {/* Avatar */}
-                  <AvatarDisplay avatar={getAvatarById(entry.avatar_id)} size="sm" />
-
-                  {/* Name */}
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className={`text-xs font-semibold truncate ${
-                        isMe ? "text-pk-red" : "text-pk-piste"
-                      }`}
-                    >
-                      {entry.username}
-                      {isMe && <span className="text-pk-titane font-normal ml-1">(toi)</span>}
-                    </p>
-                    <p className="font-data text-[0.5rem] text-pk-titane">Niv. {entry.level}</p>
-                  </div>
+                  <UserIdentity
+                    user={entry}
+                    size="sm"
+                    showLevel
+                    className="flex-1"
+                    textClassName={isMe ? "text-pk-red" : ""}
+                    data-testid={`global-leaderboard-user-${entry.user_id}`}
+                  />
+                  {isMe && <span className="text-pk-titane font-normal text-xs ml-1">(toi)</span>}
 
                   {/* Delta */}
                   <DeltaBadge delta={entry.delta} />

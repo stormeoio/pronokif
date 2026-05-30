@@ -52,6 +52,8 @@ def league_admin_payload(
                 "user_id": user_id,
                 "email": user.get("email"),
                 "username": user.get("username"),
+                "avatar_id": user.get("avatar_id"),
+                "custom_avatar_url": user.get("custom_avatar_url"),
                 "is_owner": user_id == league.get("created_by"),
                 "total_points": entry.get("total_points", 0),
                 "last_race_points": entry.get("last_race_points", 0),
@@ -75,6 +77,8 @@ def league_admin_payload(
         "members_count": len(members),
         "owner_email": owner.get("email"),
         "owner_username": owner.get("username"),
+        "owner_avatar_id": owner.get("avatar_id"),
+        "owner_custom_avatar_url": owner.get("custom_avatar_url"),
         "messages_count": messages_count,
         "leaderboard_entries_count": len(leaderboard_entries or []),
         "total_points": total_points,
@@ -137,7 +141,16 @@ async def enrich_league_docs(leagues: list[dict]) -> list[dict]:
     if user_ids:
         users = await db.users.find(
             {"id": {"$in": list(user_ids)}},
-            {"_id": 0, "id": 1, "email": 1, "username": 1, "level": 1, "xp": 1},
+            {
+                "_id": 0,
+                "id": 1,
+                "email": 1,
+                "username": 1,
+                "avatar_id": 1,
+                "custom_avatar_url": 1,
+                "level": 1,
+                "xp": 1,
+            },
         ).to_list(len(user_ids))
         users_by_id = {user["id"]: user for user in users}
 

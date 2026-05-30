@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { ArrowRight, ChevronDown, Loader2, Mail, Plus, Search } from "lucide-react";
+import { ArrowRight, ChevronDown, Loader2, Mail, Plus, Search, Trophy } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import type { User } from "@/lib/auth";
 import { iconProps } from "@/lib/icons";
@@ -11,6 +11,7 @@ import { BorderGlowButton } from "@/components/ui/border-glow-button";
 import { COUNTRIES, countryFlag } from "@/i18n/countries";
 import { getStoredLocale } from "@/i18n";
 import type { Locale } from "@/i18n";
+import { getPendingJoinCode, getPendingJoinPath } from "@/lib/pendingJoin";
 
 // ----------------------------------------------------------- component ---
 
@@ -22,6 +23,7 @@ export default function AuthPage() {
   const [magicSent, setMagicSent] = useState(false);
   const [verifyingMagic, setVerifyingMagic] = useState(false);
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+  const [pendingJoinCode] = useState(() => getPendingJoinCode());
   const consumedMagicTokenRef = useRef<string | null>(null);
   const { login, loginWithMagicLink, register, requestMagicLink } = useAuth();
   const navigate = useNavigate();
@@ -74,8 +76,12 @@ export default function AuthPage() {
 
   const navigateAfterAuth = useCallback(
     (user: User) => {
+      const pendingJoinPath = getPendingJoinPath();
+
       if (!user.username) {
         navigate("/set-username");
+      } else if (pendingJoinPath) {
+        navigate(pendingJoinPath);
       } else if (!user.current_league_id) {
         navigate("/league");
       } else {
@@ -86,10 +92,10 @@ export default function AuthPage() {
   );
 
   useEffect(() => {
-    if (inviteToken) {
+    if (inviteToken || pendingJoinCode) {
       setActiveTab("register");
     }
-  }, [inviteToken]);
+  }, [inviteToken, pendingJoinCode]);
 
   useEffect(() => {
     const token = searchParams.get("magic_token");
@@ -120,12 +126,14 @@ export default function AuthPage() {
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
+    const username = ((formData.get("username") as string | null) ?? "").trim();
 
     try {
       const user =
         type === "login"
           ? await login(email, password)
           : await register(email, password, {
+              username,
               locale: getStoredLocale() ?? locale,
               nationality: nationality || undefined,
               inviteToken,
@@ -239,6 +247,25 @@ export default function AuthPage() {
             >
               <Loader2 {...iconProps} size={14} className="animate-spin" />
               {t("auth.magic_link.verifying")}
+            </div>
+          )}
+
+          {pendingJoinCode && (
+            <div
+              className="mb-5 flex items-center gap-3 rounded-md border border-pk-amber/25 bg-pk-amber/[0.08] px-3 py-2.5"
+              data-testid="auth-pending-invite"
+            >
+              <div className="w-8 h-8 rounded-md bg-pk-amber/[0.12] flex items-center justify-center flex-shrink-0">
+                <Trophy {...iconProps} size={15} className="text-pk-amber" />
+              </div>
+              <div className="min-w-0">
+                <p className="font-data text-[0.5625rem] uppercase tracking-[0.12em] text-pk-amber">
+                  {t("auth.invite.label")}
+                </p>
+                <p className="text-[0.75rem] leading-snug text-pk-piste">
+                  {t("auth.invite.description", { code: pendingJoinCode })}
+                </p>
+              </div>
             </div>
           )}
 
@@ -359,7 +386,13 @@ export default function AuthPage() {
                   name="username"
                   type="text"
                   placeholder={t("auth.register.username_placeholder")}
+                  required
+                  minLength={3}
+                  maxLength={20}
+                  pattern="[A-Za-z0-9_]+"
+                  autoComplete="username"
                   className="input-pk w-full"
+                  data-testid="register-username"
                 />
               </div>
               <div className="mb-3.5">

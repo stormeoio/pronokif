@@ -28,7 +28,6 @@ import { api, getApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { haptic } from "@/lib/haptics";
 import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
-import type { LeagueMember as LeagueMemberType } from "@/types/api";
 
 /* ── Skeleton ─────────────────────────────────────────── */
 
@@ -165,11 +164,6 @@ export default function LeagueDetailPage() {
     } finally {
       setSaving(false);
     }
-  };
-
-  const getAvatar = (member: LeagueMemberType): string | null => {
-    if (member.custom_avatar_url) return member.custom_avatar_url;
-    return null;
   };
 
   if (loading) return <LeagueDetailSkeleton />;
@@ -393,7 +387,6 @@ export default function LeagueDetailPage() {
                 leaderboard={leaderboard}
                 members={members}
                 userId={user?.id ?? ""}
-                getAvatar={getAvatar}
               />
             </motion.div>
           ) : (
@@ -409,7 +402,6 @@ export default function LeagueDetailPage() {
                 leaderboard={leaderboard}
                 userId={user?.id ?? ""}
                 ownerId={league.owner_id ?? ""}
-                getAvatar={getAvatar}
               />
             </motion.div>
           )}

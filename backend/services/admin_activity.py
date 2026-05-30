@@ -58,6 +58,8 @@ def activity_log_query(
             {"entity_type": {"$regex": q, "$options": "i"}},
             {"entity_id": {"$regex": q, "$options": "i"}},
             {"metadata.user_id": {"$regex": q, "$options": "i"}},
+            {"metadata.username": {"$regex": q, "$options": "i"}},
+            {"metadata.email": {"$regex": q, "$options": "i"}},
             {"metadata.race_id": {"$regex": q, "$options": "i"}},
         ]
     return query

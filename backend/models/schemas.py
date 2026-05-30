@@ -13,6 +13,7 @@ from pydantic import BaseModel, EmailStr
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
+    username: str | None = None
     locale: str = "fr"
     nationality: str | None = None
     invite_token: str | None = None
@@ -95,6 +96,8 @@ class ChatMessage(BaseModel):
 class LeaderboardEntry(BaseModel):
     user_id: str
     username: str
+    avatar_id: str | None = None
+    custom_avatar_url: str | None = None
     total_points: int
     last_race_points: int
     position: int

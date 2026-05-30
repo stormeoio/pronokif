@@ -43,7 +43,47 @@ import type {
 
 // ═══════════════════════════════════════ CONFIG ═══════════════════════════════
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const RAW_BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+function stripTrailingSlash(value: string): string {
+  return value.replace(/\/+$/, "");
+}
+
+function isLoopbackHost(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "127.0.0.1";
+}
+
+/**
+ * In local runs, keep frontend and backend on the same loopback hostname.
+ * httpOnly cookies are host-scoped, so mixing 127.0.0.1 and localhost breaks
+ * the post-auth flow even when CORS is valid.
+ */
+export function resolveBackendUrl(
+  rawBackendUrl = RAW_BACKEND_URL,
+  appHostname = typeof window !== "undefined" ? window.location.hostname : "",
+): string {
+  const fallback = stripTrailingSlash(rawBackendUrl || "");
+
+  try {
+    const backendUrl = new URL(rawBackendUrl);
+
+    if (
+      isLoopbackHost(appHostname) &&
+      isLoopbackHost(backendUrl.hostname) &&
+      backendUrl.hostname !== appHostname
+    ) {
+      backendUrl.hostname = appHostname;
+    }
+
+    backendUrl.search = "";
+    backendUrl.hash = "";
+    return stripTrailingSlash(backendUrl.toString());
+  } catch {
+    return fallback;
+  }
+}
+
+const BACKEND_URL = resolveBackendUrl();
 
 /** Absolute base for REST calls, e.g. "http://localhost:8000/api". */
 export const API = `${BACKEND_URL}/api`;
@@ -177,7 +217,7 @@ export const api = {
   // ── Auth ─────────────────────────────────────────────────────
   auth: {
     login: (body: { email: string; password: string }) => post<TokenResponse>("/auth/login", body),
-    register: (body: { email: string; password: string; username: string }) =>
+    register: (body: { email: string; password: string; username?: string }) =>
       post<TokenResponse>("/auth/register", body),
     me: () => get<User>("/auth/me"),
     setUsername: (body: { username: string }) => post<User>("/auth/username", body),

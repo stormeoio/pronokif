@@ -51,6 +51,7 @@ from routes.admin_predictions import router as admin_predictions_router
 from routes.admin_races import router as admin_races_router
 from routes.admin_settings import router as admin_settings_router
 from routes.admin_sync import router as admin_sync_router
+from routes.admin_translations import router as admin_translations_router
 from routes.admin_users import router as admin_users_router
 from routes.auth import router as auth_router
 from routes.avatars import router as avatars_router
@@ -133,6 +134,7 @@ for _router in (
     admin_races_router,
     admin_settings_router,
     admin_sync_router,
+    admin_translations_router,
     admin_users_router,
     auth_router,
     avatars_router,

@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ChevronLeft, Check, AlertTriangle, Zap, Flag, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import PredictionTimer from "./PredictionTimer";
 import PredictionForm from "./PredictionForm";
 import { DeleteConfirmModal } from "./DeleteConfirmModal";
@@ -16,6 +17,7 @@ import { BorderGlowButton } from "@/components/ui/border-glow-button";
 export default function PredictionsPage() {
   const { raceId } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // ---- Data fetching ----
   const {
@@ -83,10 +85,10 @@ export default function PredictionsPage() {
       <div className="min-h-dvh bg-pk-carbon p-4 pt-16 max-w-[430px] mx-auto">
         <div className="bg-pk-surface border border-white/[0.08] rounded-md p-6 text-center">
           <AlertTriangle size={32} strokeWidth={1.5} className="text-pk-red mx-auto mb-3" />
-          <p className="text-pk-piste text-[0.875rem]">Course introuvable</p>
+          <p className="text-pk-piste text-[0.875rem]">{t("predictions.race_not_found")}</p>
           <button onClick={() => navigate(-1)} className="btn-pk-outline text-[0.75rem] mt-4 px-4">
             <ChevronLeft size={14} strokeWidth={2} />
-            Retour
+            {t("predictions.back")}
           </button>
         </div>
       </div>
@@ -106,7 +108,9 @@ export default function PredictionsPage() {
         show={form.showCelebration}
         onDone={form.dismissCelebration}
         xpEarned={form.celebrationXp}
-        message={form.activeTab === "sprint" ? "Sprint enregistré !" : "Pronostics enregistrés !"}
+        message={
+          form.activeTab === "sprint" ? t("predictions.saved_sprint") : t("predictions.saved_main")
+        }
       />
 
       {/* Delete modal */}
@@ -143,7 +147,7 @@ export default function PredictionsPage() {
             {race.name.replace(" Grand Prix", "")}
           </h1>
           <p className="font-mono text-[0.5625rem] text-pk-titane uppercase tracking-[0.1em]">
-            Pronostic course
+            {t("predictions.header_subtitle")}
           </p>
         </div>
         {form.existingPrediction && (canPredictMain || canPredictSprint) && (
@@ -154,7 +158,7 @@ export default function PredictionsPage() {
               text-pk-red hover:bg-pk-red-subtle
               transition-colors duration-pk-short"
             data-testid="delete-predictions-btn"
-            title="Supprimer mes pronostics"
+            title={t("predictions.delete_title")}
           >
             <Trash2 size={16} strokeWidth={1.5} />
           </button>
@@ -186,9 +190,13 @@ export default function PredictionsPage() {
               data-testid="tab-sprint"
             >
               <Zap size={16} strokeWidth={1.5} className="mx-auto mb-0.5" />
-              <span className="font-display text-[0.75rem] uppercase">Sprint</span>
+              <span className="font-display text-[0.75rem] uppercase">
+                {t("predictions.sprint")}
+              </span>
               {!canPredictSprint && (
-                <span className="block font-mono text-[0.5rem] text-pk-red mt-0.5">Fermé</span>
+                <span className="block font-mono text-[0.5rem] text-pk-red mt-0.5">
+                  {t("predictions.closed_short")}
+                </span>
               )}
               {form.isSprintCompletee && canPredictSprint && (
                 <Check size={12} strokeWidth={2} className="text-pk-emerald mx-auto mt-0.5" />
@@ -212,9 +220,11 @@ export default function PredictionsPage() {
               data-testid="tab-main"
             >
               <Flag size={16} strokeWidth={1.5} className="mx-auto mb-0.5" />
-              <span className="font-display text-[0.75rem] uppercase">Course</span>
+              <span className="font-display text-[0.75rem] uppercase">{t("predictions.race")}</span>
               {!canPredictMain && (
-                <span className="block font-mono text-[0.5rem] text-pk-red mt-0.5">Fermé</span>
+                <span className="block font-mono text-[0.5rem] text-pk-red mt-0.5">
+                  {t("predictions.closed_short")}
+                </span>
               )}
               {form.isMainCompletee && canPredictMain && (
                 <Check size={12} strokeWidth={2} className="text-pk-emerald mx-auto mt-0.5" />
@@ -278,11 +288,11 @@ export default function PredictionsPage() {
           <p className="font-mono text-[0.625rem] text-pk-titane uppercase tracking-[0.1em]">
             {form.activeTab === "sprint"
               ? form.isSprintCompletee
-                ? "Sprint prêt"
-                : "Sprint incomplet"
+                ? t("predictions.status.sprint_ready")
+                : t("predictions.status.sprint_incomplete")
               : form.isMainCompletee
-                ? "Course prête"
-                : "Course incomplète"}
+                ? t("predictions.status.race_ready")
+                : t("predictions.status.race_incomplete")}
           </p>
           <div className="w-full h-[3px] bg-white/[0.04] rounded-sm mt-1 overflow-hidden">
             <div
@@ -316,16 +326,16 @@ export default function PredictionsPage() {
           data-testid="save-predictions-btn"
         >
           {form.saving ? (
-            "Enregistrement..."
+            t("predictions.saving")
           ) : (form.activeTab === "sprint" ? !canPredictSprint : !canPredictMain) ? (
-            "Pronostics fermés"
+            t("predictions.closed")
           ) : (form.activeTab === "sprint" ? form.isSprintCompletee : form.isMainCompletee) ? (
             <>
               <Check size={14} strokeWidth={2} />
-              Enregistrer
+              {t("predictions.save")}
             </>
           ) : (
-            "Incomplet"
+            t("predictions.incomplete")
           )}
         </BorderGlowButton>
       </div>

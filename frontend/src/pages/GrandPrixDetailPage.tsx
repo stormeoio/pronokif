@@ -3,7 +3,7 @@
  * Broadcast Premium theme.
  */
 import { useState, useMemo, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
@@ -215,6 +215,7 @@ function GrandPrixSkeleton() {
 export default function GrandPrixDetailPage() {
   const { raceId } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
 
@@ -261,6 +262,14 @@ export default function GrandPrixDetailPage() {
     if (!raceDetails) return null;
     return (raceDetails.circuit_map as CircuitMapData | null | undefined) ?? null;
   }, [raceDetails]);
+
+  const selectedHotspotId = searchParams.get("hotspot");
+
+  const selectCircuitHotspot = (hotspotId: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("hotspot", hotspotId);
+    setSearchParams(next, { replace: true });
+  };
 
   const sessions = useMemo(() => {
     if (!raceDetails) return [];
@@ -421,6 +430,8 @@ export default function GrandPrixDetailPage() {
                   circuitFullName={circuitFullName}
                   country={raceDetails.country as string}
                   mapData={circuitMapData}
+                  selectedHotspotId={selectedHotspotId}
+                  onHotspotSelect={selectCircuitHotspot}
                 />
               </motion.div>
 

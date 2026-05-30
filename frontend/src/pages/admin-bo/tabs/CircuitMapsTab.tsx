@@ -1,9 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import {
   AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
   CheckCircle2,
+  Copy,
   Gauge,
+  History,
   Layers,
   Loader2,
   MapPinned,
@@ -13,15 +18,34 @@ import {
   Save,
   Search,
   ShieldCheck,
+  Trash2,
   UserCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { adminApi } from "../adminApi";
+import {
+  CIRCUIT_MAP_PARAM,
+  CIRCUIT_OWNER_PARAM,
+  CIRCUIT_PRIORITY_PARAM,
+  CIRCUIT_Q_PARAM,
+  CIRCUIT_REVIEW_PARAM,
+  CIRCUIT_SOURCE_PARAM,
+  buildCircuitMapSearchParams,
+  decodeOwnerFilter,
+  decodePriorityFilter,
+  decodeReviewFilter,
+  decodeSourceFilter,
+} from "./circuitMapUrlState";
 import { CircuitMap } from "@/components/CircuitMap";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { CircuitMapData, CircuitMapFeature, CircuitMapZone } from "@/lib/circuitMaps";
+import type {
+  CircuitFirstCorner,
+  CircuitMapData,
+  CircuitMapFeature,
+  CircuitMapZone,
+} from "@/lib/circuitMaps";
 
 type CircuitMapRecord = {
   key: string;
@@ -37,11 +61,19 @@ type CircuitMapRecord = {
   quality_report?: {
     is_interactive: boolean;
     has_fallback_image: boolean;
+    has_first_corner?: boolean;
+    first_corner_hotspot_id?: string;
     features_count: number;
     zones_count: number;
     missing_translations: number;
+    path_errors?: number;
     warnings: string[];
     ready_for_public: boolean;
+  };
+  review_priority?: {
+    level: "blocked" | "review" | "done";
+    label: string;
+    reason: string;
   };
   updated_at?: string;
   updated_by?: string;
@@ -56,6 +88,16 @@ type CircuitMapsResponse = {
     admin_overrides: number;
     approved: number;
     needs_review: number;
+    ready_for_public?: number;
+    first_corner_ready?: number;
+    missing_first_corner?: number;
+    blocked?: number;
+    in_review?: number;
+    owned_by_me?: number;
+    unassigned?: number;
+    coverage_percent?: number;
+    total_features?: number;
+    total_zones?: number;
   };
 };
 
@@ -65,6 +107,7 @@ type CircuitMapDraft = {
   racingLinePath: string;
   fallbackImageUrl: string;
   aliases: string;
+  firstCornerHotspotId: string;
   featuresJson: string;
   zonesJson: string;
   dataStatus: string;
@@ -77,6 +120,14 @@ type CircuitMapsTabProps = {
   currentAdminEmail?: string;
 };
 
+type ActivityLog = {
+  id: string;
+  actor_email?: string;
+  action?: string;
+  metadata?: Record<string, unknown>;
+  created_at?: string;
+};
+
 const REVIEW_FILTERS = [
   { value: "all", label: "Tous" },
   { value: "", label: "Non revus" },
@@ -85,6 +136,41 @@ const REVIEW_FILTERS = [
   { value: "needs_source", label: "Source à vérifier" },
   { value: "approved", label: "Validés" },
 ] as const;
+
+const PRIORITY_FILTERS = [
+  { value: "all", label: "Toutes priorités" },
+  { value: "blocked", label: "Bloquées" },
+  { value: "review", label: "À relire" },
+  { value: "done", label: "Publiées" },
+] as const;
+
+const OWNER_FILTERS = [
+  { value: "all", label: "Tous admins" },
+  { value: "mine", label: "Mes cartes" },
+  { value: "unassigned", label: "Sans propriétaire" },
+  { value: "assigned", label: "Assignées" },
+] as const;
+
+const SOURCE_FILTERS = [
+  { value: "all", label: "Toutes sources" },
+  { value: "seed", label: "Seed" },
+  { value: "admin", label: "Overrides admin" },
+] as const;
+
+const SVG_PATH_ARITY: Record<string, number> = {
+  M: 2,
+  L: 2,
+  H: 1,
+  V: 1,
+  C: 6,
+  S: 4,
+  Q: 4,
+  T: 2,
+  A: 7,
+  Z: 0,
+};
+
+const SVG_PATH_TOKEN_RE = /[a-zA-Z]|[-+]?(?:\d*\.\d+|\d+)(?:[eE][-+]?\d+)?/g;
 
 function formatJson(value: unknown) {
   return JSON.stringify(value ?? [], null, 2);
@@ -97,6 +183,7 @@ function initialDraft(item: CircuitMapRecord, currentAdminEmail = ""): CircuitMa
     racingLinePath: item.map_data?.racingLinePath || "",
     fallbackImageUrl: item.map_data?.fallbackImageUrl || "",
     aliases: (item.map_data?.aliases || [item.circuit_name]).join("\n"),
+    firstCornerHotspotId: item.map_data?.firstCorner?.hotspotId || "",
     featuresJson: formatJson(item.map_data?.features),
     zonesJson: formatJson(item.map_data?.zones),
     dataStatus: item.data_status || "seeded",
@@ -129,6 +216,55 @@ function statusClass(status?: string) {
   return "border-white/10 bg-white/[0.04] text-pk-titane";
 }
 
+function priorityClass(level?: string) {
+  if (level === "done") return "border-emerald-400/25 bg-emerald-500/10 text-emerald-300";
+  if (level === "blocked") return "border-red-400/25 bg-red-500/10 text-red-200";
+  return "border-amber-400/25 bg-amber-500/10 text-amber-300";
+}
+
+function svgPathErrors(value: unknown, label: string) {
+  const path = String(value || "").trim();
+  if (!path) return [`${label} est requis`];
+
+  const tokens = path.replaceAll(",", " ").match(SVG_PATH_TOKEN_RE) || [];
+  if (tokens.length === 0) return [`${label} doit contenir un path SVG`];
+
+  let index = 0;
+  let currentCommand = "";
+  while (index < tokens.length) {
+    const token = tokens[index];
+    if (/^[a-zA-Z]$/.test(token)) {
+      const command = token.toUpperCase();
+      if (!(command in SVG_PATH_ARITY)) {
+        return [`${label} contient une commande SVG invalide: ${token}`];
+      }
+      currentCommand = command;
+      index += 1;
+      if (command === "Z") continue;
+    } else if (!currentCommand) {
+      return [`${label} doit commencer par une commande SVG`];
+    }
+
+    const expected = SVG_PATH_ARITY[currentCommand];
+    if (expected === 0) {
+      return [`${label} contient des coordonnées après la commande ${currentCommand}`];
+    }
+    if (index + expected > tokens.length) {
+      return [`${label} est incomplet pour la commande ${currentCommand}`];
+    }
+    const segment = tokens.slice(index, index + expected);
+    if (segment.some((part) => /^[a-zA-Z]$/.test(part))) {
+      return [`${label} est incomplet pour la commande ${currentCommand}`];
+    }
+    if (segment.some((part) => !Number.isFinite(Number(part)))) {
+      return [`${label} contient une coordonnée invalide`];
+    }
+    index += expected;
+  }
+
+  return [];
+}
+
 function nextMapItemId<T extends { id: string }>(items: T[], prefix: string) {
   const used = new Set(items.map((item) => item.id));
   let index = items.length + 1;
@@ -146,6 +282,20 @@ function translationMissing(value: unknown) {
   return !localized.fr?.trim() || !localized.en?.trim();
 }
 
+const FIRST_CORNER_NOTE = {
+  fr: "Repère canonique utilisé pour les statistiques pilotes au premier virage.",
+  en: "Canonical reference used for driver first-corner statistics.",
+};
+
+function firstCornerFromFeature(feature?: CircuitMapFeature): CircuitFirstCorner | undefined {
+  if (!feature) return undefined;
+  return {
+    hotspotId: feature.id,
+    label: feature.label,
+    note: FIRST_CORNER_NOTE,
+  };
+}
+
 function inspectDraft(draft: CircuitMapDraft) {
   const errors: string[] = [];
   let features: CircuitMapFeature[] = [];
@@ -161,18 +311,39 @@ function inspectDraft(draft: CircuitMapDraft) {
   } catch (error) {
     errors.push(error instanceof Error ? error.message : "zones JSON invalide");
   }
+  if (draft.trackPath.trim()) {
+    errors.push(...svgPathErrors(draft.trackPath, "trackPath"));
+  }
+  if (draft.racingLinePath.trim()) {
+    errors.push(...svgPathErrors(draft.racingLinePath, "racingLinePath"));
+  }
+  for (const [index, zone] of zones.entries()) {
+    errors.push(...svgPathErrors(zone.path, `zones[${index}].path`));
+  }
 
   const missingTranslations =
     features.filter(
       (feature) => translationMissing(feature.label) || translationMissing(feature.note),
     ).length +
     zones.filter((zone) => translationMissing(zone.label) || translationMissing(zone.note)).length;
+  const firstCornerFeature = features.find((feature) => feature.id === draft.firstCornerHotspotId);
+  const requiresFirstCorner = Boolean(draft.trackPath.trim() || features.length);
+  if (
+    firstCornerFeature &&
+    (firstCornerFeature.kind !== "corner" || firstCornerFeature.turn !== 1)
+  ) {
+    errors.push("Le premier virage doit pointer vers un point de type virage avec turn=1.");
+  }
   const warnings = [
     !draft.fallbackImageUrl.trim() ? "Image fallback manquante" : "",
     !draft.trackPath.trim() ? "Path SVG principal manquant" : "",
     features.length === 0 ? "Aucun point interactif" : "",
     zones.length === 0 ? "Aucune zone DRS/secteur" : "",
+    requiresFirstCorner && !firstCornerFeature ? "Premier virage non identifié" : "",
     missingTranslations > 0 ? "Traductions fr/en incomplètes" : "",
+    errors.some((error) => error.includes("path") || error.includes("Path"))
+      ? "Path SVG invalide"
+      : "",
   ].filter(Boolean);
 
   return {
@@ -180,6 +351,7 @@ function inspectDraft(draft: CircuitMapDraft) {
     warnings,
     features,
     zones,
+    firstCornerFeature,
     missingTranslations,
     readyForPublic: errors.length === 0 && warnings.length === 0,
   };
@@ -190,21 +362,70 @@ function adminMutationErrorMessage(error: unknown) {
   return maybeResponse.response?.data?.detail || "Impossible de sauvegarder la carte circuit";
 }
 
+function coordinateFromInput(value: string) {
+  const next = Number(value);
+  return Number.isFinite(next) ? next : 0;
+}
+
+function formatActivityDate(value: unknown) {
+  if (!value) return "—";
+  return new Date(String(value)).toLocaleString("fr-FR", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function activityMetadataSummary(metadata?: Record<string, unknown>) {
+  if (!metadata) return "—";
+  const entries = Object.entries(metadata)
+    .filter(([, value]) => value !== undefined && value !== null && value !== "")
+    .slice(0, 3);
+  if (!entries.length) return "—";
+  return entries
+    .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(", ") : String(value)}`)
+    .join(" · ");
+}
+
 export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTabProps) {
   const queryClient = useQueryClient();
-  const [query, setQuery] = useState("");
-  const [reviewStatus, setReviewStatus] = useState("all");
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [query, setQuery] = useState(() => searchParams.get(CIRCUIT_Q_PARAM) || "");
+  const [reviewStatus, setReviewStatus] = useState(() =>
+    decodeReviewFilter(searchParams.get(CIRCUIT_REVIEW_PARAM)),
+  );
+  const [priority, setPriority] = useState(() =>
+    decodePriorityFilter(searchParams.get(CIRCUIT_PRIORITY_PARAM)),
+  );
+  const [owner, setOwner] = useState(() =>
+    decodeOwnerFilter(searchParams.get(CIRCUIT_OWNER_PARAM)),
+  );
+  const [source, setSource] = useState(() =>
+    decodeSourceFilter(searchParams.get(CIRCUIT_SOURCE_PARAM)),
+  );
+  const [selectedKey, setSelectedKey] = useState<string | null>(() =>
+    searchParams.get(CIRCUIT_MAP_PARAM),
+  );
+  const pendingSelectedKeyRef = useRef<string | null | undefined>(undefined);
   const [draft, setDraft] = useState<CircuitMapDraft | null>(null);
   const [jsonError, setJsonError] = useState("");
+
+  const applySelectedKey = useCallback((key: string | null) => {
+    pendingSelectedKeyRef.current = key;
+    setSelectedKey(key);
+  }, []);
 
   const params = useMemo(
     () => ({
       q: query.trim() || undefined,
       review_status: reviewStatus === "all" ? undefined : reviewStatus,
+      priority: priority === "all" ? undefined : priority,
+      owner: owner === "all" ? undefined : owner,
+      source: source === "all" ? undefined : source,
       limit: 80,
     }),
-    [query, reviewStatus],
+    [owner, priority, query, reviewStatus, source],
   );
 
   const { data, isLoading } = useQuery<CircuitMapsResponse>({
@@ -217,12 +438,37 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
     () => items.find((item) => item.key === selectedKey) || items[0] || null,
     [items, selectedKey],
   );
+  const selectedIndex = selected ? items.findIndex((item) => item.key === selected.key) : -1;
+  const previousQueueKey = selectedIndex > 0 ? items[selectedIndex - 1]?.key : null;
+  const nextQueueKey =
+    selectedIndex >= 0 && selectedIndex < items.length - 1 ? items[selectedIndex + 1]?.key : null;
+
+  const activityParams = useMemo(
+    () => ({
+      entity_type: "circuit_map",
+      entity_id: selected?.key,
+      limit: 6,
+    }),
+    [selected?.key],
+  );
+
+  const { data: activityData, isLoading: isActivityLoading } = useQuery({
+    queryKey: ["admin-bo", "activity-logs", activityParams],
+    queryFn: () => adminApi.activityLogs.list(activityParams),
+    enabled: Boolean(selected?.key),
+  });
+
+  const recentActivity = (activityData?.logs ?? []) as ActivityLog[];
 
   useEffect(() => {
-    if (!selectedKey && items[0]) {
-      setSelectedKey(items[0].key);
+    if (!items.length) {
+      applySelectedKey(null);
+      return;
     }
-  }, [items, selectedKey]);
+    if (!selectedKey || !items.some((item) => item.key === selectedKey)) {
+      applySelectedKey(items[0].key);
+    }
+  }, [applySelectedKey, items, selectedKey]);
 
   useEffect(() => {
     if (selected) {
@@ -232,13 +478,35 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
   }, [currentAdminEmail, selected]);
 
   const updateMutation = useMutation({
-    mutationFn: ({ key, payload }: { key: string; payload: Record<string, unknown> }) =>
-      adminApi.circuitMaps.update(key, payload),
-    onSuccess: (response) => {
+    mutationFn: ({
+      key,
+      payload,
+    }: {
+      key: string;
+      payload: Record<string, unknown>;
+      nextKey?: string | null;
+    }) => adminApi.circuitMaps.update(key, payload),
+    onSuccess: (response, variables) => {
       toast.success("Carte circuit mise à jour");
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "circuit-maps"] });
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "knowledge"] });
-      setSelectedKey(response.item?.key || selectedKey);
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "activity-logs"] });
+      applySelectedKey(variables.nextKey || response.item?.key || selectedKey);
+    },
+    onError: (error) => toast.error(adminMutationErrorMessage(error)),
+  });
+
+  const resetMutation = useMutation({
+    mutationFn: (key: string) => adminApi.circuitMaps.reset(key),
+    onSuccess: (response) => {
+      toast.success("Carte circuit réinitialisée depuis le seed");
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "circuit-maps"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "knowledge"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "activity-logs"] });
+      applySelectedKey(response.item?.key || selectedKey);
+      if (response.item) {
+        setDraft(initialDraft(response.item, currentAdminEmail));
+      }
     },
     onError: (error) => toast.error(adminMutationErrorMessage(error)),
   });
@@ -251,6 +519,9 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
       .split("\n")
       .map((alias) => alias.trim())
       .filter(Boolean);
+    const firstCornerFeature = features.find(
+      (feature) => feature.id === nextDraft.firstCornerHotspotId,
+    );
 
     const mapData: CircuitMapData = {
       ...selected.map_data,
@@ -263,6 +534,7 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
       racingLinePath: nextDraft.racingLinePath.trim() || undefined,
       features,
       zones,
+      firstCorner: firstCornerFromFeature(firstCornerFeature),
     };
 
     return {
@@ -274,21 +546,25 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
     };
   };
 
-  const saveDraft = (nextDraft = draft) => {
+  const saveDraft = (nextDraft = draft, options?: { nextKey?: string | null }) => {
     if (!selected || !nextDraft) return;
     try {
       setJsonError("");
-      updateMutation.mutate({ key: selected.key, payload: buildPayload(nextDraft) });
+      updateMutation.mutate({
+        key: selected.key,
+        payload: buildPayload(nextDraft),
+        nextKey: options?.nextKey,
+      });
     } catch (error) {
       setJsonError(error instanceof Error ? error.message : "JSON invalide");
     }
   };
 
-  const patchAndSave = (patch: Partial<CircuitMapDraft>) => {
+  const patchAndSave = (patch: Partial<CircuitMapDraft>, options?: { nextKey?: string | null }) => {
     if (!draft) return;
     const nextDraft = { ...draft, ...patch };
     setDraft(nextDraft);
-    saveDraft(nextDraft);
+    saveDraft(nextDraft, options);
   };
 
   const addFeatureTemplate = () => {
@@ -342,8 +618,181 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
     }
   };
 
+  const updateFeatureAt = (index: number, patch: Partial<CircuitMapFeature>) => {
+    if (!draft) return;
+    try {
+      const features = parseJsonArray<CircuitMapFeature>(draft.featuresJson, "features");
+      const current = features[index];
+      if (!current) return;
+      features[index] = { ...current, ...patch };
+      setJsonError("");
+      setDraft({
+        ...draft,
+        reviewStatus: draft.reviewStatus || "draft",
+        featuresJson: formatJson(features),
+      });
+    } catch (error) {
+      setJsonError(error instanceof Error ? error.message : "features JSON invalide");
+    }
+  };
+
+  const updateFeatureText = (
+    index: number,
+    field: "label" | "note",
+    locale: "fr" | "en",
+    value: string,
+  ) => {
+    if (!draft) return;
+    try {
+      const features = parseJsonArray<CircuitMapFeature>(draft.featuresJson, "features");
+      const current = features[index];
+      if (!current) return;
+      features[index] = {
+        ...current,
+        [field]: { ...current[field], [locale]: value },
+      };
+      setJsonError("");
+      setDraft({
+        ...draft,
+        reviewStatus: draft.reviewStatus || "draft",
+        featuresJson: formatJson(features),
+      });
+    } catch (error) {
+      setJsonError(error instanceof Error ? error.message : "features JSON invalide");
+    }
+  };
+
+  const removeFeatureAt = (index: number) => {
+    if (!draft) return;
+    try {
+      const features = parseJsonArray<CircuitMapFeature>(draft.featuresJson, "features");
+      setJsonError("");
+      setDraft({
+        ...draft,
+        reviewStatus: draft.reviewStatus || "draft",
+        featuresJson: formatJson(features.filter((_, featureIndex) => featureIndex !== index)),
+      });
+    } catch (error) {
+      setJsonError(error instanceof Error ? error.message : "features JSON invalide");
+    }
+  };
+
+  const updateZoneAt = (index: number, patch: Partial<CircuitMapZone>) => {
+    if (!draft) return;
+    try {
+      const zones = parseJsonArray<CircuitMapZone>(draft.zonesJson, "zones");
+      const current = zones[index];
+      if (!current) return;
+      zones[index] = { ...current, ...patch };
+      setJsonError("");
+      setDraft({
+        ...draft,
+        reviewStatus: draft.reviewStatus || "draft",
+        zonesJson: formatJson(zones),
+      });
+    } catch (error) {
+      setJsonError(error instanceof Error ? error.message : "zones JSON invalide");
+    }
+  };
+
+  const updateZoneText = (
+    index: number,
+    field: "label" | "note",
+    locale: "fr" | "en",
+    value: string,
+  ) => {
+    if (!draft) return;
+    try {
+      const zones = parseJsonArray<CircuitMapZone>(draft.zonesJson, "zones");
+      const current = zones[index];
+      if (!current) return;
+      zones[index] = {
+        ...current,
+        [field]: { ...current[field], [locale]: value },
+      };
+      setJsonError("");
+      setDraft({
+        ...draft,
+        reviewStatus: draft.reviewStatus || "draft",
+        zonesJson: formatJson(zones),
+      });
+    } catch (error) {
+      setJsonError(error instanceof Error ? error.message : "zones JSON invalide");
+    }
+  };
+
+  const removeZoneAt = (index: number) => {
+    if (!draft) return;
+    try {
+      const zones = parseJsonArray<CircuitMapZone>(draft.zonesJson, "zones");
+      setJsonError("");
+      setDraft({
+        ...draft,
+        reviewStatus: draft.reviewStatus || "draft",
+        zonesJson: formatJson(zones.filter((_, zoneIndex) => zoneIndex !== index)),
+      });
+    } catch (error) {
+      setJsonError(error instanceof Error ? error.message : "zones JSON invalide");
+    }
+  };
+
   const summary = data?.summary;
   const draftInspection = useMemo(() => (draft ? inspectDraft(draft) : null), [draft]);
+  const baselineDraft = useMemo(
+    () => (selected ? initialDraft(selected, currentAdminEmail) : null),
+    [currentAdminEmail, selected],
+  );
+  const isDirty = Boolean(
+    draft && baselineDraft && JSON.stringify(draft) !== JSON.stringify(baselineDraft),
+  );
+
+  useEffect(() => {
+    const nextQuery = searchParams.get(CIRCUIT_Q_PARAM) || "";
+    const nextReview = decodeReviewFilter(searchParams.get(CIRCUIT_REVIEW_PARAM));
+    const nextPriority = decodePriorityFilter(searchParams.get(CIRCUIT_PRIORITY_PARAM));
+    const nextOwner = decodeOwnerFilter(searchParams.get(CIRCUIT_OWNER_PARAM));
+    const nextSource = decodeSourceFilter(searchParams.get(CIRCUIT_SOURCE_PARAM));
+    const nextSelectedKey = searchParams.get(CIRCUIT_MAP_PARAM);
+    const pendingSelectedKey = pendingSelectedKeyRef.current;
+
+    if (pendingSelectedKey !== undefined) {
+      if (
+        nextSelectedKey === pendingSelectedKey ||
+        (pendingSelectedKey === null && !nextSelectedKey)
+      ) {
+        pendingSelectedKeyRef.current = undefined;
+      } else if (selectedKey === pendingSelectedKey) {
+        return;
+      }
+    }
+
+    if (nextQuery !== query) setQuery(nextQuery);
+    if (nextReview !== reviewStatus) setReviewStatus(nextReview);
+    if (nextPriority !== priority) setPriority(nextPriority);
+    if (nextOwner !== owner) setOwner(nextOwner);
+    if (nextSource !== source) setSource(nextSource);
+    if (nextSelectedKey && nextSelectedKey !== selectedKey && !isDirty) {
+      pendingSelectedKeyRef.current = undefined;
+      setSelectedKey(nextSelectedKey);
+    }
+  }, [isDirty, owner, priority, query, reviewStatus, searchParams, selectedKey, source]);
+
+  useEffect(() => {
+    const next = buildCircuitMapSearchParams(searchParams, {
+      query,
+      reviewStatus,
+      priority,
+      owner,
+      source,
+      selectedKey,
+    });
+
+    if (next.toString() !== searchParams.toString()) {
+      setSearchParams(next, { replace: true });
+    }
+  }, [owner, priority, query, reviewStatus, searchParams, selectedKey, setSearchParams, source]);
+
+  const selectedPriority = selected?.review_priority;
   const previewMapData = useMemo<CircuitMapData | null>(() => {
     if (!selected) return null;
     if (!draft) return selected.map_data;
@@ -362,8 +811,49 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
       racingLinePath: draft.racingLinePath.trim() || undefined,
       features: draftInspection?.features ?? selected.map_data.features,
       zones: draftInspection?.zones ?? selected.map_data.zones,
+      firstCorner: firstCornerFromFeature(draftInspection?.firstCornerFeature),
     };
   }, [draft, draftInspection, selected]);
+
+  const selectMap = (key: string) => {
+    if (key === selectedKey) return;
+    if (
+      isDirty &&
+      !window.confirm("Des modifications locales ne sont pas sauvegardées. Changer de carte ?")
+    ) {
+      return;
+    }
+    applySelectedKey(key);
+  };
+
+  const selectAdjacentMap = (key: string | null) => {
+    if (key) selectMap(key);
+  };
+
+  const resetLocalDraft = () => {
+    if (!baselineDraft) return;
+    setDraft(baselineDraft);
+    setJsonError("");
+  };
+
+  const resetToSeed = () => {
+    if (!selected) return;
+    const confirmed = window.confirm(
+      "Réinitialiser cette carte avec les données seed et supprimer l'override admin ?",
+    );
+    if (confirmed) {
+      resetMutation.mutate(selected.key);
+    }
+  };
+
+  const copyReviewLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success("Lien de revue copié");
+    } catch {
+      toast.error("Impossible de copier le lien");
+    }
+  };
 
   return (
     <div>
@@ -376,15 +866,29 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
             Tracés interactifs, zones DRS, virages clés et notes réutilisées par l'app et le RAG.
           </p>
         </div>
-        <Button
-          onClick={() => queryClient.invalidateQueries({ queryKey: ["admin-bo", "circuit-maps"] })}
-          variant="ghost"
-          className="text-cyan-300 hover:text-cyan-200"
-          size="sm"
-        >
-          <RefreshCw className="mr-1 h-4 w-4" />
-          Rafraîchir
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            onClick={() =>
+              queryClient.invalidateQueries({ queryKey: ["admin-bo", "circuit-maps"] })
+            }
+            variant="ghost"
+            className="text-cyan-300 hover:text-cyan-200"
+            size="sm"
+          >
+            <RefreshCw className="mr-1 h-4 w-4" />
+            Rafraîchir
+          </Button>
+          <Button
+            onClick={copyReviewLink}
+            variant="ghost"
+            className="text-pk-titane hover:text-white"
+            size="sm"
+            data-testid="copy-circuit-map-review-link"
+          >
+            <Copy className="mr-1 h-4 w-4" />
+            Copier lien
+          </Button>
+        </div>
       </div>
 
       <div className="mb-4 grid gap-3 md:grid-cols-5">
@@ -395,18 +899,18 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
         </div>
         <div className="card-arcade p-4">
           <MapPinned className="mb-2 h-4 w-4 text-cyan-400" />
-          <p className="font-data text-2xl text-white">{summary?.interactive ?? 0}</p>
-          <p className="font-body text-[10px] uppercase text-gray-500">Interactifs</p>
+          <p className="font-data text-2xl text-white">{summary?.coverage_percent ?? 0}%</p>
+          <p className="font-body text-[10px] uppercase text-gray-500">Couverture</p>
         </div>
         <div className="card-arcade p-4">
           <Layers className="mb-2 h-4 w-4 text-amber-400" />
-          <p className="font-data text-2xl text-white">{summary?.static ?? 0}</p>
-          <p className="font-body text-[10px] uppercase text-gray-500">Fallback</p>
+          <p className="font-data text-2xl text-white">{summary?.ready_for_public ?? 0}</p>
+          <p className="font-body text-[10px] uppercase text-gray-500">Prêtes</p>
         </div>
         <div className="card-arcade p-4">
           <UserCheck className="mb-2 h-4 w-4 text-purple-300" />
-          <p className="font-data text-2xl text-white">{summary?.admin_overrides ?? 0}</p>
-          <p className="font-body text-[10px] uppercase text-gray-500">Overrides</p>
+          <p className="font-data text-2xl text-white">{summary?.in_review ?? 0}</p>
+          <p className="font-body text-[10px] uppercase text-gray-500">À relire</p>
         </div>
         <div className="card-arcade p-4">
           <CheckCircle2 className="mb-2 h-4 w-4 text-emerald-300" />
@@ -416,7 +920,37 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
       </div>
 
       <div className="card-arcade mb-4 p-4">
-        <div className="grid gap-3 md:grid-cols-[1fr_220px]">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0">
+            <p className="font-data text-[10px] uppercase text-pk-titane">Pipeline éditorial</p>
+            <div className="mt-2 h-2 overflow-hidden rounded-sm bg-white/[0.06]">
+              <div
+                className="h-full rounded-sm bg-pk-red"
+                style={{ width: `${Math.min(summary?.coverage_percent ?? 0, 100)}%` }}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3 md:min-w-[420px]">
+            <div className="border-l border-white/10 pl-3">
+              <p className="font-data text-lg text-white">{summary?.interactive ?? 0}</p>
+              <p className="font-data text-[9px] uppercase text-pk-titane">Interactifs</p>
+            </div>
+            <div className="border-l border-white/10 pl-3">
+              <p className="font-data text-lg text-white">{summary?.blocked ?? 0}</p>
+              <p className="font-data text-[9px] uppercase text-pk-titane">Bloqués</p>
+            </div>
+            <div className="border-l border-white/10 pl-3">
+              <p className="font-data text-lg text-white">
+                {(summary?.total_features ?? 0) + (summary?.total_zones ?? 0)}
+              </p>
+              <p className="font-data text-[9px] uppercase text-pk-titane">Objets RAG</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card-arcade mb-4 p-4">
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_180px_190px_170px]">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
             <Input
@@ -437,6 +971,115 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
               </option>
             ))}
           </select>
+          <select
+            value={priority}
+            onChange={(event) => setPriority(event.target.value)}
+            className="h-10 rounded-md border border-gray-700 bg-gray-900 px-3 font-body text-sm text-white"
+            data-testid="circuit-map-priority-filter"
+          >
+            {PRIORITY_FILTERS.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={owner}
+            onChange={(event) => setOwner(event.target.value)}
+            className="h-10 rounded-md border border-gray-700 bg-gray-900 px-3 font-body text-sm text-white"
+            data-testid="circuit-map-owner-filter"
+          >
+            {OWNER_FILTERS.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={source}
+            onChange={(event) => setSource(event.target.value)}
+            className="h-10 rounded-md border border-gray-700 bg-gray-900 px-3 font-body text-sm text-white"
+            data-testid="circuit-map-source-filter"
+          >
+            {SOURCE_FILTERS.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setOwner(owner === "mine" ? "all" : "mine")}
+            className={`rounded-sm border px-2 py-1 font-data text-[9px] uppercase transition-colors ${
+              owner === "mine"
+                ? "border-cyan-400/25 bg-cyan-500/10 text-cyan-300"
+                : "border-white/10 bg-white/[0.03] text-pk-titane hover:text-white"
+            }`}
+            data-testid="circuit-map-owner-chip-mine"
+          >
+            Mes cartes · {summary?.owned_by_me ?? 0}
+          </button>
+          <button
+            type="button"
+            onClick={() => setOwner(owner === "unassigned" ? "all" : "unassigned")}
+            className={`rounded-sm border px-2 py-1 font-data text-[9px] uppercase transition-colors ${
+              owner === "unassigned"
+                ? "border-amber-400/25 bg-amber-500/10 text-amber-300"
+                : "border-white/10 bg-white/[0.03] text-pk-titane hover:text-white"
+            }`}
+            data-testid="circuit-map-owner-chip-unassigned"
+          >
+            Sans propriétaire · {summary?.unassigned ?? 0}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSource(source === "admin" ? "all" : "admin")}
+            className={`rounded-sm border px-2 py-1 font-data text-[9px] uppercase transition-colors ${
+              source === "admin"
+                ? "border-pk-red/35 bg-pk-red-subtle text-red-200"
+                : "border-white/10 bg-white/[0.03] text-pk-titane hover:text-white"
+            }`}
+            data-testid="circuit-map-source-chip-admin"
+          >
+            Overrides · {summary?.admin_overrides ?? 0}
+          </button>
+          {PRIORITY_FILTERS.slice(1).map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              onClick={() => setPriority(priority === item.value ? "all" : item.value)}
+              className={`rounded-sm border px-2 py-1 font-data text-[9px] uppercase transition-colors ${
+                priority === item.value
+                  ? priorityClass(item.value === "done" ? "done" : item.value)
+                  : "border-white/10 bg-white/[0.03] text-pk-titane hover:text-white"
+              }`}
+              data-testid={`circuit-map-priority-chip-${item.value}`}
+            >
+              {item.label}
+            </button>
+          ))}
+          {query ||
+          reviewStatus !== "all" ||
+          priority !== "all" ||
+          owner !== "all" ||
+          source !== "all" ? (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setReviewStatus("all");
+                setPriority("all");
+                setOwner("all");
+                setSource("all");
+              }}
+              className="rounded-sm border border-white/10 bg-white/[0.03] px-2 py-1 font-data text-[9px] uppercase text-pk-titane transition-colors hover:text-white"
+              data-testid="clear-circuit-map-filters"
+            >
+              Effacer filtres
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -461,8 +1104,9 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
                 return (
                   <button
                     key={item.key}
-                    onClick={() => setSelectedKey(item.key)}
-                    className={`w-full rounded-md border p-3 text-left transition-all ${
+                    onClick={() => selectMap(item.key)}
+                    data-testid={`select-circuit-map-${item.key}`}
+                    className={`w-full rounded-md border p-3 text-left transition-colors duration-75 ${
                       active
                         ? "border-pk-red/45 bg-pk-red-subtle"
                         : "border-white/10 bg-black/25 hover:border-white/20"
@@ -483,6 +1127,20 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
                         {statusLabel(item.review_status)}
                       </span>
                     </div>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <span
+                        className={`rounded-sm border px-2 py-1 font-data text-[9px] uppercase ${priorityClass(
+                          item.review_priority?.level,
+                        )}`}
+                      >
+                        {item.review_priority?.label || "À qualifier"}
+                      </span>
+                      {item.quality_report?.ready_for_public ? (
+                        <span className="font-data text-[9px] uppercase text-emerald-300">
+                          Publiable
+                        </span>
+                      ) : null}
+                    </div>
                     <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-pk-titane">
                       <span className="rounded bg-white/[0.04] px-2 py-1">
                         {item.source === "admin" ? "Override admin" : "Seed"}
@@ -491,6 +1149,15 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
                         {featureCount} point(s)
                       </span>
                       <span className="rounded bg-white/[0.04] px-2 py-1">{zoneCount} zone(s)</span>
+                      {item.quality_report?.has_first_corner ? (
+                        <span className="rounded bg-amber-500/10 px-2 py-1 text-amber-300">
+                          T1 {item.quality_report.first_corner_hotspot_id}
+                        </span>
+                      ) : (
+                        <span className="rounded bg-red-500/10 px-2 py-1 text-red-200">
+                          T1 manquant
+                        </span>
+                      )}
                       {item.quality_report?.warnings?.length ? (
                         <span className="rounded bg-amber-500/10 px-2 py-1 text-amber-300">
                           {item.quality_report.warnings.length} alerte(s)
@@ -513,6 +1180,7 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
                     circuitName={selected.circuit_name}
                     circuitFullName={selected.full_name}
                     mapData={previewMapData ?? selected.map_data}
+                    renderMode="preview"
                   />
                 </div>
                 <div className="card-arcade p-4">
@@ -524,12 +1192,57 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
                       <p className="font-data text-[10px] uppercase text-pk-titane">
                         {selected.map_status} • {selected.source}
                       </p>
+                      {selectedPriority?.reason ? (
+                        <p className="mt-1 text-xs text-pk-titane">{selectedPriority.reason}</p>
+                      ) : null}
                     </div>
                     <span
-                      className={`rounded-sm border px-2 py-1 font-data text-[10px] uppercase ${statusClass(draft.reviewStatus)}`}
+                      className={`rounded-sm border px-2 py-1 font-data text-[10px] uppercase ${priorityClass(selectedPriority?.level)}`}
                     >
-                      {statusLabel(draft.reviewStatus)}
+                      {selectedPriority?.label || statusLabel(draft.reviewStatus)}
                     </span>
+                  </div>
+                  <div className="mb-4 flex flex-wrap gap-2">
+                    <span className="rounded-sm border border-white/10 bg-white/[0.04] px-2 py-1 font-data text-[9px] uppercase text-pk-titane">
+                      {selected.source === "admin" ? "Override admin" : "Seed actif"}
+                    </span>
+                    <span className="rounded-sm border border-white/10 bg-white/[0.04] px-2 py-1 font-data text-[9px] uppercase text-pk-titane">
+                      {selectedIndex + 1}/{items.length} dans la file
+                    </span>
+                    {isDirty ? (
+                      <span className="rounded-sm border border-amber-400/25 bg-amber-500/10 px-2 py-1 font-data text-[9px] uppercase text-amber-300">
+                        Modifié non sauvegardé
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <div className="mb-4 grid grid-cols-2 gap-2">
+                    <Button
+                      onClick={() => selectAdjacentMap(previousQueueKey)}
+                      disabled={
+                        !previousQueueKey || updateMutation.isPending || resetMutation.isPending
+                      }
+                      variant="ghost"
+                      className="text-pk-titane hover:text-white"
+                      size="sm"
+                      data-testid="previous-circuit-map"
+                    >
+                      <ChevronLeft className="mr-1 h-4 w-4" />
+                      Précédent
+                    </Button>
+                    <Button
+                      onClick={() => selectAdjacentMap(nextQueueKey)}
+                      disabled={
+                        !nextQueueKey || updateMutation.isPending || resetMutation.isPending
+                      }
+                      variant="ghost"
+                      className="text-pk-titane hover:text-white"
+                      size="sm"
+                      data-testid="next-circuit-map"
+                    >
+                      Suivant
+                      <ChevronRight className="ml-1 h-4 w-4" />
+                    </Button>
                   </div>
 
                   <div className="grid gap-3">
@@ -569,7 +1282,7 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
                           reviewStatus: "in_review",
                         })
                       }
-                      disabled={updateMutation.isPending}
+                      disabled={updateMutation.isPending || resetMutation.isPending}
                       variant="ghost"
                       className="text-cyan-300 hover:text-cyan-200"
                       size="sm"
@@ -578,8 +1291,33 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
                       Prendre
                     </Button>
                     <Button
+                      onClick={() =>
+                        patchAndSave(
+                          {
+                            ownerAdminEmail: currentAdminEmail,
+                            reviewStatus: "in_review",
+                          },
+                          { nextKey: nextQueueKey },
+                        )
+                      }
+                      disabled={
+                        !nextQueueKey || updateMutation.isPending || resetMutation.isPending
+                      }
+                      variant="ghost"
+                      className="text-cyan-300 hover:text-cyan-200"
+                      size="sm"
+                      data-testid="claim-and-next-circuit-map"
+                    >
+                      <UserCheck className="mr-1 h-4 w-4" />
+                      Prendre + suiv.
+                    </Button>
+                    <Button
                       onClick={() => patchAndSave({ reviewStatus: "approved" })}
-                      disabled={updateMutation.isPending || !draftInspection?.readyForPublic}
+                      disabled={
+                        updateMutation.isPending ||
+                        resetMutation.isPending ||
+                        !draftInspection?.readyForPublic
+                      }
                       variant="ghost"
                       className="text-emerald-300 hover:text-emerald-200"
                       size="sm"
@@ -587,6 +1325,54 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
                     >
                       <CheckCircle2 className="mr-1 h-4 w-4" />
                       Valider
+                    </Button>
+                    <Button
+                      onClick={() =>
+                        patchAndSave({ reviewStatus: "approved" }, { nextKey: nextQueueKey })
+                      }
+                      disabled={
+                        !nextQueueKey ||
+                        updateMutation.isPending ||
+                        resetMutation.isPending ||
+                        !draftInspection?.readyForPublic
+                      }
+                      variant="ghost"
+                      className="text-emerald-300 hover:text-emerald-200"
+                      size="sm"
+                      data-testid="approve-and-next-circuit-map"
+                    >
+                      <CheckCircle2 className="mr-1 h-4 w-4" />
+                      Valider + suiv.
+                    </Button>
+                    <Button
+                      onClick={resetLocalDraft}
+                      disabled={!isDirty || updateMutation.isPending || resetMutation.isPending}
+                      variant="ghost"
+                      className="text-pk-titane hover:text-white"
+                      size="sm"
+                      data-testid="reset-circuit-map-local-draft"
+                    >
+                      <RefreshCw className="mr-1 h-4 w-4" />
+                      Annuler
+                    </Button>
+                    <Button
+                      onClick={resetToSeed}
+                      disabled={
+                        selected.source !== "admin" ||
+                        updateMutation.isPending ||
+                        resetMutation.isPending
+                      }
+                      variant="ghost"
+                      className="text-red-200 hover:text-red-100"
+                      size="sm"
+                      data-testid="reset-circuit-map-seed"
+                    >
+                      {resetMutation.isPending ? (
+                        <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="mr-1 h-4 w-4" />
+                      )}
+                      Seed
                     </Button>
                   </div>
 
@@ -645,6 +1431,48 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
                       ) : null}
                     </div>
                   </div>
+
+                  <div className="mt-4 rounded-md border border-white/10 bg-black/20 p-3">
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <History className="h-4 w-4 text-cyan-300" />
+                        <p className="font-data text-[10px] uppercase text-pk-titane">Historique</p>
+                      </div>
+                      <span className="font-data text-[9px] uppercase text-pk-titane">
+                        {activityData?.total ?? 0} trace(s)
+                      </span>
+                    </div>
+                    {isActivityLoading ? (
+                      <div className="flex justify-center py-4">
+                        <Loader2 className="h-4 w-4 animate-spin text-pk-red" />
+                      </div>
+                    ) : recentActivity.length ? (
+                      <div className="space-y-2" data-testid="circuit-map-activity-log">
+                        {recentActivity.map((log) => (
+                          <div
+                            key={log.id}
+                            className="rounded-sm border border-white/10 bg-white/[0.03] p-2"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="truncate font-data text-[10px] uppercase text-white">
+                                {log.action ?? "action"}
+                              </p>
+                              <span className="whitespace-nowrap font-data text-[9px] uppercase text-pk-titane">
+                                {formatActivityDate(log.created_at)}
+                              </span>
+                            </div>
+                            <p className="mt-1 truncate text-xs text-pk-titane">
+                              {log.actor_email || "admin"} · {activityMetadataSummary(log.metadata)}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="py-3 text-center text-xs text-pk-titane">
+                        Aucune trace sur cette carte.
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -656,21 +1484,28 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
                       Les libellés et notes sont locale-keyed pour préparer l'internationalisation.
                     </p>
                   </div>
-                  <Button
-                    onClick={() => saveDraft()}
-                    disabled={updateMutation.isPending}
-                    variant="ghost"
-                    className="text-pk-red hover:text-red-300"
-                    size="sm"
-                    data-testid="save-circuit-map"
-                  >
-                    {updateMutation.isPending ? (
-                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Save className="mr-1 h-4 w-4" />
-                    )}
-                    Sauvegarder
-                  </Button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {isDirty ? (
+                      <span className="rounded-sm border border-amber-400/25 bg-amber-500/10 px-2 py-1 font-data text-[9px] uppercase text-amber-300">
+                        Brouillon local
+                      </span>
+                    ) : null}
+                    <Button
+                      onClick={() => saveDraft()}
+                      disabled={updateMutation.isPending || resetMutation.isPending}
+                      variant="ghost"
+                      className="text-pk-red hover:text-red-300"
+                      size="sm"
+                      data-testid="save-circuit-map"
+                    >
+                      {updateMutation.isPending ? (
+                        <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="mr-1 h-4 w-4" />
+                      )}
+                      Sauvegarder
+                    </Button>
+                  </div>
                 </div>
 
                 {jsonError && (
@@ -711,6 +1546,311 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
                     <AlertTriangle className="mr-1 h-4 w-4" />
                     Source à vérifier
                   </Button>
+                  <Button
+                    onClick={() =>
+                      patchAndSave({ reviewStatus: "needs_source" }, { nextKey: nextQueueKey })
+                    }
+                    disabled={!nextQueueKey || updateMutation.isPending || resetMutation.isPending}
+                    variant="ghost"
+                    className="text-amber-300 hover:text-amber-200"
+                    size="sm"
+                    data-testid="mark-circuit-map-needs-source-and-next"
+                  >
+                    <AlertTriangle className="mr-1 h-4 w-4" />À sourcer + suiv.
+                  </Button>
+                </div>
+
+                <div className="mb-4 rounded-md border border-white/10 bg-black/20 p-3">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <Gauge className="h-4 w-4 text-amber-300" />
+                      <p className="font-data text-[10px] uppercase text-pk-titane">
+                        Premier virage stats pilotes
+                      </p>
+                    </div>
+                    {draft.firstCornerHotspotId ? (
+                      <span className="rounded-sm border border-amber-400/25 bg-amber-500/10 px-2 py-1 font-data text-[9px] uppercase text-amber-300">
+                        {draft.firstCornerHotspotId}
+                      </span>
+                    ) : null}
+                  </div>
+                  <select
+                    value={draft.firstCornerHotspotId}
+                    onChange={(event) =>
+                      setDraft({
+                        ...draft,
+                        firstCornerHotspotId: event.target.value,
+                        reviewStatus: draft.reviewStatus || "draft",
+                      })
+                    }
+                    className="h-10 w-full rounded-md border border-gray-700 bg-gray-900 px-3 font-body text-sm text-white"
+                    data-testid="circuit-map-first-corner-select"
+                  >
+                    <option value="">Non identifié</option>
+                    {(draftInspection?.features ?? [])
+                      .filter((feature) => feature.kind === "corner")
+                      .map((feature) => (
+                        <option key={feature.id} value={feature.id}>
+                          {feature.turn ? `T${feature.turn} · ` : ""}
+                          {feature.label?.fr || feature.id}
+                        </option>
+                      ))}
+                  </select>
+                  <p className="mt-2 text-xs leading-relaxed text-pk-titane">
+                    Ce hotspot devient la référence stable pour les statistiques pilotes liées au
+                    premier virage.
+                  </p>
+                </div>
+
+                <div className="mb-4 grid gap-4 xl:grid-cols-2">
+                  <div className="rounded-md border border-white/10 bg-black/20 p-3">
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Gauge className="h-4 w-4 text-amber-300" />
+                        <p className="font-data text-[10px] uppercase text-pk-titane">
+                          Atelier points
+                        </p>
+                      </div>
+                      <span className="font-data text-[9px] uppercase text-pk-titane">
+                        {draftInspection?.features.length ?? 0} élément(s)
+                      </span>
+                    </div>
+                    <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1">
+                      {draftInspection?.features.map((feature, index) => (
+                        <div
+                          key={`${feature.id}-${index}`}
+                          className="rounded-md border border-white/10 bg-white/[0.03] p-3"
+                        >
+                          <div className="mb-3 grid gap-2 md:grid-cols-[minmax(0,1fr)_118px_44px]">
+                            <Input
+                              value={feature.id}
+                              onChange={(event) =>
+                                updateFeatureAt(index, { id: event.target.value })
+                              }
+                              aria-label="Identifiant du point"
+                              className="bg-gray-900 border-gray-700 text-white"
+                              data-testid={`circuit-map-feature-id-${index}`}
+                            />
+                            <select
+                              value={feature.kind}
+                              onChange={(event) =>
+                                updateFeatureAt(index, {
+                                  kind: event.target.value as CircuitMapFeature["kind"],
+                                })
+                              }
+                              aria-label="Type du point"
+                              className="h-10 rounded-md border border-gray-700 bg-gray-900 px-2 font-body text-sm text-white"
+                            >
+                              <option value="start">Départ</option>
+                              <option value="corner">Virage</option>
+                              <option value="sector">Secteur</option>
+                              <option value="drs">DRS</option>
+                            </select>
+                            <Button
+                              type="button"
+                              onClick={() => removeFeatureAt(index)}
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-200 hover:text-red-100"
+                              aria-label="Supprimer le point"
+                              data-testid={`remove-circuit-map-feature-${index}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="grid gap-2 md:grid-cols-3">
+                            <Input
+                              type="number"
+                              value={feature.x}
+                              onChange={(event) =>
+                                updateFeatureAt(index, {
+                                  x: coordinateFromInput(event.target.value),
+                                })
+                              }
+                              aria-label="Coordonnée X"
+                              className="bg-gray-900 border-gray-700 text-white"
+                            />
+                            <Input
+                              type="number"
+                              value={feature.y}
+                              onChange={(event) =>
+                                updateFeatureAt(index, {
+                                  y: coordinateFromInput(event.target.value),
+                                })
+                              }
+                              aria-label="Coordonnée Y"
+                              className="bg-gray-900 border-gray-700 text-white"
+                            />
+                            <Input
+                              type="number"
+                              value={feature.turn ?? ""}
+                              onChange={(event) =>
+                                updateFeatureAt(index, {
+                                  turn: event.target.value
+                                    ? coordinateFromInput(event.target.value)
+                                    : undefined,
+                                })
+                              }
+                              placeholder="Virage"
+                              aria-label="Numéro de virage"
+                              className="bg-gray-900 border-gray-700 text-white"
+                            />
+                          </div>
+                          <div className="mt-2 grid gap-2 md:grid-cols-2">
+                            <Input
+                              value={feature.label?.fr ?? ""}
+                              onChange={(event) =>
+                                updateFeatureText(index, "label", "fr", event.target.value)
+                              }
+                              placeholder="Libellé FR"
+                              className="bg-gray-900 border-gray-700 text-white"
+                            />
+                            <Input
+                              value={feature.label?.en ?? ""}
+                              onChange={(event) =>
+                                updateFeatureText(index, "label", "en", event.target.value)
+                              }
+                              placeholder="Label EN"
+                              className="bg-gray-900 border-gray-700 text-white"
+                            />
+                          </div>
+                          <div className="mt-2 grid gap-2 md:grid-cols-2">
+                            <Textarea
+                              value={feature.note?.fr ?? ""}
+                              onChange={(event) =>
+                                updateFeatureText(index, "note", "fr", event.target.value)
+                              }
+                              placeholder="Note métier FR"
+                              rows={3}
+                              className="resize-none border-gray-700 bg-gray-900 text-white"
+                            />
+                            <Textarea
+                              value={feature.note?.en ?? ""}
+                              onChange={(event) =>
+                                updateFeatureText(index, "note", "en", event.target.value)
+                              }
+                              placeholder="Business note EN"
+                              rows={3}
+                              className="resize-none border-gray-700 bg-gray-900 text-white"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-md border border-white/10 bg-black/20 p-3">
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Layers className="h-4 w-4 text-cyan-300" />
+                        <p className="font-data text-[10px] uppercase text-pk-titane">
+                          Atelier zones
+                        </p>
+                      </div>
+                      <span className="font-data text-[9px] uppercase text-pk-titane">
+                        {draftInspection?.zones.length ?? 0} élément(s)
+                      </span>
+                    </div>
+                    <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1">
+                      {draftInspection?.zones.map((zone, index) => {
+                        const pathErrors = svgPathErrors(zone.path, `zone ${index + 1}`);
+
+                        return (
+                          <div
+                            key={`${zone.id}-${index}`}
+                            className="rounded-md border border-white/10 bg-white/[0.03] p-3"
+                          >
+                            <div className="mb-3 grid gap-2 md:grid-cols-[minmax(0,1fr)_118px_44px]">
+                              <Input
+                                value={zone.id}
+                                onChange={(event) =>
+                                  updateZoneAt(index, { id: event.target.value })
+                                }
+                                aria-label="Identifiant de la zone"
+                                className="bg-gray-900 border-gray-700 text-white"
+                                data-testid={`circuit-map-zone-id-${index}`}
+                              />
+                              <select
+                                value={zone.kind}
+                                onChange={(event) =>
+                                  updateZoneAt(index, {
+                                    kind: event.target.value as CircuitMapZone["kind"],
+                                  })
+                                }
+                                aria-label="Type de zone"
+                                className="h-10 rounded-md border border-gray-700 bg-gray-900 px-2 font-body text-sm text-white"
+                              >
+                                <option value="sector">Secteur</option>
+                                <option value="drs">DRS</option>
+                              </select>
+                              <Button
+                                type="button"
+                                onClick={() => removeZoneAt(index)}
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-200 hover:text-red-100"
+                                aria-label="Supprimer la zone"
+                                data-testid={`remove-circuit-map-zone-${index}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <Textarea
+                              value={zone.path}
+                              onChange={(event) =>
+                                updateZoneAt(index, { path: event.target.value })
+                              }
+                              placeholder="Path SVG de zone"
+                              rows={3}
+                              className="resize-none border-gray-700 bg-gray-900 font-mono text-xs text-white"
+                              data-testid={`circuit-map-zone-path-${index}`}
+                            />
+                            {pathErrors.length ? (
+                              <p className="mt-1 text-xs text-red-200">{pathErrors[0]}</p>
+                            ) : null}
+                            <div className="mt-2 grid gap-2 md:grid-cols-2">
+                              <Input
+                                value={zone.label?.fr ?? ""}
+                                onChange={(event) =>
+                                  updateZoneText(index, "label", "fr", event.target.value)
+                                }
+                                placeholder="Libellé FR"
+                                className="bg-gray-900 border-gray-700 text-white"
+                              />
+                              <Input
+                                value={zone.label?.en ?? ""}
+                                onChange={(event) =>
+                                  updateZoneText(index, "label", "en", event.target.value)
+                                }
+                                placeholder="Label EN"
+                                className="bg-gray-900 border-gray-700 text-white"
+                              />
+                            </div>
+                            <div className="mt-2 grid gap-2 md:grid-cols-2">
+                              <Textarea
+                                value={zone.note?.fr ?? ""}
+                                onChange={(event) =>
+                                  updateZoneText(index, "note", "fr", event.target.value)
+                                }
+                                placeholder="Note métier FR"
+                                rows={3}
+                                className="resize-none border-gray-700 bg-gray-900 text-white"
+                              />
+                              <Textarea
+                                value={zone.note?.en ?? ""}
+                                onChange={(event) =>
+                                  updateZoneText(index, "note", "en", event.target.value)
+                                }
+                                placeholder="Business note EN"
+                                rows={3}
+                                className="resize-none border-gray-700 bg-gray-900 text-white"
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-2">

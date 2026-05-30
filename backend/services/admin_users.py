@@ -66,6 +66,8 @@ def user_analytics_from_docs(
                 "user_id": user_id,
                 "email": user.get("email"),
                 "username": user.get("username"),
+                "avatar_id": user.get("avatar_id"),
+                "custom_avatar_url": user.get("custom_avatar_url"),
                 "created_at": user.get("created_at"),
                 "level": user.get("level"),
                 "xp": user.get("xp"),
@@ -107,7 +109,9 @@ def user_analytics_from_docs(
     }
 
 
-async def user_admin_stats(user_id: str) -> dict:
+async def user_admin_stats(user_id: str, user: dict | None = None) -> dict:
+    user_doc = user or await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    user_email = str((user_doc or {}).get("email") or "").strip().lower()
     predictions = await db.predictions.find({"user_id": user_id}, {"_id": 0}).to_list(500)
     enriched_predictions = await enrich_prediction_docs(predictions)
     stats = user_prediction_stats_from_payloads(enriched_predictions)
@@ -117,12 +121,59 @@ async def user_admin_stats(user_id: str) -> dict:
     ).to_list(50)
     leaderboard_entries = await db.leaderboard.find(
         {"user_id": user_id},
-        {"_id": 0, "league_id": 1, "championship_id": 1, "total_points": 1, "last_race_points": 1},
+        {
+            "_id": 0,
+            "league_id": 1,
+            "championship_id": 1,
+            "total_points": 1,
+            "last_race_points": 1,
+            "previous_position": 1,
+        },
     ).to_list(100)
+    league_names = {league.get("id"): league.get("name") for league in leagues if league.get("id")}
+    for entry in leaderboard_entries:
+        entry["league_name"] = league_names.get(entry.get("league_id"))
+
     activity_logs = await db.admin_activity_logs.find(
         {"$or": [{"entity_type": "user", "entity_id": user_id}, {"metadata.user_id": user_id}]},
         {"_id": 0},
     ).sort("created_at", -1).to_list(20)
+    feedback_query = {"user_id": user_id}
+    if user_email:
+        feedback_query = {"$or": [{"user_id": user_id}, {"email": user_email}]}
+    feedbacks = await db.feedback.find(feedback_query, {"_id": 0}).sort("created_at", -1).to_list(20)
+
+    notification_query = {
+        "$or": [
+            {"user_id": user_id},
+            {"target_user_ids": user_id},
+            {"target_user_ids": {"$exists": False}, "user_id": {"$exists": False}},
+        ]
+    }
+    notifications = await db.notifications.find(
+        notification_query,
+        {"_id": 0},
+    ).sort("created_at", -1).to_list(20)
+    unread_ids = set((user_doc or {}).get("unread_notifications") or [])
+    for notification in notifications:
+        notification["is_read"] = notification.get("id") not in unread_ids
+
+    support_messages = (
+        await db.league_messages.find({"user_id": user_id}, {"_id": 0})
+        .sort("created_at", -1)
+        .limit(20)
+        .to_list(20)
+    )
+    for message in support_messages:
+        message["league_name"] = league_names.get(message.get("league_id"))
+
+    invitation_query = {"email": user_email} if user_email else {"email": "__no_email__"}
+    invitations = (
+        await db.invitations.find(invitation_query, {"_id": 0, "token": 0})
+        .sort("created_at", -1)
+        .limit(20)
+        .to_list(20)
+    )
 
     sorted_predictions = sorted(
         enriched_predictions,
@@ -145,6 +196,10 @@ async def user_admin_stats(user_id: str) -> dict:
         "leaderboard_entries": leaderboard_entries,
         "recent_predictions": sorted_predictions[:8],
         "recent_activity": activity_logs,
+        "feedbacks": feedbacks,
+        "notifications": notifications,
+        "support_messages": support_messages,
+        "invitations": invitations,
         "leagues": leagues[:20],
     }
 

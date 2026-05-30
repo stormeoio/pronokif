@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { UserIdentity } from "@/components/users/UserIdentity";
 
 type AdminPrediction = {
   id?: string;
@@ -31,6 +32,8 @@ type AdminPrediction = {
   race_id?: string;
   user_email?: string;
   user_username?: string;
+  user_avatar_id?: string | null;
+  user_custom_avatar_url?: string | null;
   race_name?: string;
   race_date?: string;
   created_at?: string;
@@ -65,6 +68,8 @@ type PredictionAnalyticsUser = {
   user_id: string;
   user_email?: string;
   user_username?: string;
+  user_avatar_id?: string | null;
+  user_custom_avatar_url?: string | null;
   predictions_count: number;
   complete_predictions: number;
   total_points: number;
@@ -408,9 +413,20 @@ export default function PredictionsTab() {
                     className="flex items-center justify-between gap-3 border-b border-white/5 pb-2 last:border-0 last:pb-0"
                   >
                     <div className="min-w-0">
-                      <p className="truncate font-body text-sm text-gray-200">
-                        {user.user_username ?? user.user_email ?? user.user_id}
-                      </p>
+                      <UserIdentity
+                        user={{
+                          id: user.user_id,
+                          username: user.user_username,
+                          email: user.user_email,
+                          avatar_id: user.user_avatar_id,
+                          custom_avatar_url: user.user_custom_avatar_url,
+                        }}
+                        surface="admin"
+                        size="sm"
+                        showEmail
+                        className="max-w-full"
+                        data-testid={`admin-predictions-top-user-${user.user_id}`}
+                      />
                       <p className="font-body text-[11px] text-gray-500">
                         {user.complete_predictions}/{user.predictions_count} complets ·{" "}
                         {user.average_points} pts moy.
@@ -570,10 +586,25 @@ export default function PredictionsTab() {
           <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
             <div>
               <h3 className="font-heading text-sm uppercase text-orange-400">Édition admin</h3>
-              <p className="font-body text-xs text-gray-500">
-                {selectedPrediction.user_email ?? selectedPrediction.user_id} ·{" "}
-                {selectedPrediction.race_name ?? selectedPrediction.race_id}
-              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <UserIdentity
+                  user={{
+                    id: selectedPrediction.user_id,
+                    username: selectedPrediction.user_username,
+                    email: selectedPrediction.user_email,
+                    avatar_id: selectedPrediction.user_avatar_id,
+                    custom_avatar_url: selectedPrediction.user_custom_avatar_url,
+                  }}
+                  surface="admin"
+                  size="sm"
+                  showEmail
+                  className="max-w-[280px]"
+                  data-testid="admin-selected-prediction-user"
+                />
+                <span className="font-body text-xs text-gray-500">
+                  {selectedPrediction.race_name ?? selectedPrediction.race_id}
+                </span>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <label className="flex items-center gap-2 font-body text-xs text-gray-400">
@@ -736,12 +767,20 @@ export default function PredictionsTab() {
                       </p>
                     </td>
                     <td className="p-3">
-                      <p className="font-body text-gray-300">
-                        {prediction.user_username ?? "Joueur"}
-                      </p>
-                      <p className="font-body text-[11px] text-gray-500">
-                        {prediction.user_email ?? prediction.user_id ?? "—"}
-                      </p>
+                      <UserIdentity
+                        user={{
+                          id: prediction.user_id,
+                          username: prediction.user_username,
+                          email: prediction.user_email,
+                          avatar_id: prediction.user_avatar_id,
+                          custom_avatar_url: prediction.user_custom_avatar_url,
+                        }}
+                        surface="admin"
+                        size="sm"
+                        showEmail
+                        className="max-w-[240px]"
+                        data-testid={`admin-prediction-user-${prediction.id ?? prediction.user_id}`}
+                      />
                     </td>
                     <td className="p-3">
                       <div className="flex flex-wrap gap-1.5">

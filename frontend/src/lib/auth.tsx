@@ -43,7 +43,7 @@ interface AuthContextValue {
   register: (
     email: string,
     password: string,
-    opts?: { locale?: string; nationality?: string; inviteToken?: string },
+    opts?: { username?: string; locale?: string; nationality?: string; inviteToken?: string },
   ) => Promise<User>;
   logout: () => Promise<void>;
   setUsername: (username: string) => Promise<User>;
@@ -141,11 +141,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (
     email: string,
     password: string,
-    opts?: { locale?: string; nationality?: string; inviteToken?: string },
+    opts?: { username?: string; locale?: string; nationality?: string; inviteToken?: string },
   ): Promise<User> => {
     const res = await apiClient.post("/auth/register", {
       email,
       password,
+      username: opts?.username,
       locale: opts?.locale,
       nationality: opts?.nationality,
       invite_token: opts?.inviteToken,

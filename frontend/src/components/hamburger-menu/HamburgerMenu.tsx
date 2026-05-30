@@ -15,6 +15,7 @@ import {
   Trophy,
   Calculator,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   TutorialContent,
   RulesContent,
@@ -27,16 +28,17 @@ import { brandAssets } from "@/lib/brand";
 import { haptic } from "@/lib/haptics";
 
 export default function HamburgerMenu() {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
   const menuItems = [
-    { id: "tutorial", icon: BookOpen, label: "Tutoriel", color: "text-pk-info" },
-    { id: "rules", icon: Trophy, label: "Règles du jeu", color: "text-pk-amber" },
-    { id: "scoring", icon: Calculator, label: "Barème des points", color: "text-pk-info" },
-    { id: "privacy", icon: Shield, label: "Confidentialité", color: "text-pk-emerald" },
-    { id: "legal", icon: FileText, label: "Mentions légales", color: "text-pk-amber" },
-    { id: "contact", icon: Mail, label: "Contact", color: "text-pk-red" },
+    { id: "tutorial", icon: BookOpen, label: t("menu.tutorial.title"), color: "text-pk-info" },
+    { id: "rules", icon: Trophy, label: t("menu.rules.title"), color: "text-pk-amber" },
+    { id: "scoring", icon: Calculator, label: t("menu.scoring.title"), color: "text-pk-info" },
+    { id: "privacy", icon: Shield, label: t("menu.privacy.title"), color: "text-pk-emerald" },
+    { id: "legal", icon: FileText, label: t("menu.legal.title"), color: "text-pk-amber" },
+    { id: "contact", icon: Mail, label: t("menu.contact.title"), color: "text-pk-red" },
   ];
 
   const closeMenu = () => {
@@ -51,7 +53,7 @@ export default function HamburgerMenu() {
           haptic("light");
           setIsOpen(true);
         }}
-        aria-label="Ouvrir le menu"
+        aria-label={t("menu.hamburger.open")}
         aria-expanded={isOpen}
         className="p-2 rounded-lg text-pk-titane hover:text-pk-piste hover:bg-white/[0.04] transition-colors"
         data-testid="hamburger-menu-btn"
@@ -76,7 +78,7 @@ export default function HamburgerMenu() {
         {isOpen && (
           <motion.div
             role="dialog"
-            aria-label="Menu principal"
+            aria-label={t("menu.hamburger.dialog")}
             className="fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-pk-carbon border-r border-white/[0.08] z-50"
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
@@ -91,11 +93,11 @@ export default function HamburgerMenu() {
                   className="h-6 w-auto max-w-[150px] object-contain"
                   draggable={false}
                 />
-                <h2 className="sr-only">Menu</h2>
+                <h2 className="sr-only">{t("menu.hamburger.menu")}</h2>
               </div>
               <button
                 onClick={closeMenu}
-                aria-label="Fermer le menu"
+                aria-label={t("menu.hamburger.close")}
                 className="p-1.5 rounded-lg text-pk-titane hover:text-pk-piste hover:bg-white/[0.04] transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -149,7 +151,7 @@ export default function HamburgerMenu() {
                     className="flex items-center gap-2 text-pk-info hover:text-pk-info/80 mb-4 text-sm"
                     whileHover={{ x: -4 }}
                   >
-                    <ChevronRight className="w-4 h-4 rotate-180" /> Retour
+                    <ChevronRight className="w-4 h-4 rotate-180" /> {t("menu.hamburger.back")}
                   </motion.button>
                   {activeSection === "tutorial" && <TutorialContent />}
                   {activeSection === "rules" && <RulesContent />}

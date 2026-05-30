@@ -17,17 +17,11 @@ import {
 } from "lucide-react";
 import RaceHeroCard from "./RaceHeroCard";
 import { useDashboardData } from "./useDashboardData";
-import { iconProps, iconSmall } from "@/lib/icons";
-import {
-  fadeUp,
-  staggerContainer,
-  STAGGER_DELAY,
-  easing,
-  duration,
-  smoothEnter,
-} from "@/lib/motion";
+import { iconSmall } from "@/lib/icons";
+import { fadeUp, staggerContainer } from "@/lib/motion";
 import { useAuth } from "@/lib/auth";
-import type { Race } from "@/types/api";
+import { openDeepSearch } from "@/components/search/deepSearchEvents";
+import { UserIdentity } from "@/components/users/UserIdentity";
 
 const RACE_FLAGS: Record<string, string> = {
   australia: "\u{1F1E6}\u{1F1FA}",
@@ -94,7 +88,7 @@ export default function DashboardPage() {
     globalLeaderboard,
   } = useDashboardData(user?.id);
 
-  const [currentRaceIndex, setCurrentRaceIndex] = useState(0);
+  const [currentRaceIndex] = useState(0);
   const [countdown, setCountdown] = useState({
     days: 0,
     hours: 0,
@@ -230,30 +224,34 @@ export default function DashboardPage() {
           border-b border-white/[0.08]"
         data-testid="dashboard-header"
       >
-        <div className="flex items-center gap-3">
-          <div
-            className="w-[34px] h-[34px] rounded-full
-              bg-gradient-to-br from-pk-red to-[#ff4444]
-              flex items-center justify-center
-              font-display text-[0.75rem] text-white
-              border-2 border-pk-anthracite cursor-pointer"
-            onClick={() => navigate("/profile")}
-          >
-            {user?.username?.slice(0, 2).toUpperCase() || "PK"}
-          </div>
-          <div>
-            <p className="text-[0.75rem] text-pk-titane leading-tight">Salut</p>
-            <p className="font-display text-[1rem] uppercase leading-tight">
-              {user?.username || "Driver"}
-            </p>
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={() => navigate("/profile")}
+          className="min-w-0 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pk-red/40"
+          data-testid="dashboard-profile-link"
+        >
+          <p className="mb-0.5 text-[0.75rem] leading-tight text-pk-titane">Salut</p>
+          <UserIdentity
+            user={{
+              id: user?.id,
+              username: user?.username || "Driver",
+              email: user?.email,
+              avatar_id: user?.avatar_id,
+              custom_avatar_url: user?.custom_avatar_url,
+              level: user?.level,
+            }}
+            linked={false}
+            size="md"
+            textClassName="font-display text-[1rem] uppercase leading-tight"
+          />
+        </button>
         <div className="flex items-center gap-1">
           <button
             className="w-9 h-9 rounded-full flex items-center justify-center
               text-pk-titane hover:text-pk-piste transition-colors duration-pk-short"
-            onClick={() => navigate("/search")}
+            onClick={openDeepSearch}
             aria-label="Rechercher"
+            data-testid="dashboard-open-deep-search"
           >
             <Search {...iconSmall} size={18} />
           </button>

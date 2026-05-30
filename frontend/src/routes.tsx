@@ -5,6 +5,7 @@
 import { lazy } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ProtectedRoute, useAuth } from "@/lib/auth";
+import { getPendingJoinPath } from "@/lib/pendingJoin";
 
 // --- lazy page imports (code-split: each page = separate chunk) ----------
 const AuthPage = lazy(() => import("@/pages/AuthPage"));
@@ -60,7 +61,6 @@ const PROTECTED_ROUTES: Array<{ path: string; element: React.ReactNode }> = [
   { path: "/league/:leagueId/chat", element: <LeagueChatPage /> },
   { path: "/league/:leagueId/details", element: <LeagueDetailPage /> },
   { path: "/profile/:userId", element: <MemberProfilePage /> },
-  { path: "/join/:code", element: <JoinLeaguePage /> },
   { path: "/driver/:driverId", element: <DriverDetailPage /> },
   { path: "/compare", element: <DriverComparisonPage /> },
 ];
@@ -88,6 +88,7 @@ function AdminEntry() {
 // --- Router component ---
 export function AppRouter() {
   const { user, loading } = useAuth();
+  const pendingJoinPath = getPendingJoinPath();
 
   if (loading) {
     return <PageLoader />;
@@ -101,7 +102,11 @@ export function AppRouter() {
         element={
           user ? (
             <Navigate
-              to={user.username ? (user.current_league_id ? "/" : "/league") : "/set-username"}
+              to={
+                user.username
+                  ? pendingJoinPath || (user.current_league_id ? "/" : "/league")
+                  : "/set-username"
+              }
               replace
             />
           ) : (
@@ -116,7 +121,10 @@ export function AppRouter() {
         element={
           <ProtectedRoute>
             {user?.username ? (
-              <Navigate to={user.current_league_id ? "/" : "/league"} replace />
+              <Navigate
+                to={pendingJoinPath || (user.current_league_id ? "/" : "/league")}
+                replace
+              />
             ) : (
               <SetUsernamePage />
             )}
@@ -131,6 +139,7 @@ export function AppRouter() {
           </ProtectedRoute>
         }
       />
+      <Route path="/join/:code" element={<JoinLeaguePage />} />
       <Route
         path="/"
         element={

@@ -403,6 +403,16 @@ def test_feedback_query_combines_triage_filters_and_text_search():
     assert query["$or"][0]["message"]["$regex"] == "sprint"
 
 
+def test_feedback_query_filters_beta_ownership():
+    mine_query = admin_feedbacks_service.feedback_query(owner="mine", current_admin_email="admin@pronokif.eu")
+    unassigned_query = admin_feedbacks_service.feedback_query(q="bug", owner="unassigned")
+
+    assert mine_query["assigned_to"] == "admin@pronokif.eu"
+    assert "$and" in unassigned_query
+    assert unassigned_query["$and"][0]["$or"][0]["message"]["$regex"] == "bug"
+    assert {"assigned_to": ""} in unassigned_query["$and"][1]["$or"]
+
+
 def test_feedback_analytics_from_docs_groups_triage_state():
     analytics = admin_feedbacks_service.feedback_analytics_from_docs(
         [
@@ -414,6 +424,7 @@ def test_feedback_analytics_from_docs_groups_triage_state():
                 "read": False,
                 "status": "new",
                 "priority": "high",
+                "assigned_to": "admin@pronokif.eu",
                 "created_at": "2026-05-29T10:00:00+00:00",
             },
             {
@@ -424,6 +435,8 @@ def test_feedback_analytics_from_docs_groups_triage_state():
                 "read": True,
                 "status": "planned",
                 "priority": "normal",
+                "admin_reply": "Merci, c'est noté.",
+                "admin_reply_sent_at": "2026-05-29T11:30:00+00:00",
                 "created_at": "2026-05-29T11:00:00+00:00",
             },
         ]
@@ -434,6 +447,9 @@ def test_feedback_analytics_from_docs_groups_triage_state():
     assert analytics["summary"]["bugs"] == 1
     assert analytics["summary"]["suggestions"] == 1
     assert analytics["summary"]["high_priority"] == 1
+    assert analytics["summary"]["open_bugs"] == 1
+    assert analytics["summary"]["assigned"] == 1
+    assert analytics["summary"]["replied"] == 1
     assert analytics["by_status"]["planned"] == 1
     assert analytics["top_submitters"][0]["feedbacks_count"] == 2
 

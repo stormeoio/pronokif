@@ -10,6 +10,8 @@ def feedback_query(
     read_status: str | None = None,
     status: str | None = None,
     priority: str | None = None,
+    owner: str | None = None,
+    current_admin_email: str | None = None,
 ) -> dict:
     query: dict[str, Any] = {}
     if category:
@@ -22,13 +24,33 @@ def feedback_query(
         query["read"] = True
     elif read_status == "unread":
         query["read"] = False
+    owner_conditions: list[dict[str, Any]] | None = None
+    if owner == "mine" and current_admin_email:
+        query["assigned_to"] = current_admin_email
+    elif owner == "unassigned":
+        owner_conditions = [
+            {"assigned_to": {"$exists": False}},
+            {"assigned_to": ""},
+            {"assigned_to": None},
+        ]
+    elif owner == "assigned":
+        query["assigned_to"] = {"$exists": True, "$nin": ["", None]}
     if q.strip():
-        query["$or"] = [
+        search_conditions = [
             {"message": {"$regex": q.strip(), "$options": "i"}},
             {"username": {"$regex": q.strip(), "$options": "i"}},
+            {"email": {"$regex": q.strip(), "$options": "i"}},
             {"user_id": {"$regex": q.strip(), "$options": "i"}},
+            {"assigned_to": {"$regex": q.strip(), "$options": "i"}},
             {"admin_note": {"$regex": q.strip(), "$options": "i"}},
+            {"admin_reply": {"$regex": q.strip(), "$options": "i"}},
         ]
+        if owner_conditions:
+            query["$and"] = [{"$or": search_conditions}, {"$or": owner_conditions}]
+        else:
+            query["$or"] = search_conditions
+    elif owner_conditions:
+        query["$or"] = owner_conditions
     return query
 
 
@@ -77,7 +99,26 @@ def feedback_analytics_from_docs(feedbacks: list[dict]) -> dict:
             "bugs": by_category.get("bug", 0),
             "suggestions": by_category.get("suggestion", 0),
             "feedback": by_category.get("feedback", 0),
+            "open_bugs": len(
+                [
+                    feedback
+                    for feedback in feedbacks
+                    if (feedback.get("category") or "feedback") == "bug"
+                    and (feedback.get("status") or "new") not in {"resolved", "wont_fix"}
+                ]
+            ),
             "high_priority": by_priority.get("high", 0) + by_priority.get("urgent", 0),
+            "assigned": len(
+                [feedback for feedback in feedbacks if str(feedback.get("assigned_to") or "").strip()]
+            ),
+            "replied": len(
+                [
+                    feedback
+                    for feedback in feedbacks
+                    if str(feedback.get("admin_reply") or "").strip()
+                    or str(feedback.get("admin_reply_sent_at") or "").strip()
+                ]
+            ),
         },
         "by_category": by_category,
         "by_status": by_status,

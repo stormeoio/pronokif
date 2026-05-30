@@ -3,18 +3,17 @@
  * Broadcast Premium theme: glass header, member strip, pk-* bubbles.
  */
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
-import { ChevronLeft, Send, Users, MessageCircle, RefreshCw, Crown, Clock } from "lucide-react";
-import { AvatarDisplay } from "../components/AvatarDisplay";
+import { ChevronLeft, Clock, Crown, MessageCircle, RefreshCw, Send } from "lucide-react";
 import { api, getApiError } from "@/lib/api";
-import type { AvatarsResponse, LeagueMember, ChatMessageResponse } from "@/types/api";
+import type { ChatMessageResponse, LeagueMember } from "@/types/api";
 import { useAuth } from "@/lib/auth";
 import { haptic } from "@/lib/haptics";
-import { fadeUp, getReducedMotionProps } from "@/lib/motion";
 import { EmptyFullPage } from "@/components/EmptyState";
+import { UserIdentity } from "@/components/users/UserIdentity";
 
 /* ── Skeleton ──────────────────────────────────────────── */
 
@@ -68,7 +67,6 @@ export default function LeagueChatPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion() ?? false;
-  const rmProps = getReducedMotionProps(prefersReducedMotion);
 
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -99,12 +97,6 @@ export default function LeagueChatPage() {
     queryKey: ["/leagues", leagueId, "members"],
     queryFn: () => api.leagues.members(leagueId!),
     enabled: !!leagueId,
-  });
-
-  const { data: avatars = {} as AvatarsResponse } = useQuery<AvatarsResponse>({
-    queryKey: ["/avatars"],
-    queryFn: () => api.avatars.list(),
-    staleTime: 5 * 60_000,
   });
 
   /* ── Scroll to bottom on new messages ────────────────── */
@@ -140,14 +132,6 @@ export default function LeagueChatPage() {
     haptic("light");
     queryClient.invalidateQueries({ queryKey: ["/leagues", leagueId, "messages"] });
     toast.success("Messages actualisés");
-  };
-
-  const getAvatarById = (avatarId: string | undefined) => {
-    return avatars?.all?.find((a: { id: string }) => a.id === avatarId) || null;
-  };
-
-  const navigateToProfile = (userId: string) => {
-    navigate(`/profile/${userId}`);
   };
 
   /* ── Loading ─────────────────────────────────────────── */
@@ -217,33 +201,27 @@ export default function LeagueChatPage() {
         {/* Member strip */}
         <div className="flex gap-1 px-4 pb-2.5 overflow-x-auto scrollbar-none">
           {(members as LeagueMember[]).map((member, i) => (
-            <motion.button
+            <motion.div
               key={member.id}
-              onClick={() => navigateToProfile(member.id)}
-              className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg hover:bg-white/[0.04] transition-colors min-w-[48px]"
-              data-testid={`member-${member.id}`}
+              className="relative min-w-[56px]"
               initial={prefersReducedMotion ? {} : { opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1 + i * 0.03 }}
             >
-              <div className="relative">
-                <AvatarDisplay
-                  avatar={getAvatarById(member.avatar_id)}
-                  customUrl={member.custom_avatar_url}
-                  size="sm"
-                />
-                {member.is_owner && (
-                  <Crown className="w-2.5 h-2.5 text-pk-amber absolute -top-0.5 -right-0.5" />
-                )}
-              </div>
-              <span
-                className={`font-data text-[0.5rem] truncate max-w-[44px] ${
+              <UserIdentity
+                user={member}
+                layout="vertical"
+                size="sm"
+                className="w-full px-1.5 py-1 rounded-lg hover:bg-white/[0.04]"
+                textClassName={`font-data text-[0.5rem] max-w-[48px] ${
                   member.id === user?.id ? "text-pk-red" : "text-pk-titane"
                 }`}
-              >
-                {member.id === user?.id ? "Toi" : member.username}
-              </span>
-            </motion.button>
+                data-testid={`member-${member.id}`}
+              />
+              {member.is_owner && (
+                <Crown className="w-2.5 h-2.5 text-pk-amber absolute top-0.5 right-1.5" />
+              )}
+            </motion.div>
           ))}
         </div>
       </header>
@@ -266,39 +244,30 @@ export default function LeagueChatPage() {
               return (
                 <motion.div
                   key={msg.id}
-                  className={`flex gap-2 ${isMe ? "flex-row-reverse" : ""}`}
+                  className={`flex ${isMe ? "justify-end" : "justify-start"}`}
                   data-testid={`message-${msg.id}`}
                   initial={prefersReducedMotion ? {} : { opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.15 }}
                 >
-                  {/* Avatar */}
-                  {showAvatar ? (
-                    <button
-                      onClick={() => navigateToProfile(msg.user_id)}
-                      className="flex-shrink-0 hover:opacity-80 transition-opacity"
-                    >
-                      <AvatarDisplay
-                        avatar={getAvatarById(msg.avatar_id)}
-                        customUrl={msg.custom_avatar_url}
-                        size="sm"
-                      />
-                    </button>
-                  ) : (
-                    <div className="w-8" />
-                  )}
-
-                  {/* Bubble */}
-                  <div className={`max-w-[75%] ${isMe ? "items-end" : "items-start"}`}>
+                  <div
+                    className={`flex max-w-[82%] flex-col ${isMe ? "items-end" : "items-start"}`}
+                  >
                     {showAvatar && (
-                      <button
-                        onClick={() => navigateToProfile(msg.user_id)}
-                        className={`font-data text-[0.5625rem] mb-0.5 hover:underline block ${
+                      <UserIdentity
+                        user={{
+                          id: msg.user_id,
+                          username: msg.username,
+                          avatar_id: msg.avatar_id,
+                          custom_avatar_url: msg.custom_avatar_url,
+                        }}
+                        size="sm"
+                        className={`mb-1 ${isMe ? "flex-row-reverse" : ""}`}
+                        textClassName={`font-data text-[0.5625rem] ${
                           isMe ? "text-pk-red text-right" : "text-pk-titane"
                         }`}
-                      >
-                        {isMe ? "Toi" : msg.username}
-                      </button>
+                        data-testid={`message-author-${msg.id}`}
+                      />
                     )}
                     <div
                       className={`rounded-2xl px-3.5 py-2 ${

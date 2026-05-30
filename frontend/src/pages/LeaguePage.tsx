@@ -2,26 +2,152 @@
  * LeaguePage — My Leagues hub.
  * Broadcast Premium theme: glass header, league list, create/join chips + forms.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
-import { Trophy, Plus, LogIn, ChevronLeft } from "lucide-react";
+import { Trophy, Plus, LogIn, ChevronLeft, CircleCheck, Flag, Users } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import LeagueCreatedScreen from "./leagues/LeagueCreatedScreen";
 import LeagueList from "./leagues/LeagueList";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { haptic } from "@/lib/haptics";
 import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
+import { UserIdentity, type UserIdentityRecord } from "@/components/users/UserIdentity";
 
 /* ── Types ─────────────────────────────────────────────── */
 
 type TabKey = "join" | "create";
 
+interface LeagueOnboardingProps {
+  activeTab: TabKey;
+  onSelectTab: (tab: TabKey) => void;
+  user?: UserIdentityRecord | null;
+}
+
+function LeagueOnboarding({ activeTab, onSelectTab, user }: LeagueOnboardingProps) {
+  const { t } = useTranslation();
+  const welcomeLabel = t("leagues_page.welcome", { name: "" }).trim();
+  const stepLabels = t("leagues_page.onboarding_steps", { returnObjects: true }) as string[];
+  const choices = [
+    {
+      key: "create" as const,
+      Icon: Plus,
+      title: t("leagues_page.choices.create_title"),
+      description: t("leagues_page.choices.create_description"),
+    },
+    {
+      key: "join" as const,
+      Icon: LogIn,
+      title: t("leagues_page.choices.join_title"),
+      description: t("leagues_page.choices.join_description"),
+    },
+  ];
+
+  return (
+    <motion.section variants={fadeUp} className="mb-4" data-testid="league-onboarding">
+      <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-4 overflow-hidden">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-lg bg-pk-red-subtle border border-pk-red/25 flex items-center justify-center flex-shrink-0">
+            <Flag className="w-4.5 h-4.5 text-pk-red" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-data text-[0.5625rem] text-pk-red uppercase tracking-wider mb-1">
+              {t("leagues_page.onboarding_badge")}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="font-display text-base leading-tight">{welcomeLabel}</h2>
+              {user ? (
+                <UserIdentity
+                  user={user}
+                  linked={false}
+                  size="sm"
+                  textClassName="font-display text-base leading-tight"
+                  data-testid="league-onboarding-user"
+                />
+              ) : (
+                <span className="font-display text-base leading-tight">
+                  {t("leagues_page.pilot_fallback")}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-pk-titane leading-relaxed mt-1.5">
+              {t("leagues_page.onboarding_text")}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 mt-4">
+          {[
+            { label: stepLabels[0], state: "done" },
+            { label: stepLabels[1], state: "active" },
+            { label: stepLabels[2], state: "next" },
+          ].map((step) => (
+            <div
+              key={step.label}
+              className={`rounded-md border px-2.5 py-2 ${
+                step.state === "active"
+                  ? "bg-pk-red-subtle border-pk-red/25"
+                  : "bg-white/[0.03] border-white/[0.08]"
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                {step.state === "done" ? (
+                  <CircleCheck className="w-3 h-3 text-pk-emerald" />
+                ) : (
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      step.state === "active" ? "bg-pk-red" : "bg-pk-titane/40"
+                    }`}
+                  />
+                )}
+                <span className="font-data text-[0.5rem] text-pk-titane uppercase tracking-wider">
+                  {step.label}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 mt-4">
+          {choices.map(({ key, Icon, title, description }) => {
+            const selected = activeTab === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => onSelectTab(key)}
+                className={`text-left rounded-lg border p-3 transition-colors ${
+                  selected
+                    ? "bg-pk-red-subtle border-pk-red/30"
+                    : "bg-white/[0.03] border-white/[0.08] hover:border-white/[0.14]"
+                }`}
+                data-testid={`league-onboarding-${key}`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-md flex items-center justify-center mb-2 ${
+                    selected ? "bg-pk-red/15 text-pk-red" : "bg-white/[0.04] text-pk-titane"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                </div>
+                <p className="font-display text-xs">{title}</p>
+                <p className="text-[0.625rem] text-pk-titane leading-snug mt-1">{description}</p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </motion.section>
+  );
+}
+
 /* ── Component ─────────────────────────────────────────── */
 
 export default function LeaguePage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabKey>("join");
   const [isLoading, setIsLoading] = useState(false);
   const [createdLeague, setCreatedLeague] = useState<{
@@ -57,24 +183,37 @@ export default function LeaguePage() {
     queryClient.invalidateQueries({ queryKey: ["/leagues/unread-messages"] });
   };
 
+  const hasLeagues = myLeagues.length > 0;
+  const needsLeagueOnboarding = !loadingLeagues && !hasLeagues && !user?.current_league_id;
+
+  useEffect(() => {
+    if (needsLeagueOnboarding) {
+      setActiveTab("create");
+    }
+  }, [needsLeagueOnboarding]);
+
   /* ── Actions ─────────────────────────────────────────── */
 
   const handleJoin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     const formData = new FormData(e.currentTarget);
-    const code = (formData.get("code") as string).toUpperCase();
+    const code = (formData.get("code") as string).trim().toUpperCase();
+    const shouldAdvanceAfterJoin = !user?.current_league_id && myLeagues.length === 0;
 
     try {
       const res = await api.leagues.join({ code });
-      updateUser({ ...user, current_league_id: res.id });
-      toast.success(`Tu as rejoint "${res.name}" !`);
+      updateUser({ current_league_id: res.id });
+      toast.success(t("leagues_page.joined_toast", { name: res.name }));
       invalidateLeagues();
       (e.target as HTMLFormElement).reset();
+      if (shouldAdvanceAfterJoin) {
+        navigate("/");
+      }
     } catch (error: unknown) {
       toast.error(
         (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-          "Code invalide",
+          t("leagues_page.invalid_code"),
       );
     } finally {
       setIsLoading(false);
@@ -90,13 +229,13 @@ export default function LeaguePage() {
     try {
       const res = await api.leagues.create({ name });
       setCreatedLeague(res);
-      updateUser({ ...user, current_league_id: res.id });
-      toast.success("Ligue créée !");
+      updateUser({ current_league_id: res.id });
+      toast.success(t("leagues_page.created_toast"));
       invalidateLeagues();
     } catch (error: unknown) {
       toast.error(
         (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-          "Erreur lors de la création",
+          t("leagues_page.create_error"),
       );
     } finally {
       setIsLoading(false);
@@ -107,16 +246,16 @@ export default function LeaguePage() {
     try {
       await navigator.clipboard.writeText(code || createdLeague?.code || "");
       setCopied(code || createdLeague?.code || false);
-      toast.success("Code copié !");
+      toast.success(t("leagues_page.code_copied"));
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("Impossible de copier");
+      toast.error(t("leagues_page.copy_error"));
     }
   };
 
   const shareLeague = async (league: { name: string; code: string }) => {
     const shareUrl = `${window.location.origin}/join/${league.code}`;
-    const shareText = `Rejoins ma ligue F1 "${league.name}" sur PRONOKIF !`;
+    const shareText = t("leagues_page.share_text", { name: league.name });
 
     if (navigator.share) {
       try {
@@ -135,8 +274,8 @@ export default function LeaguePage() {
   };
 
   const selectLeague = (leagueId: string) => {
-    updateUser({ ...user, current_league_id: leagueId });
-    toast.success("Ligue sélectionnée !");
+    updateUser({ current_league_id: leagueId });
+    toast.success(t("leagues_page.selected_toast"));
   };
 
   /* ── Created league success screen ──────────────────── */
@@ -173,7 +312,7 @@ export default function LeaguePage() {
             </button>
             <div className="flex items-center gap-2">
               <Trophy className="w-4.5 h-4.5 text-pk-red" />
-              <h1 className="font-display text-lg">Mes ligues</h1>
+              <h1 className="font-display text-lg">{t("leagues_page.title")}</h1>
             </div>
           </div>
         </div>
@@ -187,20 +326,32 @@ export default function LeaguePage() {
         animate="visible"
         {...rmProps}
       >
-        {/* League List */}
-        <motion.div variants={fadeUp}>
-          <LeagueList
-            leagues={myLeagues}
-            loading={loadingLeagues}
-            userId={user!.id}
-            currentLeagueId={user!.current_league_id}
-            copied={copied || null}
-            unreadByLeague={unreadByLeague}
-            onCopyCode={copyCode}
-            onShareLeague={shareLeague}
-            onSelectLeague={(id) => selectLeague(String(id))}
+        {needsLeagueOnboarding && (
+          <LeagueOnboarding
+            activeTab={activeTab}
+            user={user}
+            onSelectTab={(tab) => {
+              haptic("selection");
+              setActiveTab(tab);
+            }}
           />
-        </motion.div>
+        )}
+
+        {!needsLeagueOnboarding && (
+          <motion.div variants={fadeUp}>
+            <LeagueList
+              leagues={myLeagues}
+              loading={loadingLeagues}
+              userId={user!.id}
+              currentLeagueId={user!.current_league_id}
+              copied={copied || null}
+              unreadByLeague={unreadByLeague}
+              onCopyCode={copyCode}
+              onShareLeague={shareLeague}
+              onSelectLeague={(id) => selectLeague(String(id))}
+            />
+          </motion.div>
+        )}
 
         {/* Create / Join Card */}
         <motion.div
@@ -222,7 +373,7 @@ export default function LeaguePage() {
               data-testid="tab-join"
             >
               <LogIn className="w-3.5 h-3.5" />
-              Rejoindre
+              {t("leagues_page.join_tab")}
             </button>
             <button
               onClick={() => {
@@ -237,7 +388,7 @@ export default function LeaguePage() {
               data-testid="tab-create"
             >
               <Plus className="w-3.5 h-3.5" />
-              Créer
+              {t("leagues_page.create_tab")}
             </button>
           </div>
 
@@ -253,7 +404,7 @@ export default function LeaguePage() {
                 className="p-5"
               >
                 <p className="text-xs text-pk-titane text-center mb-4">
-                  Entre le code de la ligue que tu veux rejoindre
+                  {t("leagues_page.join_intro")}
                 </p>
 
                 <form onSubmit={handleJoin} className="space-y-4">
@@ -262,7 +413,7 @@ export default function LeaguePage() {
                       htmlFor="code"
                       className="block font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-1.5"
                     >
-                      Code d'invitation
+                      {t("leagues_page.code_label")}
                     </label>
                     <input
                       id="code"
@@ -283,12 +434,12 @@ export default function LeaguePage() {
                     {isLoading ? (
                       <>
                         <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Connexion...
+                        {t("leagues_page.joining")}
                       </>
                     ) : (
                       <>
                         <LogIn className="w-4 h-4" />
-                        Rejoindre la ligue
+                        {t("leagues_page.join_submit")}
                       </>
                     )}
                   </button>
@@ -304,7 +455,7 @@ export default function LeaguePage() {
                 className="p-5"
               >
                 <p className="text-xs text-pk-titane text-center mb-4">
-                  Crée ta propre ligue et invite tes amis
+                  {t("leagues_page.create_intro")}
                 </p>
 
                 <form onSubmit={handleCreate} className="space-y-4">
@@ -313,13 +464,13 @@ export default function LeaguePage() {
                       htmlFor="name"
                       className="block font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-1.5"
                     >
-                      Nom de la ligue
+                      {t("leagues_page.name_label")}
                     </label>
                     <input
                       id="name"
                       name="name"
                       required
-                      placeholder="Ex: Les Champions F1"
+                      placeholder={t("leagues_page.name_placeholder")}
                       className="w-full h-11 px-4 bg-pk-anthracite border border-white/[0.08] rounded-lg text-sm text-pk-piste placeholder:text-pk-titane/40 focus:outline-none focus:border-pk-red/50 focus:ring-1 focus:ring-pk-red/20 transition-colors"
                       data-testid="league-name-input"
                     />
@@ -334,12 +485,12 @@ export default function LeaguePage() {
                     {isLoading ? (
                       <>
                         <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Création...
+                        {t("leagues_page.creating")}
                       </>
                     ) : (
                       <>
                         <Plus className="w-4 h-4" />
-                        Créer ma ligue
+                        {t("leagues_page.create_submit")}
                       </>
                     )}
                   </button>
@@ -348,6 +499,20 @@ export default function LeaguePage() {
             )}
           </AnimatePresence>
         </motion.div>
+
+        {needsLeagueOnboarding && (
+          <motion.div variants={fadeUp} className="mt-4">
+            <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] p-4">
+              <div className="flex items-center gap-2 mb-1.5">
+                <Users className="w-3.5 h-3.5 text-pk-titane" />
+                <p className="font-display text-xs">{t("leagues_page.social_unlock_title")}</p>
+              </div>
+              <p className="text-[0.6875rem] text-pk-titane leading-relaxed">
+                {t("leagues_page.social_unlock_text")}
+              </p>
+            </div>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );

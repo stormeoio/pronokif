@@ -17,7 +17,9 @@ import {
   MessageSquare,
   Save,
   Search,
+  Send,
   Trash2,
+  UserCheck,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -25,17 +27,27 @@ import { adminApi } from "../adminApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { UserIdentity } from "@/components/users/UserIdentity";
 
 type Feedback = {
   id: string;
   user_id?: string;
   username?: string;
+  email?: string;
+  avatar_id?: string | null;
+  custom_avatar_url?: string | null;
   category?: string;
   message?: string;
   read?: boolean;
   status?: string;
   priority?: string;
+  assigned_to?: string;
   admin_note?: string;
+  admin_reply?: string;
+  admin_reply_by?: string;
+  admin_reply_at?: string;
+  admin_reply_sent_at?: string;
+  admin_reply_delivery?: string;
   created_at?: string;
   updated_at?: string;
 };
@@ -44,7 +56,9 @@ type FeedbackDraft = {
   category: string;
   status: string;
   priority: string;
+  assigned_to: string;
   admin_note: string;
+  admin_reply: string;
   read: boolean;
 };
 
@@ -52,7 +66,9 @@ const EMPTY_DRAFT: FeedbackDraft = {
   category: "feedback",
   status: "new",
   priority: "normal",
+  assigned_to: "",
   admin_note: "",
+  admin_reply: "",
   read: false,
 };
 
@@ -82,7 +98,9 @@ function feedbackToDraft(feedback: Feedback): FeedbackDraft {
     category: feedback.category ?? "feedback",
     status: feedback.status ?? "new",
     priority: feedback.priority ?? "normal",
+    assigned_to: feedback.assigned_to ?? "",
     admin_note: feedback.admin_note ?? "",
+    admin_reply: feedback.admin_reply ?? "",
     read: !!feedback.read,
   };
 }
@@ -92,7 +110,9 @@ function draftToPayload(draft: FeedbackDraft) {
     category: draft.category,
     status: draft.status,
     priority: draft.priority,
-    admin_note: draft.admin_note.trim() || null,
+    assigned_to: draft.assigned_to.trim(),
+    admin_note: draft.admin_note.trim(),
+    admin_reply: draft.admin_reply.trim(),
     read: draft.read,
   };
 }
@@ -126,6 +146,36 @@ function priorityTone(priority?: string) {
   return "text-cyan-300";
 }
 
+function statusLabel(status?: string) {
+  switch (status) {
+    case "in_progress":
+      return "Pris en charge";
+    case "in_review":
+      return "En revue";
+    case "planned":
+      return "Planifié";
+    case "resolved":
+      return "Résolu";
+    case "wont_fix":
+      return "Écarté";
+    default:
+      return "Nouveau";
+  }
+}
+
+function priorityLabel(priority?: string) {
+  switch (priority) {
+    case "urgent":
+      return "Urgente";
+    case "high":
+      return "Haute";
+    case "low":
+      return "Basse";
+    default:
+      return "Normale";
+  }
+}
+
 function StatCard({
   label,
   value,
@@ -143,18 +193,23 @@ function StatCard({
   );
 }
 
-export default function FeedbacksTab() {
+type FeedbacksTabProps = {
+  currentAdminEmail?: string;
+};
+
+export default function FeedbacksTab({ currentAdminEmail = "" }: FeedbacksTabProps) {
   const queryClient = useQueryClient();
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("");
   const [readStatus, setReadStatus] = useState("");
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
+  const [owner, setOwner] = useState("");
   const [page, setPage] = useState(0);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
   const [draft, setDraft] = useState<FeedbackDraft>(EMPTY_DRAFT);
-  const [batchStatus, setBatchStatus] = useState("in_review");
+  const [batchStatus, setBatchStatus] = useState("in_progress");
   const [batchPriority, setBatchPriority] = useState("normal");
   const limit = 20;
 
@@ -164,6 +219,7 @@ export default function FeedbacksTab() {
     read_status: readStatus || undefined,
     status: status || undefined,
     priority: priority || undefined,
+    owner: owner || undefined,
   };
 
   const { data, isLoading } = useQuery({
@@ -204,9 +260,10 @@ export default function FeedbacksTab() {
 
   const batchMutation = useMutation({
     mutationFn: (payload: {
-      action: "mark_read" | "mark_unread" | "delete" | "set_status" | "set_priority";
+      action: "mark_read" | "mark_unread" | "delete" | "set_status" | "set_priority" | "assign";
       status?: string;
       priority?: string;
+      assigned_to?: string;
     }) => adminApi.feedbacks.batch({ ids: selectedIds, ...payload }),
     onSuccess: (result) => {
       toast.success(`${result.matched ?? result.deleted ?? 0} retour(s) traité(s)`);
@@ -224,6 +281,32 @@ export default function FeedbacksTab() {
       toast.success("Export CSV généré");
     },
     onError: () => toast.error("Export CSV impossible"),
+  });
+
+  const replyMutation = useMutation({
+    mutationFn: () => {
+      if (!selectedFeedback?.id) throw new Error("Feedback id missing");
+      return adminApi.feedbacks.reply(selectedFeedback.id, {
+        reply: draft.admin_reply.trim(),
+        status: draft.status,
+        mark_read: true,
+      });
+    },
+    onSuccess: (result) => {
+      if (result.email_sent) {
+        toast.success("Réponse envoyée au joueur");
+      } else if (result.delivery_status === "missing_email") {
+        toast.warning("Réponse enregistrée, aucun email joueur disponible");
+      } else {
+        toast.warning("Réponse enregistrée, email non envoyé");
+      }
+      if (result.feedback) {
+        setSelectedFeedback(result.feedback);
+        setDraft(feedbackToDraft(result.feedback));
+      }
+      invalidateFeedbacks();
+    },
+    onError: () => toast.error("Impossible d'envoyer cette réponse"),
   });
 
   const markReadMutation = useMutation({
@@ -284,9 +367,11 @@ export default function FeedbacksTab() {
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-heading text-2xl uppercase tracking-tight text-white">Retours</h2>
+          <h2 className="font-heading text-2xl uppercase tracking-tight text-white">
+            Feedbacks Beta
+          </h2>
           <p className="font-body text-xs text-gray-500">
-            Triage support, bugs bêta et demandes d'amélioration.
+            Triage support, réponses aux joueurs et prise en charge des bugs bêta.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -312,14 +397,18 @@ export default function FeedbacksTab() {
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <StatCard label="Total" value={summary.total ?? total} />
         <StatCard label="Non lus" value={summary.unread} tone="text-amber-400" />
-        <StatCard label="Bugs" value={summary.bugs} tone="text-red-300" />
-        <StatCard label="Suggestions" value={summary.suggestions} tone="text-cyan-300" />
+        <StatCard
+          label="Bugs ouverts"
+          value={summary.open_bugs ?? summary.bugs}
+          tone="text-red-300"
+        />
         <StatCard label="Prioritaires" value={summary.high_priority} tone="text-orange-300" />
-        <StatCard label="Lus" value={summary.read} tone="text-emerald-400" />
+        <StatCard label="Pris en charge" value={summary.assigned} tone="text-cyan-300" />
+        <StatCard label="Réponses" value={summary.replied} tone="text-emerald-400" />
       </div>
 
       <div className="card-arcade mb-4 p-4">
-        <div className="grid gap-3 lg:grid-cols-[1fr_160px_160px_160px_160px_auto]">
+        <div className="grid gap-3 xl:grid-cols-[1fr_150px_140px_150px_140px_150px_auto]">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
             <Input
@@ -369,6 +458,7 @@ export default function FeedbacksTab() {
           >
             <option value="">Tous statuts</option>
             <option value="new">Nouveau</option>
+            <option value="in_progress">Pris en charge</option>
             <option value="in_review">En revue</option>
             <option value="planned">Planifié</option>
             <option value="resolved">Résolu</option>
@@ -388,6 +478,19 @@ export default function FeedbacksTab() {
             <option value="normal">Normale</option>
             <option value="low">Basse</option>
           </select>
+          <select
+            value={owner}
+            onChange={(event) => {
+              setOwner(event.target.value);
+              setPage(0);
+            }}
+            className="h-10 rounded-sm border border-gray-700 bg-gray-900 px-3 font-body text-sm text-white"
+          >
+            <option value="">Prise en charge</option>
+            <option value="mine">À moi</option>
+            <option value="unassigned">Non assignés</option>
+            <option value="assigned">Assignés</option>
+          </select>
           <Button
             variant="ghost"
             onClick={() => {
@@ -396,6 +499,7 @@ export default function FeedbacksTab() {
               setReadStatus("");
               setStatus("");
               setPriority("");
+              setOwner("");
               setPage(0);
             }}
             className="text-xs text-gray-400"
@@ -421,6 +525,7 @@ export default function FeedbacksTab() {
                 onChange={(event) => setBatchStatus(event.target.value)}
                 className="h-9 rounded-sm border border-gray-700 bg-gray-900 px-3 font-body text-xs text-white"
               >
+                <option value="in_progress">Pris en charge</option>
                 <option value="in_review">En revue</option>
                 <option value="planned">Planifié</option>
                 <option value="resolved">Résolu</option>
@@ -456,6 +561,20 @@ export default function FeedbacksTab() {
               >
                 Priorité
               </Button>
+              {currentAdminEmail && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={batchMutation.isPending}
+                  onClick={() =>
+                    batchMutation.mutate({ action: "assign", assigned_to: currentAdminEmail })
+                  }
+                  className="text-xs text-cyan-300"
+                >
+                  <UserCheck className="mr-1 h-4 w-4" />
+                  Me l'assigner
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="ghost"
@@ -499,10 +618,25 @@ export default function FeedbacksTab() {
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
             <div>
               <h3 className="font-heading text-lg uppercase text-white">Retour sélectionné</h3>
-              <p className="font-body text-xs text-gray-500">
-                {selectedFeedback.username ?? selectedFeedback.user_id ?? "Utilisateur"} ·{" "}
-                {formatDateTime(selectedFeedback.created_at)}
-              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <UserIdentity
+                  user={{
+                    id: selectedFeedback.user_id,
+                    username: selectedFeedback.username,
+                    email: selectedFeedback.email,
+                    avatar_id: selectedFeedback.avatar_id,
+                    custom_avatar_url: selectedFeedback.custom_avatar_url,
+                  }}
+                  surface="admin"
+                  size="sm"
+                  showEmail
+                  className="max-w-[280px]"
+                  data-testid="admin-selected-feedback-user"
+                />
+                <span className="font-body text-xs text-gray-500">
+                  {formatDateTime(selectedFeedback.created_at)}
+                </span>
+              </div>
             </div>
             <Button
               type="button"
@@ -533,6 +667,7 @@ export default function FeedbacksTab() {
               className="h-10 rounded-sm border border-gray-700 bg-gray-900 px-3 font-body text-sm text-white"
             >
               <option value="new">Nouveau</option>
+              <option value="in_progress">Pris en charge</option>
               <option value="in_review">En revue</option>
               <option value="planned">Planifié</option>
               <option value="resolved">Résolu</option>
@@ -558,6 +693,31 @@ export default function FeedbacksTab() {
               Lu
             </label>
           </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-[1fr_auto]">
+            <Input
+              value={draft.assigned_to}
+              onChange={(event) => setDraft({ ...draft, assigned_to: event.target.value })}
+              placeholder="Assigné à (email admin)"
+              className="border-gray-700 bg-gray-900 text-white"
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={!currentAdminEmail}
+              onClick={() =>
+                setDraft({
+                  ...draft,
+                  assigned_to: currentAdminEmail,
+                  status: draft.status === "new" ? "in_progress" : draft.status,
+                })
+              }
+              className="h-10 text-xs text-cyan-300"
+            >
+              <UserCheck className="mr-1 h-4 w-4" />
+              Me l'assigner
+            </Button>
+          </div>
           <Textarea
             value={draft.admin_note}
             onChange={(event) => setDraft({ ...draft, admin_note: event.target.value })}
@@ -565,6 +725,38 @@ export default function FeedbacksTab() {
             rows={3}
             className="mt-3 border-gray-700 bg-gray-900 text-white"
           />
+          <Textarea
+            value={draft.admin_reply}
+            onChange={(event) => setDraft({ ...draft, admin_reply: event.target.value })}
+            placeholder="Réponse au joueur..."
+            rows={4}
+            className="mt-3 border-gray-700 bg-gray-900 text-white"
+          />
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+            <p className="font-body text-xs text-gray-500">
+              {selectedFeedback.admin_reply_sent_at
+                ? `Dernière réponse envoyée ${formatDateTime(selectedFeedback.admin_reply_sent_at)}`
+                : selectedFeedback.admin_reply_delivery === "not_sent"
+                  ? "Dernière réponse enregistrée, email non envoyé."
+                  : "La réponse est enregistrable, puis envoyable par email si une adresse est disponible."}
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={replyMutation.isPending || !draft.admin_reply.trim()}
+              onClick={() => replyMutation.mutate()}
+              className="text-xs text-cyan-300"
+              data-testid="feedback-send-reply"
+            >
+              {replyMutation.isPending ? (
+                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="mr-1 h-4 w-4" />
+              )}
+              Envoyer la réponse
+            </Button>
+          </div>
           <div className="mt-4 flex justify-end">
             <Button
               type="submit"
@@ -648,19 +840,47 @@ export default function FeedbacksTab() {
                           Note : {feedback.admin_note}
                         </p>
                       )}
+                      {feedback.admin_reply && (
+                        <p className="mt-1 line-clamp-1 font-body text-xs text-emerald-300">
+                          Réponse : {feedback.admin_reply}
+                        </p>
+                      )}
                     </td>
                     <td className="p-3">
                       <p className="font-data text-xs uppercase text-gray-300">
-                        {feedback.status ?? "new"}
+                        {statusLabel(feedback.status)}
                       </p>
                       <p
                         className={`font-data text-[11px] uppercase ${priorityTone(feedback.priority)}`}
                       >
-                        {feedback.priority ?? "normal"}
+                        {priorityLabel(feedback.priority)}
                       </p>
+                      {feedback.assigned_to && (
+                        <p className="mt-1 line-clamp-1 font-body text-[11px] text-cyan-300">
+                          {feedback.assigned_to}
+                        </p>
+                      )}
+                      {feedback.admin_reply_sent_at && (
+                        <p className="mt-1 font-data text-[10px] uppercase text-emerald-300">
+                          Répondu
+                        </p>
+                      )}
                     </td>
                     <td className="p-3 font-body text-gray-400">
-                      {feedback.username ?? feedback.user_id ?? "—"}
+                      <UserIdentity
+                        user={{
+                          id: feedback.user_id,
+                          username: feedback.username,
+                          email: feedback.email,
+                          avatar_id: feedback.avatar_id,
+                          custom_avatar_url: feedback.custom_avatar_url,
+                        }}
+                        surface="admin"
+                        size="sm"
+                        showEmail
+                        className="max-w-[220px]"
+                        data-testid={`admin-feedback-user-${feedback.id}`}
+                      />
                     </td>
                     <td className="p-3 font-body text-xs text-gray-500">
                       {formatDateTime(feedback.created_at)}

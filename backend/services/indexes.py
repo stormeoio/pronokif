@@ -126,6 +126,8 @@ async def ensure_indexes() -> None:
     await db.feedback.create_index("category")
     await db.feedback.create_index("status")
     await db.feedback.create_index("priority")
+    await db.feedback.create_index("assigned_to")
+    await db.feedback.create_index("admin_reply_sent_at")
     await db.feedback.create_index("created_at")
 
     # ── user_sessions ──────────────────────────────────────────────

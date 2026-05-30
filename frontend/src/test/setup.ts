@@ -41,6 +41,11 @@ Object.defineProperty(window, "ResizeObserver", {
   value: MockResizeObserver,
 });
 
+Object.defineProperty(window, "scrollTo", {
+  writable: true,
+  value: () => {},
+});
+
 // Suppress console.error in tests (noisy React warnings)
 // Remove this if you want to see them.
 const originalError = console.error;

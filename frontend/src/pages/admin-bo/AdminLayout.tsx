@@ -2,18 +2,16 @@
  * Admin Back-Office Layout with sidebar navigation + app preview panel.
  */
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity,
   BarChart3,
   Calculator,
   LayoutDashboard,
-  Database,
   Users,
   Trophy,
   Flag,
-  MessageSquare,
   Mail,
   Image,
   Settings,
@@ -22,13 +20,11 @@ import {
   Menu,
   X,
   Smartphone,
-  Map,
   Route,
   Network,
   PanelRightOpen,
   PanelRightClose,
-  Shield,
-  Scale,
+  Wrench,
 } from "lucide-react";
 import DashboardTab from "./tabs/DashboardTab";
 import UsersTab from "./tabs/UsersTab";
@@ -37,17 +33,14 @@ import ScoringTab from "./tabs/ScoringTab";
 import LeaguesTab from "./tabs/LeaguesTab";
 import ChampionshipsTab from "./tabs/ChampionshipsTab";
 import RacesTab from "./tabs/RacesTab";
-import FeedbacksTab from "./tabs/FeedbacksTab";
 import InvitationsTab from "./tabs/InvitationsTab";
 import MediaTab from "./tabs/MediaTab";
 import SettingsTab from "./tabs/SettingsTab";
-import RoadmapTab from "./tabs/RoadmapTab";
-import AuditTab from "./tabs/AuditTab";
-import KnowledgeTab from "./tabs/KnowledgeTab";
-import LegalPwaTab from "./tabs/LegalPwaTab";
 import ActivityLogsTab from "./tabs/ActivityLogsTab";
 import CircuitMapsTab from "./tabs/CircuitMapsTab";
+import DevOpsTab, { devOpsSectionFromKey, type DevOpsSectionKey } from "./tabs/DevOpsTab";
 import PreviewPanel from "./PreviewPanel";
+import AdminDeepSearch from "./AdminDeepSearch";
 import { adminApi } from "./adminApi";
 import { Button } from "@/components/ui/button";
 import { brandAssets } from "@/lib/brand";
@@ -63,15 +56,26 @@ type AdminTabKey =
   | "championships"
   | "races"
   | "circuitMaps"
-  | "feedbacks"
   | "invitations"
   | "media"
+  | "activity"
+  | "devops"
+  | "settings";
+
+type AdminDestinationKey =
+  | AdminTabKey
+  | "beta"
+  | "feedbacks"
   | "knowledge"
   | "legal"
-  | "activity"
+  | "translations"
   | "audit"
-  | "roadmap"
-  | "settings";
+  | "roadmap";
+
+type AdminSelection = {
+  tab: AdminTabKey;
+  devOpsSection: DevOpsSectionKey;
+};
 
 type NavItem = {
   key: AdminTabKey;
@@ -89,21 +93,50 @@ const NAV_ITEMS: NavItem[] = [
   { key: "championships", label: "Championnats", icon: Trophy, section: "general" },
   { key: "races", label: "Courses", icon: Flag, section: "general" },
   { key: "circuitMaps", label: "Cartes circuits", icon: Route, section: "general" },
-  { key: "feedbacks", label: "Retours", icon: MessageSquare, section: "general" },
   { key: "invitations", label: "Invitations", icon: Mail, section: "general" },
   { key: "media", label: "Médias", icon: Image, section: "general" },
   { key: "activity", label: "Activité", icon: Activity, section: "general" },
-  { key: "knowledge", label: "Base RAG", icon: Database, section: "dev" },
-  { key: "legal", label: "Légal & PWA", icon: Scale, section: "dev" },
-  { key: "audit", label: "Audit", icon: Shield, section: "dev" },
-  { key: "roadmap", label: "Feuille de route", icon: Map, section: "dev" },
+  { key: "devops", label: "DevOps", icon: Wrench, section: "dev" },
   { key: "settings", label: "Paramètres", icon: Settings, section: "general" },
 ];
 
+const ADMIN_TAB_ALIASES: Record<string, AdminTabKey> = {
+  circuitmaps: "circuitMaps",
+  "circuit-maps": "circuitMaps",
+  circuits: "circuitMaps",
+};
+
+function selectionFromSearch(search: string): AdminSelection {
+  const rawTab = new URLSearchParams(search).get("tab");
+  if (!rawTab) return { tab: "dashboard", devOpsSection: "beta" };
+  const normalized = rawTab.trim();
+  const devOpsSection = devOpsSectionFromKey(normalized);
+  if (devOpsSection) return { tab: "devops", devOpsSection };
+  const aliased = ADMIN_TAB_ALIASES[normalized.toLowerCase()] ?? normalized;
+  if (aliased === "devops") {
+    const section = devOpsSectionFromKey(new URLSearchParams(search).get("devops"));
+    return { tab: "devops", devOpsSection: section ?? "beta" };
+  }
+  return NAV_ITEMS.some((item) => item.key === aliased)
+    ? { tab: aliased as AdminTabKey, devOpsSection: "beta" }
+    : { tab: "dashboard", devOpsSection: "beta" };
+}
+
+function normalizeDestination(destination: AdminDestinationKey): AdminSelection {
+  const devOpsSection = devOpsSectionFromKey(destination);
+  if (devOpsSection) return { tab: "devops", devOpsSection };
+  return { tab: destination as AdminTabKey, devOpsSection: "beta" };
+}
+
 export default function AdminLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const mainRef = useRef<HTMLElement | null>(null);
-  const [activeTab, setActiveTab] = useState<AdminTabKey>("dashboard");
+  const initialSelection = selectionFromSearch(location.search);
+  const [activeTab, setActiveTab] = useState<AdminTabKey>(() => initialSelection.tab);
+  const [activeDevOpsSection, setActiveDevOpsSection] = useState<DevOpsSectionKey>(
+    () => initialSelection.devOpsSection,
+  );
   const [adminEmail, setAdminEmail] = useState("");
   const [authChecked, setAuthChecked] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -118,6 +151,12 @@ export default function AdminLayout() {
       })
       .catch(() => navigate(ADMIN_AUTH_PATH, { replace: true }));
   }, [navigate]);
+
+  useEffect(() => {
+    const nextSelection = selectionFromSearch(location.search);
+    setActiveTab(nextSelection.tab);
+    setActiveDevOpsSection(nextSelection.devOpsSection);
+  }, [location.search]);
 
   if (!authChecked) {
     return (
@@ -148,12 +187,26 @@ export default function AdminLayout() {
     navigate(ADMIN_AUTH_PATH);
   };
 
-  const handleSelectTab = (tab: AdminTabKey) => {
-    setActiveTab(tab);
+  const handleSelectTab = (destination: AdminDestinationKey) => {
+    const nextSelection = normalizeDestination(destination);
+    setActiveTab(nextSelection.tab);
+    setActiveDevOpsSection(nextSelection.devOpsSection);
     setSidebarOpen(false);
+    const searchParams = new URLSearchParams(location.search);
+    searchParams.set("tab", nextSelection.tab);
+    if (nextSelection.tab === "devops") {
+      searchParams.set("devops", nextSelection.devOpsSection);
+    } else {
+      searchParams.delete("devops");
+    }
+    navigate({ pathname: "/admin", search: `?${searchParams.toString()}` }, { replace: true });
     window.requestAnimationFrame(() => {
       mainRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     });
+  };
+
+  const handleSelectDevOpsSection = (section: DevOpsSectionKey) => {
+    handleSelectTab(section);
   };
 
   const renderTab = () => {
@@ -174,24 +227,22 @@ export default function AdminLayout() {
         return <RacesTab />;
       case "circuitMaps":
         return <CircuitMapsTab currentAdminEmail={adminEmail} />;
-      case "feedbacks":
-        return <FeedbacksTab />;
       case "invitations":
         return <InvitationsTab />;
       case "media":
         return <MediaTab />;
       case "activity":
         return <ActivityLogsTab />;
-      case "knowledge":
-        return <KnowledgeTab currentAdminEmail={adminEmail} />;
-      case "legal":
-        return <LegalPwaTab />;
+      case "devops":
+        return (
+          <DevOpsTab
+            activeSection={activeDevOpsSection}
+            currentAdminEmail={adminEmail}
+            onSectionChange={handleSelectDevOpsSection}
+          />
+        );
       case "settings":
         return <SettingsTab />;
-      case "audit":
-        return <AuditTab />;
-      case "roadmap":
-        return <RoadmapTab />;
       default:
         return <DashboardTab />;
     }
@@ -238,6 +289,7 @@ export default function AdminLayout() {
                 <button
                   key={key}
                   onClick={() => handleSelectTab(key)}
+                  data-testid={`admin-tab-${key}`}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${
                     isActive
                       ? "bg-pk-red-subtle text-pk-piste border border-pk-red/35 shadow-[0_0_20px_rgba(225,6,0,.12)]"
@@ -253,7 +305,7 @@ export default function AdminLayout() {
             {/* Dev section */}
             <div className="pt-3 mt-3 border-t border-white/[0.08]">
               <p className="px-3 pb-2 font-body text-[10px] uppercase text-pk-titane tracking-wider">
-                Développement
+                DevOps
               </p>
               {devItems.map(({ key, label, icon: Icon }) => {
                 const isActive = activeTab === key;
@@ -261,6 +313,7 @@ export default function AdminLayout() {
                   <button
                     key={key}
                     onClick={() => handleSelectTab(key)}
+                    data-testid={`admin-tab-${key}`}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${
                       isActive
                         ? "bg-pk-red-subtle text-pk-piste border border-pk-red/35 shadow-[0_0_20px_rgba(225,6,0,.12)]"
@@ -339,7 +392,7 @@ export default function AdminLayout() {
             "radial-gradient(circle at 50% -8%, rgba(225,6,0,.11), transparent 34%), linear-gradient(180deg, rgba(11,13,18,1) 0%, rgba(7,9,13,1) 100%)",
         }}
       >
-        <div className="max-w-6xl mx-auto p-4 lg:p-8">
+        <div className="max-w-6xl mx-auto px-4 pb-4 pt-16 lg:p-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -356,6 +409,7 @@ export default function AdminLayout() {
 
       {/* App Preview Panel */}
       <PreviewPanel open={previewOpen} onClose={() => setPreviewOpen(false)} />
+      <AdminDeepSearch />
     </div>
   );
 }

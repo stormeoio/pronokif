@@ -127,6 +127,26 @@ async def _record_login(user: dict, request: Request) -> None:
 # ── Register ─────────────────────────────────────────────────────────────────
 
 
+USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9_]{3,20}$")
+
+
+def _normalize_username(username: str | None) -> str | None:
+    if username is None:
+        return None
+    normalized = username.strip()
+    return normalized or None
+
+
+def _validate_username(username: str | None) -> None:
+    if username is None:
+        return
+    if not USERNAME_PATTERN.fullmatch(username):
+        raise HTTPException(
+            status_code=422,
+            detail="Le pseudo doit contenir 3 à 20 caractères, lettres, chiffres ou underscore uniquement",
+        )
+
+
 @router.post("/register", response_model=TokenResponse)
 @_rate_5_per_min
 async def register(request: Request, data: UserCreate, response: Response):
@@ -138,9 +158,17 @@ async def register(request: Request, data: UserCreate, response: Response):
     if password_error:
         raise HTTPException(status_code=422, detail=password_error)
 
+    username = _normalize_username(data.username)
+    _validate_username(username)
+
     existing = await db.users.find_one(_user_email_filter(email))
     if existing:
         raise HTTPException(status_code=400, detail="Cet email est déjà utilisé")
+
+    if username:
+        existing_username = await db.users.find_one({"username": username})
+        if existing_username:
+            raise HTTPException(status_code=400, detail="Ce pseudo est déjà pris")
 
     invitation = None
     if data.invite_token:
@@ -158,7 +186,7 @@ async def register(request: Request, data: UserCreate, response: Response):
         "id": user_id,
         "email": email,
         "password_hash": hash_password(data.password),
-        "username": None,
+        "username": username,
         "current_league_id": None,
         "xp": 0,
         "level": 1,
@@ -205,7 +233,7 @@ async def register(request: Request, data: UserCreate, response: Response):
         user=UserResponse(
             id=user_id,
             email=email,
-            username=None,
+            username=username,
             created_at=user["created_at"],
             current_league_id=None,
             xp=0,
@@ -514,14 +542,19 @@ async def update_profile(data: ProfileUpdate, user=Depends(get_current_user)):
 @router.post("/username", response_model=UserResponse)
 async def set_username(data: UserSetUsername, user=Depends(get_current_user)):
     """Set or update username"""
-    existing = await db.users.find_one({"username": data.username, "id": {"$ne": user["id"]}})
+    username = _normalize_username(data.username)
+    _validate_username(username)
+    if username is None:
+        raise HTTPException(status_code=422, detail="Le pseudo est requis")
+
+    existing = await db.users.find_one({"username": username, "id": {"$ne": user["id"]}})
     if existing:
         raise HTTPException(status_code=400, detail="Ce pseudo est déjà pris")
-    await db.users.update_one({"id": user["id"]}, {"$set": {"username": data.username}})
+    await db.users.update_one({"id": user["id"]}, {"$set": {"username": username}})
     return UserResponse(
         id=user["id"],
         email=user["email"],
-        username=data.username,
+        username=username,
         created_at=user["created_at"],
         current_league_id=user.get("current_league_id"),
         xp=user.get("xp", 0),

@@ -20,6 +20,7 @@ import { adminApi } from "../adminApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { UserIdentity } from "@/components/users/UserIdentity";
 
 type ReconciliationSummary = {
   rows_count: number;
@@ -60,6 +61,8 @@ type ScoreLedgerRow = {
   user_id?: string;
   user_email?: string;
   user_username?: string;
+  user_avatar_id?: string | null;
+  user_custom_avatar_url?: string | null;
   race_id?: string;
   race_name?: string;
   league_id?: string;
@@ -611,12 +614,20 @@ export default function ScoringTab() {
                       </p>
                     </td>
                     <td className="p-3">
-                      <p className="font-body text-xs text-white">
-                        {score.user_username || score.user_email || score.user_id || "—"}
-                      </p>
-                      <p className="mt-1 font-data text-[10px] text-gray-600">
-                        {score.user_id || "—"}
-                      </p>
+                      <UserIdentity
+                        user={{
+                          id: score.user_id,
+                          username: score.user_username,
+                          email: score.user_email,
+                          avatar_id: score.user_avatar_id,
+                          custom_avatar_url: score.user_custom_avatar_url,
+                        }}
+                        surface="admin"
+                        size="sm"
+                        showEmail
+                        className="max-w-[240px]"
+                        data-testid={`admin-score-user-${score.id}`}
+                      />
                     </td>
                     <td className="p-3">
                       <p className="font-body text-xs text-gray-300">

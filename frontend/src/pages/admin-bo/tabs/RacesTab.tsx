@@ -1,7 +1,8 @@
 /**
  * Admin Races operations tab.
  */
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -32,9 +33,13 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { adminApi } from "../adminApi";
+import { EntityToken } from "@/components/entities/EntityToken";
+import { UserIdentity } from "@/components/users/UserIdentity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { api } from "@/lib/api";
+import type { Driver } from "@/types/api";
 
 type RaceContentStatus = "draft" | "ready" | "published";
 
@@ -92,6 +97,8 @@ interface AdminUserSummary {
   id: string;
   email: string;
   username?: string | null;
+  avatar_id?: string | null;
+  custom_avatar_url?: string | null;
 }
 
 interface PredictionEntry {
@@ -228,10 +235,6 @@ function formatRaceWindow(race: Race) {
   return `${start} → ${formatDateTime(race.race_end_at, timezone)}`;
 }
 
-function podium(values: string[]) {
-  return values.length ? values.slice(0, 3).join(" / ") : "Non renseigné";
-}
-
 function toDateInput(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -280,12 +283,160 @@ function joinedLines(values?: string[]) {
   return (values || []).join("\n");
 }
 
-function driverList(values?: string[]) {
-  return values?.length ? values.join(" / ") : "À confirmer";
+type DriverLookup = Map<string, Driver>;
+
+function normalizeLookupKey(value?: string | number | null) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function addDriverLookupKey(
+  lookup: DriverLookup,
+  key: string | number | null | undefined,
+  driver: Driver,
+) {
+  const normalized = normalizeLookupKey(key);
+  if (normalized) lookup.set(normalized, driver);
+}
+
+function buildDriverLookup(drivers: Driver[]) {
+  const lookup: DriverLookup = new Map();
+  for (const driver of drivers) {
+    addDriverLookupKey(lookup, driver.id, driver);
+    addDriverLookupKey(lookup, driver.code, driver);
+    addDriverLookupKey(lookup, driver.name, driver);
+    addDriverLookupKey(lookup, `${driver.code} - ${driver.name}`, driver);
+  }
+  return lookup;
+}
+
+function driverCodeFromReference(value: string) {
+  const [code] = value.split(" - ");
+  return code?.trim() || value.trim();
+}
+
+function resolveDriverReference(value: string | null | undefined, lookup: DriverLookup) {
+  if (!value) return null;
+  const byFullReference = lookup.get(normalizeLookupKey(value));
+  if (byFullReference) return byFullReference;
+  const byCode = lookup.get(normalizeLookupKey(driverCodeFromReference(value)));
+  if (byCode) return byCode;
+  return null;
+}
+
+function adminKnowledgeHref(entityType: "driver" | "team", query: string) {
+  const params = new URLSearchParams({
+    tab: "knowledge",
+    entity_type: entityType,
+    q: query,
+  });
+  return `/admin?${params.toString()}`;
+}
+
+function DriverEntityToken({
+  value,
+  driversByReference,
+  emptyLabel = "—",
+}: {
+  value?: string | null;
+  driversByReference: DriverLookup;
+  emptyLabel?: string;
+}) {
+  if (!value) return <span className="text-white">{emptyLabel}</span>;
+
+  const driver = resolveDriverReference(value, driversByReference);
+  const compactLabel = driver?.code || driverCodeFromReference(value).toUpperCase();
+  const label = driver?.name || value;
+
+  return (
+    <EntityToken
+      compactLabel={compactLabel}
+      label={label}
+      kindLabel="Pilote"
+      href={driver ? `/driver/${driver.id}` : undefined}
+      description={driver ? "Ouvrir la fiche pilote." : undefined}
+      tone="driver"
+      meta={[
+        {
+          label: "Écurie",
+          value: driver?.team,
+          href: driver?.team ? adminKnowledgeHref("team", driver.team) : undefined,
+          ariaLabel: driver?.team ? `Ouvrir l'entité écurie ${driver.team}` : undefined,
+        },
+        { label: "N°", value: driver?.number ? `#${driver.number}` : null },
+        { label: "Pays", value: driver?.country },
+      ]}
+    />
+  );
+}
+
+function DriverEntityList({
+  values,
+  driversByReference,
+  emptyLabel = "Non renseigné",
+  limit = 3,
+}: {
+  values?: string[];
+  driversByReference: DriverLookup;
+  emptyLabel?: string;
+  limit?: number;
+}) {
+  const displayedValues = (values || []).slice(0, limit);
+  if (!displayedValues.length) return <span className="text-white">{emptyLabel}</span>;
+
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1.5 align-middle">
+      {displayedValues.map((value, index) => (
+        <Fragment key={`${value}-${index}`}>
+          {index > 0 ? <span className="font-data text-[0.625rem] text-pk-titane">/</span> : null}
+          <DriverEntityToken value={value} driversByReference={driversByReference} />
+        </Fragment>
+      ))}
+    </span>
+  );
+}
+
+function compactPlayerLabel(user: AdminUserSummary) {
+  const value = user.username || user.email || "Joueur";
+  return value.length > 14 ? `${value.slice(0, 12)}...` : value;
+}
+
+function PlayerEntityToken({ user }: { user: AdminUserSummary }) {
+  const label = user.username || user.email || "Joueur";
+
+  return (
+    <span className="inline-flex items-center gap-2 align-middle">
+      <UserIdentity
+        user={user}
+        surface="admin"
+        size="sm"
+        linked={false}
+        showName={false}
+        className="shrink-0"
+        data-testid={`race-player-avatar-${user.id}`}
+      />
+      <EntityToken
+        compactLabel={compactPlayerLabel(user)}
+        label={label}
+        kindLabel="Joueur"
+        href={`/admin?tab=users&user=${user.id}`}
+        description="Ouvrir la fiche admin joueur."
+        tone="player"
+        meta={[
+          { label: "Email", value: user.email },
+          { label: "ID", value: user.id },
+        ]}
+      />
+    </span>
+  );
 }
 
 export default function RacesTab() {
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Race | null>(null);
   const [selectedRaceId, setSelectedRaceId] = useState<string | null>(null);
@@ -313,14 +464,36 @@ export default function RacesTab() {
         championship_id: selectedChampionshipId === "all" ? undefined : selectedChampionshipId,
       }),
   });
+  const { data: drivers = [] } = useQuery({
+    queryKey: ["drivers", "entity-tokens"],
+    queryFn: () => api.drivers.list(),
+    staleTime: 30 * 60 * 1000,
+  });
 
   const raceList = useMemo(() => (Array.isArray(races) ? races : []), [races]);
+  const driversByReference = useMemo(
+    () => buildDriverLookup(Array.isArray(drivers) ? drivers : []),
+    [drivers],
+  );
 
   useEffect(() => {
+    const raceFromUrl = searchParams.get("race");
+    if (raceFromUrl && raceList.some((race: Race) => race.id === raceFromUrl)) {
+      if (selectedRaceId !== raceFromUrl) setSelectedRaceId(raceFromUrl);
+      return;
+    }
     if (!selectedRaceId && raceList.length > 0) {
       setSelectedRaceId(raceList[0].id);
     }
-  }, [raceList, selectedRaceId]);
+  }, [raceList, searchParams, selectedRaceId]);
+
+  const selectRace = (raceId: string) => {
+    setSelectedRaceId(raceId);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("tab", "races");
+    nextParams.set("race", raceId);
+    setSearchParams(nextParams, { replace: true });
+  };
 
   const seasonStats = useMemo(() => {
     const total = raceList.length;
@@ -539,7 +712,12 @@ export default function RacesTab() {
     try {
       await adminApi.races.delete(id);
       toast.success("Course supprimée");
-      if (selectedRaceId === id) setSelectedRaceId(null);
+      if (selectedRaceId === id) {
+        setSelectedRaceId(null);
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.delete("race");
+        setSearchParams(nextParams, { replace: true });
+      }
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "races"] });
     } catch {
       toast.error("Erreur");
@@ -669,6 +847,9 @@ export default function RacesTab() {
               onChange={(e) => {
                 setSelectedChampionshipId(e.target.value);
                 setSelectedRaceId(null);
+                const nextParams = new URLSearchParams(searchParams);
+                nextParams.delete("race");
+                setSearchParams(nextParams, { replace: true });
               }}
               className="h-10 rounded-md border border-white/10 bg-gray-900 px-3 text-xs text-white"
               aria-label="Filtrer par championnat"
@@ -982,7 +1163,7 @@ export default function RacesTab() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <button
-                      onClick={() => setSelectedRaceId(race.id)}
+                      onClick={() => selectRace(race.id)}
                       className="flex min-w-0 flex-1 items-center gap-3 text-left"
                     >
                       <div
@@ -1083,7 +1264,7 @@ export default function RacesTab() {
                     </button>
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => setSelectedRaceId(race.id)}
+                        onClick={() => selectRace(race.id)}
                         className="p-2 text-gray-400 hover:text-white rounded"
                         title="Voir les pronostics"
                       >
@@ -1343,20 +1524,32 @@ export default function RacesTab() {
                   <div className="grid gap-3 md:grid-cols-4">
                     <div>
                       <p className="font-data text-[10px] uppercase text-green-300">Pole</p>
-                      <p className="font-body text-sm text-white">
-                        {editorial.results_digest.quali_pole || "À confirmer"}
+                      <p className="font-body text-sm text-white leading-7">
+                        <DriverEntityToken
+                          value={editorial.results_digest.quali_pole}
+                          driversByReference={driversByReference}
+                          emptyLabel="À confirmer"
+                        />
                       </p>
                     </div>
                     <div>
                       <p className="font-data text-[10px] uppercase text-green-300">Vainqueur</p>
-                      <p className="font-body text-sm text-white">
-                        {editorial.results_digest.race_winner || "À confirmer"}
+                      <p className="font-body text-sm text-white leading-7">
+                        <DriverEntityToken
+                          value={editorial.results_digest.race_winner}
+                          driversByReference={driversByReference}
+                          emptyLabel="À confirmer"
+                        />
                       </p>
                     </div>
                     <div>
                       <p className="font-data text-[10px] uppercase text-green-300">Podium</p>
-                      <p className="font-body text-sm text-white">
-                        {driverList(editorial.results_digest.race_top3)}
+                      <p className="font-body text-sm text-white leading-7">
+                        <DriverEntityList
+                          values={editorial.results_digest.race_top3}
+                          driversByReference={driversByReference}
+                          emptyLabel="À confirmer"
+                        />
                       </p>
                     </div>
                     <div>
@@ -1439,8 +1632,8 @@ export default function RacesTab() {
                         key={user.id}
                         className="border border-white/10 rounded-md p-2 bg-black/20"
                       >
-                        <p className="font-body text-sm text-white truncate">
-                          {user.username || "Pseudo non défini"}
+                        <p className="font-body text-sm text-white">
+                          <PlayerEntityToken user={user} />
                         </p>
                         <p className="font-body text-[11px] text-gray-500 truncate">{user.email}</p>
                       </div>
@@ -1466,8 +1659,8 @@ export default function RacesTab() {
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                           <div>
-                            <p className="font-body text-sm text-white">
-                              {prediction.user.username || prediction.user.email}
+                            <p className="font-body text-sm text-white leading-7">
+                              <PlayerEntityToken user={prediction.user} />
                             </p>
                             <p className="font-body text-[11px] text-gray-500">
                               {prediction.is_complete ? "Complet" : "Partiel"} • maj{" "}
@@ -1485,36 +1678,50 @@ export default function RacesTab() {
                           </span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                          <p className="font-body text-gray-400">
+                          <div className="font-body text-gray-400 leading-7">
                             Pole :{" "}
-                            <span className="text-white">{prediction.quali_pole || "—"}</span>
-                          </p>
-                          <p className="font-body text-gray-400">
+                            <DriverEntityToken
+                              value={prediction.quali_pole}
+                              driversByReference={driversByReference}
+                            />
+                          </div>
+                          <div className="font-body text-gray-400 leading-7">
                             Vainqueur :{" "}
-                            <span className="text-white">{prediction.race_winner || "—"}</span>
-                          </p>
-                          <p className="font-body text-gray-400 md:col-span-2">
+                            <DriverEntityToken
+                              value={prediction.race_winner}
+                              driversByReference={driversByReference}
+                            />
+                          </div>
+                          <div className="font-body text-gray-400 md:col-span-2 leading-7">
                             Top 3 qualifications :{" "}
-                            <span className="text-white">{podium(prediction.quali_top10)}</span>
-                          </p>
-                          <p className="font-body text-gray-400 md:col-span-2">
+                            <DriverEntityList
+                              values={prediction.quali_top10}
+                              driversByReference={driversByReference}
+                            />
+                          </div>
+                          <div className="font-body text-gray-400 md:col-span-2 leading-7">
                             Top 3 course :{" "}
-                            <span className="text-white">{podium(prediction.race_top10)}</span>
-                          </p>
+                            <DriverEntityList
+                              values={prediction.race_top10}
+                              driversByReference={driversByReference}
+                            />
+                          </div>
                           {selectedRace.is_sprint && (
                             <>
-                              <p className="font-body text-gray-400 md:col-span-2">
+                              <div className="font-body text-gray-400 md:col-span-2 leading-7">
                                 Top 3 qualifications sprint :{" "}
-                                <span className="text-white">
-                                  {podium(prediction.sprint_quali_top10)}
-                                </span>
-                              </p>
-                              <p className="font-body text-gray-400 md:col-span-2">
+                                <DriverEntityList
+                                  values={prediction.sprint_quali_top10}
+                                  driversByReference={driversByReference}
+                                />
+                              </div>
+                              <div className="font-body text-gray-400 md:col-span-2 leading-7">
                                 Top 3 sprint :{" "}
-                                <span className="text-white">
-                                  {podium(prediction.sprint_race_top10)}
-                                </span>
-                              </p>
+                                <DriverEntityList
+                                  values={prediction.sprint_race_top10}
+                                  driversByReference={driversByReference}
+                                />
+                              </div>
                             </>
                           )}
                         </div>

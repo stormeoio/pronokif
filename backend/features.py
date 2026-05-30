@@ -113,6 +113,7 @@ class GlobalLeaderboardEntry(BaseModel):
     user_id: str
     username: str
     avatar_id: str | None = None
+    custom_avatar_url: str | None = None
     total_points: int
     level: int
     position: int
@@ -122,6 +123,7 @@ class RaceWeekendLeaderboardEntry(BaseModel):
     user_id: str
     username: str
     avatar_id: str | None = None
+    custom_avatar_url: str | None = None
     race_points: int
     position: int
 
@@ -145,6 +147,7 @@ class MinigameLeaderboardEntry(BaseModel):
     user_id: str
     username: str
     avatar_id: str | None = None
+    custom_avatar_url: str | None = None
     best_score: int
     attempts_used: int
     position: int
