@@ -447,6 +447,7 @@ export default function PredictionForm({
     selectionMode.includes("dnf") ||
     (!!singleSelection && !showBonus);
   const slotCount = selectionMode.includes("dnf") ? 5 : selectionMode.includes("top10") ? 10 : 1;
+  const slotGridClass = slotCount === 1 ? "grid-cols-1" : "grid-cols-2";
 
   // -- Render -------------------------------------------------------------
   return (
@@ -471,7 +472,7 @@ export default function PredictionForm({
             <div className="text-right">
               <p className="font-data text-2xl text-white tabular-nums">{progress}%</p>
               <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-titane">
-                {t("predictions.form.essential")}
+                {completedCore}/{coreSteps.length} {t("predictions.form.essential")}
               </p>
             </div>
           </div>
@@ -483,7 +484,7 @@ export default function PredictionForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-4 border-b border-white/[0.08]">
+        <div className="grid grid-cols-2 border-b border-white/[0.08] sm:grid-cols-4">
           {stageGroups.map((stage, index) => (
             <button
               key={stage.key}
@@ -494,9 +495,11 @@ export default function PredictionForm({
                 if (stage.key === "bonus") setSelectionMode(bonusModeKey);
                 if (stage.key === "minigames") navigate("/minigames");
               }}
-              className={`relative min-h-[72px] border-r border-white/[0.06] px-2 py-3 text-left last:border-r-0 ${
-                stage.active ? "bg-white/[0.05]" : "bg-transparent"
+              aria-current={stage.active ? "step" : undefined}
+              className={`group relative min-h-[78px] border-b border-r border-white/[0.06] px-3 py-3 text-left transition-colors last:border-r-0 sm:border-b-0 ${
+                stage.active ? "bg-white/[0.055]" : "bg-transparent hover:bg-white/[0.025]"
               }`}
+              data-testid={`stage-${stage.key}`}
             >
               <span
                 className={`mb-2 flex h-6 w-6 items-center justify-center rounded-sm border font-data text-[10px] ${
@@ -509,16 +512,21 @@ export default function PredictionForm({
               >
                 {stage.done ? <Check className="h-3.5 w-3.5" /> : index + 1}
               </span>
-              <p className="font-display text-[0.6rem] uppercase text-white">{stage.label}</p>
+              <p className="truncate font-display text-[0.66rem] uppercase leading-none text-white">
+                {stage.label}
+              </p>
               <p className="font-data text-[0.55rem] text-pk-titane">
                 {stage.count}/{stage.max}
               </p>
+              {stage.active && (
+                <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-sm bg-pk-red" />
+              )}
             </button>
           ))}
         </div>
 
         <div className="p-4">
-          <div className="rounded-md border border-white/[0.08] bg-white/[0.03] p-3">
+          <div className="rounded-md border border-white/[0.08] bg-white/[0.035] p-3 shadow-[inset_3px_0_0_rgba(225,6,0,0.55)]">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-titane">
@@ -546,14 +554,14 @@ export default function PredictionForm({
             </div>
 
             {showSlots && (
-              <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className={`mt-3 grid ${slotGridClass} gap-2`}>
                 {Array.from({ length: slotCount }).map((_, index) => {
                   const driverId =
                     orderedSelection[index] ?? (slotCount === 1 ? singleSelection : null);
                   return (
                     <div
                       key={`${selectionMode}-${index}`}
-                      className={`min-h-[42px] rounded-sm border px-2 py-2 ${
+                      className={`min-h-[46px] rounded-sm border px-2.5 py-2 ${
                         driverId
                           ? "border-pk-red/25 bg-pk-red-subtle"
                           : "border-white/[0.08] bg-black/20"
@@ -592,7 +600,7 @@ export default function PredictionForm({
                     haptic("selection");
                     setSelectionMode(step.isBonus ? bonusModeKey : step.key);
                   }}
-                  className={`flex min-h-[74px] items-center gap-3 rounded-md border p-3 text-left transition-all ${tone.bg} ${tone.border}`}
+                  className={`flex min-h-[78px] items-center gap-3 rounded-md border p-3 text-left transition-all hover:-translate-y-0.5 hover:border-white/[0.16] ${tone.bg} ${tone.border}`}
                   data-testid={`step-${step.key}`}
                   variants={fadeUp}
                   whileTap={{ scale: 0.96 }}
@@ -622,7 +630,7 @@ export default function PredictionForm({
             <button
               type="button"
               onClick={() => navigate("/minigames")}
-              className={`flex min-h-[74px] items-center gap-3 rounded-md border p-3 text-left transition-all ${
+              className={`flex min-h-[78px] items-center gap-3 rounded-md border p-3 text-left transition-all hover:-translate-y-0.5 hover:border-white/[0.16] ${
                 minigamesCompletee
                   ? "border-pk-emerald/30 bg-pk-emerald/[0.08]"
                   : "border-pk-info/30 bg-pk-info/[0.06]"
@@ -654,7 +662,7 @@ export default function PredictionForm({
 
           <div className="mt-3 rounded-md border border-white/[0.08] bg-black/20 p-3">
             <div className="flex items-center justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-titane">
                   {t("predictions.form.ticket_status")}
                 </p>
@@ -718,7 +726,7 @@ export default function PredictionForm({
         <div className="mt-4">
           <button
             onClick={() => setSelectionMode(bonusModeKey)}
-            className="w-full h-11 rounded-lg bg-pk-info/[0.1] border border-pk-info/30 text-pk-info font-display text-sm hover:bg-pk-info/[0.15] transition-colors flex items-center justify-center gap-2 active:scale-[0.97]"
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-md border border-white/[0.08] bg-white/[0.04] font-display text-sm text-pk-piste transition-colors hover:border-pk-red/30 hover:bg-pk-red-subtle active:scale-[0.97]"
             data-testid="back-to-bonus-btn"
           >
             <Check className="w-4 h-4" />

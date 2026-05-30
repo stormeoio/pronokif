@@ -2,7 +2,6 @@ import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { TEAM_COLORS } from "@/lib/constants";
 import { haptic } from "@/lib/haptics";
-import { staggerContainer, STAGGER_DELAY, easing, duration } from "@/lib/motion";
 
 // ----------------------------------------------------------- types ---
 
@@ -52,7 +51,7 @@ export default function DriverPicker({
 
   return (
     <motion.div
-      className="grid grid-cols-2 gap-2"
+      className="grid grid-cols-2 gap-2.5"
       initial="hidden"
       animate="visible"
       variants={{
@@ -68,17 +67,19 @@ export default function DriverPicker({
         return (
           <motion.button
             key={driver.id}
+            type="button"
             onClick={() => handleSelect(driver.id)}
+            aria-pressed={selected}
             variants={cardVariants}
             whileTap={{ scale: 0.92 }}
             className={`
-              relative flex items-center gap-2.5
+              relative flex min-h-[74px] items-center gap-2.5
               p-3 rounded-md
               border transition-all duration-pk-short ease-pk-enter
               ${
                 selected
-                  ? "border-pk-red bg-pk-red-subtle shadow-[0_0_15px_rgba(225,6,0,0.15)]"
-                  : "border-white/[0.08] bg-pk-surface hover:border-white/[0.15]"
+                  ? "border-pk-red/70 bg-pk-red-subtle shadow-[0_0_15px_rgba(225,6,0,0.15)]"
+                  : "border-white/[0.08] bg-pk-surface hover:-translate-y-0.5 hover:border-white/[0.15]"
               }
             `}
             data-testid={`driver-${driver.id}`}
@@ -91,8 +92,12 @@ export default function DriverPicker({
 
             {/* Number */}
             <span
-              className={`font-mono text-[1.125rem] font-bold w-8 text-center ml-1
-                ${selected ? "text-pk-red" : "text-pk-titane"}
+              className={`ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border font-mono text-[0.95rem] font-bold
+                ${
+                  selected
+                    ? "border-pk-red/35 bg-pk-red-subtle text-pk-red"
+                    : "border-white/[0.08] bg-black/20 text-pk-titane"
+                }
                 transition-colors duration-pk-short`}
             >
               {driver.number}
@@ -101,12 +106,14 @@ export default function DriverPicker({
             {/* Info */}
             <div className="flex-1 min-w-0 text-left">
               <p
-                className={`font-semibold text-[0.8125rem] truncate
+                className={`truncate text-[0.8125rem] font-semibold leading-tight
                   ${selected ? "text-pk-piste" : "text-pk-piste"}`}
               >
                 {driver.name}
               </p>
-              <p className="font-mono text-[0.5625rem] text-pk-titane truncate">{driver.team}</p>
+              <p className="truncate font-mono text-[0.5625rem] uppercase text-pk-titane">
+                {driver.team}
+              </p>
             </div>
 
             {/* Position badge (when assigned) */}
@@ -128,11 +135,11 @@ export default function DriverPicker({
 
             {/* Position label (inside card) */}
             <span
-              className={`font-display text-[1.25rem] min-w-6 text-center
-                ${selected ? "text-pk-red" : "text-pk-titane"}
+              className={`flex min-w-7 items-center justify-center font-display text-[1rem]
+                ${selected ? "text-pk-red" : "text-pk-titane/50"}
                 transition-colors duration-pk-short`}
             >
-              {position ? `P${position}` : "—"}
+              {position ? `P${position}` : selected ? <Check className="h-4 w-4" /> : null}
             </span>
 
             {/* Selection indicator line */}

@@ -146,6 +146,32 @@ async def save_batak_result(data: BatakResultCreate, user: dict = Depends(get_cu
     return result
 
 
+@router.get("/{game_type}/scores")
+async def get_my_minigame_scores(game_type: str, user: dict = Depends(get_current_user)) -> list[dict]:
+    """Return current user's mini-game scores for prediction completion badges."""
+    if game_type not in ["reaction", "batak"]:
+        raise HTTPException(status_code=400, detail="Type de jeu invalide")
+
+    results = await db.minigame_results.find(
+        {"user_id": user["id"], "game_type": game_type},
+        {"_id": 0},
+    ).sort("created_at", -1).to_list(200)
+
+    return [
+        {
+            "id": result.get("id"),
+            "game_type": result.get("game_type"),
+            "score": result.get("score"),
+            "mode": "training" if result.get("is_training") else "competition",
+            "is_training": bool(result.get("is_training")),
+            "league_id": result.get("league_id"),
+            "race_id": result.get("race_id"),
+            "created_at": result.get("created_at"),
+        }
+        for result in results
+    ]
+
+
 @router.get("/leaderboard/{game_type}/{league_id}/{race_id}")
 async def get_minigame_leaderboard(
     game_type: str, league_id: str, race_id: str, user: dict = Depends(get_current_user)

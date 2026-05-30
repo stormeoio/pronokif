@@ -78,37 +78,39 @@ type BusinessOperations = {
 };
 
 const cardStyles = {
-  cyan: {
-    border: "border-cyan-500",
-    icon: "text-cyan-400",
-    hover: "hover:border-cyan-400/80 hover:shadow-cyan-500/10",
+  primary: {
+    border: "border-l-pk-red",
+    icon: "text-pk-red",
+    chip: "border-pk-red/20 bg-pk-red-subtle",
+    hover: "hover:border-pk-red/30 hover:shadow-[0_12px_32px_rgba(225,6,0,0.12)]",
   },
-  orange: {
-    border: "border-orange-500",
-    icon: "text-orange-400",
-    hover: "hover:border-orange-400/80 hover:shadow-orange-500/10",
+  neutral: {
+    border: "border-l-white/[0.12]",
+    icon: "text-pk-piste",
+    chip: "border-white/[0.08] bg-white/[0.04]",
+    hover: "hover:border-white/[0.16]",
   },
-  purple: {
-    border: "border-purple-500",
-    icon: "text-purple-400",
-    hover: "hover:border-purple-400/80 hover:shadow-purple-500/10",
+  success: {
+    border: "border-l-pk-emerald",
+    icon: "text-pk-emerald",
+    chip: "border-pk-emerald/20 bg-pk-emerald/[0.08]",
+    hover: "hover:border-pk-emerald/25 hover:shadow-[0_12px_32px_rgba(16,185,129,0.08)]",
   },
-  green: {
-    border: "border-green-500",
-    icon: "text-green-400",
-    hover: "hover:border-green-400/80 hover:shadow-green-500/10",
+  warning: {
+    border: "border-l-pk-amber",
+    icon: "text-pk-amber",
+    chip: "border-pk-amber/25 bg-pk-amber/[0.08]",
+    hover: "hover:border-pk-amber/25 hover:shadow-[0_12px_32px_rgba(245,158,11,0.08)]",
   },
-  yellow: {
-    border: "border-yellow-500",
-    icon: "text-yellow-400",
-    hover: "hover:border-yellow-400/80 hover:shadow-yellow-500/10",
-  },
-  red: {
-    border: "border-red-500",
-    icon: "text-red-400",
-    hover: "hover:border-red-400/80 hover:shadow-red-500/10",
+  danger: {
+    border: "border-l-pk-red",
+    icon: "text-pk-red",
+    chip: "border-pk-red/25 bg-pk-red-subtle",
+    hover: "hover:border-pk-red/35 hover:shadow-[0_12px_32px_rgba(225,6,0,0.12)]",
   },
 } as const;
+
+type DashboardMetricTone = keyof typeof cardStyles;
 
 function formatDateTime(value: unknown) {
   if (!value) return "—";
@@ -121,15 +123,15 @@ function formatDateTime(value: unknown) {
 }
 
 function severityClass(severity: BusinessActionItem["severity"]) {
-  if (severity === "critical") return "border-red-500/30 bg-red-500/10 text-red-300";
-  if (severity === "warning") return "border-yellow-500/30 bg-yellow-500/10 text-yellow-300";
-  return "border-cyan-500/25 bg-cyan-500/10 text-cyan-300";
+  if (severity === "critical") return "border-pk-red/30 bg-pk-red-subtle text-pk-red";
+  if (severity === "warning") return "border-pk-amber/30 bg-pk-amber/[0.08] text-pk-amber";
+  return "border-white/[0.1] bg-white/[0.04] text-pk-piste";
 }
 
 function scoreTone(score: number) {
-  if (score >= 80) return "text-green-300";
-  if (score >= 55) return "text-yellow-300";
-  return "text-red-300";
+  if (score >= 80) return "text-pk-emerald";
+  if (score >= 55) return "text-pk-amber";
+  return "text-pk-red";
 }
 
 export default function DashboardTab({ onNavigate }: DashboardTabProps) {
@@ -165,56 +167,56 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
     label: string;
     value: number | string;
     icon: typeof Users;
-    color: keyof typeof cardStyles;
+    tone: DashboardMetricTone;
     target: AdminTabKey;
   }> = [
     {
       label: "Utilisateurs",
       value: stats?.total_users ?? "—",
       icon: Users,
-      color: "cyan",
+      tone: "neutral",
       target: "users",
     },
     {
       label: "Pickstics",
       value: stats?.total_predictions ?? "—",
       icon: TrendingUp,
-      color: "orange",
+      tone: "primary",
       target: "predictions",
     },
     {
       label: "Ligues",
       value: stats?.total_leagues ?? "—",
       icon: Trophy,
-      color: "purple",
+      tone: "success",
       target: "leagues",
     },
     {
       label: "Courses",
       value: stats?.total_races ?? "—",
       icon: Flag,
-      color: "green",
+      tone: "neutral",
       target: "races",
     },
     {
       label: "Retours non lus",
       value: stats?.unread_feedbacks ?? "—",
       icon: MessageSquare,
-      color: "yellow",
+      tone: "warning",
       target: "feedbacks",
     },
     {
       label: "Invitations en attente",
       value: stats?.pending_invitations ?? "—",
       icon: Mail,
-      color: "red",
+      tone: "danger",
       target: "invitations",
     },
     {
       label: "Actions admin",
       value: stats?.total_activity_logs ?? "—",
       icon: Activity,
-      color: "cyan",
+      tone: "neutral",
       target: "activity",
     },
   ];
@@ -230,9 +232,19 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
 
   return (
     <div>
-      <h2 className="font-heading text-2xl text-white uppercase tracking-tight mb-6">
-        Tableau de bord
-      </h2>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-red">
+            Back office
+          </p>
+          <h2 className="font-heading text-2xl text-white uppercase tracking-tight">
+            Tableau de bord
+          </h2>
+        </div>
+        <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-titane">
+          Pilotage live
+        </p>
+      </div>
 
       <section className="card-arcade mb-6 overflow-hidden border-l-4 border-pk-red">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/[0.08] p-4">
@@ -256,7 +268,7 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
               >
                 {operationSummary.business_score}
               </p>
-              <p className="font-data text-[10px] uppercase tracking-[0.16em] text-gray-500">
+              <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-titane">
                 score métier
               </p>
             </div>
@@ -266,13 +278,13 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
         <div className="grid gap-0 lg:grid-cols-[minmax(0,1.3fr)_minmax(300px,0.7fr)]">
           <div className="p-4">
             <div className="mb-3 flex flex-wrap gap-2">
-              <span className="rounded-sm border border-red-500/25 bg-red-500/10 px-2 py-1 font-data text-xs text-red-300">
+              <span className="rounded-sm border border-pk-red/25 bg-pk-red-subtle px-2 py-1 font-data text-xs text-pk-red">
                 {operationSummary.critical_count} critique
               </span>
-              <span className="rounded-sm border border-yellow-500/25 bg-yellow-500/10 px-2 py-1 font-data text-xs text-yellow-300">
+              <span className="rounded-sm border border-pk-amber/25 bg-pk-amber/[0.08] px-2 py-1 font-data text-xs text-pk-amber">
                 {operationSummary.warning_count} warning
               </span>
-              <span className="rounded-sm border border-cyan-500/25 bg-cyan-500/10 px-2 py-1 font-data text-xs text-cyan-300">
+              <span className="rounded-sm border border-white/[0.1] bg-white/[0.04] px-2 py-1 font-data text-xs text-pk-piste">
                 {operationSummary.info_count} info
               </span>
             </div>
@@ -283,7 +295,7 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
                   key={item.id}
                   type="button"
                   onClick={() => onNavigate?.(item.target_tab)}
-                  className="group flex w-full items-start justify-between gap-3 py-3 text-left"
+                  className="group flex w-full items-start justify-between gap-3 rounded-md px-2 py-3 text-left transition-colors hover:bg-white/[0.035]"
                 >
                   <div className="flex min-w-0 items-start gap-3">
                     <span
@@ -293,18 +305,18 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
                     </span>
                     <div className="min-w-0">
                       <p className="font-body text-sm text-white">{item.title}</p>
-                      <p className="mt-1 font-body text-xs leading-5 text-gray-500">
+                      <p className="mt-1 font-body text-xs leading-5 text-pk-titane">
                         {item.description}
                       </p>
                     </div>
                   </div>
-                  <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-gray-600 transition-transform group-hover:translate-x-0.5 group-hover:text-gray-300" />
+                  <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-pk-titane transition-transform group-hover:translate-x-0.5 group-hover:text-pk-piste" />
                 </button>
               ))}
               {!operationsLoading && actionItems.length === 0 && (
                 <div className="flex items-center gap-3 py-6">
-                  <CheckCircle2 className="h-5 w-5 text-green-300" />
-                  <p className="font-body text-sm text-gray-300">
+                  <CheckCircle2 className="h-5 w-5 text-pk-emerald" />
+                  <p className="font-body text-sm text-pk-piste">
                     Aucune priorité bloquante détectée.
                   </p>
                 </div>
@@ -314,7 +326,7 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
 
           <div className="border-t border-white/[0.08] p-4 lg:border-l lg:border-t-0">
             <div className="mb-3 flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-yellow-300" />
+              <AlertTriangle className="h-4 w-4 text-pk-amber" />
               <h4 className="font-heading text-sm uppercase text-white">Prochains GP</h4>
             </div>
             <div className="divide-y divide-white/[0.06]">
@@ -330,18 +342,20 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
                       {race.round_number ? `${race.round_number}. ` : ""}
                       {race.name}
                     </p>
-                    <span className="font-data text-xs text-orange-300">
+                    <span className="font-data text-xs text-pk-amber">
                       {race.completion_rate ?? 0}%
                     </span>
                   </div>
-                  <p className="mt-1 font-body text-[11px] text-gray-500">
+                  <p className="mt-1 font-body text-[11px] text-pk-titane">
                     {race.missing_predictions ?? 0} à relancer · {race.scoring_pending ?? 0} scoring
                     · {String(race.content_status ?? "draft")}
                   </p>
                 </button>
               ))}
               {!operationsLoading && nextRaces.length === 0 && (
-                <p className="py-6 font-body text-sm text-gray-500">Aucun GP actif à surveiller.</p>
+                <p className="py-6 font-body text-sm text-pk-titane">
+                  Aucun GP actif à surveiller.
+                </p>
               )}
             </div>
           </div>
@@ -351,39 +365,49 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
       {isLoading ? (
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-28 rounded-xl bg-gray-800/50 animate-pulse" />
+            <div
+              key={i}
+              className="h-28 rounded-md border border-white/[0.06] bg-white/[0.04] animate-pulse"
+            />
           ))}
         </div>
       ) : (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            {cards.map(({ label, value, icon: Icon, color, target }) => {
-              const styles = cardStyles[color];
+            {cards.map(({ label, value, icon: Icon, tone, target }) => {
+              const styles = cardStyles[tone];
               return (
                 <button
                   key={label}
                   type="button"
                   onClick={() => onNavigate?.(target)}
-                  className={`card-arcade group p-4 border-l-4 ${styles.border} text-left transition-all hover:-translate-y-0.5 hover:shadow-lg ${styles.hover}`}
+                  className={`card-arcade group min-h-[128px] p-4 border-l-4 ${styles.border} text-left transition-all hover:-translate-y-0.5 ${styles.hover}`}
+                  data-testid={`dashboard-card-${target}`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <Icon className={`w-5 h-5 ${styles.icon}`} />
-                    <ArrowRight className="h-4 w-4 text-gray-600 transition-transform group-hover:translate-x-0.5 group-hover:text-gray-300" />
+                    <span
+                      className={`flex h-9 w-9 items-center justify-center rounded-md border ${styles.chip}`}
+                    >
+                      <Icon className={`w-4 h-4 ${styles.icon}`} />
+                    </span>
+                    <ArrowRight className="h-4 w-4 text-pk-titane transition-transform group-hover:translate-x-0.5 group-hover:text-pk-piste" />
                   </div>
-                  <p className="font-data text-2xl text-white">{value}</p>
-                  <p className="font-body text-xs text-gray-500">{label}</p>
+                  <p className="font-data text-3xl text-white tabular-nums">{value}</p>
+                  <p className="mt-1 font-data text-[10px] uppercase tracking-[0.14em] text-pk-titane">
+                    {label}
+                  </p>
                 </button>
               );
             })}
           </div>
 
           {stats?.new_users_week !== undefined && (
-            <div className="card-arcade p-4">
-              <h3 className="font-heading text-sm text-gray-400 uppercase mb-2">
+            <div className="card-arcade p-4 border-l-4 border-l-pk-emerald">
+              <h3 className="font-heading text-sm text-pk-piste uppercase mb-2">
                 Activité récente
               </h3>
-              <p className="font-body text-gray-300">
-                <span className="text-cyan-400 font-data text-lg">{stats.new_users_week}</span>{" "}
+              <p className="font-body text-pk-titane">
+                <span className="text-pk-emerald font-data text-lg">{stats.new_users_week}</span>{" "}
                 nouveaux utilisateurs cette semaine
               </p>
             </div>
@@ -391,39 +415,39 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
 
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="card-arcade p-4">
-              <h3 className="mb-3 font-heading text-sm uppercase text-gray-400">
+              <h3 className="mb-3 font-heading text-sm uppercase text-pk-piste">
                 Santé pronostics
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
-                  <p className="font-data text-[10px] uppercase tracking-[0.16em] text-gray-500">
+                  <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-titane">
                     7 jours
                   </p>
-                  <p className="mt-1 font-data text-xl text-orange-400">
+                  <p className="mt-1 font-data text-xl text-pk-red">
                     {stats?.predictions_week ?? 0}
                   </p>
                 </div>
                 <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
-                  <p className="font-data text-[10px] uppercase tracking-[0.16em] text-gray-500">
+                  <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-titane">
                     24h
                   </p>
-                  <p className="mt-1 font-data text-xl text-cyan-400">
+                  <p className="mt-1 font-data text-xl text-pk-piste">
                     {stats?.predictions_day ?? 0}
                   </p>
                 </div>
                 <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
-                  <p className="font-data text-[10px] uppercase tracking-[0.16em] text-gray-500">
+                  <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-titane">
                     Verrouillés
                   </p>
-                  <p className="mt-1 font-data text-xl text-red-400">
+                  <p className="mt-1 font-data text-xl text-pk-red">
                     {stats?.locked_predictions ?? 0}
                   </p>
                 </div>
                 <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
-                  <p className="font-data text-[10px] uppercase tracking-[0.16em] text-gray-500">
+                  <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-titane">
                     À revoir
                   </p>
-                  <p className="mt-1 font-data text-xl text-yellow-400">
+                  <p className="mt-1 font-data text-xl text-pk-amber">
                     {stats?.predictions_to_review ?? 0}
                   </p>
                 </div>
@@ -433,11 +457,12 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
             <button
               type="button"
               onClick={() => onNavigate?.("activity")}
-              className="card-arcade p-4 text-left transition-all hover:-translate-y-0.5 hover:border-cyan-400/50"
+              className="card-arcade p-4 text-left transition-all hover:-translate-y-0.5 hover:border-white/[0.16]"
+              data-testid="dashboard-card-recent-activity"
             >
               <div className="mb-3 flex items-center justify-between">
-                <h3 className="font-heading text-sm uppercase text-gray-400">Derniers logs</h3>
-                <ArrowRight className="h-4 w-4 text-gray-600" />
+                <h3 className="font-heading text-sm uppercase text-pk-piste">Derniers logs</h3>
+                <ArrowRight className="h-4 w-4 text-pk-titane" />
               </div>
               <div className="space-y-2">
                 {(stats?.recent_activity_logs ?? [])
@@ -447,16 +472,18 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
                       key={String(log.id)}
                       className="border-b border-white/5 pb-2 last:border-0 last:pb-0"
                     >
-                      <p className="font-body text-sm text-gray-200">
+                      <p className="font-body text-sm text-pk-piste">
                         {String(log.action ?? "activité")}
                       </p>
-                      <p className="font-body text-[11px] text-gray-500">
+                      <p className="font-body text-[11px] text-pk-titane">
                         {String(log.actor_email ?? "admin")} · {formatDateTime(log.created_at)}
                       </p>
                     </div>
                   ))}
                 {(stats?.recent_activity_logs ?? []).length === 0 && (
-                  <p className="font-body text-xs text-gray-500">Aucun log admin pour l’instant.</p>
+                  <p className="font-body text-xs text-pk-titane">
+                    Aucun log admin pour l’instant.
+                  </p>
                 )}
               </div>
             </button>
@@ -470,7 +497,7 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
                 </div>
                 <div>
                   <h3 className="font-heading text-sm text-white uppercase">Données démo</h3>
-                  <p className="font-body text-xs text-gray-500">
+                  <p className="font-body text-xs text-pk-titane">
                     Calendrier, résultats, ligues, pronostics, médias et compteurs.
                   </p>
                 </div>
