@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
+  Calendar,
   Database,
   Flag,
   Keyboard,
@@ -183,6 +184,8 @@ function adminNavigationItems(): DeepSearchItem[] {
 }
 
 function typeLabel(type?: string) {
+  if (type === "championship") return "Championnat";
+  if (type === "season") return "Saison";
   if (type === "race") return "Course";
   if (type === "circuit") return "Circuit";
   if (type === "location") return "Lieu";
@@ -266,6 +269,8 @@ function knowledgeItems(documents: KnowledgeSearchDocument[], query: string): De
 }
 
 function groupIcon(group: string, type?: string) {
+  if (type === "championship") return Trophy;
+  if (type === "season") return Calendar;
   if (type === "driver") return User;
   if (type === "race") return Flag;
   if (type === "circuit") return Route;

@@ -80,6 +80,8 @@ type DocumentDraft = {
 
 const ENTITY_TYPES = [
   { value: "", label: "Toutes" },
+  { value: "championship", label: "Championnats" },
+  { value: "season", label: "Saisons" },
   { value: "race", label: "Courses" },
   { value: "circuit", label: "Circuits" },
   { value: "location", label: "Lieux" },

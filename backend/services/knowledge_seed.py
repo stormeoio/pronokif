@@ -29,8 +29,10 @@ from data.f1_knowledge import (
 )
 from services.championships import (
     F1_2026_CHAMPIONSHIP_ID,
+    F1_2026_CHAMPIONSHIP_SLUG,
     F1_2026_SEASON,
     ensure_f1_2026_championship,
+    f1_2026_championship_from_races,
 )
 from services.race_calendar import active_2026_races
 
@@ -278,6 +280,132 @@ def _build_sources() -> list[dict[str, Any]]:
     return sources
 
 
+def _build_championship_entities(
+    races: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Build the canonical championship and season nodes for the RAG graph."""
+    championship = f1_2026_championship_from_races(races)
+    active_races = [race for race in races if not race.get("is_cancelled")]
+    cancelled_races = [race for race in races if race.get("is_cancelled")]
+    sprint_races = [race for race in active_races if race.get("is_sprint")]
+    race_ids = [race["id"] for race in races]
+    active_race_ids = [race["id"] for race in active_races]
+    cancelled_race_ids = [race["id"] for race in cancelled_races]
+    sprint_race_ids = [race["id"] for race in sprint_races]
+
+    championship_entity = {
+        **_base_entity("championship", F1_2026_CHAMPIONSHIP_ID, championship["name"]),
+        "championship_record_id": F1_2026_CHAMPIONSHIP_ID,
+        "slug": F1_2026_CHAMPIONSHIP_SLUG,
+        "series": championship["series"],
+        "is_active": championship["is_active"],
+        "name_translations": championship["name_translations"],
+        "description": championship["description"],
+        "description_translations": championship["description_translations"],
+        "linked_race_ids": race_ids,
+        "active_race_ids": active_race_ids,
+        "cancelled_race_ids": cancelled_race_ids,
+        "sprint_race_ids": sprint_race_ids,
+        "races_count": len(race_ids),
+        "active_races_count": len(active_race_ids),
+        "cancelled_races_count": len(cancelled_race_ids),
+        "sprint_races_count": len(sprint_race_ids),
+        "useful_links": [
+            _link(
+                "Formula 1 2026 calendar",
+                F1_2026_SOURCE_REFS["formula1_calendar_2026"]["url"],
+                "formula1_calendar",
+            )
+        ],
+        "relations": [
+            {
+                "relation": "has_season",
+                "target_entity_id": _entity_id("season", str(F1_2026_SEASON)),
+            },
+        ],
+        "source_refs": ["formula1_calendar_2026"],
+        "data_status": "seeded",
+    }
+    championship_entity["search_terms"] = _compact(
+        [
+            F1_2026_CHAMPIONSHIP_ID,
+            F1_2026_CHAMPIONSHIP_SLUG,
+            championship["name"],
+            championship["name_translations"].get("fr"),
+            championship["name_translations"].get("en"),
+            championship["series"],
+            F1_2026_SEASON,
+            "f1",
+            "formula 1",
+            "formule 1",
+        ]
+    )
+    championship_entity["search_text"] = _search_text(championship_entity)
+
+    season_entity = {
+        **_base_entity("season", str(F1_2026_SEASON), str(F1_2026_SEASON)),
+        "year": F1_2026_SEASON,
+        "series": championship["series"],
+        "championship_record_id": F1_2026_CHAMPIONSHIP_ID,
+        "linked_championship_ids": [championship_entity["id"]],
+        "linked_race_ids": race_ids,
+        "active_race_ids": active_race_ids,
+        "cancelled_race_ids": cancelled_race_ids,
+        "sprint_race_ids": sprint_race_ids,
+        "races_count": len(race_ids),
+        "active_races_count": len(active_race_ids),
+        "cancelled_races_count": len(cancelled_race_ids),
+        "sprint_races_count": len(sprint_race_ids),
+        "relations": [
+            {"relation": "season_of", "target_entity_id": championship_entity["id"]},
+        ],
+        "source_refs": ["formula1_calendar_2026"],
+        "data_status": "seeded",
+    }
+    season_entity["name_translations"] = {"fr": "Saison 2026", "en": "2026 season"}
+    season_entity["search_terms"] = _compact(
+        [
+            "2026",
+            "saison 2026",
+            "season 2026",
+            "calendrier 2026",
+            championship["name"],
+            championship["name_translations"].get("fr"),
+        ]
+    )
+    season_entity["search_text"] = _search_text(season_entity)
+
+    championship_content = (
+        f"{championship['name_translations']['fr']} est le championnat canonique PronoKif pour "
+        f"la saison {F1_2026_SEASON}. Il regroupe {len(race_ids)} courses projet, "
+        f"dont {len(active_race_ids)} actives, {len(cancelled_race_ids)} annulees conservees "
+        f"pour audit, et {len(sprint_race_ids)} week-ends sprint."
+    )
+    season_content = (
+        f"La saison {F1_2026_SEASON} rattache le calendrier F1, les courses, pronostics, "
+        f"classements, briefs RAG et statistiques utilisateurs au championnat "
+        f"{F1_2026_CHAMPIONSHIP_ID}."
+    )
+
+    documents = [
+        _document(
+            entity=championship_entity,
+            title="Championnat F1 2026 - Synthese",
+            content=championship_content,
+            source_refs=championship_entity["source_refs"],
+            related_entity_ids=[season_entity["id"]],
+        ),
+        _document(
+            entity=season_entity,
+            title="Saison F1 2026 - Synthese",
+            content=season_content,
+            source_refs=season_entity["source_refs"],
+            related_entity_ids=[championship_entity["id"]],
+        ),
+    ]
+    return [championship_entity, season_entity], documents
+
+
 def _race_status_label(race: dict) -> str:
     if race.get("is_cancelled"):
         return "cancelled"
@@ -293,6 +421,8 @@ def _build_country_location_circuit_entities(
     circuit_ids_by_country: dict[str, set[str]] = defaultdict(set)
     location_ids_by_country: dict[str, set[str]] = defaultdict(set)
     races_by_circuit: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    championship_entity_id = _entity_id("championship", F1_2026_CHAMPIONSHIP_ID)
+    season_entity_id = _entity_id("season", str(F1_2026_SEASON))
 
     for race in races:
         races_by_circuit[race["circuit"]].append(race)
@@ -459,6 +589,8 @@ def _build_country_location_circuit_entities(
                     {"relation": "uses_circuit", "target_entity_id": circuit_entity["id"]},
                     {"relation": "takes_place_at", "target_entity_id": location_entity["id"]},
                     {"relation": "country", "target_entity_id": country_entity_id},
+                    {"relation": "part_of_championship", "target_entity_id": championship_entity_id},
+                    {"relation": "part_of_season", "target_entity_id": season_entity_id},
                 ],
                 "source_refs": ["formula1_calendar_2026"],
                 "data_status": "seeded" if not race.get("is_cancelled") else "project_cancelled_event",
@@ -489,7 +621,13 @@ def _build_country_location_circuit_entities(
                     title=f"Course F1 2026 - {race['name']}",
                     content=race_content,
                     source_refs=race_entity["source_refs"],
-                    related_entity_ids=[circuit_entity["id"], location_entity["id"], country_entity_id],
+                    related_entity_ids=[
+                        circuit_entity["id"],
+                        location_entity["id"],
+                        country_entity_id,
+                        championship_entity_id,
+                        season_entity_id,
+                    ],
                 )
             )
 
@@ -717,10 +855,11 @@ def build_f1_2026_knowledge_bundle(races: list[dict[str, Any]] | None = None) ->
     """Build deterministic source/entity/document payloads for the F1 2026 KB."""
     resolved_races = races or active_2026_races()
     sources = _build_sources()
+    championship_entities, championship_documents = _build_championship_entities(resolved_races)
     geo_entities, geo_documents = _build_country_location_circuit_entities(resolved_races)
     team_entities, team_documents = _build_team_driver_entities()
-    entities = geo_entities + team_entities
-    documents = geo_documents + team_documents
+    entities = championship_entities + geo_entities + team_entities
+    documents = championship_documents + geo_documents + team_documents
     summary = {
         "sources": len(sources),
         "entities": len(entities),

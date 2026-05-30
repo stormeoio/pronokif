@@ -17,6 +17,8 @@ def test_f1_knowledge_bundle_links_core_entity_types():
     bundle = build_f1_2026_knowledge_bundle()
 
     assert bundle["summary"]["sources"] == 14
+    assert bundle["summary"]["entity_types"]["championship"] == 1
+    assert bundle["summary"]["entity_types"]["season"] == 1
     assert bundle["summary"]["entity_types"]["race"] == 24
     assert bundle["summary"]["entity_types"]["circuit"] == 24
     assert bundle["summary"]["entity_types"]["location"] == 24
@@ -30,6 +32,28 @@ def test_f1_knowledge_bundle_links_core_entity_types():
     assert all(document["content_translations"]["fr"] for document in bundle["documents"])
 
 
+def test_f1_knowledge_bundle_adds_championship_and_season_nodes():
+    bundle = build_f1_2026_knowledge_bundle()
+
+    championship = _entities(bundle, "championship")[0]
+    season = _entities(bundle, "season")[0]
+    monaco = next(entity for entity in _entities(bundle, "race") if entity["race_id"] == "monaco-2026")
+
+    assert championship["championship_record_id"] == F1_2026_CHAMPIONSHIP_ID
+    assert championship["slug"] == "formula-1-2026"
+    assert championship["name_translations"]["fr"] == "Formule 1 2026"
+    assert championship["active_races_count"] == 22
+    assert championship["cancelled_races_count"] == 2
+    assert season["year"] == 2026
+    assert season["linked_championship_ids"] == [championship["id"]]
+    assert "monaco-2026" in season["linked_race_ids"]
+    assert {"part_of_championship", "part_of_season"}.issubset(
+        {relation["relation"] for relation in monaco["relations"]}
+    )
+    assert any(document["entity_type"] == "championship" for document in bundle["documents"])
+    assert any(document["entity_type"] == "season" for document in bundle["documents"])
+
+
 def test_f1_knowledge_bundle_enriches_circuits_locations_and_countries():
     bundle = build_f1_2026_knowledge_bundle()
 
@@ -39,7 +63,11 @@ def test_f1_knowledge_bundle_enriches_circuits_locations_and_countries():
     spain = next(entity for entity in _entities(bundle, "country") if entity["country_code"] == "ES")
 
     assert madrid["circuit"]["venue_type"] == "hybrid_street_circuit"
-    assert madrid["circuit"]["map_status"] == "static_fallback"
+    assert madrid["circuit"]["map_status"] == "interactive_seeded"
+    assert any(
+        feature["id"] == "ifema-section"
+        for feature in madrid["circuit"]["interactive_map"]["features"]
+    )
     assert monaco["circuit"]["map_status"] == "interactive_seeded"
     assert monaco["circuit"]["interactive_map"]["features"][1]["id"] == "sainte-devote"
     assert madrid_location["location"]["city"] == "Madrid"
