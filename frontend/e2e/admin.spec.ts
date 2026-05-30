@@ -199,7 +199,7 @@ test.describe("Admin panel", () => {
 
     await expect(page.getByText("SpeedKing")).toBeVisible({ timeout: 10000 });
     await expect(page.getByText("RaceQueen")).toBeVisible();
-    await expect(page.getByText("non défini")).toBeVisible(); // null username
+    await expect(page.getByTestId("admin-user-row-identity-3")).toContainText("newbie@test.fr");
   });
 
   test("devops beta tab shows feedback messages with categories", async ({ page }) => {

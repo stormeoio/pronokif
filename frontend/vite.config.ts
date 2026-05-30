@@ -145,7 +145,10 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: "build",
       sourcemap: true,
-      chunkSizeWarningLimit: 600,
+      // Three.js is isolated below as its own async vendor chunk. Its minified
+      // core bundle is expected to sit above Vite's generic 600 kB default, so
+      // keep a tighter project budget that still warns on unexpected growth.
+      chunkSizeWarningLimit: 750,
       rollupOptions: {
         output: {
           manualChunks(id) {

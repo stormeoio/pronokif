@@ -4,6 +4,7 @@
  */
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, History } from "lucide-react";
+import { RaceEntityToken } from "@/components/entities/RaceEntityToken";
 import { haptic } from "@/lib/haptics";
 
 /* ── Types ─────────────────────────────────────────────── */
@@ -119,7 +120,12 @@ function RaceHistoryItem({ race }: { race: RaceHistoryEntry }) {
       {/* Race Header */}
       <div className="flex items-center justify-between mb-2.5">
         <div>
-          <h4 className="font-display text-sm">{race.race_name?.replace(" Grand Prix", "")}</h4>
+          <RaceEntityToken
+            raceId={race.race_id}
+            raceName={race.race_name}
+            href={`/results/${race.race_id}`}
+            className="font-display text-xs tracking-normal"
+          />
           {race.is_sprint_weekend && (
             <span className="font-data text-[0.5rem] bg-pk-amber/20 text-pk-amber px-1.5 py-0.5 rounded uppercase tracking-wider">
               Sprint

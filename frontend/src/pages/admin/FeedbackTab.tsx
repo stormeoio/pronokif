@@ -1,12 +1,16 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
 import { Loader2, RefreshCw, MessageSquare, Bug, Lightbulb } from "lucide-react";
 import { api } from "@/lib/api";
+import { UserIdentity } from "@/components/users/UserIdentity";
 
 interface FeedbackItem {
   id: number;
+  user_id?: string | number | null;
   username: string;
+  email?: string | null;
+  avatar_id?: string | null;
+  custom_avatar_url?: string | null;
   category: string;
   message: string;
   read: boolean;
@@ -33,9 +37,6 @@ export default function FeedbackTab() {
       console.error(error);
     }
   };
-
-  /** Expose unread count via callback so the orchestrator can show the badge */
-  const unreadCount = feedbackList.filter((f) => !f.read).length;
 
   return (
     <div className="space-y-4">
@@ -106,9 +107,19 @@ export default function FeedbackTab() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-body text-sm text-white font-semibold">
-                          {feedback.username}
-                        </span>
+                        <UserIdentity
+                          user={{
+                            id: feedback.user_id ? String(feedback.user_id) : null,
+                            username: feedback.username,
+                            email: feedback.email,
+                            avatar_id: feedback.avatar_id,
+                            custom_avatar_url: feedback.custom_avatar_url,
+                          }}
+                          surface="admin"
+                          linked={!!feedback.user_id}
+                          size="sm"
+                          className="max-w-[220px]"
+                        />
                         <span
                           className={`font-body text-xs px-2 py-0.5 rounded ${config.bg} ${config.color}`}
                         >

@@ -6,10 +6,11 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
-import { ChevronLeft, User, History, Lightbulb, Loader2, GitCompare } from "lucide-react";
+import { ChevronLeft, User, History, Lightbulb, GitCompare } from "lucide-react";
 import { getTeamColors } from "./driverHelpers";
 import { ProfileTab, PalmaresTab, FactsTab } from "./DriverTabs";
 import { useDriverDetailData } from "./useDriverDetailData";
+import { TeamEntityToken } from "@/components/entities/TeamEntityToken";
 import { haptic } from "@/lib/haptics";
 import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
 
@@ -162,7 +163,14 @@ export default function DriverDetailPage() {
             {driver.first_name}{" "}
             <span style={{ color: colors.primary }}>{driver.last_name?.toUpperCase()}</span>
           </h1>
-          <p className="font-data text-[0.5625rem] text-pk-titane mt-1">{driver.team}</p>
+          <p className="font-data text-[0.5625rem] text-pk-titane mt-2">
+            <TeamEntityToken
+              teamId={driver.team_id}
+              name={driver.team}
+              linked={false}
+              className="text-[0.5625rem]"
+            />
+          </p>
 
           <motion.div
             className="flex justify-center gap-6 mt-4"

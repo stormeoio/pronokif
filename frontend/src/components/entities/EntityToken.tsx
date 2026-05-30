@@ -3,7 +3,15 @@ import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
-type EntityTokenTone = "driver" | "player" | "race" | "team" | "neutral";
+type EntityTokenTone =
+  | "driver"
+  | "player"
+  | "race"
+  | "team"
+  | "circuit"
+  | "date"
+  | "championship"
+  | "neutral";
 
 type EntityTokenMeta = {
   label: string;
@@ -22,6 +30,7 @@ interface EntityTokenProps {
   tone?: EntityTokenTone;
   className?: string;
   defaultOpen?: boolean;
+  focusable?: boolean;
 }
 
 const tokenTones: Record<EntityTokenTone, string> = {
@@ -29,6 +38,9 @@ const tokenTones: Record<EntityTokenTone, string> = {
   player: "border-cyan-400/30 bg-cyan-500/10 text-cyan-100 hover:border-cyan-300/70",
   race: "border-amber-400/30 bg-amber-500/10 text-amber-100 hover:border-amber-300/70",
   team: "border-emerald-400/30 bg-emerald-500/10 text-emerald-100 hover:border-emerald-300/70",
+  circuit: "border-sky-400/30 bg-sky-500/10 text-sky-100 hover:border-sky-300/70",
+  date: "border-violet-400/30 bg-violet-500/10 text-violet-100 hover:border-violet-300/70",
+  championship: "border-pk-red/35 bg-pk-red-subtle text-pk-piste hover:border-pk-red/70",
   neutral: "border-white/12 bg-white/[0.04] text-pk-piste hover:border-white/25",
 };
 
@@ -42,6 +54,7 @@ export function EntityToken({
   tone = "neutral",
   className,
   defaultOpen = false,
+  focusable = true,
 }: EntityTokenProps) {
   const triggerClassName = cn(
     "inline-flex min-h-6 items-center rounded-sm border px-1.5 py-0.5 align-middle font-data text-[0.625rem] leading-none tracking-wider transition-colors",
@@ -56,7 +69,11 @@ export function EntityToken({
       {compactLabel}
     </Link>
   ) : (
-    <span className={triggerClassName} tabIndex={0} aria-label={`${kindLabel}: ${label}`}>
+    <span
+      className={triggerClassName}
+      tabIndex={focusable ? 0 : undefined}
+      aria-label={`${kindLabel}: ${label}`}
+    >
       {compactLabel}
     </span>
   );

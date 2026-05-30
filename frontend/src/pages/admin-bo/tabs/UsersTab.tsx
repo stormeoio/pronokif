@@ -25,6 +25,7 @@ import {
 import { toast } from "sonner";
 import { adminApi } from "../adminApi";
 import { Button } from "@/components/ui/button";
+import { DateEntityToken, RaceEntityToken } from "@/components/entities/RaceEntityToken";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { UserIdentity } from "@/components/users/UserIdentity";
@@ -762,8 +763,17 @@ export default function UsersTab() {
                   <p className="font-data text-[10px] uppercase tracking-[0.16em] text-gray-500">
                     Meilleur Grand Prix
                   </p>
-                  <p className="mt-1 font-body text-sm text-white">
-                    {selectedStats.best_race.race_name ?? selectedStats.best_race.race_id} ·{" "}
+                  <p className="mt-1 font-body text-sm text-white leading-7">
+                    <RaceEntityToken
+                      raceId={selectedStats.best_race.race_id}
+                      raceName={selectedStats.best_race.race_name}
+                      href={
+                        selectedStats.best_race.race_id
+                          ? `/results/${selectedStats.best_race.race_id}`
+                          : undefined
+                      }
+                    />{" "}
+                    ·{" "}
                     <span className="font-data text-orange-400">
                       {selectedStats.best_race.points} pts
                     </span>
@@ -785,11 +795,22 @@ export default function UsersTab() {
                           className="flex items-center justify-between gap-3 border-b border-white/5 pb-2 last:border-0 last:pb-0"
                         >
                           <div className="min-w-0">
-                            <p className="truncate font-body text-sm text-gray-200">
-                              {String(prediction.race_name ?? prediction.race_id ?? "Course")}
-                            </p>
-                            <p className="font-body text-[11px] text-gray-500">
-                              {formatDateTime(prediction.updated_at ?? prediction.created_at)}
+                            <RaceEntityToken
+                              raceId={String(prediction.race_id ?? "")}
+                              raceName={String(
+                                prediction.race_name ?? prediction.race_id ?? "Course",
+                              )}
+                              href={
+                                prediction.race_id
+                                  ? `/results/${String(prediction.race_id)}`
+                                  : undefined
+                              }
+                              className="max-w-[220px] font-body text-xs tracking-normal"
+                            />
+                            <p className="mt-1 font-body text-[11px] text-gray-500 leading-7">
+                              <DateEntityToken
+                                value={String(prediction.updated_at ?? prediction.created_at ?? "")}
+                              />
                             </p>
                           </div>
                           <span className="shrink-0 font-data text-xs text-orange-400">

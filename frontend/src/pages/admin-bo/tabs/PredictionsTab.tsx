@@ -1,7 +1,7 @@
 /**
  * Admin predictions tab — moderation, scoring preview and corrective editing.
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BarChart3,
@@ -21,10 +21,14 @@ import {
 import { toast } from "sonner";
 import { adminApi } from "../adminApi";
 import { Button } from "@/components/ui/button";
+import { DriverEntityToken } from "@/components/entities/DriverEntityToken";
+import { DateEntityToken, RaceEntityToken } from "@/components/entities/RaceEntityToken";
+import { buildDriverLookup } from "@/components/entities/driverEntityUtils";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { UserIdentity } from "@/components/users/UserIdentity";
+import { api } from "@/lib/api";
 
 type AdminPrediction = {
   id?: string;
@@ -103,15 +107,6 @@ const EMPTY_DRAFT: PredictionDraft = {
   review_status: "",
   admin_note: "",
 };
-
-function formatDate(value: unknown) {
-  if (!value) return "—";
-  return new Date(String(value)).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
 
 function formatDateTime(value: unknown) {
   if (!value) return "—";
@@ -205,6 +200,16 @@ export default function PredictionsTab() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [batchReviewStatus, setBatchReviewStatus] = useState("in_review");
   const limit = 20;
+
+  const { data: drivers = [] } = useQuery({
+    queryKey: ["drivers", "admin-prediction-tokens"],
+    queryFn: () => api.drivers.list(),
+    staleTime: 30 * 60 * 1000,
+  });
+  const driversByReference = useMemo(
+    () => buildDriverLookup(Array.isArray(drivers) ? drivers : []),
+    [drivers],
+  );
 
   const filterParams = {
     q: q.trim() || undefined,
@@ -759,11 +764,17 @@ export default function PredictionsTab() {
                       />
                     </td>
                     <td className="p-3">
-                      <p className="font-body text-white">
-                        {prediction.race_name ?? prediction.race_id ?? "—"}
-                      </p>
-                      <p className="font-body text-[11px] text-gray-500">
-                        {formatDate(prediction.race_date)}
+                      <RaceEntityToken
+                        raceId={prediction.race_id}
+                        raceName={prediction.race_name}
+                        href={prediction.race_id ? `/race/${prediction.race_id}` : undefined}
+                        className="max-w-[220px] font-display text-xs tracking-normal"
+                      />
+                      <p className="mt-1 font-body text-[11px] text-gray-500 leading-7">
+                        <DateEntityToken
+                          value={prediction.race_date}
+                          href={prediction.race_id ? `/race/${prediction.race_id}` : undefined}
+                        />
                       </p>
                     </td>
                     <td className="p-3">
@@ -805,10 +816,18 @@ export default function PredictionsTab() {
                         </p>
                       )}
                     </td>
-                    <td className="p-3 font-body text-gray-300">
-                      <span className="text-gray-500">Pole</span> {prediction.quali_pole ?? "—"}
+                    <td className="p-3 font-body text-gray-300 leading-7">
+                      <span className="text-gray-500">Pole</span>{" "}
+                      <DriverEntityToken
+                        value={prediction.quali_pole}
+                        driversByReference={driversByReference}
+                      />
                       <span className="mx-2 text-gray-700">/</span>
-                      <span className="text-gray-500">Win</span> {prediction.race_winner ?? "—"}
+                      <span className="text-gray-500">Win</span>{" "}
+                      <DriverEntityToken
+                        value={prediction.race_winner}
+                        driversByReference={driversByReference}
+                      />
                     </td>
                     <td className="p-3 font-data text-orange-400">
                       {prediction.score_preview ? `${prediction.score_preview.total} pts` : "—"}

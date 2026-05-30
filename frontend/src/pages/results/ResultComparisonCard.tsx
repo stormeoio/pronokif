@@ -5,6 +5,8 @@
 import { motion } from "framer-motion";
 import { Check, X } from "lucide-react";
 import type { ReactNode } from "react";
+import { DriverEntityToken } from "@/components/entities/DriverEntityToken";
+import type { DriverLookup } from "@/components/entities/driverEntityUtils";
 import { staggerContainer } from "@/lib/motion";
 
 /* ── Types ─────────────────────────────────────────────── */
@@ -18,6 +20,7 @@ export interface ResultComparisonCardProps {
   top3?: Array<string | number>;
   predictionTop3?: Array<string | number>;
   getDriverName: (id: string | number) => string;
+  driversByReference?: DriverLookup;
 }
 
 /* ── Component ─────────────────────────────────────────── */
@@ -31,7 +34,15 @@ export default function ResultComparisonCard({
   top3,
   predictionTop3,
   getDriverName,
+  driversByReference,
 }: ResultComparisonCardProps) {
+  const renderDriver = (driverId: string | number) =>
+    driversByReference ? (
+      <DriverEntityToken value={driverId} driversByReference={driversByReference} />
+    ) : (
+      <span>{getDriverName(driverId)}</span>
+    );
+
   return (
     <div className="bg-pk-surface border border-white/[0.08] rounded-lg overflow-hidden">
       {/* Header */}
@@ -48,17 +59,17 @@ export default function ResultComparisonCard({
           </p>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="font-display text-sm">{getDriverName(winnerId)}</span>
+              {renderDriver(winnerId)}
               <span className="font-data text-[0.5rem] text-pk-titane">(Réel)</span>
             </div>
             {predictionWinnerId !== undefined && (
               <div className="flex items-center gap-1.5">
                 <span
-                  className={`font-data text-[0.5625rem] ${
+                  className={`inline-flex items-center gap-1 font-data text-[0.5625rem] ${
                     predictionWinnerId === winnerId ? "text-pk-emerald" : "text-pk-titane"
                   }`}
                 >
-                  Ton choix : {getDriverName(predictionWinnerId)}
+                  Ton choix : {renderDriver(predictionWinnerId)}
                 </span>
                 {predictionWinnerId === winnerId ? (
                   <Check className="w-4 h-4 text-pk-emerald" />
@@ -103,7 +114,7 @@ export default function ResultComparisonCard({
                     >
                       {i + 1}
                     </span>
-                    <span className="text-sm">{getDriverName(driverId)}</span>
+                    {renderDriver(driverId)}
                   </div>
                   {predictionTop3 && (
                     <div className="flex items-center gap-1.5">
@@ -112,7 +123,7 @@ export default function ResultComparisonCard({
                         return (
                           <>
                             <span
-                              className={`font-data text-[0.5625rem] ${
+                              className={`inline-flex items-center gap-1 font-data text-[0.5625rem] ${
                                 pred === driverId
                                   ? "text-pk-emerald"
                                   : predictionTop3.includes(driverId)
@@ -120,7 +131,7 @@ export default function ResultComparisonCard({
                                     : "text-pk-titane"
                               }`}
                             >
-                              {pred !== undefined ? getDriverName(pred) : "—"}
+                              {pred !== undefined ? renderDriver(pred) : "—"}
                             </span>
                             {pred === driverId ? (
                               <Check className="w-3.5 h-3.5 text-pk-emerald" />

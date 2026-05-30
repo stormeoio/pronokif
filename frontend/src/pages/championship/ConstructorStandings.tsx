@@ -7,6 +7,7 @@ import { Car, Trophy } from "lucide-react";
 import { getTeamColor, getRankStyle, getRankIcon } from "./championshipUtils";
 import { staggerContainer, fadeUp } from "@/lib/motion";
 import { EmptyMinimal } from "@/components/EmptyState";
+import { TeamEntityToken } from "@/components/entities/TeamEntityToken";
 
 interface ConstructorEntry {
   position: string;
@@ -62,7 +63,12 @@ export default function ConstructorStandings({ constructorsStandings }: Construc
 
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <p className="font-display text-sm">{constructor?.name}</p>
+                <TeamEntityToken
+                  teamId={constructor?.constructorId}
+                  name={constructor?.name}
+                  nationality={constructor?.nationality}
+                  className="font-display text-xs tracking-normal"
+                />
                 <p className="font-data text-[0.5625rem] text-pk-titane">
                   {constructor?.nationality}
                 </p>

@@ -1,7 +1,7 @@
 /**
  * Admin Races operations tab.
  */
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -33,13 +33,18 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { adminApi } from "../adminApi";
-import { EntityToken } from "@/components/entities/EntityToken";
+import { DriverEntityList, DriverEntityToken } from "@/components/entities/DriverEntityToken";
+import {
+  CircuitEntityToken,
+  DateEntityToken,
+  RaceEntityToken,
+} from "@/components/entities/RaceEntityToken";
+import { buildDriverLookup } from "@/components/entities/driverEntityUtils";
 import { UserIdentity } from "@/components/users/UserIdentity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
-import type { Driver } from "@/types/api";
 
 type RaceContentStatus = "draft" | "ready" | "published";
 
@@ -283,154 +288,17 @@ function joinedLines(values?: string[]) {
   return (values || []).join("\n");
 }
 
-type DriverLookup = Map<string, Driver>;
-
-function normalizeLookupKey(value?: string | number | null) {
-  return String(value ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toLowerCase();
-}
-
-function addDriverLookupKey(
-  lookup: DriverLookup,
-  key: string | number | null | undefined,
-  driver: Driver,
-) {
-  const normalized = normalizeLookupKey(key);
-  if (normalized) lookup.set(normalized, driver);
-}
-
-function buildDriverLookup(drivers: Driver[]) {
-  const lookup: DriverLookup = new Map();
-  for (const driver of drivers) {
-    addDriverLookupKey(lookup, driver.id, driver);
-    addDriverLookupKey(lookup, driver.code, driver);
-    addDriverLookupKey(lookup, driver.name, driver);
-    addDriverLookupKey(lookup, `${driver.code} - ${driver.name}`, driver);
-  }
-  return lookup;
-}
-
-function driverCodeFromReference(value: string) {
-  const [code] = value.split(" - ");
-  return code?.trim() || value.trim();
-}
-
-function resolveDriverReference(value: string | null | undefined, lookup: DriverLookup) {
-  if (!value) return null;
-  const byFullReference = lookup.get(normalizeLookupKey(value));
-  if (byFullReference) return byFullReference;
-  const byCode = lookup.get(normalizeLookupKey(driverCodeFromReference(value)));
-  if (byCode) return byCode;
-  return null;
-}
-
-function adminKnowledgeHref(entityType: "driver" | "team", query: string) {
-  const params = new URLSearchParams({
-    tab: "knowledge",
-    entity_type: entityType,
-    q: query,
-  });
-  return `/admin?${params.toString()}`;
-}
-
-function DriverEntityToken({
-  value,
-  driversByReference,
-  emptyLabel = "—",
-}: {
-  value?: string | null;
-  driversByReference: DriverLookup;
-  emptyLabel?: string;
-}) {
-  if (!value) return <span className="text-white">{emptyLabel}</span>;
-
-  const driver = resolveDriverReference(value, driversByReference);
-  const compactLabel = driver?.code || driverCodeFromReference(value).toUpperCase();
-  const label = driver?.name || value;
-
-  return (
-    <EntityToken
-      compactLabel={compactLabel}
-      label={label}
-      kindLabel="Pilote"
-      href={driver ? `/driver/${driver.id}` : undefined}
-      description={driver ? "Ouvrir la fiche pilote." : undefined}
-      tone="driver"
-      meta={[
-        {
-          label: "Écurie",
-          value: driver?.team,
-          href: driver?.team ? adminKnowledgeHref("team", driver.team) : undefined,
-          ariaLabel: driver?.team ? `Ouvrir l'entité écurie ${driver.team}` : undefined,
-        },
-        { label: "N°", value: driver?.number ? `#${driver.number}` : null },
-        { label: "Pays", value: driver?.country },
-      ]}
-    />
-  );
-}
-
-function DriverEntityList({
-  values,
-  driversByReference,
-  emptyLabel = "Non renseigné",
-  limit = 3,
-}: {
-  values?: string[];
-  driversByReference: DriverLookup;
-  emptyLabel?: string;
-  limit?: number;
-}) {
-  const displayedValues = (values || []).slice(0, limit);
-  if (!displayedValues.length) return <span className="text-white">{emptyLabel}</span>;
-
-  return (
-    <span className="inline-flex flex-wrap items-center gap-1.5 align-middle">
-      {displayedValues.map((value, index) => (
-        <Fragment key={`${value}-${index}`}>
-          {index > 0 ? <span className="font-data text-[0.625rem] text-pk-titane">/</span> : null}
-          <DriverEntityToken value={value} driversByReference={driversByReference} />
-        </Fragment>
-      ))}
-    </span>
-  );
-}
-
-function compactPlayerLabel(user: AdminUserSummary) {
-  const value = user.username || user.email || "Joueur";
-  return value.length > 14 ? `${value.slice(0, 12)}...` : value;
-}
-
 function PlayerEntityToken({ user }: { user: AdminUserSummary }) {
-  const label = user.username || user.email || "Joueur";
-
   return (
-    <span className="inline-flex items-center gap-2 align-middle">
-      <UserIdentity
-        user={user}
-        surface="admin"
-        size="sm"
-        linked={false}
-        showName={false}
-        className="shrink-0"
-        data-testid={`race-player-avatar-${user.id}`}
-      />
-      <EntityToken
-        compactLabel={compactPlayerLabel(user)}
-        label={label}
-        kindLabel="Joueur"
-        href={`/admin?tab=users&user=${user.id}`}
-        description="Ouvrir la fiche admin joueur."
-        tone="player"
-        meta={[
-          { label: "Email", value: user.email },
-          { label: "ID", value: user.id },
-        ]}
-      />
-    </span>
+    <UserIdentity
+      user={user}
+      surface="admin"
+      size="sm"
+      showEmail
+      className="max-w-full rounded-sm border border-cyan-400/30 bg-cyan-500/10 px-1.5 py-0.5 text-cyan-100 hover:border-cyan-300/70"
+      textClassName="font-data text-[0.625rem] uppercase tracking-wider text-cyan-100"
+      data-testid={`race-player-identity-${user.id}`}
+    />
   );
 }
 
@@ -1324,9 +1192,17 @@ export default function RacesTab() {
                     {selectedRace.is_cancelled ? " • annulée" : ""}
                     {selectedRace.is_test_race ? " • test" : ""}
                   </p>
-                  <h3 className="font-heading text-xl uppercase text-white">{selectedRace.name}</h3>
-                  <p className="font-body text-xs text-gray-500">
-                    {selectedRace.circuit} • clôture{" "}
+                  <RaceEntityToken
+                    race={selectedRace}
+                    href={`/race/${selectedRace.id}`}
+                    className="min-h-8 px-2 font-heading text-base tracking-normal"
+                  />
+                  <p className="mt-1 font-body text-xs text-gray-500 leading-7">
+                    <CircuitEntityToken
+                      circuit={selectedRace.circuit}
+                      country={selectedRace.country}
+                    />{" "}
+                    • clôture{" "}
                     {formatDateTime(overview?.predictions_close_at, selectedRace.timezone)}
                   </p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -1428,8 +1304,11 @@ export default function RacesTab() {
                 <div className="grid gap-3">
                   <div className="rounded-md border border-white/10 bg-black/30 p-3">
                     <MapPin className="mb-2 h-4 w-4 text-cyan-400" />
-                    <p className="font-body text-sm text-white">
-                      {selectedRace.circuit || "Circuit"}
+                    <p className="font-body text-sm text-white leading-7">
+                      <CircuitEntityToken
+                        circuit={selectedRace.circuit}
+                        country={selectedRace.country}
+                      />
                     </p>
                     <p className="font-body text-xs text-gray-500">
                       {selectedRace.country || "Pays"}
@@ -1437,8 +1316,12 @@ export default function RacesTab() {
                   </div>
                   <div className="rounded-md border border-white/10 bg-black/30 p-3">
                     <Timer className="mb-2 h-4 w-4 text-orange-400" />
-                    <p className="font-body text-sm text-white">
-                      Course {formatDateTime(selectedRace.race_start_at, selectedRace.timezone)}
+                    <p className="font-body text-sm text-white leading-7">
+                      Course{" "}
+                      <DateEntityToken
+                        value={selectedRace.race_start_at || selectedRace.date}
+                        href={`/race/${selectedRace.id}`}
+                      />
                     </p>
                     <p className="font-body text-xs text-gray-500">
                       Qualifications {formatDate(selectedRace.quali_date, selectedRace.timezone)}{" "}
@@ -1632,10 +1515,7 @@ export default function RacesTab() {
                         key={user.id}
                         className="border border-white/10 rounded-md p-2 bg-black/20"
                       >
-                        <p className="font-body text-sm text-white">
-                          <PlayerEntityToken user={user} />
-                        </p>
-                        <p className="font-body text-[11px] text-gray-500 truncate">{user.email}</p>
+                        <PlayerEntityToken user={user} />
                       </div>
                     ))}
                   </div>

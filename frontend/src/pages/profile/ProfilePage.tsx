@@ -21,9 +21,8 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { toast } from "sonner";
-import { AvatarDisplay, AvatarSelector } from "../../components/AvatarDisplay";
+import { AvatarSelector } from "../../components/AvatarDisplay";
 import BadgeCollection from "../../components/BadgeCollection";
-import StreakWidget from "../../components/StreakWidget";
 import PointsHistory from "./PointsHistory";
 import { MyLeaguesSection } from "./MyLeaguesSection";
 import { useProfileData } from "./useProfileData";
@@ -31,6 +30,7 @@ import { apiClient, getApiError, api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { haptic } from "@/lib/haptics";
 import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
+import { UserIdentity } from "@/components/users/UserIdentity";
 
 /* ── Skeleton ──────────────────────────────────────────── */
 
@@ -169,43 +169,54 @@ export default function ProfilePage() {
           variants={fadeUp}
           className="bg-pk-surface border border-white/[0.08] rounded-lg p-5"
         >
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <AvatarDisplay
-                avatar={getAvatarById(user!.avatar_id)}
-                customUrl={user!.custom_avatar_url}
-                size="xl"
-              />
+          <UserIdentity
+            user={{
+              id: user!.id,
+              username: user!.username,
+              email: user!.email,
+              avatar_id: user!.avatar_id,
+              custom_avatar_url: user!.custom_avatar_url,
+              level: user!.level,
+            }}
+            linked={false}
+            size="xl"
+            avatarObject={getAvatarById(user!.avatar_id)}
+            className="w-full"
+            textClassName="font-display text-xl"
+            data-testid="profile-main-identity"
+            avatarAccessory={
               <button
-                onClick={() => setShowAvatarModal(true)}
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setShowAvatarModal(true);
+                }}
                 className="absolute -bottom-0.5 -right-0.5 w-7 h-7 bg-pk-red rounded-full flex items-center justify-center border-2 border-pk-carbon shadow-glow-red"
                 data-testid="edit-avatar-btn"
               >
                 <Pencil className="w-3 h-3 text-white" />
               </button>
+            }
+          >
+            <p className="font-data text-[0.5625rem] text-pk-titane truncate">{user!.email}</p>
+            <div className="flex items-center gap-2.5 mt-2">
+              <span className="font-data text-[0.5625rem] px-2 py-0.5 rounded-full bg-pk-info/[0.12] border border-pk-info/20 text-pk-info">
+                Niv. {user!.level || 1}
+              </span>
+              <span className="flex items-center gap-1 font-data text-[0.5625rem] text-pk-amber">
+                <Zap className="w-3 h-3" />
+                {user!.xp || 0} XP
+              </span>
             </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="font-display text-xl truncate">{user!.username}</h2>
-              <p className="font-data text-[0.5625rem] text-pk-titane truncate">{user!.email}</p>
-              <div className="flex items-center gap-2.5 mt-2">
-                <span className="font-data text-[0.5625rem] px-2 py-0.5 rounded-full bg-pk-info/[0.12] border border-pk-info/20 text-pk-info">
-                  Niv. {user!.level || 1}
-                </span>
-                <span className="flex items-center gap-1 font-data text-[0.5625rem] text-pk-amber">
-                  <Zap className="w-3 h-3" />
-                  {user!.xp || 0} XP
+            {globalPosition && (
+              <div className="flex items-center gap-1 mt-1">
+                <Globe className="w-3 h-3 text-pk-titane" />
+                <span className="font-data text-[0.5625rem] text-pk-titane">
+                  Rang mondial : <span className="text-pk-red font-bold">#{globalPosition}</span>
                 </span>
               </div>
-              {globalPosition && (
-                <div className="flex items-center gap-1 mt-1">
-                  <Globe className="w-3 h-3 text-pk-titane" />
-                  <span className="font-data text-[0.5625rem] text-pk-titane">
-                    Rang mondial : <span className="text-pk-red font-bold">#{globalPosition}</span>
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
+            )}
+          </UserIdentity>
         </motion.div>
 
         {/* Stats Grid */}

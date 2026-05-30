@@ -4,6 +4,7 @@
  */
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   ChevronLeft,
@@ -21,6 +22,9 @@ import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
 import { EmptyFullPage } from "@/components/EmptyState";
+import { DriverEntityToken } from "@/components/entities/DriverEntityToken";
+import { RaceEntityToken } from "@/components/entities/RaceEntityToken";
+import { buildDriverLookup } from "@/components/entities/driverEntityUtils";
 import { UserIdentity } from "@/components/users/UserIdentity";
 
 /* ── Types ─────────────────────────────────────────────── */
@@ -51,6 +55,7 @@ interface MemberProfile {
   }>;
   recent_predictions: Array<{
     id: string;
+    race_id: string;
     race_name: string;
     race_winner: string;
     quali_pole: string;
@@ -112,6 +117,15 @@ export default function MemberProfilePage() {
     queryFn: () => api.profile.get(userId!) as Promise<MemberProfile | null>,
     enabled: !!userId,
   });
+  const { data: drivers = [] } = useQuery({
+    queryKey: ["drivers", "member-profile-tokens"],
+    queryFn: () => api.drivers.list(),
+    staleTime: 30 * 60 * 1000,
+  });
+  const driversByReference = useMemo(
+    () => buildDriverLookup(Array.isArray(drivers) ? drivers : []),
+    [drivers],
+  );
 
   const loading = profileLoading;
   const error = profileError ? "Impossible de charger le profil" : null;
@@ -360,9 +374,23 @@ export default function MemberProfilePage() {
               {profile.recent_predictions.map((pred) => (
                 <div key={pred.id} className="flex items-center justify-between px-4 py-3">
                   <div className="min-w-0">
-                    <p className="font-display text-sm truncate">{pred.race_name}</p>
-                    <p className="font-data text-[0.5625rem] text-pk-titane">
-                      Vainqueur : {pred.race_winner} · Pole : {pred.quali_pole}
+                    <RaceEntityToken
+                      raceId={pred.race_id}
+                      raceName={pred.race_name}
+                      href={`/results/${pred.race_id}`}
+                      className="max-w-full font-display text-xs tracking-normal"
+                    />
+                    <p className="font-data text-[0.5625rem] text-pk-titane leading-7">
+                      Vainqueur :{" "}
+                      <DriverEntityToken
+                        value={pred.race_winner}
+                        driversByReference={driversByReference}
+                      />{" "}
+                      · Pole :{" "}
+                      <DriverEntityToken
+                        value={pred.quali_pole}
+                        driversByReference={driversByReference}
+                      />
                     </p>
                   </div>
                   {pred.locked && (

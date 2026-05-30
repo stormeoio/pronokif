@@ -9,6 +9,7 @@ import { getTeamColor, getRankStyle, getRankIcon, DRIVER_ID_MAP } from "./champi
 import { haptic } from "@/lib/haptics";
 import { staggerContainer, fadeUp } from "@/lib/motion";
 import { EmptyMinimal } from "@/components/EmptyState";
+import { TeamEntityToken } from "@/components/entities/TeamEntityToken";
 
 interface DriverEntry {
   position: string;
@@ -84,9 +85,15 @@ export default function DriverStandings({ driversStandings }: DriverStandingsPro
                   {driver.givenName}{" "}
                   <span className="text-pk-red">{driver.familyName?.toUpperCase()}</span>
                 </p>
-                <p className="font-data text-[0.5625rem] text-pk-titane truncate">
-                  {constructor?.name || "Écurie inconnue"}
-                </p>
+                <div className="mt-0.5">
+                  <TeamEntityToken
+                    teamId={constructor?.constructorId}
+                    name={constructor?.name}
+                    linked={false}
+                    focusable={false}
+                    className="max-w-full text-[0.5625rem]"
+                  />
+                </div>
               </div>
 
               {/* Points */}

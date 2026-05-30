@@ -5,11 +5,14 @@ import { toast } from "sonner";
 import { Loader2, Users, RefreshCw } from "lucide-react";
 import { DeleteConfirmModal, MemberDetailsModal } from "./MembersSubComponents";
 import { api } from "@/lib/api";
+import { UserIdentity } from "@/components/users/UserIdentity";
 
 interface MemberListItem {
   id: number;
   username: string | null;
   email: string;
+  avatar_id?: string | null;
+  custom_avatar_url?: string | null;
   level: number;
   predictions_count: number;
 }
@@ -188,15 +191,22 @@ export default function MembersTab() {
                 variants={{ hidden: { opacity: 0, x: -10 }, visible: { opacity: 1, x: 0 } }}
                 whileTap={{ scale: 0.98 }}
               >
-                <div className="w-10 h-10 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center text-white font-heading text-sm">
-                  {member.username?.charAt(0)?.toUpperCase() || "?"}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-body text-sm text-white truncate">
-                    {member.username || "No username"}
-                  </p>
-                  <p className="font-body text-xs text-gray-500 truncate">{member.email}</p>
-                </div>
+                <UserIdentity
+                  user={{
+                    id: String(member.id),
+                    username: member.username,
+                    email: member.email,
+                    avatar_id: member.avatar_id,
+                    custom_avatar_url: member.custom_avatar_url,
+                    level: member.level,
+                  }}
+                  surface="admin"
+                  linked={false}
+                  size="md"
+                  showEmail
+                  className="flex-1"
+                  data-testid={`admin-user-row-identity-${member.id}`}
+                />
                 <div className="text-right">
                   <p className="font-data text-sm text-cyan-400">Niv. {member.level || 1}</p>
                   <p className="font-body text-xs text-gray-500">

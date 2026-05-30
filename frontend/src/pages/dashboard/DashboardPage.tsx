@@ -21,6 +21,7 @@ import { iconSmall } from "@/lib/icons";
 import { fadeUp, staggerContainer } from "@/lib/motion";
 import { useAuth } from "@/lib/auth";
 import { openDeepSearch } from "@/components/search/deepSearchEvents";
+import { DateEntityToken, RaceEntityToken } from "@/components/entities/RaceEntityToken";
 import { UserIdentity } from "@/components/users/UserIdentity";
 
 const RACE_FLAGS: Record<string, string> = {
@@ -189,6 +190,8 @@ export default function DashboardPage() {
         id: result.race_id,
         flag: raceFlag(result.race_id),
         name: result.race_name.replace(" Grand Prix", " GP"),
+        raceName: result.race_name,
+        raceDate: result.race_date,
         date: formatRaceDate(result.race_date),
         pts: result.total_points,
         trend: result.total_points >= (entries[index + 1]?.total_points ?? 0) ? "up" : "down",
@@ -584,8 +587,21 @@ export default function DashboardPage() {
               >
                 <span className="text-[1.125rem]">{result.flag}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-[0.8125rem] truncate">{result.name}</p>
-                  <p className="font-mono text-[0.625rem] text-pk-titane">{result.date}</p>
+                  <RaceEntityToken
+                    raceId={result.id}
+                    raceName={result.raceName}
+                    linked={false}
+                    focusable={false}
+                    compactLabel={result.name}
+                    className="max-w-full font-medium text-[0.75rem] tracking-normal"
+                  />
+                  <p className="mt-1 font-mono text-[0.625rem] text-pk-titane">
+                    <DateEntityToken
+                      value={result.raceDate}
+                      focusable={false}
+                      className="text-[0.5625rem]"
+                    />
+                  </p>
                 </div>
                 <div className="text-right">
                   <p

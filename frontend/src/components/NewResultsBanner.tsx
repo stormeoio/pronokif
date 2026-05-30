@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Trophy, ChevronRight, Sparkles } from "lucide-react";
+import { RaceEntityToken } from "@/components/entities/RaceEntityToken";
 import { api } from "@/lib/api";
 import { haptic } from "@/lib/haptics";
 
@@ -52,8 +53,13 @@ export default function NewResultsBanner() {
               <Sparkles className="w-3 h-3" />
               Résultats disponibles !
             </p>
-            <p className="font-data text-[0.5625rem] text-pk-titane">
-              {latestResult.race_name}
+            <p className="font-data text-[0.5625rem] text-pk-titane leading-7">
+              <RaceEntityToken
+                raceId={latestResult.race_id}
+                raceName={latestResult.race_name}
+                linked={false}
+                focusable={false}
+              />
               {latestResult.user_score !== null && (
                 <span className="ml-2 text-pk-emerald font-data">
                   +{latestResult.user_score} pts

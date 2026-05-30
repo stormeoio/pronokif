@@ -11,11 +11,14 @@ import {
   Monitor,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { UserIdentity } from "@/components/users/UserIdentity";
 
 interface MemberDetails {
   id: number;
   username: string | null;
   email: string;
+  avatar_id?: string | null;
+  custom_avatar_url?: string | null;
   created_at: string;
   level: number;
   xp: number;
@@ -72,13 +75,22 @@ export function DeleteConfirmModal({
           </h3>
         </div>
         <div className="p-4 space-y-4">
-          <p className="font-body text-gray-300">
-            Are you sure you want to delete the account of{" "}
-            <span className="text-white font-semibold">
-              {memberDetails.username || memberDetails.email}
-            </span>{" "}
-            ?
-          </p>
+          <div className="font-body text-gray-300">
+            <p className="mb-3">Are you sure you want to delete this account?</p>
+            <UserIdentity
+              user={{
+                id: String(memberDetails.id),
+                username: memberDetails.username,
+                email: memberDetails.email,
+                avatar_id: memberDetails.avatar_id,
+                custom_avatar_url: memberDetails.custom_avatar_url,
+                level: memberDetails.level,
+              }}
+              surface="admin"
+              size="md"
+              showEmail
+            />
+          </div>
           <p className="font-body text-sm text-red-400 bg-red-500/10 p-3 rounded-lg">
             {"⚠️"} This action cannot be undone. All data for this member will be deleted :
             predictions, scores, statistiques, etc.
@@ -171,20 +183,24 @@ export function MemberDetailsModal({
             <div className="flex-1 overflow-y-auto">
               <div className="p-4 space-y-4">
                 {/* Basic Info Header */}
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-heading text-xl">
-                    {memberDetails.username?.charAt(0)?.toUpperCase() || "?"}
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-heading text-lg text-white">
-                      {memberDetails.username || "No username"}
-                    </h4>
-                    <p className="font-body text-sm text-gray-400">{memberDetails.email}</p>
-                    <p className="font-body text-xs text-gray-500">
-                      Inscrit le {new Date(memberDetails.created_at).toLocaleDateString("fr-FR")}
-                    </p>
-                  </div>
-                </div>
+                <UserIdentity
+                  user={{
+                    id: String(memberDetails.id),
+                    username: memberDetails.username,
+                    email: memberDetails.email,
+                    avatar_id: memberDetails.avatar_id,
+                    custom_avatar_url: memberDetails.custom_avatar_url,
+                    level: memberDetails.level,
+                  }}
+                  surface="admin"
+                  size="lg"
+                  showEmail
+                  textClassName="font-heading text-lg"
+                >
+                  <span className="mt-1 block font-body text-xs text-gray-500">
+                    Inscrit le {new Date(memberDetails.created_at).toLocaleDateString("fr-FR")}
+                  </span>
+                </UserIdentity>
 
                 {/* Tab Selector */}
                 <div className="flex gap-2">

@@ -6,7 +6,7 @@ import { useState, useMemo, lazy, Suspense } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { ChevronLeft, Trophy, Flag, Calendar, MapPin, Clock } from "lucide-react";
+import { ChevronLeft, Trophy, Flag, Clock } from "lucide-react";
 import AnimatedNumber from "../components/AnimatedNumber";
 import ResultComparisonCard from "./results/ResultComparisonCard";
 import { api, getApiStatus } from "@/lib/api";
@@ -14,6 +14,12 @@ import type { Race } from "@/types/api";
 import { haptic } from "@/lib/haptics";
 import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
 import { EmptyFullPage } from "@/components/EmptyState";
+import {
+  CircuitEntityToken,
+  DateEntityToken,
+  RaceEntityToken,
+} from "@/components/entities/RaceEntityToken";
+import { buildDriverLookup } from "@/components/entities/driverEntityUtils";
 
 const PodiumScene = lazy(() => import("../components/three/PodiumScene"));
 
@@ -128,6 +134,10 @@ export default function ResultsPage() {
     const driver = drivers.find((d) => d.id === String(driverId));
     return driver?.name || String(driverId);
   };
+  const driversByReference = useMemo(
+    () => buildDriverLookup(Array.isArray(drivers) ? drivers : []),
+    [drivers],
+  );
 
   const qualiTop3 = result?.results?.quali_top3 ?? result?.results?.quali_top10?.slice(0, 3);
   const raceTop3 = result?.results?.race_top3 ?? result?.results?.race_top10?.slice(0, 3);
@@ -208,18 +218,17 @@ export default function ResultsPage() {
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <h2 className="font-display text-base">{selectedRace.name}</h2>
-                  <div className="flex items-center gap-3 mt-1.5">
-                    <span className="flex items-center gap-1 font-data text-[0.5625rem] text-pk-titane">
-                      <MapPin className="w-3 h-3" /> {selectedRace.circuit}
-                    </span>
-                    <span className="flex items-center gap-1 font-data text-[0.5625rem] text-pk-titane">
-                      <Calendar className="w-3 h-3" />
-                      {new Date(selectedRace.date).toLocaleDateString("fr-FR", {
-                        day: "numeric",
-                        month: "long",
-                      })}
-                    </span>
+                  <RaceEntityToken
+                    race={selectedRace}
+                    href={`/race/${selectedRace.id}`}
+                    className="min-h-7 px-2 font-display text-sm tracking-normal"
+                  />
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <CircuitEntityToken
+                      circuit={selectedRace.circuit}
+                      country={selectedRace.country}
+                    />
+                    <DateEntityToken value={selectedRace.date} href={`/race/${selectedRace.id}`} />
                   </div>
                 </div>
                 <Flag className="w-5 h-5 text-pk-red/40" />
@@ -298,6 +307,7 @@ export default function ResultsPage() {
                 top3={qualiTop3}
                 predictionTop3={predictionQualiTop3}
                 getDriverName={getDriverName}
+                driversByReference={driversByReference}
               />
             </motion.div>
 
@@ -312,6 +322,7 @@ export default function ResultsPage() {
                 top3={raceTop3}
                 predictionTop3={predictionRaceTop3}
                 getDriverName={getDriverName}
+                driversByReference={driversByReference}
               />
             </motion.div>
 
