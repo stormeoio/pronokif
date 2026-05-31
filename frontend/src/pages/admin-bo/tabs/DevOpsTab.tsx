@@ -4,6 +4,7 @@ import {
   ClipboardList,
   Database,
   GitBranch,
+  History,
   Languages,
   Map,
   MessageSquare,
@@ -17,6 +18,8 @@ import LegalPwaTab from "./LegalPwaTab";
 import TranslationsTab from "./TranslationsTab";
 import AuditTab from "./AuditTab";
 import RoadmapTab from "./RoadmapTab";
+import ChangelogTab from "./ChangelogTab";
+import { APP_VERSION_LABEL } from "@/lib/appVersion";
 
 export type DevOpsSectionKey =
   | "beta"
@@ -24,7 +27,8 @@ export type DevOpsSectionKey =
   | "translations"
   | "legal"
   | "audit"
-  | "roadmap";
+  | "roadmap"
+  | "changelog";
 
 type DevOpsTabProps = {
   activeSection: DevOpsSectionKey;
@@ -74,6 +78,12 @@ const SECTIONS: Array<{
     description: "Plan produit et technique.",
     icon: Map,
   },
+  {
+    key: "changelog",
+    label: "Changelog",
+    description: "Versions et livrables.",
+    icon: History,
+  },
 ];
 
 const REAL_STATUS: Array<{
@@ -86,7 +96,7 @@ const REAL_STATUS: Array<{
   {
     label: "Production",
     value: "Live",
-    detail: "pronokif.eu sert le bundle admin v0.4",
+    detail: `pronokif.eu sert le bundle admin ${APP_VERSION_LABEL}`,
     tone: "success",
     icon: Radio,
   },
@@ -140,6 +150,9 @@ export function devOpsSectionFromKey(key: string | null | undefined): DevOpsSect
   if (normalized === "rag") return "knowledge";
   if (normalized === "legal-pwa") return "legal";
   if (normalized === "feuille-de-route") return "roadmap";
+  if (normalized === "versions" || normalized === "release" || normalized === "releases") {
+    return "changelog";
+  }
   return SECTIONS.some((section) => section.key === normalized)
     ? (normalized as DevOpsSectionKey)
     : null;
@@ -166,6 +179,8 @@ export default function DevOpsTab({
         return <AuditTab />;
       case "roadmap":
         return <RoadmapTab />;
+      case "changelog":
+        return <ChangelogTab />;
       default:
         return <FeedbacksTab currentAdminEmail={currentAdminEmail} />;
     }
@@ -212,7 +227,7 @@ export default function DevOpsTab({
         })}
       </div>
 
-      <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-7">
         {SECTIONS.map(({ key, label, description, icon: Icon }) => {
           const isActive = active.key === key;
           return (

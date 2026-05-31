@@ -25,6 +25,7 @@ import {
   PanelRightOpen,
   PanelRightClose,
   Wrench,
+  History,
 } from "lucide-react";
 import DashboardTab from "./tabs/DashboardTab";
 import UsersTab from "./tabs/UsersTab";
@@ -43,6 +44,7 @@ import PreviewPanel from "./PreviewPanel";
 import AdminDeepSearch from "./AdminDeepSearch";
 import { adminApi } from "./adminApi";
 import { Button } from "@/components/ui/button";
+import { APP_VERSION_LABEL } from "@/lib/appVersion";
 import { brandAssets } from "@/lib/brand";
 
 const ADMIN_AUTH_PATH = "/admin/auth";
@@ -70,7 +72,8 @@ type AdminDestinationKey =
   | "legal"
   | "translations"
   | "audit"
-  | "roadmap";
+  | "roadmap"
+  | "changelog";
 
 type AdminSelection = {
   tab: AdminTabKey;
@@ -416,7 +419,7 @@ export default function AdminLayout() {
         <div className="max-w-6xl mx-auto px-4 pb-4 pt-16 lg:p-8">
           <AnimatePresence mode="wait">
             <motion.div
-              key={activeTab}
+              key={`${activeTab}-${activeTab === "devops" ? activeDevOpsSection : "main"}`}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
@@ -425,6 +428,23 @@ export default function AdminLayout() {
               {renderTab()}
             </motion.div>
           </AnimatePresence>
+          <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.08] pt-4">
+            <p className="font-body text-xs text-pk-titane">Back-office administrateur</p>
+            <button
+              type="button"
+              onClick={() => handleSelectTab("changelog")}
+              data-testid="admin-version-footer-link"
+              className="group inline-flex items-center gap-2 rounded-sm border border-white/[0.08] bg-white/[0.03] px-3 py-2 font-data text-[10px] uppercase tracking-[0.16em] text-pk-titane transition-all hover:border-pk-red/40 hover:bg-pk-red-subtle hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pk-red/40"
+              aria-label={`Ouvrir le changelog ${APP_VERSION_LABEL}`}
+              title="Ouvrir le changelog"
+            >
+              <History className="h-3.5 w-3.5 text-pk-red" />
+              <span>Version</span>
+              <span className="text-white transition-colors group-hover:text-pk-red">
+                {APP_VERSION_LABEL}
+              </span>
+            </button>
+          </footer>
         </div>
       </main>
 

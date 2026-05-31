@@ -20,6 +20,7 @@ import {
   Lock,
   ArrowRight,
 } from "lucide-react";
+import { APP_RELEASE_DATETIME, APP_VERSION_LABEL } from "@/lib/appVersion";
 
 /* ── Audit data ────────────────────────────────────── */
 
@@ -210,7 +211,7 @@ export default function AuditTab() {
           Audit technique
         </h2>
         <p className="font-body text-sm text-gray-500">
-          v0.4.1 — 31 mai 2026, 16:00 CEST — 22 sprints — 216 commits — prod live
+          {APP_VERSION_LABEL} — {APP_RELEASE_DATETIME} — 22 sprints — 216 commits — prod live
         </p>
       </div>
 

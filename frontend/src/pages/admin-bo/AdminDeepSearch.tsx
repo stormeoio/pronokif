@@ -6,6 +6,7 @@ import {
   Calendar,
   Database,
   Flag,
+  History,
   Keyboard,
   Languages,
   LayoutDashboard,
@@ -180,6 +181,16 @@ function adminNavigationItems(): DeepSearchItem[] {
       keywords: ["logs", "audit", "historique"],
       priority: 29,
     },
+    {
+      id: "admin-changelog",
+      title: "Changelog",
+      subtitle: "Versions, livrables et points de vérification release",
+      href: "/admin?tab=changelog",
+      group: "Back-office",
+      type: "changelog",
+      keywords: ["version", "release", "changelog", "livraison"],
+      priority: 28,
+    },
   ];
 }
 
@@ -279,6 +290,7 @@ function groupIcon(group: string, type?: string) {
   if (group === "Base RAG") return Database;
   if (type === "translations") return Languages;
   if (type === "activity") return Shield;
+  if (type === "changelog") return History;
   return GROUP_ICONS[group as keyof typeof GROUP_ICONS] || Search;
 }
 
