@@ -3,7 +3,7 @@
  * Extracted from App.tsx (Sprint 4 S3-T3: App.tsx < 150L).
  */
 import { lazy } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
 import { ProtectedRoute, useAuth } from "@/lib/auth";
 import { getPendingJoinPath } from "@/lib/pendingJoin";
 
@@ -83,6 +83,11 @@ function AdminEntry() {
   const hasMagicToken = new URLSearchParams(location.search).has("token");
 
   return hasMagicToken ? <AdminAuthPage /> : <AdminLayout />;
+}
+
+function AdminTabRedirect() {
+  const { tab = "" } = useParams();
+  return <Navigate to={`/admin?tab=${encodeURIComponent(tab)}`} replace />;
 }
 
 // --- Router component ---
@@ -172,10 +177,13 @@ export function AppRouter() {
 
       {/* Admin Back-Office (separate auth) */}
       <Route path="/admin/auth" element={<AdminAuthPage />} />
+      <Route path="/admin/:tab" element={<AdminTabRedirect />} />
       <Route path="/admin" element={<AdminEntry />} />
       <Route path="/bo-admin/auth" element={<Navigate to="/admin/auth" replace />} />
+      <Route path="/bo-admin/:tab" element={<AdminTabRedirect />} />
       <Route path="/bo-admin" element={<Navigate to="/admin" replace />} />
       <Route path="/admin-bo/auth" element={<Navigate to="/admin/auth" replace />} />
+      <Route path="/admin-bo/:tab" element={<AdminTabRedirect />} />
       <Route path="/admin-bo" element={<Navigate to="/admin" replace />} />
 
       {/* 404 page */}
