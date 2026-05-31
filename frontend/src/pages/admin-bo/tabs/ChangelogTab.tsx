@@ -15,6 +15,21 @@ const CHANGELOG: ChangelogEntry[] = [
   {
     version: APP_VERSION_LABEL,
     date: APP_RELEASE_DATE,
+    title: "Release finale, documentation et deep links admin",
+    summary:
+      "La production est synchronisée sur main, le smoke test final est vert et les deep links admin retombent proprement sur l'authentification hors session.",
+    items: [
+      "Correction des routes /admin/:tab, /bo-admin/:tab et /admin-bo/:tab sans page 404.",
+      "Smoke prod validé : health, branding endpoint, bundle, admin auth et mentions légales.",
+      "Documentation projet, roadmap, audit, runbook et fiche back-office actualisés.",
+      "Main, origin/main et stormeo/main synchronisés sur le commit de release.",
+    ],
+    commit: "301451b",
+    current: true,
+  },
+  {
+    version: "v0.4.1",
+    date: "31 mai 2026",
     title: "Périmètre i18n UI front et traçabilité release",
     summary:
       "La traduction est cadrée sur l'interface utilisateur front uniquement, le back-office reste en français et la version devient accessible depuis toutes les interfaces admin.",
@@ -25,7 +40,6 @@ const CHANGELOG: ChangelogEntry[] = [
       "CI/CD vert et production pronokif.eu vérifiée sur le nouveau bundle admin.",
     ],
     commit: "f5789fc",
-    current: true,
   },
   {
     version: "v0.4.0",

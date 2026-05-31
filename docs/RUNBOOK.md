@@ -1,5 +1,8 @@
 # Pronokif — Runbook operationnel
 
+Derniere mise a jour : 31 mai 2026.
+Production : `https://pronokif.eu` / commit de reference `301451b`.
+
 ## Installation from scratch (< 1h)
 
 ### Prerequis
@@ -12,7 +15,7 @@
 
 ```bash
 # 1. Cloner
-git clone git@github.com:<org>/pronokif.git && cd pronokif
+git clone https://github.com/catalanbaptiste123-source/pronokif.git && cd pronokif
 
 # 2. Backend
 cd backend
@@ -42,7 +45,25 @@ cd frontend && npm run dev
 2. Creer l'app DigitalOcean (voir DEPLOY.md section 2)
 3. Configurer Cloudflare DNS (voir DEPLOY.md section 3)
 4. Configurer Sentry (voir DEPLOY.md section 4)
-5. Pousser sur `main` → CI/CD deploie automatiquement
+5. Pousser sur `main` → CI/CD + StormDeploy deploient automatiquement
+6. Verifier le smoke test de release ci-dessous
+
+### Smoke test post-deploy
+
+```bash
+# API
+curl -fsS https://pronokif.eu/api/health
+curl -fsS https://pronokif.eu/api/settings/branding
+
+# Front bundle
+curl -fsS https://pronokif.eu/ | rg -o 'assets/index-[A-Za-z0-9_-]+\\.js' | head -1
+
+# Routes critiques a verifier au navigateur
+# - /
+# - /mentions-legales
+# - /admin/auth
+# - /admin/settings (doit rediriger vers /admin/auth hors session admin)
+```
 
 ---
 
@@ -70,6 +91,18 @@ curl http://localhost:8000/docs
 # 3. Rebuild
 cd frontend && npm run build
 ```
+
+### Deep link admin affiche une 404
+
+```bash
+# Comportement attendu depuis v0.4.2 :
+# /admin/<tab>, /bo-admin/<tab> et /admin-bo/<tab>
+# redirigent vers /admin?tab=<tab>, puis vers /admin/auth si non connecte.
+
+curl -I https://pronokif.eu/admin/settings
+```
+
+Si le navigateur affiche encore la page 404 front, verifier que la prod sert bien un bundle posterieur a `301451b` et que le fichier `frontend/src/routes.tsx` contient la route `AdminTabRedirect`.
 
 ### MongoDB connection timeout
 
@@ -136,6 +169,16 @@ docker compose logs -f frontend
 # DigitalOcean
 doctl apps logs <app-id> --type=run
 ```
+
+### Release checklist admin
+
+- `main`, `origin/main` et `stormeo/main` pointent sur le meme SHA.
+- `npm run typecheck`, `npm run build`, `npm run lint` et `vitest` passent.
+- Le footer admin affiche la bonne version.
+- L'onglet Changelog liste la release courante.
+- L'onglet DevOps reflete le statut reel de la prod.
+- Le branding endpoint renvoie les logos, icones et couleurs attendus.
+- Les uploads media admin sont testes avec une session admin active avant ouverture large.
 
 ---
 

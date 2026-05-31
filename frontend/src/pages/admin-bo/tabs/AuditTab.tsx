@@ -30,7 +30,7 @@ const SCORES = [
   { label: "Qualite code", v0: 5, v04: 8.8, icon: Code2, color: "cyan" },
   { label: "Performance", v0: 6, v04: 8.2, icon: Gauge, color: "orange" },
   { label: "Tests", v0: 3, v04: 8, icon: TestTube, color: "yellow" },
-  { label: "DevOps", v0: 2, v04: 7.6, icon: Container, color: "green" },
+  { label: "DevOps", v0: 2, v04: 7.9, icon: Container, color: "green" },
   { label: "UX / UI", v0: 7, v04: 8.9, icon: Paintbrush, color: "pink" },
   { label: "Mobile", v0: 5, v04: 8, icon: Smartphone, color: "blue" },
   { label: "Monitoring", v0: 0, v04: 6.5, icon: Activity, color: "amber" },
@@ -148,7 +148,7 @@ const SPRINTS = [
 ];
 
 const TODO = [
-  { task: "Corriger le trigger CD StormDeploy", effort: "P1", done: false },
+  { task: "Automatiser le canary post-deploy complet", effort: "P1", done: false },
   { task: "Ajouter CSP report-only puis enforcement", effort: "P1", done: false },
   { task: "Valider MIME, taille et droits des uploads médias", effort: "P1", done: true },
   { task: "Durcir SVG uploadés et cache-control médias", effort: "P1", done: false },
@@ -201,7 +201,7 @@ function ScoreBar({ value, max = 10, color }: { value: number; max?: number; col
 
 export default function AuditTab() {
   const globalV0 = 4.4;
-  const globalV04 = 8.4;
+  const globalV04 = 8.5;
 
   return (
     <div className="space-y-8">
@@ -211,7 +211,7 @@ export default function AuditTab() {
           Audit technique
         </h2>
         <p className="font-body text-sm text-gray-500">
-          {APP_VERSION_LABEL} — {APP_RELEASE_DATETIME} — 22 sprints — 216 commits — prod live
+          {APP_VERSION_LABEL} — {APP_RELEASE_DATETIME} — 23 sprints — 221 commits — prod live
         </p>
       </div>
 

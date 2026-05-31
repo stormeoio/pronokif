@@ -1,5 +1,8 @@
 # Pronokif — Guide de deploiement
 
+Derniere mise a jour : 31 mai 2026.
+Domaine production : `https://pronokif.eu`.
+
 ## Architecture cible
 
 ```
@@ -68,7 +71,7 @@ services:
         value: ${JWT_SECRET}
         type: SECRET
       - key: CORS_ORIGINS
-        value: https://pronokif.com
+        value: https://pronokif.eu
     health_check:
       http_path: /docs
 ```
@@ -84,7 +87,7 @@ static_sites:
     output_dir: build
     envs:
       - key: VITE_BACKEND_URL
-        value: https://api.pronokif.com
+        value: https://pronokif.eu
 ```
 
 ### Deploy
@@ -95,15 +98,15 @@ doctl apps create --spec .do/app.yaml
 
 ## 3. Cloudflare
 
-1. Ajouter le domaine `pronokif.com`
+1. Ajouter le domaine `pronokif.eu`
 2. Configurer les records DNS :
-   - `A pronokif.com` → IP DigitalOcean frontend
-   - `A api.pronokif.com` → IP DigitalOcean backend
+   - `CNAME pronokif.eu` ou record racine equivalent → frontend App Platform
+   - les appels API sont proxifies sous `https://pronokif.eu/api/*`
 3. Activer :
    - SSL/TLS : Full (strict)
    - WAF : OWASP managed rules
    - Cache : standard (pas de cache sur `/api/*`)
-4. Page rule : `api.pronokif.com/*` → Cache Level: Bypass
+4. Page rule : `pronokif.eu/api/*` → Cache Level: Bypass
 
 ## 4. Sentry
 
@@ -141,7 +144,7 @@ Sentry.init({
 
 ## 5. Monitoring
 
-- **UptimeRobot** : monitorer `https://api.pronokif.com/docs` (5 min interval)
+- **UptimeRobot** : monitorer `https://pronokif.eu/api/health` (5 min interval)
 - **Sentry** : alertes sur > 10 erreurs/heure
 - **MongoDB Atlas** : alertes CPU > 80%, connections > 100
 
@@ -151,11 +154,26 @@ Le workflow `.github/workflows/ci.yml` :
 1. Lint + test + build sur chaque PR
 2. Docker build check sur push `main`
 
-Le CD (`.github/workflows/cd.yml` — a creer) :
-1. Trigger : push `main` (apres CI vert)
-2. Build images Docker
-3. Push vers DigitalOcean Container Registry
-4. Trigger re-deploy via `doctl apps update`
+Le CD `.github/workflows/cd.yml` :
+1. attend les gates CI backend, frontend et Docker ;
+2. synchronise le miroir `stormeoio/pronokif` ;
+3. declenche le webhook signe StormDeploy ;
+4. verifie `https://pronokif.eu/api/health`.
+
+### Smoke test apres deploy
+
+```bash
+curl -fsS https://pronokif.eu/api/health
+curl -fsS https://pronokif.eu/api/settings/branding
+curl -fsS https://pronokif.eu/ | rg -o 'assets/index-[A-Za-z0-9_-]+\\.js' | head -1
+```
+
+Verifier ensuite au navigateur :
+
+- `/`
+- `/mentions-legales`
+- `/admin/auth`
+- `/admin/settings` hors session admin : redirection attendue vers `/admin/auth`, sans 404.
 
 ## 7. Rollback
 

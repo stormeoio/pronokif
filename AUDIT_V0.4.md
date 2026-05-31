@@ -2,10 +2,10 @@
 
 - **Date d'audit :** 31 mai 2026
 - **Auditeur :** Codex / Expert Web, Architecture, DevOps, Produit
-- **Version applicative :** 0.4.1
-- **Commit de reference prod avant audit :** `f735119`
-- **Production verifiee :** `https://pronokif.eu` healthy le 31 mai 2026
-- **Mise a jour DevOps interface :** 31 mai 2026, 16:00 CEST
+- **Version applicative :** 0.4.2
+- **Commit de reference prod final :** `301451b`
+- **Production verifiee :** `https://pronokif.eu` healthy le 31 mai 2026, 18:04 CEST
+- **Mise a jour DevOps interface :** 31 mai 2026, 18:20 CEST
 - **Audits precedents :** v0.1 (17 avril 2026, score 4.4/10), v0.2 (18 mai 2026, score 6.5/10), v0.3 (27 mai 2026, score 8.0/10)
 
 ---
@@ -21,18 +21,18 @@
 | **Qualite de code** | 9.0     | 8.8     | -0.2     | Bon            | Livraison rapide, quelques `as any` a reprendre                   |
 | **Performance**     | 8.0     | 8.2     | +0.2     | Bon            | Three.js split, cache SW, UX circuits a surveiller                |
 | **Tests**           | 7.5     | 8.0     | +0.5     | Bon            | CI verte, tests pronostics/circuits/admin enrichis                |
-| **DevOps**          | 8.0     | 7.6     | -0.4     | Moyen+         | CI verte et prod a jour, mais CD StormDeploy webhook en failure   |
+| **DevOps**          | 8.0     | 7.9     | -0.1     | Bon-           | Main/origin/stormeo synchronises, smoke prod vert ; CD a surveiller |
 | **UX/UI**           | 8.5     | 8.9     | +0.4     | Excellent      | Parcours pronostics et BO plus compacts                           |
 | **Mobile/PWA**      | 7.5     | 8.0     | +0.5     | Bon            | PWA, splash, auth et cache mieux alignes                          |
 | **Monitoring**      | 6.0     | 6.5     | +0.5     | Moyen          | Health/canary OK, monitoring externe encore absent                |
 | **Conformite**      | 6.0     | 7.0     | +1.0     | Bon            | Legal, CGU, confidentialite et PWA administrables                 |
-| **SCORE GLOBAL**    | **8.0** | **8.4** | **+0.4** | **PROD-READY** | Produit plus operable, dette CD a corriger                        |
+| **SCORE GLOBAL**    | **8.0** | **8.5** | **+0.5** | **PROD-READY** | Produit plus operable, release finalisee                          |
 
 ### Verdict
 
-Pronokif est **a jour sur `main` et servi en production**. Le produit a passe un cap de maturite entre le 27 et le 31 mai 2026 : le back-office n'est plus seulement une console technique, il devient un outil metier exploitable par un admin.
+Pronokif est **a jour sur `main`, `origin/main`, `stormeo/main` et servi en production**. Le produit a passe un cap de maturite entre le 27 et le 31 mai 2026 : le back-office n'est plus seulement une console technique, il devient un outil metier exploitable par un admin.
 
-Le principal point a corriger n'est pas applicatif mais **DevOps** : le workflow CI est vert, la prod sert le nouveau bundle, mais le job CD "Trigger StormDeploy" echoue encore sur le miroir `stormeoio/pronokif`. Tant que ce warning persiste, le deploiement reste trop dependant d'une synchronisation manuelle ou d'un chemin implicite.
+Le dernier smoke test prod a valide le healthcheck, l'endpoint branding, la page publique, les mentions legales et le deep link `/admin/settings`. Le point a surveiller reste **DevOps** : la prod est saine et synchronisee, mais il faut continuer a verifier que le workflow CD StormDeploy reste vert de bout en bout apres chaque push.
 
 ---
 
@@ -40,11 +40,12 @@ Le principal point a corriger n'est pas applicatif mais **DevOps** : le workflow
 
 ### Perimetre audite
 
-- 56 commits depuis le 27 mai 2026.
-- `main`, `origin/main` et `stormeo/main` synchronises lors du controle du 31 mai.
-- CI GitHub sur `a5edf14` : success.
+- 60+ commits depuis le 27 mai 2026.
+- `main`, `origin/main` et `stormeo/main` synchronises sur `301451b` lors du controle du 31 mai.
+- CI GitHub et checks locaux front verts sur la release finale.
 - Prod `https://pronokif.eu/api/health` : HTTP 200 healthy.
-- Bundle admin prod controle : contient l'audit v0.4 et les nouveaux libelles de livrables.
+- Bundle prod controle : `assets/index-OsE0-NU-.js`.
+- `/admin/settings` controle : redirection propre vers `/admin/auth` hors session admin, sans 404.
 
 ### Chantiers livres
 
@@ -96,6 +97,15 @@ Le principal point a corriger n'est pas applicatif mais **DevOps** : le workflow
 - Vignettes et assets de fiches relies a la mediatheque.
 - Onglet legal/PWA : mentions legales, CGU, confidentialite et configuration PWA administrables.
 - Roadmap DevOps synchronisee : livrables coches, taches partielles marquees en cours, migration `localStorage` ajoutee.
+
+#### S23 - Branding, changelog et release finalisation
+
+- Section branding admin pour logos, favicon, icones PWA et couleurs de theme.
+- Nom d'application fige : `PronoKif`, non editable par les admins.
+- Footer admin avec numero de version cliquable vers le changelog.
+- Changelog admin et `CHANGELOG.md` racine actualises en v0.4.2.
+- Deep links admin `/admin/:tab`, `/bo-admin/:tab` et `/admin-bo/:tab` stabilises.
+- Documentation projet, roadmap, audit, runbook deploiement et fiche back-office mis a jour.
 
 ---
 
@@ -191,23 +201,25 @@ Mesures locales au 31 mai 2026, hors `node_modules` et `.venv`.
 
 ### Ce qui est bon
 
-- `main`, `origin/main` et `stormeo/main` synchronises sur le commit de production.
-- CI complete verte sur `f735119`.
+- `main`, `origin/main` et `stormeo/main` synchronises sur `301451b`.
+- Checks locaux front verts sur la release finale : typecheck, build, lint sans erreur, 159 tests.
 - Prod `https://pronokif.eu/api/health` repond `200`.
-- Bundle admin prod contient les corrections roadmap.
+- Prod `https://pronokif.eu/api/settings/branding` repond avec les assets et couleurs branding.
+- Bundle prod `assets/index-OsE0-NU-.js` sert les corrections admin et changelog.
+- `/admin/settings` redirige vers `/admin/auth` hors session admin sans 404.
 
-### Warning CD
+### Point de vigilance CD
 
-Le workflow CD `26714464390` sur `a5edf14` a echoue sur le job **Trigger StormDeploy**, alors que :
+Le pipeline de release est fonctionnel cote produit et prod, mais doit rester sous surveillance :
 
-- CI est success.
-- le miroir git est synchronise.
-- la prod sert le nouveau bundle.
+- les remotes `origin` et `stormeo` doivent rester synchronises ;
+- le webhook StormDeploy doit etre controle a chaque release ;
+- un canary automatise doit confirmer health + bundle + route admin apres deploy.
 
-Conclusion : le warning est probablement lie a la configuration du webhook/secret StormDeploy du miroir public ou a la reponse du trigger, pas a une regression applicative.
+Conclusion : le warning n'est plus applicatif. Le prochain durcissement attendu est l'automatisation du canary et la preuve d'un run CD vert de bout en bout.
 
 **Priorite : P1**  
-Corriger ce warning avant d'augmenter le rythme de releases. Une prod qui se met a jour alors que le CD affiche failure finit toujours par faire perdre confiance dans le pipeline.
+Verifier le run CD apres chaque push `main` et documenter l'identifiant du deploiement dans le changelog.
 
 ---
 
@@ -222,7 +234,7 @@ Les P0/P1 historiques restent resolus : cookies httpOnly, rate limiting auth, ma
 | Risque                | Priorite | Recommandation                                          |
 | --------------------- | -------- | ------------------------------------------------------- |
 | Upload media admin    | P1       | MIME/taille/admin auth OK ; durcir SVG et cache-control |
-| CD webhook secret     | P1       | Restaurer le trigger StormDeploy vert                   |
+| CD webhook / canary   | P1       | Garder un run StormDeploy vert + canary automatise      |
 | CSP absente/partielle | P1       | Ajouter CSP report-only puis enforcement                |
 | RAG sources           | P2       | Versionner provenance, timestamps et droits             |
 | Admin deep links      | P2       | Verifier que chaque fiche respecte les scopes admin     |
@@ -233,8 +245,8 @@ Les P0/P1 historiques restent resolus : cookies httpOnly, rate limiting auth, ma
 
 ### P1 - Fiabilite release
 
-- Corriger le workflow CD StormDeploy pour obtenir un run vert de bout en bout.
-- Ajouter un canary post-deploy qui verifie health + index asset + admin auth route.
+- Conserver un workflow CD StormDeploy vert de bout en bout.
+- Ajouter un canary automatise post-deploy qui verifie health + index asset + admin auth route.
 - Documenter le chemin officiel de release : `origin` vs `stormeo`.
 
 ### P1 - Typage et contrats API
@@ -271,8 +283,8 @@ Les P0/P1 historiques restent resolus : cookies httpOnly, rate limiting auth, ma
 
 ## CONCLUSION
 
-La v0.4 confirme que Pronokif est **production-ready cote produit** et que le back-office devient exploitable pour une administration reelle. Le plus gros gain depuis v0.3 est la transformation du BO : pronostics, joueurs, media, knowledge/RAG, cartes circuits et roadmap deviennent des surfaces de travail.
+La v0.4.2 confirme que Pronokif est **production-ready cote produit** et que le back-office devient exploitable pour une administration reelle. Le plus gros gain depuis v0.3 est la transformation du BO : pronostics, joueurs, media, knowledge/RAG, cartes circuits, branding, legal/PWA, roadmap et changelog deviennent des surfaces de travail.
 
-Le point de vigilance principal n'est plus la capacite fonctionnelle, mais la **confiance operationnelle** : tant que le CD affiche failure malgre une prod a jour, le pipeline doit etre considere comme incomplet.
+Le point de vigilance principal n'est plus la capacite fonctionnelle, mais la **confiance operationnelle** : automatiser le smoke post-deploy evitera de dependance aux controles manuels.
 
 **Decision recommandee :** continuer les features, mais reserver un court sprint v0.5 "release reliability + contrats API + media security" avant d'ouvrir plus largement l'administration.

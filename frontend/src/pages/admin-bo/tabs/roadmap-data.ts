@@ -172,6 +172,14 @@ export const DEFAULT_PHASES: Phase[] = [
     startDate: "2026-05-31",
     endDate: "2026-06-07",
   },
+  {
+    id: "docs-release",
+    name: "Documentation & changelog",
+    color: "#38bdf8",
+    order: 10,
+    startDate: "2026-05-31",
+    endDate: "2026-05-31",
+  },
 ];
 
 export const DEFAULT_TASKS: RoadmapTask[] = [
@@ -549,7 +557,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   {
     id: "rr2",
     title: "Production pronokif.eu live",
-    description: "Healthcheck 200 et bundle admin v0.4 servi par la production.",
+    description: "Healthcheck 200, branding endpoint OK et bundle v0.4.2 servi par la production.",
     status: "done",
     priority: "high",
     category: "devops",
@@ -569,9 +577,9 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
   },
   {
     id: "rr4",
-    title: "Canary post-deploy complet",
+    title: "Canary post-deploy automatisé",
     description:
-      "Vérifier health, index asset, chunk admin et route d'auth admin après chaque release.",
+      "Automatiser la vérification health, index asset, chunk admin et route d'auth admin après chaque release.",
     status: "todo",
     priority: "high",
     category: "devops",
@@ -599,5 +607,39 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     category: "security",
     phase: "release-reliability",
     createdAt: "2026-05-31",
+  },
+  {
+    id: "rr7",
+    title: "Smoke prod final v0.4.2",
+    description:
+      "Contrôle manuel health, branding, bundle, /admin/settings et /mentions-legales après deploy.",
+    status: "done",
+    priority: "high",
+    category: "devops",
+    phase: "release-reliability",
+    createdAt: "2026-05-31",
+    completedAt: "2026-05-31",
+  },
+  {
+    id: "dr1",
+    title: "Documentation projet actualisée",
+    description: "README, roadmap, changelog, audit, runbook et guide de déploiement mis à jour.",
+    status: "done",
+    priority: "high",
+    category: "devops",
+    phase: "docs-release",
+    createdAt: "2026-05-31",
+    completedAt: "2026-05-31",
+  },
+  {
+    id: "dr2",
+    title: "Fiche back-office admin",
+    description: "Inventaire des fonctionnalités et chantiers BO livré dans docs/BACK_OFFICE.md.",
+    status: "done",
+    priority: "medium",
+    category: "feature",
+    phase: "docs-release",
+    createdAt: "2026-05-31",
+    completedAt: "2026-05-31",
   },
 ];

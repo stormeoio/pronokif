@@ -2,6 +2,8 @@
 
 Local stdio MCP server for the PronoKif F1 2026 knowledge base.
 
+Status on 2026-05-31: read-only foundation shipped, connected to the admin knowledge/RAG workflow and documented in the v0.4.2 release.
+
 ## Foundation
 
 The backend seed builds three MongoDB collections:
@@ -62,5 +64,5 @@ All tools are read-only.
 ## Next steps
 
 1. Add a production embedding provider behind the same `embedding` schema.
-2. Connect admin/public race briefs to the retrieval layer.
+2. Add observable embedding rebuild status in the admin back office.
 3. Expand evals with deeper multi-tool questions once more live data is seeded.

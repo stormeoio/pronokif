@@ -62,8 +62,11 @@ frontend/blob-report/
 *.tgz
 
 # ═══════════════════════════════════════ DOCS / AUDIT ARTIFACTS ═════════════════
-# Generated HTML reports and planning docs (keep source .md in docs/ if needed)
-/docs/
+# Generated HTML reports and planning docs (keep selected living docs tracked)
+/docs/*
+!/docs/DEPLOY.md
+!/docs/RUNBOOK.md
+!/docs/BACK_OFFICE.md
 /docs_A2/
 /BRIEF_ASSISTANT.html
 /PLAN_REFACTO.md
@@ -78,6 +81,8 @@ frontend/blob-report/
 /SECURITY_AUDIT.md
 /test_result.md
 /RAPPORT_MISSION.html
+!/00_READ_ME_FIRST.md
+!/ROADMAP_12MONTH.md
 
 # ═══════════════════════════════════════ LOCAL BACKUPS ══════════════════════════
 _0-WORK/
