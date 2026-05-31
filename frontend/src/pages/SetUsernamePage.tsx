@@ -13,7 +13,6 @@ import { AvatarDisplay } from "../components/AvatarDisplay";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { haptic } from "@/lib/haptics";
-import { brandAssets } from "@/lib/brand";
 import { getPendingJoinPath } from "@/lib/pendingJoin";
 import { fadeUp, staggerContainer, easing, duration, getReducedMotionProps } from "@/lib/motion";
 

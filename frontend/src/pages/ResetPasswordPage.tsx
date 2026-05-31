@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
 import { Lock, CheckCircle2, XCircle, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { apiClient } from "@/lib/api";
-import { brandAssets } from "@/lib/brand";
+import { useBranding } from "@/lib/branding";
 import { haptic } from "@/lib/haptics";
 import { easing, duration, getReducedMotionProps } from "@/lib/motion";
 
@@ -32,6 +32,7 @@ export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
   const { t } = useTranslation();
+  const { assets } = useBranding();
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
 
@@ -101,7 +102,7 @@ export default function ResetPasswordPage() {
         {...rmProps}
       >
         <img
-          src={brandAssets.wordmarkWhiteRed}
+          src={assets.wordmarkDark}
           alt="PronoKif"
           className="mx-auto mb-6 h-7 w-auto max-w-[180px] object-contain"
           draggable={false}

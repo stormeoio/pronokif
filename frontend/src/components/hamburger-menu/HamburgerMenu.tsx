@@ -24,11 +24,12 @@ import {
   LegalContent,
   ContactContent,
 } from "./MenuSections";
-import { brandAssets } from "@/lib/brand";
+import { useBranding } from "@/lib/branding";
 import { haptic } from "@/lib/haptics";
 
 export default function HamburgerMenu() {
   const { t } = useTranslation();
+  const { assets } = useBranding();
   const [isOpen, setIsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
@@ -88,7 +89,7 @@ export default function HamburgerMenu() {
             <div className="p-4 border-b border-white/[0.06] flex items-center justify-between">
               <div className="min-w-0">
                 <img
-                  src={brandAssets.wordmarkWhiteRed}
+                  src={assets.wordmarkDark}
                   alt="PronoKif"
                   className="h-6 w-auto max-w-[150px] object-contain"
                   draggable={false}

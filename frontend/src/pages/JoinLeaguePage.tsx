@@ -12,7 +12,6 @@ import { Trophy, Users, LogIn, Loader2, AlertCircle, CheckCircle, Home } from "l
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { haptic } from "@/lib/haptics";
-import { brandAssets } from "@/lib/brand";
 import { clearPendingJoinCode, savePendingJoinCode } from "@/lib/pendingJoin";
 import { fadeUp, easing, duration, getReducedMotionProps } from "@/lib/motion";
 

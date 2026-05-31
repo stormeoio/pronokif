@@ -49,6 +49,7 @@ from routes.admin_members import router as admin_members_router
 from routes.admin_media import router as admin_media_router
 from routes.admin_predictions import router as admin_predictions_router
 from routes.admin_races import router as admin_races_router
+from routes.admin_settings import public_router as app_settings_router
 from routes.admin_settings import router as admin_settings_router
 from routes.admin_sync import router as admin_sync_router
 from routes.admin_translations import router as admin_translations_router
@@ -136,6 +137,7 @@ for _router in (
     admin_sync_router,
     admin_translations_router,
     admin_users_router,
+    app_settings_router,
     auth_router,
     avatars_router,
     custom_predictions_router,

@@ -8,12 +8,13 @@ import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
 import { Mail, ArrowLeft, CheckCircle2, ExternalLink } from "lucide-react";
 import { apiClient } from "@/lib/api";
-import { brandAssets } from "@/lib/brand";
+import { useBranding } from "@/lib/branding";
 import { haptic } from "@/lib/haptics";
 import { fadeUp, easing, duration, getReducedMotionProps } from "@/lib/motion";
 
 export default function ForgotPasswordPage() {
   const { t } = useTranslation();
+  const { assets } = useBranding();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "sent">("idle");
   const [error, setError] = useState("");
@@ -71,7 +72,7 @@ export default function ForgotPasswordPage() {
         {...rmProps}
       >
         <img
-          src={brandAssets.wordmarkWhiteRed}
+          src={assets.wordmarkDark}
           alt="PronoKif"
           className="mx-auto mb-6 h-7 w-auto max-w-[180px] object-contain"
           draggable={false}

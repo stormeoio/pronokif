@@ -24,7 +24,7 @@ import { adminApi } from "./adminApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BorderGlowButton } from "@/components/ui/border-glow-button";
-import { brandAssets } from "@/lib/brand";
+import { useBranding } from "@/lib/branding";
 
 const ADMIN_HOME_PATH = "/admin";
 const SENT_EMAIL_KEY = "pronokif:admin-magic-sent";
@@ -82,6 +82,7 @@ function clearDeviceToken() {
 
 export default function AdminAuthPage() {
   const navigate = useNavigate();
+  const { assets } = useBranding();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
@@ -242,7 +243,7 @@ export default function AdminAuthPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/55 to-black/80" />
         <div className="text-center relative z-10">
           <img
-            src={brandAssets.wordmarkWhiteRed}
+            src={assets.wordmarkDark}
             alt="PronoKif"
             className="mx-auto mb-6 h-8 w-auto max-w-[210px] object-contain drop-shadow-lg"
             draggable={false}
@@ -291,7 +292,7 @@ export default function AdminAuthPage() {
             <div>
               <h1 className="sr-only">Administration PronoKif</h1>
               <img
-                src={brandAssets.wordmarkWhiteRed}
+                src={assets.wordmarkDark}
                 alt="PronoKif"
                 className="mb-2 h-8 w-auto max-w-[210px] object-contain"
                 draggable={false}

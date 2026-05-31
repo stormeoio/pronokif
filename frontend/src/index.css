@@ -42,7 +42,9 @@
 :root {
   /* Palette officielle */
   --pk-red: #e10600;
+  --pk-red-rgb: 225 6 0;
   --pk-red-hover: #c00500;
+  --pk-red-hover-rgb: 192 5 0;
   --pk-red-glow: rgba(225, 6, 0, 0.4);
   --pk-red-subtle: rgba(225, 6, 0, 0.08);
   --pk-carbon: #0b0d12;
@@ -54,6 +56,7 @@
   /* Semantic */
   --pk-emerald: #10b981;
   --pk-amber: #f59e0b;
+  --pk-amber-rgb: 245 158 11;
   --pk-info: #3b82f6;
   --pk-error: #dc2626;
 

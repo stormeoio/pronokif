@@ -68,17 +68,17 @@ module.exports = {
 
         /* Brand palette — DESIGN.md */
         pk: {
-          red: '#E10600',
-          'red-hover': '#C00500',
-          'red-glow': 'rgba(225, 6, 0, 0.4)',
-          'red-subtle': 'rgba(225, 6, 0, 0.08)',
+          red: 'rgb(var(--pk-red-rgb) / <alpha-value>)',
+          'red-hover': 'rgb(var(--pk-red-hover-rgb) / <alpha-value>)',
+          'red-glow': 'var(--pk-red-glow)',
+          'red-subtle': 'var(--pk-red-subtle)',
           carbon: '#0B0D12',
           surface: '#121418',
           anthracite: '#1A1D24',
           piste: '#F4F4F4',
           titane: '#5F6673',
           emerald: '#10b981',
-          amber: '#f59e0b',
+          amber: 'rgb(var(--pk-amber-rgb) / <alpha-value>)',
           info: '#3b82f6',
           gold: '#FFD700',
           silver: '#C0C0C0',
@@ -118,9 +118,9 @@ module.exports = {
          BOX SHADOW — Brand glows
          ------------------------------------------------ */
       boxShadow: {
-        'glow-red': '0 0 15px rgba(225, 6, 0, 0.4)',
-        'glow-red-lg': '0 0 20px rgba(225, 6, 0, 0.4)',
-        'glow-red-xl': '0 0 30px rgba(225, 6, 0, 0.5)',
+        'glow-red': '0 0 15px var(--pk-red-glow)',
+        'glow-red-lg': '0 0 20px var(--pk-red-glow)',
+        'glow-red-xl': '0 0 30px var(--pk-red-glow)',
         'glow-emerald': '0 0 15px rgba(16, 185, 129, 0.4)',
         'glow-gold': '0 0 15px rgba(255, 215, 0, 0.4)',
         'glow-amber': '0 0 15px rgba(245, 158, 11, 0.4)',

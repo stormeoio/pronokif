@@ -45,7 +45,7 @@ import AdminDeepSearch from "./AdminDeepSearch";
 import { adminApi } from "./adminApi";
 import { Button } from "@/components/ui/button";
 import { APP_VERSION_LABEL } from "@/lib/appVersion";
-import { brandAssets } from "@/lib/brand";
+import { useBranding } from "@/lib/branding";
 
 const ADMIN_AUTH_PATH = "/admin/auth";
 
@@ -133,6 +133,7 @@ function normalizeDestination(destination: AdminDestinationKey): AdminSelection 
 }
 
 export default function AdminLayout() {
+  const { assets } = useBranding();
   const navigate = useNavigate();
   const location = useLocation();
   const mainRef = useRef<HTMLElement | null>(null);
@@ -297,7 +298,7 @@ export default function AdminLayout() {
               data-testid="admin-logo-home"
             >
               <img
-                src={brandAssets.wordmarkWhiteRed}
+                src={assets.wordmarkDark}
                 alt="PronoKif"
                 className="h-6 w-auto max-w-[154px] object-contain transition-opacity group-hover:opacity-85"
                 draggable={false}

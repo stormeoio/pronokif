@@ -6,7 +6,7 @@ import { ArrowRight, ChevronDown, Loader2, Mail, Plus, Search, Trophy } from "lu
 import { useAuth } from "@/lib/auth";
 import type { User } from "@/lib/auth";
 import { iconProps } from "@/lib/icons";
-import { brandAssets } from "@/lib/brand";
+import { useBranding } from "@/lib/branding";
 import { BorderGlowButton } from "@/components/ui/border-glow-button";
 import { COUNTRIES, countryFlag } from "@/i18n/countries";
 import { getStoredLocale } from "@/i18n";
@@ -17,6 +17,7 @@ import { getPendingJoinCode, getPendingJoinPath } from "@/lib/pendingJoin";
 
 export default function AuthPage() {
   const { t, i18n } = useTranslation();
+  const { assets } = useBranding();
   const locale = (i18n.language || "fr") as Locale;
   const [isLoading, setIsLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
@@ -230,7 +231,7 @@ export default function AuthPage() {
           {/* Logo */}
           <div className="mb-2 text-center">
             <img
-              src={brandAssets.wordmarkWhiteRed}
+              src={assets.wordmarkDark}
               alt="PronoKif"
               className="mx-auto h-9 w-auto max-w-[220px] object-contain"
               draggable={false}

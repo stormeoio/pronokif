@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, FileText, Scale } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "@/lib/api";
-import { brandAssets } from "@/lib/brand";
+import { useBranding } from "@/lib/branding";
 import {
   fallbackLegalPage,
   legalContentBlocks,
@@ -27,6 +27,7 @@ async function fetchLegalPage(slug: string, locale: string): Promise<LegalPageCo
 export default function LegalPage({ slug: slugOverride }: LegalPageProps) {
   const params = useParams();
   const { t, i18n } = useTranslation();
+  const { assets } = useBranding();
   const locale = i18n.language?.startsWith("en") ? "en" : "fr";
   const slug = slugOverride || params.slug || "mentions-legales";
   const fallback = fallbackLegalPage(slug, locale);
@@ -51,7 +52,7 @@ export default function LegalPage({ slug: slugOverride }: LegalPageProps) {
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4">
           <Link to="/" className="flex min-w-0 items-center gap-3">
             <img
-              src={brandAssets.wordmarkWhiteRed}
+              src={assets.wordmarkDark}
               alt="PronoKif"
               className="h-6 w-auto max-w-[160px] object-contain"
               draggable={false}

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import PronoKifSplashScreen from "@/components/splash/PronoKifSplashScreen";
-import { brandAssets } from "@/lib/brand";
+import { useBranding } from "@/lib/branding";
 
 // ----------------------------------------------------------- props ---
 
@@ -45,8 +45,8 @@ function isAdminRoute(): boolean {
 
 export default function SplashScreen({
   onComplete,
-  iconSrc = brandAssets.pwaIcon512,
-  wordmarkSrc = brandAssets.wordmarkWhiteRed,
+  iconSrc,
+  wordmarkSrc,
   videoSrc = "/video/splash-trailer.mp4",
   maxDuration = 13000,
   introDelayMs = 950,
@@ -54,6 +54,9 @@ export default function SplashScreen({
   appReady,
 }: SplashScreenProps) {
   const { t } = useTranslation();
+  const { assets } = useBranding();
+  const resolvedIconSrc = iconSrc ?? assets.pwaIcon512;
+  const resolvedWordmarkSrc = wordmarkSrc ?? assets.wordmarkDark;
 
   const ctaLabel = useMemo(() => {
     if (isAdminRoute()) return t("splash.start_admin");
@@ -64,8 +67,8 @@ export default function SplashScreen({
 
   return (
     <PronoKifSplashScreen
-      iconSrc={iconSrc}
-      wordmarkSrc={wordmarkSrc}
+      iconSrc={resolvedIconSrc}
+      wordmarkSrc={resolvedWordmarkSrc}
       videoSrc={videoSrc}
       baseline={t("splash.baseline")}
       loadingLabel={t("splash.loading_label")}

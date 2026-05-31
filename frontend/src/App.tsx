@@ -22,7 +22,7 @@ import PageTransition from "@/components/PageTransition";
 import EmailVerificationBanner from "@/components/EmailVerificationBanner";
 import SplashScreen from "@/components/SplashScreen";
 import AppDeepSearch from "@/components/search/AppDeepSearch";
-import { brandAssets } from "@/lib/brand";
+import { useBranding } from "@/lib/branding";
 import "@/App.css";
 
 // Lazy-load heavy 3D components for performance
@@ -192,6 +192,7 @@ function useAppPreload(enabled: boolean): boolean {
 export default function App() {
   const [hasStarted, setHasStarted] = useState(hasSeenSplash);
   const appReady = useAppPreload(!hasStarted);
+  const { assets } = useBranding();
   // Detect locale from IP + browser language (runs once, caches result)
   useLocaleDetect();
 
@@ -203,8 +204,8 @@ export default function App() {
   if (!hasStarted) {
     return (
       <SplashScreen
-        iconSrc={brandAssets.pwaIcon512}
-        wordmarkSrc={brandAssets.wordmarkWhiteRed}
+        iconSrc={assets.pwaIcon512}
+        wordmarkSrc={assets.wordmarkDark}
         videoSrc="/video/splash-trailer.mp4"
         introDelayMs={950}
         buttonDelayMs={3600}
@@ -230,7 +231,7 @@ export default function App() {
                     background: "#121418",
                     color: "#F4F4F4",
                     border: "1px solid rgba(255,255,255,0.08)",
-                    boxShadow: "0 14px 38px rgba(0,0,0,0.42), 0 0 20px rgba(225,6,0,0.12)",
+                    boxShadow: "0 14px 38px rgba(0,0,0,0.42), 0 0 20px var(--pk-red-subtle)",
                     backdropFilter: "blur(8px)",
                   },
                 }}
