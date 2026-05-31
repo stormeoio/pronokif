@@ -24,31 +24,31 @@ import {
 /* ── Audit data ────────────────────────────────────── */
 
 const SCORES = [
-  { label: "Securite", v0: 5, v03: 8.5, icon: Shield, color: "red" },
-  { label: "Architecture", v0: 4, v03: 8.5, icon: GitBranch, color: "violet" },
-  { label: "Qualite code", v0: 5, v03: 9, icon: Code2, color: "cyan" },
-  { label: "Performance", v0: 6, v03: 8, icon: Gauge, color: "orange" },
-  { label: "Tests", v0: 3, v03: 7.5, icon: TestTube, color: "yellow" },
-  { label: "DevOps", v0: 2, v03: 8, icon: Container, color: "green" },
-  { label: "UX / UI", v0: 7, v03: 8.5, icon: Paintbrush, color: "pink" },
-  { label: "Mobile", v0: 5, v03: 7.5, icon: Smartphone, color: "blue" },
-  { label: "Monitoring", v0: 0, v03: 6, icon: Activity, color: "amber" },
-  { label: "Conformite", v0: 3, v03: 6, icon: Scale, color: "teal" },
+  { label: "Securite", v0: 5, v04: 8.6, icon: Shield, color: "red" },
+  { label: "Architecture", v0: 4, v04: 8.8, icon: GitBranch, color: "violet" },
+  { label: "Qualite code", v0: 5, v04: 8.8, icon: Code2, color: "cyan" },
+  { label: "Performance", v0: 6, v04: 8.2, icon: Gauge, color: "orange" },
+  { label: "Tests", v0: 3, v04: 8, icon: TestTube, color: "yellow" },
+  { label: "DevOps", v0: 2, v04: 7.6, icon: Container, color: "green" },
+  { label: "UX / UI", v0: 7, v04: 8.9, icon: Paintbrush, color: "pink" },
+  { label: "Mobile", v0: 5, v04: 8, icon: Smartphone, color: "blue" },
+  { label: "Monitoring", v0: 0, v04: 6.5, icon: Activity, color: "amber" },
+  { label: "Conformite", v0: 3, v04: 7, icon: Scale, color: "teal" },
 ];
 
 const METRICS = [
-  { label: "LOC backend", before: "~3,500", after: "15,710", mult: "x4.5" },
-  { label: "LOC frontend", before: "~12,000", after: "36,598", mult: "x3" },
-  { label: "Endpoints API", before: "~25", after: "131", mult: "x5" },
-  { label: "Composants", before: "~15", after: "83", mult: "x5.5" },
-  { label: "Hooks personnalisés", before: "~2", after: "16", mult: "x8" },
-  { label: "Modeles Pydantic", before: "~8", after: "40", mult: "x5" },
-  { label: "Index MongoDB", before: "0", after: "47", mult: "new" },
-  { label: "Fichiers de test", before: "~5", after: "35", mult: "x7" },
-  { label: "LOC tests", before: "~400", after: "6,659", mult: "x16" },
-  { label: "Erreurs lint", before: "1,137", after: "0", mult: "-100%" },
-  { label: '"as any" TS', before: "49", after: "0", mult: "-100%" },
-  { label: "Workflows CI/CD", before: "0", after: "2", mult: "new" },
+  { label: "LOC backend", before: "15,710", after: "24,371", mult: "+55%" },
+  { label: "LOC frontend", before: "36,598", after: "57,063", mult: "+56%" },
+  { label: "Endpoints API", before: "131", after: "209", mult: "+78" },
+  { label: "Routes backend", before: "20", after: "33", mult: "+13" },
+  { label: "Services backend", before: "19", after: "36", mult: "+17" },
+  { label: "Modeles Pydantic", before: "40", after: "87", mult: "+47" },
+  { label: "Pages front", before: "74", after: "100", mult: "+26" },
+  { label: "Composants", before: "83", after: "100", mult: "+17" },
+  { label: "React Query hooks", before: "133", after: "155", mult: "+22" },
+  { label: "Tests backend", before: "15", after: "41", mult: "+26" },
+  { label: "Tests front/E2E", before: "18", after: "39", mult: "+21" },
+  { label: '"as any" TS', before: "0", after: "11", mult: "a revoir" },
 ];
 
 const SECURITY = [
@@ -100,6 +100,12 @@ const SECURITY = [
     after: "Origines strictes + en-têtes",
     resolved: true,
   },
+  {
+    threat: "Tracking hardcodé",
+    before: "Snippet PostHog",
+    after: "Snippet retiré",
+    resolved: true,
+  },
 ];
 
 const SPRINTS = [
@@ -124,17 +130,31 @@ const SPRINTS = [
     desc: "Design System v2, magic link, TOTP 2FA, emails branded, splash screen, PWA icons",
     score: "8.0",
   },
+  {
+    id: "S17-S18",
+    week: "Semaine 4",
+    title: "Domaine, i18n & RAG",
+    desc: "pronokif.eu, interface FR/EN, base knowledge F1 2026, MCP et recherche profonde admin",
+    score: null,
+  },
+  {
+    id: "S19-S22",
+    week: "Semaine 5",
+    title: "Pronostics & back-office métier",
+    desc: "Parcours pronostics compact, dashboard admin, médias, circuits interactifs, roadmap et audit v0.4",
+    score: "8.4",
+  },
 ];
 
 const TODO = [
-  { task: "Monitoring externe (UptimeRobot)", effort: "30min", done: false },
-  { task: "Email provider reel (SendGrid/SES)", effort: "2h", done: false },
-  { task: "Header CSP", effort: "1h", done: false },
-  { task: "Decomposer SplashScreen (1,141L)", effort: "2h", done: false },
-  { task: "Eliminer 20 fetch() bruts", effort: "2h", done: false },
-  { task: "CI coverage", effort: "30min", done: false },
-  { task: "Tests E2E magic link + 2FA", effort: "2h", done: false },
-  { task: "Fixer 163 ESLint warnings", effort: "1h", done: false },
+  { task: "Corriger le trigger CD StormDeploy", effort: "P1", done: false },
+  { task: "Ajouter CSP report-only puis enforcement", effort: "P1", done: false },
+  { task: "Valider MIME, taille et droits des uploads médias", effort: "P1", done: false },
+  { task: "Typer les réponses API critiques avec Zod", effort: "P1", done: false },
+  { task: 'Réduire les 11 "as any" revenus', effort: "P1", done: false },
+  { task: "Découper le bundle admin par onglet", effort: "P2", done: false },
+  { task: "Généraliser lazy images, placeholders et squelettes", effort: "P2", done: false },
+  { task: "Ajouter monitoring externe et canary post-deploy complet", effort: "P2", done: false },
 ];
 
 /* ── Helpers ────────────────────────────────────────── */
@@ -178,7 +198,7 @@ function ScoreBar({ value, max = 10, color }: { value: number; max?: number; col
 
 export default function AuditTab() {
   const globalV0 = 4.4;
-  const globalV03 = 8.0;
+  const globalV04 = 8.4;
 
   return (
     <div className="space-y-8">
@@ -188,7 +208,7 @@ export default function AuditTab() {
           Audit technique
         </h2>
         <p className="font-body text-sm text-gray-500">
-          v0.3 — 27 mai 2026 — 16 sprints en 12 jours — 100+ commits
+          v0.4 — 31 mai 2026 — 22 sprints — 214 commits — prod pronokif.eu
         </p>
       </div>
 
@@ -203,14 +223,14 @@ export default function AuditTab() {
           </div>
           <ArrowRight className="w-8 h-8 text-gray-600" />
           <div className="text-center">
-            <p className="font-data text-5xl font-bold text-emerald-400">{globalV03}</p>
+            <p className="font-data text-5xl font-bold text-emerald-400">{globalV04}</p>
             <p className="font-body text-xs text-gray-500 mt-1 uppercase tracking-wider">
               Aujourd'hui
             </p>
           </div>
           <div className="ml-4 text-center">
             <span className="inline-block px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 font-data text-sm font-bold">
-              +{(globalV03 - globalV0).toFixed(1)} pts
+              +{(globalV04 - globalV0).toFixed(1)} pts
             </span>
             <p className="font-body text-xs text-gray-500 mt-2 uppercase tracking-wider">
               Production-ready
@@ -223,14 +243,14 @@ export default function AuditTab() {
       <div className="card-arcade p-5">
         <h3 className="font-heading text-sm text-gray-400 uppercase mb-4">Scores par categorie</h3>
         <div className="space-y-3">
-          {SCORES.map(({ label, v0, v03, icon: Icon, color }) => (
+          {SCORES.map(({ label, v0, v04, icon: Icon, color }) => (
             <div key={label} className="flex items-center gap-3">
               <Icon className={`w-4 h-4 text-${color}-400 flex-shrink-0`} />
               <span className="font-body text-sm text-gray-400 w-28 flex-shrink-0">{label}</span>
-              <ScoreBar value={v03} color={color} />
-              <span className="font-data text-sm text-white w-10 text-right">{v03}</span>
+              <ScoreBar value={v04} color={color} />
+              <span className="font-data text-sm text-white w-10 text-right">{v04}</span>
               <span className="font-data text-xs text-emerald-400 w-10 text-right">
-                +{(v03 - v0).toFixed(1)}
+                +{(v04 - v0).toFixed(1)}
               </span>
             </div>
           ))}
@@ -246,6 +266,7 @@ export default function AuditTab() {
           {METRICS.map(({ label, before, after, mult }) => {
             const isNew = mult === "new";
             const isClean = mult === "-100%";
+            const needsReview = mult === "a revoir";
             return (
               <div key={label} className="card-arcade p-3">
                 <p className="font-body text-xs text-gray-500 mb-1">{label}</p>
@@ -255,7 +276,13 @@ export default function AuditTab() {
                 </div>
                 <span
                   className={`font-data text-[10px] font-bold uppercase tracking-wider ${
-                    isNew ? "text-blue-400" : isClean ? "text-emerald-400" : "text-emerald-400"
+                    isNew
+                      ? "text-blue-400"
+                      : isClean
+                        ? "text-emerald-400"
+                        : needsReview
+                          ? "text-amber-400"
+                          : "text-emerald-400"
                   }`}
                 >
                   {mult}
@@ -271,7 +298,7 @@ export default function AuditTab() {
         <div className="flex items-center gap-2 mb-4">
           <Lock className="w-4 h-4 text-red-400" />
           <h3 className="font-heading text-sm text-gray-400 uppercase">
-            Securite — Tous les P0-P1 resolus
+            Securite — P0/P1 historiques resolus, media a auditer
           </h3>
         </div>
         <div className="overflow-x-auto">
@@ -352,10 +379,10 @@ export default function AuditTab() {
       {/* Effort stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { icon: Clock, label: "Jours", value: "12", color: "text-white" },
-          { icon: Layers, label: "Sprints", value: "16", color: "text-pk-red" },
-          { icon: FileCode, label: "Commits", value: "100+", color: "text-emerald-400" },
-          { icon: Database, label: "Fichiers", value: "140+", color: "text-amber-400" },
+          { icon: Clock, label: "Jours", value: "15", color: "text-white" },
+          { icon: Layers, label: "Sprints", value: "22", color: "text-pk-red" },
+          { icon: FileCode, label: "Commits", value: "214", color: "text-emerald-400" },
+          { icon: Database, label: "Fichiers", value: "521", color: "text-amber-400" },
         ].map(({ icon: Icon, label, value, color }) => (
           <div key={label} className="card-arcade p-4 text-center">
             <Icon className={`w-5 h-5 ${color} mx-auto mb-2`} />
@@ -371,7 +398,7 @@ export default function AuditTab() {
           <TrendingUp className="w-4 h-4 text-amber-400" />
           <h3 className="font-heading text-sm text-gray-400 uppercase">Reste a faire</h3>
           <span className="ml-auto font-data text-xs text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full">
-            ~12h
+            v0.5
           </span>
         </div>
         <div className="space-y-2">
