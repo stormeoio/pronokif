@@ -1,11 +1,12 @@
 # AUDIT TECHNIQUE COMPLET - PRONOKIF v0.4
 
-**Date d'audit :** 31 mai 2026  
-**Auditeur :** Codex / Expert Web, Architecture, DevOps, Produit  
-**Version applicative :** 0.4.0  
-**Commit de reference prod avant audit :** `f735119`  
-**Production verifiee :** `https://pronokif.eu` healthy le 31 mai 2026  
-**Audits precedents :** v0.1 (17 avril 2026, score 4.4/10), v0.2 (18 mai 2026, score 6.5/10), v0.3 (27 mai 2026, score 8.0/10)
+- **Date d'audit :** 31 mai 2026
+- **Auditeur :** Codex / Expert Web, Architecture, DevOps, Produit
+- **Version applicative :** 0.4.1
+- **Commit de reference prod avant audit :** `f735119`
+- **Production verifiee :** `https://pronokif.eu` healthy le 31 mai 2026
+- **Mise a jour DevOps interface :** 31 mai 2026, 16:00 CEST
+- **Audits precedents :** v0.1 (17 avril 2026, score 4.4/10), v0.2 (18 mai 2026, score 6.5/10), v0.3 (27 mai 2026, score 8.0/10)
 
 ---
 
@@ -39,11 +40,11 @@ Le principal point a corriger n'est pas applicatif mais **DevOps** : le workflow
 
 ### Perimetre audite
 
-- 52 commits depuis le 27 mai 2026.
-- `main`, `origin/main` et `stormeo/main` synchronises sur `f735119` au moment du controle.
-- CI GitHub sur `f735119` : success.
+- 56 commits depuis le 27 mai 2026.
+- `main`, `origin/main` et `stormeo/main` synchronises lors du controle du 31 mai.
+- CI GitHub sur `a5edf14` : success.
 - Prod `https://pronokif.eu/api/health` : HTTP 200 healthy.
-- Bundle admin prod controle : contient les corrections roadmap et les nouveaux libelles de livrables.
+- Bundle admin prod controle : contient l'audit v0.4 et les nouveaux libelles de livrables.
 
 ### Chantiers livres
 
@@ -197,7 +198,7 @@ Mesures locales au 31 mai 2026, hors `node_modules` et `.venv`.
 
 ### Warning CD
 
-Le workflow CD `26713668341` sur `f735119` a echoue sur le job **Trigger StormDeploy**, alors que :
+Le workflow CD `26714464390` sur `a5edf14` a echoue sur le job **Trigger StormDeploy**, alors que :
 
 - CI est success.
 - le miroir git est synchronise.
@@ -220,7 +221,7 @@ Les P0/P1 historiques restent resolus : cookies httpOnly, rate limiting auth, ma
 
 | Risque                | Priorite | Recommandation                                          |
 | --------------------- | -------- | ------------------------------------------------------- |
-| Upload media admin    | P1       | Verifier MIME, taille, extension, chemin, cache-control |
+| Upload media admin    | P1       | MIME/taille/admin auth OK ; durcir SVG et cache-control |
 | CD webhook secret     | P1       | Restaurer le trigger StormDeploy vert                   |
 | CSP absente/partielle | P1       | Ajouter CSP report-only puis enforcement                |
 | RAG sources           | P2       | Versionner provenance, timestamps et droits             |
@@ -244,8 +245,8 @@ Les P0/P1 historiques restent resolus : cookies httpOnly, rate limiting auth, ma
 
 ### P1 - Media et securite
 
-- Ajouter limites d'upload et validation MIME stricte.
-- Ajouter tests backend pour upload media.
+- Garder les limites d'upload et la validation MIME stricte sous tests.
+- Durcir SVG uploades et politique cache-control des medias.
 - Ajouter tests frontend pour drag/drop fiche admin.
 
 ### P2 - Performance admin

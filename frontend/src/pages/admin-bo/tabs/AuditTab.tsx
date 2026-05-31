@@ -149,11 +149,13 @@ const SPRINTS = [
 const TODO = [
   { task: "Corriger le trigger CD StormDeploy", effort: "P1", done: false },
   { task: "Ajouter CSP report-only puis enforcement", effort: "P1", done: false },
-  { task: "Valider MIME, taille et droits des uploads médias", effort: "P1", done: false },
+  { task: "Valider MIME, taille et droits des uploads médias", effort: "P1", done: true },
+  { task: "Durcir SVG uploadés et cache-control médias", effort: "P1", done: false },
   { task: "Typer les réponses API critiques avec Zod", effort: "P1", done: false },
   { task: 'Réduire les 11 "as any" revenus', effort: "P1", done: false },
   { task: "Découper le bundle admin par onglet", effort: "P2", done: false },
   { task: "Généraliser lazy images, placeholders et squelettes", effort: "P2", done: false },
+  { task: "Déployer le pull-to-refresh sur les pages clés", effort: "P2", done: false },
   { task: "Ajouter monitoring externe et canary post-deploy complet", effort: "P2", done: false },
 ];
 
@@ -208,7 +210,7 @@ export default function AuditTab() {
           Audit technique
         </h2>
         <p className="font-body text-sm text-gray-500">
-          v0.4 — 31 mai 2026 — 22 sprints — 214 commits — prod pronokif.eu
+          v0.4.1 — 31 mai 2026, 16:00 CEST — 22 sprints — 216 commits — prod live
         </p>
       </div>
 
@@ -381,7 +383,7 @@ export default function AuditTab() {
         {[
           { icon: Clock, label: "Jours", value: "15", color: "text-white" },
           { icon: Layers, label: "Sprints", value: "22", color: "text-pk-red" },
-          { icon: FileCode, label: "Commits", value: "214", color: "text-emerald-400" },
+          { icon: FileCode, label: "Commits", value: "216", color: "text-emerald-400" },
           { icon: Database, label: "Fichiers", value: "521", color: "text-amber-400" },
         ].map(({ icon: Icon, label, value, color }) => (
           <div key={label} className="card-arcade p-4 text-center">

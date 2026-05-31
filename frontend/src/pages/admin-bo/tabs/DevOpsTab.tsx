@@ -1,9 +1,13 @@
 import {
+  AlertTriangle,
+  CheckCircle2,
   ClipboardList,
   Database,
+  GitBranch,
   Languages,
   Map,
   MessageSquare,
+  Radio,
   Scale,
   Shield,
 } from "lucide-react";
@@ -72,6 +76,61 @@ const SECTIONS: Array<{
   },
 ];
 
+const REAL_STATUS: Array<{
+  label: string;
+  value: string;
+  detail: string;
+  tone: "success" | "warning" | "info";
+  icon: typeof CheckCircle2;
+}> = [
+  {
+    label: "Production",
+    value: "Live",
+    detail: "pronokif.eu sert le bundle admin v0.4",
+    tone: "success",
+    icon: Radio,
+  },
+  {
+    label: "CI",
+    value: "Verte",
+    detail: "typecheck, build et lint sans erreur bloquante",
+    tone: "success",
+    icon: CheckCircle2,
+  },
+  {
+    label: "CD",
+    value: "Warning",
+    detail: "Trigger StormDeploy GitHub rouge, prod saine",
+    tone: "warning",
+    icon: AlertTriangle,
+  },
+  {
+    label: "Source",
+    value: "Main",
+    detail: "origin et miroir stormeo alignés au 31 mai 2026",
+    tone: "info",
+    icon: GitBranch,
+  },
+];
+
+const STATUS_TONES = {
+  success: {
+    card: "border-emerald-500/20 bg-emerald-500/[0.06]",
+    icon: "text-emerald-400",
+    value: "text-emerald-300",
+  },
+  warning: {
+    card: "border-amber-500/25 bg-amber-500/[0.07]",
+    icon: "text-amber-400",
+    value: "text-amber-300",
+  },
+  info: {
+    card: "border-cyan-500/20 bg-cyan-500/[0.06]",
+    icon: "text-cyan-400",
+    value: "text-cyan-300",
+  },
+} as const;
+
 export function devOpsSectionFromKey(key: string | null | undefined): DevOpsSectionKey | null {
   const normalized = String(key ?? "")
     .trim()
@@ -127,6 +186,30 @@ export default function DevOpsTab({
             Pilotage bêta, support, contenu technique, conformité et suivi de livraison.
           </p>
         </div>
+      </div>
+
+      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+        {REAL_STATUS.map(({ label, value, detail, tone, icon: Icon }) => {
+          const toneClass = STATUS_TONES[tone];
+          return (
+            <div
+              key={label}
+              className={`rounded-md border p-3 ${toneClass.card}`}
+              data-testid={`devops-real-status-${label.toLowerCase()}`}
+            >
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-titane">
+                  {label}
+                </span>
+                <Icon className={`h-4 w-4 ${toneClass.icon}`} />
+              </div>
+              <p className={`font-heading text-lg uppercase leading-none ${toneClass.value}`}>
+                {value}
+              </p>
+              <p className="mt-2 font-body text-xs leading-snug text-gray-500">{detail}</p>
+            </div>
+          );
+        })}
       </div>
 
       <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">

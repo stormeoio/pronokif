@@ -42,23 +42,37 @@ type RoadmapState = {
 };
 
 type StoredRoadmapState = {
+  revision?: string;
   tasks?: RoadmapTask[];
   phases?: Phase[];
 };
 
-function mergeDefaultsById<T extends { id: string }>(saved: T[] | undefined, defaults: T[]): T[] {
+const ROADMAP_BASELINE_REVISION = "2026-05-31-devops-real-v1";
+
+function mergeDefaultsById<T extends { id: string }>(
+  saved: T[] | undefined,
+  defaults: T[],
+  preferDefaults = false,
+): T[] {
   const merged = new Map<string, T>();
 
   defaults.forEach((item) => merged.set(item.id, item));
   saved?.forEach((item) => {
     const defaultItem = merged.get(item.id);
-    merged.set(item.id, defaultItem ? { ...defaultItem, ...item } : item);
+    if (!defaultItem) {
+      merged.set(item.id, item);
+      return;
+    }
+    merged.set(item.id, preferDefaults ? { ...item, ...defaultItem } : { ...defaultItem, ...item });
   });
 
   return Array.from(merged.values());
 }
 
-function mergeRoadmapTasks(saved: RoadmapTask[] | undefined): RoadmapTask[] {
+function mergeRoadmapTasks(
+  saved: RoadmapTask[] | undefined,
+  preferDefaultBaseline = false,
+): RoadmapTask[] {
   const merged = new Map<string, RoadmapTask>();
 
   DEFAULT_TASKS.forEach((task) => merged.set(task.id, task));
@@ -69,7 +83,9 @@ function mergeRoadmapTasks(saved: RoadmapTask[] | undefined): RoadmapTask[] {
       return;
     }
 
-    const mergedTask = { ...defaultTask, ...task };
+    const mergedTask = preferDefaultBaseline
+      ? { ...task, ...defaultTask }
+      : { ...defaultTask, ...task };
     if (defaultTask.status === "done") {
       mergedTask.status = "done";
       mergedTask.completedAt = defaultTask.completedAt ?? task.completedAt;
@@ -91,11 +107,16 @@ function loadRoadmapState(): RoadmapState {
 
   try {
     const data = JSON.parse(saved) as StoredRoadmapState;
+    const shouldRefreshBaseline = data.revision !== ROADMAP_BASELINE_REVISION;
     return {
-      tasks: mergeRoadmapTasks(Array.isArray(data.tasks) ? data.tasks : undefined),
+      tasks: mergeRoadmapTasks(
+        Array.isArray(data.tasks) ? data.tasks : undefined,
+        shouldRefreshBaseline,
+      ),
       phases: mergeDefaultsById(
         Array.isArray(data.phases) ? data.phases : undefined,
         DEFAULT_PHASES,
+        shouldRefreshBaseline,
       ),
     };
   } catch (error) {
@@ -140,7 +161,10 @@ export default function RoadmapTab() {
   // Save to localStorage
   useEffect(() => {
     if (tasks.length > 0 || phases.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks, phases }));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ revision: ROADMAP_BASELINE_REVISION, tasks, phases }),
+      );
     }
   }, [tasks, phases]);
 

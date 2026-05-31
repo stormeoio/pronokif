@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Circle,
   Clock,
+  GitBranch,
   Layers,
   Sparkles,
   Zap,
@@ -16,7 +17,15 @@ import {
 
 export type TaskStatus = "todo" | "in_progress" | "done" | "blocked";
 export type TaskPriority = "critical" | "high" | "medium" | "low";
-export type TaskCategory = "bug" | "perf" | "ux" | "a11y" | "refactor" | "feature" | "security";
+export type TaskCategory =
+  | "bug"
+  | "perf"
+  | "ux"
+  | "a11y"
+  | "refactor"
+  | "feature"
+  | "security"
+  | "devops";
 export type ViewMode = "checklist" | "gantt" | "phases";
 
 export interface RoadmapTask {
@@ -75,6 +84,7 @@ export const CATEGORY_CONFIG: Record<
   refactor: { label: "Refacto", icon: Layers, color: "text-orange-400" },
   feature: { label: "Fonctionnalité", icon: Sparkles, color: "text-yellow-400" },
   security: { label: "Sécurité", icon: AlertTriangle, color: "text-red-400" },
+  devops: { label: "DevOps", icon: GitBranch, color: "text-emerald-400" },
 };
 
 // ── Default seed data ────────────────────────────────────────────────────────
@@ -87,48 +97,48 @@ export const DEFAULT_PHASES: Phase[] = [
     name: "Audit & Diagnostic",
     color: "#f97316",
     order: 0,
-    startDate: "2025-05-01",
-    endDate: "2025-05-15",
+    startDate: "2026-04-17",
+    endDate: "2026-05-15",
   },
   {
     id: "refactor",
     name: "Refactorisation",
     color: "#8b5cf6",
     order: 1,
-    startDate: "2025-05-15",
-    endDate: "2025-06-15",
+    startDate: "2026-05-15",
+    endDate: "2026-06-15",
   },
   {
     id: "ux-polish",
     name: "UX Polish",
     color: "#06b6d4",
     order: 2,
-    startDate: "2025-06-01",
-    endDate: "2025-06-30",
+    startDate: "2026-06-01",
+    endDate: "2026-06-30",
   },
   {
     id: "perf",
     name: "Performance",
     color: "#22c55e",
     order: 3,
-    startDate: "2025-06-15",
-    endDate: "2025-07-15",
+    startDate: "2026-06-15",
+    endDate: "2026-07-15",
   },
   {
     id: "features",
     name: "Nouvelles fonctionnalités",
     color: "#eab308",
     order: 4,
-    startDate: "2025-07-01",
-    endDate: "2025-08-31",
+    startDate: "2026-07-01",
+    endDate: "2026-08-31",
   },
   {
     id: "beta",
     name: "Beta publique",
     color: "#ec4899",
     order: 5,
-    startDate: "2025-09-01",
-    endDate: "2025-10-01",
+    startDate: "2026-06-15",
+    endDate: "2026-07-01",
   },
   {
     id: "predictions-pipeline",
@@ -154,6 +164,14 @@ export const DEFAULT_PHASES: Phase[] = [
     startDate: "2026-05-31",
     endDate: "2026-05-31",
   },
+  {
+    id: "release-reliability",
+    name: "Release reliability",
+    color: "#22c55e",
+    order: 9,
+    startDate: "2026-05-31",
+    endDate: "2026-06-07",
+  },
 ];
 
 export const DEFAULT_TASKS: RoadmapTask[] = [
@@ -166,8 +184,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     priority: "high",
     category: "ux",
     phase: "audit",
-    createdAt: "2025-05-01",
-    completedAt: "2025-05-17",
+    createdAt: "2026-05-01",
+    completedAt: "2026-05-17",
   },
   {
     id: "a2",
@@ -177,8 +195,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     priority: "high",
     category: "a11y",
     phase: "audit",
-    createdAt: "2025-05-01",
-    completedAt: "2025-05-17",
+    createdAt: "2026-05-01",
+    completedAt: "2026-05-17",
   },
   {
     id: "a3",
@@ -188,8 +206,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     priority: "medium",
     category: "ux",
     phase: "audit",
-    createdAt: "2025-05-01",
-    completedAt: "2025-05-17",
+    createdAt: "2026-05-01",
+    completedAt: "2026-05-17",
   },
   {
     id: "a4",
@@ -199,8 +217,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     priority: "low",
     category: "ux",
     phase: "audit",
-    createdAt: "2025-05-01",
-    completedAt: "2025-05-17",
+    createdAt: "2026-05-01",
+    completedAt: "2026-05-17",
   },
   {
     id: "a5",
@@ -210,8 +228,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     priority: "medium",
     category: "ux",
     phase: "audit",
-    createdAt: "2025-05-01",
-    completedAt: "2025-05-17",
+    createdAt: "2026-05-01",
+    completedAt: "2026-05-17",
   },
   {
     id: "a6",
@@ -221,8 +239,8 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     priority: "critical",
     category: "feature",
     phase: "audit",
-    createdAt: "2025-05-17",
-    completedAt: "2025-05-17",
+    createdAt: "2026-05-17",
+    completedAt: "2026-05-17",
   },
   // Refactor phase
   {
@@ -233,7 +251,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     priority: "high",
     category: "refactor",
     phase: "refactor",
-    createdAt: "2025-05-17",
+    createdAt: "2026-05-17",
     completedAt: "2026-05-17",
   },
   {
@@ -244,7 +262,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     priority: "high",
     category: "refactor",
     phase: "refactor",
-    createdAt: "2025-05-17",
+    createdAt: "2026-05-17",
   },
   {
     id: "r3",
@@ -254,7 +272,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     priority: "medium",
     category: "refactor",
     phase: "refactor",
-    createdAt: "2025-05-17",
+    createdAt: "2026-05-17",
     completedAt: "2026-05-16",
   },
   {
@@ -265,7 +283,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     priority: "medium",
     category: "perf",
     phase: "refactor",
-    createdAt: "2025-05-17",
+    createdAt: "2026-05-17",
   },
   {
     id: "r5",
@@ -275,7 +293,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     priority: "low",
     category: "refactor",
     phase: "refactor",
-    createdAt: "2025-05-17",
+    createdAt: "2026-05-17",
     completedAt: "2026-05-16",
   },
   // UX Polish
@@ -287,7 +305,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     priority: "medium",
     category: "ux",
     phase: "ux-polish",
-    createdAt: "2025-05-17",
+    createdAt: "2026-05-17",
     completedAt: "2026-05-17",
   },
   {
@@ -298,28 +316,27 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     priority: "medium",
     category: "ux",
     phase: "ux-polish",
-    createdAt: "2025-05-17",
+    createdAt: "2026-05-17",
   },
   {
     id: "u3",
     title: "Pull-to-refresh natif",
-    description: "Améliorer le geste de rafraîchissement",
-    status: "done",
+    description: "Hook + indicateur livrés, intégration sur les écrans clés à finaliser",
+    status: "in_progress",
     priority: "high",
     category: "ux",
     phase: "ux-polish",
-    createdAt: "2025-05-17",
-    completedAt: "2026-05-17",
+    createdAt: "2026-05-17",
   },
   {
     id: "u4",
     title: "Assistant d'accueil",
-    description: "Tutoriel interactif au premier lancement",
-    status: "todo",
+    description: "Tooltip premier pronostic livré, tutoriel global premier lancement à compléter",
+    status: "in_progress",
     priority: "high",
     category: "feature",
     phase: "ux-polish",
-    createdAt: "2025-05-17",
+    createdAt: "2026-05-17",
   },
   // Performance
   {
@@ -330,7 +347,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     priority: "critical",
     category: "perf",
     phase: "perf",
-    createdAt: "2025-05-17",
+    createdAt: "2026-05-17",
     completedAt: "2026-05-28",
   },
   {
@@ -341,7 +358,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     priority: "high",
     category: "perf",
     phase: "perf",
-    createdAt: "2025-05-17",
+    createdAt: "2026-05-17",
     completedAt: "2026-05-30",
   },
   {
@@ -352,7 +369,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     priority: "medium",
     category: "perf",
     phase: "perf",
-    createdAt: "2025-05-17",
+    createdAt: "2026-05-17",
   },
   // Features
   {
@@ -363,17 +380,17 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     priority: "high",
     category: "feature",
     phase: "features",
-    createdAt: "2025-05-17",
+    createdAt: "2026-05-17",
   },
   {
     id: "f2",
     title: "Mode sombre/clair",
-    description: "Sélecteur de thème avec persistance",
-    status: "todo",
+    description: "Hors scope v1 : le design system Pronokif est dark-only",
+    status: "blocked",
     priority: "low",
     category: "feature",
     phase: "features",
-    createdAt: "2025-05-17",
+    createdAt: "2026-05-17",
   },
   {
     id: "f3",
@@ -383,7 +400,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     priority: "low",
     category: "feature",
     phase: "features",
-    createdAt: "2025-05-17",
+    createdAt: "2026-05-17",
   },
   {
     id: "f4",
@@ -393,7 +410,7 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     priority: "medium",
     category: "feature",
     phase: "features",
-    createdAt: "2025-05-17",
+    createdAt: "2026-05-17",
   },
   // Livrables Pronokif 2026
   {
@@ -517,5 +534,70 @@ export const DEFAULT_TASKS: RoadmapTask[] = [
     phase: "knowledge-media",
     createdAt: "2026-05-31",
     completedAt: "2026-05-31",
+  },
+  {
+    id: "rr1",
+    title: "CI GitHub verte sur main",
+    description: "Workflow CI terminé avec succès sur le commit d'audit v0.4.",
+    status: "done",
+    priority: "high",
+    category: "devops",
+    phase: "release-reliability",
+    createdAt: "2026-05-31",
+    completedAt: "2026-05-31",
+  },
+  {
+    id: "rr2",
+    title: "Production pronokif.eu live",
+    description: "Healthcheck 200 et bundle admin v0.4 servi par la production.",
+    status: "done",
+    priority: "high",
+    category: "devops",
+    phase: "release-reliability",
+    createdAt: "2026-05-31",
+    completedAt: "2026-05-31",
+  },
+  {
+    id: "rr3",
+    title: "Trigger CD StormDeploy GitHub vert",
+    description: "Le job Trigger StormDeploy reste rouge malgré une prod saine.",
+    status: "blocked",
+    priority: "critical",
+    category: "devops",
+    phase: "release-reliability",
+    createdAt: "2026-05-31",
+  },
+  {
+    id: "rr4",
+    title: "Canary post-deploy complet",
+    description:
+      "Vérifier health, index asset, chunk admin et route d'auth admin après chaque release.",
+    status: "todo",
+    priority: "high",
+    category: "devops",
+    phase: "release-reliability",
+    createdAt: "2026-05-31",
+  },
+  {
+    id: "rr5",
+    title: "Validation upload médias admin",
+    description: "MIME, taille 5 Mo, admin auth, dossiers et tests backend en place.",
+    status: "done",
+    priority: "high",
+    category: "security",
+    phase: "release-reliability",
+    createdAt: "2026-05-31",
+    completedAt: "2026-05-31",
+  },
+  {
+    id: "rr6",
+    title: "Durcissement SVG et cache médias",
+    description:
+      "Sanitiser ou désactiver les SVG uploadés, puis définir une politique cache-control.",
+    status: "todo",
+    priority: "high",
+    category: "security",
+    phase: "release-reliability",
+    createdAt: "2026-05-31",
   },
 ];
