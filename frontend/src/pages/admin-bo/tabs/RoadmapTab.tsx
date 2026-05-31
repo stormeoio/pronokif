@@ -58,6 +58,31 @@ function mergeDefaultsById<T extends { id: string }>(saved: T[] | undefined, def
   return Array.from(merged.values());
 }
 
+function mergeRoadmapTasks(saved: RoadmapTask[] | undefined): RoadmapTask[] {
+  const merged = new Map<string, RoadmapTask>();
+
+  DEFAULT_TASKS.forEach((task) => merged.set(task.id, task));
+  saved?.forEach((task) => {
+    const defaultTask = merged.get(task.id);
+    if (!defaultTask) {
+      merged.set(task.id, task);
+      return;
+    }
+
+    const mergedTask = { ...defaultTask, ...task };
+    if (defaultTask.status === "done") {
+      mergedTask.status = "done";
+      mergedTask.completedAt = defaultTask.completedAt ?? task.completedAt;
+    } else if (defaultTask.status === "in_progress" && task.status === "todo") {
+      mergedTask.status = "in_progress";
+    }
+
+    merged.set(task.id, mergedTask);
+  });
+
+  return Array.from(merged.values());
+}
+
 function loadRoadmapState(): RoadmapState {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (!saved) {
@@ -67,7 +92,7 @@ function loadRoadmapState(): RoadmapState {
   try {
     const data = JSON.parse(saved) as StoredRoadmapState;
     return {
-      tasks: mergeDefaultsById(Array.isArray(data.tasks) ? data.tasks : undefined, DEFAULT_TASKS),
+      tasks: mergeRoadmapTasks(Array.isArray(data.tasks) ? data.tasks : undefined),
       phases: mergeDefaultsById(
         Array.isArray(data.phases) ? data.phases : undefined,
         DEFAULT_PHASES,
