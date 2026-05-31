@@ -111,24 +111,25 @@ const ADMIN_TAB_ALIASES: Record<string, AdminTabKey> = {
 
 function selectionFromSearch(search: string): AdminSelection {
   const rawTab = new URLSearchParams(search).get("tab");
-  if (!rawTab) return { tab: "dashboard", devOpsSection: "beta" };
+  if (!rawTab) return { tab: "dashboard", devOpsSection: "audit" };
   const normalized = rawTab.trim();
   const devOpsSection = devOpsSectionFromKey(normalized);
   if (devOpsSection) return { tab: "devops", devOpsSection };
   const aliased = ADMIN_TAB_ALIASES[normalized.toLowerCase()] ?? normalized;
   if (aliased === "devops") {
     const section = devOpsSectionFromKey(new URLSearchParams(search).get("devops"));
-    return { tab: "devops", devOpsSection: section ?? "beta" };
+    return { tab: "devops", devOpsSection: section ?? "audit" };
   }
   return NAV_ITEMS.some((item) => item.key === aliased)
-    ? { tab: aliased as AdminTabKey, devOpsSection: "beta" }
-    : { tab: "dashboard", devOpsSection: "beta" };
+    ? { tab: aliased as AdminTabKey, devOpsSection: "audit" }
+    : { tab: "dashboard", devOpsSection: "audit" };
 }
 
 function normalizeDestination(destination: AdminDestinationKey): AdminSelection {
+  if (destination === "devops") return { tab: "devops", devOpsSection: "audit" };
   const devOpsSection = devOpsSectionFromKey(destination);
   if (devOpsSection) return { tab: "devops", devOpsSection };
-  return { tab: destination as AdminTabKey, devOpsSection: "beta" };
+  return { tab: destination as AdminTabKey, devOpsSection: "audit" };
 }
 
 export default function AdminLayout() {

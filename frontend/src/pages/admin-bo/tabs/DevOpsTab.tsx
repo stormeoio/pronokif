@@ -36,36 +36,14 @@ type DevOpsTabProps = {
   onSectionChange: (section: DevOpsSectionKey) => void;
 };
 
-const SECTIONS: Array<{
+type DevOpsSectionMeta = {
   key: DevOpsSectionKey;
   label: string;
   description: string;
   icon: typeof MessageSquare;
-}> = [
-  {
-    key: "beta",
-    label: "Beta",
-    description: "Feedbacks, bugs et réponses utilisateurs.",
-    icon: MessageSquare,
-  },
-  {
-    key: "knowledge",
-    label: "Base RAG",
-    description: "Connaissances et embeddings.",
-    icon: Database,
-  },
-  {
-    key: "translations",
-    label: "Traductions",
-    description: "Complétion FR/EN.",
-    icon: Languages,
-  },
-  {
-    key: "legal",
-    label: "Légal & PWA",
-    description: "Pages publiques et publication.",
-    icon: Scale,
-  },
+};
+
+const VISIBLE_SECTIONS: DevOpsSectionMeta[] = [
   {
     key: "audit",
     label: "Audit",
@@ -79,12 +57,41 @@ const SECTIONS: Array<{
     icon: Map,
   },
   {
+    key: "beta",
+    label: "Beta",
+    description: "Feedbacks, bugs et réponses utilisateurs.",
+    icon: MessageSquare,
+  },
+  {
+    key: "legal",
+    label: "Légal & PWA",
+    description: "Pages publiques et publication.",
+    icon: Scale,
+  },
+  {
+    key: "knowledge",
+    label: "Base RAG",
+    description: "Connaissances et embeddings.",
+    icon: Database,
+  },
+  {
+    key: "translations",
+    label: "Traductions",
+    description: "Complétion FR/EN.",
+    icon: Languages,
+  },
+];
+
+const HIDDEN_SECTIONS: DevOpsSectionMeta[] = [
+  {
     key: "changelog",
     label: "Changelog",
     description: "Versions et livrables.",
     icon: History,
   },
 ];
+
+const SECTIONS = [...VISIBLE_SECTIONS, ...HIDDEN_SECTIONS];
 
 const REAL_STATUS: Array<{
   label: string;
@@ -163,7 +170,7 @@ export default function DevOpsTab({
   currentAdminEmail,
   onSectionChange,
 }: DevOpsTabProps) {
-  const active = SECTIONS.find((section) => section.key === activeSection) ?? SECTIONS[0];
+  const active = SECTIONS.find((section) => section.key === activeSection) ?? VISIBLE_SECTIONS[0];
 
   const renderSection = () => {
     switch (active.key) {
@@ -227,8 +234,8 @@ export default function DevOpsTab({
         })}
       </div>
 
-      <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-7">
-        {SECTIONS.map(({ key, label, description, icon: Icon }) => {
+      <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
+        {VISIBLE_SECTIONS.map(({ key, label, description, icon: Icon }) => {
           const isActive = active.key === key;
           return (
             <button
