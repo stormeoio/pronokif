@@ -26,10 +26,10 @@ In QA mode, flag any code that doesn't match DESIGN.md.
 
 ## Internationalization
 Pronokif.eu is being prepared for a multilingual version.
-Every new database table, seed dataset, enum-like content list, admin-managed content field, notification template, email template, public copy source, or user-visible stored data must anticipate future translations.
+Translations are scoped to the public/front-end application UI only. League content and user-generated data must stay in the language entered by users, and the admin back office must remain fully French.
 
 Default expectation:
-- Keep stable language-neutral identifiers separate from translated labels/copy.
-- Avoid hard-coding French-only content in schemas or seed data when that content may be shown to users.
-- Prefer structures that can later hold per-locale values, such as translation tables, locale-keyed JSON, or i18n keys, according to the surrounding backend pattern.
-- When adding migrations or data imports, document which fields are translatable and which are canonical/internal.
+- Translate UI labels, navigation, empty states, helper text, system buttons, validation messages, and front-end interface copy through the front-end i18n resources.
+- Do not translate or include in completion metrics: league names/descriptions, predictions, custom predictions, chats/messages, player names, usernames, scores, feedback, support discussions, uploaded media metadata, or any user-generated content.
+- Keep canonical IDs and enum-like technical values language-neutral, but do not add translation tables/fields for user-owned content unless the user explicitly reopens that scope.
+- Keep all admin back-office screens, actions, labels, logs, and operational copy in French.

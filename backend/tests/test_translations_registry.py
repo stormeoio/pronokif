@@ -25,6 +25,16 @@ def test_translation_entry_tracks_locale_gaps():
     assert entry["completion_rate"] == 0.5
 
 
+def test_user_generated_sources_are_not_registered_for_translation_completion():
+    source_keys = {source.key for source in TRANSLATION_SOURCES}
+
+    assert "leagues" not in source_keys
+    assert "predictions" not in source_keys
+    assert "custom_predictions" not in source_keys
+    assert "league_messages" not in source_keys
+    assert "users" not in source_keys
+
+
 def test_translation_summary_reports_completion_per_locale():
     entries = [
         {

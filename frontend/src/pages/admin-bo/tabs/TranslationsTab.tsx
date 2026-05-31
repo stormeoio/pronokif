@@ -131,16 +131,18 @@ export default function TranslationsTab() {
 
   const entries = data?.entries ?? [];
   const selectedEntry = entries.find((entry) => entry.id === selectedId) ?? entries[0] ?? null;
+  const selectedEntryId = selectedEntry?.id ?? null;
+  const selectedEntryValue = selectedEntry?.translations?.[locale] ?? "";
 
   useEffect(() => {
-    if (!selectedEntry) {
+    if (!selectedEntryId) {
       setSelectedId(null);
       setDraft("");
       return;
     }
-    setSelectedId(selectedEntry.id);
-    setDraft(selectedEntry.translations?.[locale] ?? "");
-  }, [locale, selectedEntry?.id]);
+    setSelectedId(selectedEntryId);
+    setDraft(selectedEntryValue);
+  }, [selectedEntryId, selectedEntryValue]);
 
   const saveMutation = useMutation({
     mutationFn: () => {
@@ -158,8 +160,7 @@ export default function TranslationsTab() {
     onError: () => toast.error("Impossible d'enregistrer cette traduction"),
   });
 
-  const backendEn = data?.summary.locales.en;
-  const backendFr = data?.summary.locales.fr;
+  const frontendFr = frontendAudit.summaries.fr;
   const frontendEn = frontendAudit.summaries.en;
   const missingFrontendEn = frontendEn?.missingKeys ?? [];
 
@@ -168,10 +169,11 @@ export default function TranslationsTab() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="font-heading text-2xl uppercase tracking-tight text-white">
-            Registre des traductions
+            Traductions UI front
           </h2>
           <p className="mt-1 font-body text-sm text-gray-500">
-            Audit FR/EN des contenus publics, des ressources front et des contenus éditables.
+            La complétion FR/EN concerne uniquement les ressources i18n de l'interface utilisateur
+            front. Les contenus utilisateurs restent dans leur langue d'origine.
           </p>
         </div>
         <Button
@@ -190,73 +192,66 @@ export default function TranslationsTab() {
       </div>
 
       <div className="grid gap-3 md:grid-cols-4">
-        <StatCard label="Complétion EN contenu" value={pct(backendEn?.rate)} tone="text-cyan-300" />
+        <StatCard label="UI front FR" value={pct(frontendFr?.rate)} tone="text-emerald-300" />
+        <StatCard label="UI front EN" value={pct(frontendEn?.rate)} tone="text-cyan-300" />
+        <StatCard label="Clés UI suivies" value={frontendAudit.keys.length} />
         <StatCard
-          label="Complétion FR contenu"
-          value={pct(backendFr?.rate)}
-          tone="text-emerald-300"
-        />
-        <StatCard label="Champs suivis" value={data?.summary.total_entries ?? 0} />
-        <StatCard
-          label="Clés front EN manquantes"
+          label="UI EN manquantes"
           value={missingFrontendEn.length}
           tone={missingFrontendEn.length ? "text-amber-300" : "text-emerald-300"}
         />
       </div>
 
+      <section className="rounded-md border border-cyan-400/20 bg-cyan-400/[0.06] p-4">
+        <div className="flex flex-wrap items-start gap-3">
+          <Languages className="mt-0.5 h-4 w-4 text-cyan-300" />
+          <div className="min-w-0 flex-1">
+            <h3 className="font-heading text-sm uppercase text-white">Périmètre officiel</h3>
+            <p className="mt-1 font-body text-sm leading-relaxed text-gray-400">
+              Le score de traduction ignore les noms de ligues, descriptions saisies par les
+              joueurs, pronostics, messages de chat, pseudos, scores, feedbacks et données métier
+              générées par l'usage. Le back-office administrateur reste volontairement en français.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section className="card-arcade p-4">
         <div className="mb-4 flex items-center gap-2">
           <Languages className="h-4 w-4 text-pk-red" />
-          <h3 className="font-heading text-sm uppercase text-white">Complétion par langue</h3>
+          <h3 className="font-heading text-sm uppercase text-white">Complétion UI front</h3>
         </div>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-3">
-            <p className="font-data text-[10px] uppercase tracking-[0.18em] text-pk-titane">
-              Contenus administrables
-            </p>
-            {(["fr", "en"] as LocaleCode[]).map((item) => {
-              const summary = data?.summary.locales[item] ?? { complete: 0, total: 0, rate: 0 };
-              return (
-                <div key={item} className="space-y-1">
-                  <div className="flex items-center justify-between font-body text-sm text-gray-300">
-                    <span>{LOCALE_LABELS[item]}</span>
-                    <span>
-                      {summary.complete}/{summary.total} · {pct(summary.rate)}
-                    </span>
-                  </div>
-                  <ProgressBar rate={summary.rate} />
+        <div className="space-y-3">
+          {(["fr", "en"] as LocaleCode[]).map((item) => {
+            const summary = frontendAudit.summaries[item];
+            return (
+              <div key={item} className="space-y-1">
+                <div className="flex items-center justify-between font-body text-sm text-gray-300">
+                  <span>{LOCALE_LABELS[item]}</span>
+                  <span>
+                    {summary.complete}/{summary.total} · {pct(summary.rate)}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-          <div className="space-y-3">
-            <p className="font-data text-[10px] uppercase tracking-[0.18em] text-pk-titane">
-              Ressources front i18n
-            </p>
-            {(["fr", "en"] as LocaleCode[]).map((item) => {
-              const summary = frontendAudit.summaries[item];
-              return (
-                <div key={item} className="space-y-1">
-                  <div className="flex items-center justify-between font-body text-sm text-gray-300">
-                    <span>{LOCALE_LABELS[item]}</span>
-                    <span>
-                      {summary.complete}/{summary.total} · {pct(summary.rate)}
-                    </span>
-                  </div>
-                  <ProgressBar rate={summary.rate} />
-                </div>
-              );
-            })}
-          </div>
+                <ProgressBar rate={summary.rate} />
+              </div>
+            );
+          })}
+          <p className="pt-1 font-body text-xs text-gray-500">
+            Base calculée depuis les fichiers i18n front uniquement. Aucun contenu joueur ou donnée
+            de ligue n'entre dans ce taux.
+          </p>
         </div>
       </section>
 
       <section className="card-arcade p-4">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="font-heading text-sm uppercase text-white">Contenus enregistrés</h3>
+            <h3 className="font-heading text-sm uppercase text-white">
+              Contenus système hors score UI
+            </h3>
             <p className="mt-1 font-body text-xs text-gray-500">
-              Sélectionne un champ, bascule la langue, puis modifie la traduction.
+              Outil interne pour les contenus système locale-keyed. Les ligues, pronostics, chats et
+              données des joueurs sont exclus.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -283,7 +278,7 @@ export default function TranslationsTab() {
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Rechercher un contenu, un champ ou une traduction..."
+              placeholder="Rechercher un contenu système, un champ ou une traduction..."
               className="pl-9"
             />
           </div>
@@ -312,7 +307,7 @@ export default function TranslationsTab() {
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
           <div className="min-h-[320px] overflow-hidden rounded-md border border-white/10">
             <div className="grid grid-cols-[1.2fr_1fr_96px] border-b border-white/10 bg-white/[0.03] px-3 py-2 font-data text-[10px] uppercase tracking-[0.16em] text-pk-titane">
-              <span>Contenu</span>
+              <span>Contenu système</span>
               <span>Champ</span>
               <span>État</span>
             </div>
@@ -433,12 +428,13 @@ export default function TranslationsTab() {
           ) : (
             <CheckCircle2 className="h-4 w-4 text-emerald-300" />
           )}
-          <h3 className="font-heading text-sm uppercase text-white">Audit front public</h3>
+          <h3 className="font-heading text-sm uppercase text-white">Audit UI front utilisateur</h3>
         </div>
         <p className="font-body text-sm text-gray-500">
           Les fichiers i18n déclarés sont alignés FR/EN sur {frontendAudit.keys.length} clé(s). Les
-          chaînes publiques encore codées en dur doivent être migrées vers ces ressources pour
-          entrer dans ce taux.
+          chaînes de l'interface utilisateur encore codées en dur doivent être migrées vers ces
+          ressources pour entrer dans ce taux. Le back-office admin reste en français et hors
+          comptage i18n.
         </p>
         {missingFrontendEn.length > 0 && (
           <div className="mt-3 max-h-36 overflow-auto rounded-md border border-white/10 bg-black/20 p-3 font-data text-xs text-amber-200">

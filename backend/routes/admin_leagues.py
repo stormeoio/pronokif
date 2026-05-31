@@ -38,8 +38,6 @@ class LeagueAdminUpdate(BaseModel):
     admin_note: str | None = Field(default=None, max_length=4000)
     review_status: str | None = Field(default=None, max_length=50)
     is_archived: bool | None = None
-    name_translations: dict[str, str] | None = None
-    description_translations: dict[str, str] | None = None
 
 
 class LeagueMemberRequest(BaseModel):

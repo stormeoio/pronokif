@@ -25,6 +25,9 @@ class TranslationSource:
     sort_field: str | None = None
 
 
+# Only system-managed copy belongs in this registry. User-generated content
+# such as league names/descriptions, chats, predictions, player names and
+# support messages must stay out of translation completion metrics.
 TRANSLATION_SOURCES: tuple[TranslationSource, ...] = (
     TranslationSource(
         key="legal_pages",
@@ -46,18 +49,6 @@ TRANSLATION_SOURCES: tuple[TranslationSource, ...] = (
         identity_field="id",
         title_fields=("name_translations.fr", "name", "slug", "id"),
         sort_field="season",
-        fields=(
-            TranslationField("name_translations", "Nom"),
-            TranslationField("description_translations", "Description"),
-        ),
-    ),
-    TranslationSource(
-        key="leagues",
-        label="Ligues",
-        collection="leagues",
-        identity_field="id",
-        title_fields=("name_translations.fr", "name", "code", "id"),
-        sort_field="created_at",
         fields=(
             TranslationField("name_translations", "Nom"),
             TranslationField("description_translations", "Description"),
