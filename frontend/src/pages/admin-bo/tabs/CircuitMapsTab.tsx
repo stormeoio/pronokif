@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { adminApi } from "../adminApi";
+import { AdminMediaThumbnailPicker } from "../AdminMediaThumbnailPicker";
 import {
   CIRCUIT_MAP_PARAM,
   CIRCUIT_OWNER_PARAM,
@@ -1861,13 +1862,14 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
                       placeholder="viewBox SVG"
                       className="bg-gray-900 border-gray-700 text-white"
                     />
-                    <Input
+                    <AdminMediaThumbnailPicker
                       value={draft.fallbackImageUrl}
-                      onChange={(event) =>
-                        setDraft({ ...draft, fallbackImageUrl: event.target.value })
-                      }
-                      placeholder="Image fallback"
-                      className="bg-gray-900 border-gray-700 text-white"
+                      onValueChange={(fallbackImageUrl) => setDraft({ ...draft, fallbackImageUrl })}
+                      entityType="circuit_map"
+                      entityId={selected?.key}
+                      folder="circuits"
+                      label="Image fallback circuit"
+                      testId="circuit-map-fallback-picker"
                     />
                     <Textarea
                       value={draft.aliases}

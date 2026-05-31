@@ -25,6 +25,8 @@ def test_default_app_settings_are_admin_pwa_ready():
     settings = admin_settings.default_app_settings()
 
     assert settings["app_name"] == "Pronokif"
+    assert settings["logo_url"] == ""
+    assert settings["favicon_url"] == ""
     assert settings["pwa_enabled"] is True
     assert settings["admin_pwa_enabled"] is True
     assert settings["pwa_start_url"] == "/admin"
@@ -54,14 +56,25 @@ async def test_update_settings_uses_non_null_fields(monkeypatch):
     monkeypatch.setattr(admin_settings, "db", fake_db)
 
     response = await admin_settings.update_settings(
-        admin_settings.AppSettings(app_name="Pronokif 2026", logo_url=None, pwa_enabled=True),
+        admin_settings.AppSettings(
+            app_name="Pronokif 2026",
+            logo_url=None,
+            favicon_url="/images/branding/app-icon.png",
+            pwa_enabled=True,
+        ),
         admin={"email": "admin@pronokif.eu"},
     )
 
     assert response == {"message": "Parametres mis a jour"}
     assert fake_db.app_settings.updated == (
         {"_id": "global"},
-        {"$set": {"app_name": "Pronokif 2026", "pwa_enabled": True}},
+        {
+            "$set": {
+                "app_name": "Pronokif 2026",
+                "favicon_url": "/images/branding/app-icon.png",
+                "pwa_enabled": True,
+            }
+        },
         True,
     )
 

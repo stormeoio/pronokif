@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 
 from routes import admin_content
 from services import admin_invitations
+from services import admin_predictions as admin_predictions_service
 
 
 def test_invitation_status_handles_pending_expired_accepted_and_revoked():
@@ -133,3 +134,72 @@ def test_race_ops_payload_computes_business_coverage():
     assert payload["missing_predictions"] == 2
     assert payload["scoring_pending"] == 2
     assert payload["scoring_coverage_rate"] == 75
+    assert payload["is_cancelled"] is False
+
+
+def test_dashboard_watchlist_prioritizes_active_races_then_finished_actions():
+    races = [
+        {
+            "id": "finished-ok",
+            "status": "finished",
+            "is_cancelled": False,
+            "has_results": True,
+            "scoring_pending": 0,
+        },
+        {
+            "id": "finished-missing-results",
+            "status": "finished",
+            "is_cancelled": False,
+            "has_results": False,
+            "scoring_pending": 0,
+        },
+        {
+            "id": "upcoming",
+            "status": "upcoming",
+            "is_cancelled": False,
+            "has_results": False,
+            "scoring_pending": 0,
+        },
+        {
+            "id": "live",
+            "status": "in_progress",
+            "is_cancelled": False,
+            "has_results": False,
+            "scoring_pending": 0,
+        },
+        {
+            "id": "finished-scoring",
+            "status": "finished",
+            "is_cancelled": False,
+            "has_results": True,
+            "scoring_pending": 3,
+        },
+        {
+            "id": "cancelled-upcoming",
+            "status": "upcoming",
+            "is_cancelled": True,
+            "has_results": False,
+            "scoring_pending": 0,
+        },
+    ]
+
+    watchlist = admin_content._dashboard_watchlist_races(races)
+
+    assert [race["id"] for race in watchlist] == [
+        "upcoming",
+        "live",
+        "finished-missing-results",
+        "finished-scoring",
+    ]
+
+
+def test_prediction_activity_timestamp_uses_latest_submission_marker():
+    timestamp = admin_predictions_service.prediction_activity_timestamp(
+        {
+            "created_at": "2026-05-01T10:00:00+00:00",
+            "sprint_updated_at": "2026-05-02T10:00:00+00:00",
+            "main_updated_at": "2026-05-03T10:00:00+00:00",
+        }
+    )
+
+    assert timestamp == "2026-05-03T10:00:00+00:00"

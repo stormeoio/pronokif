@@ -4,7 +4,11 @@ from collections.abc import Iterable
 
 from config import db
 from routes.admin_auth import ADMIN_EMAILS
-from services.admin_predictions import enrich_prediction_docs, user_prediction_stats_from_payloads
+from services.admin_predictions import (
+    enrich_prediction_docs,
+    prediction_activity_timestamp,
+    user_prediction_stats_from_payloads,
+)
 
 
 def is_protected_admin_user(user: dict, admin_emails: Iterable[str] | None = None) -> bool:
@@ -107,6 +111,68 @@ def user_analytics_from_docs(
         "top_users": [row for row in rows if row["predictions_count"] > 0][:20],
         "inactive_users": [row for row in rows if row["predictions_count"] == 0][:20],
     }
+
+
+def recent_user_dashboard_payloads(
+    users: list[dict],
+    predictions: list[dict],
+    leagues: list[dict] | None = None,
+) -> list[dict]:
+    prediction_counts_by_user: dict[str, int] = {}
+    last_prediction_by_user: dict[str, str] = {}
+    for prediction in predictions:
+        user_id = prediction.get("user_id")
+        if not user_id:
+            continue
+        prediction_counts_by_user[user_id] = prediction_counts_by_user.get(user_id, 0) + 1
+        submitted_at = prediction_activity_timestamp(prediction)
+        if submitted_at and submitted_at > last_prediction_by_user.get(user_id, ""):
+            last_prediction_by_user[user_id] = submitted_at
+
+    leagues_count_by_user: dict[str, int] = {}
+    for league in leagues or []:
+        owner_id = league.get("created_by")
+        if owner_id:
+            leagues_count_by_user[owner_id] = leagues_count_by_user.get(owner_id, 0) + 1
+        for member_id in league.get("members") or []:
+            if member_id and member_id != owner_id:
+                leagues_count_by_user[member_id] = leagues_count_by_user.get(member_id, 0) + 1
+
+    rows = []
+    for user in users:
+        user_id = user.get("id")
+        rows.append(
+            {
+                **user,
+                "predictions_count": prediction_counts_by_user.get(user_id, 0),
+                "leagues_count": leagues_count_by_user.get(user_id, 0),
+                "last_prediction_at": last_prediction_by_user.get(user_id),
+            }
+        )
+    return rows
+
+
+async def recent_user_dashboard_rows(users: list[dict]) -> list[dict]:
+    user_ids = [user["id"] for user in users if user.get("id")]
+    if not user_ids:
+        return recent_user_dashboard_payloads(users, [], [])
+
+    predictions = await db.predictions.find(
+        {"user_id": {"$in": user_ids}},
+        {
+            "_id": 0,
+            "user_id": 1,
+            "created_at": 1,
+            "updated_at": 1,
+            "main_updated_at": 1,
+            "sprint_updated_at": 1,
+        },
+    ).to_list(5000)
+    leagues = await db.leagues.find(
+        {"$or": [{"created_by": {"$in": user_ids}}, {"members": {"$in": user_ids}}]},
+        {"_id": 0, "created_by": 1, "members": 1},
+    ).to_list(5000)
+    return recent_user_dashboard_payloads(users, predictions, leagues)
 
 
 async def user_admin_stats(user_id: str, user: dict | None = None) -> dict:

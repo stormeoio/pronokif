@@ -4,8 +4,8 @@
  */
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Check, Flag, Zap, Gamepad2, Trophy, Medal } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Check, Flag, Zap, Gamepad2, Trophy, Medal, CircleDot, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import DriverPicker from "./DriverPicker";
 import type { Driver } from "./DriverPicker";
@@ -286,18 +286,24 @@ export default function PredictionForm({
   const showBonus =
     activeTab === "sprint" ? selectionMode === "sprint_bonus" : selectionMode === "bonus";
   const bonusModeKey = activeTab === "sprint" ? "sprint_bonus" : "bonus";
+  const bonusStep = steps.find((step) => step.isBonus);
   const activeStep =
-    steps.find((step) => selectionMode === step.key || (step.isBonus && showBonus)) ?? steps[0];
+    steps.find((step) => selectionMode === step.key || (step.isBonus && showBonus)) ??
+    ((selectionMode.includes("fastest") ||
+      selectionMode.includes("corner") ||
+      selectionMode.includes("dnf")) &&
+    bonusStep
+      ? bonusStep
+      : steps[0]);
   const activeStepKey = `${activeTab}:${activeStep.key}`;
   const coreSteps = steps.filter((step) => !step.isBonus && !step.isMinigames);
   const completedCore = coreSteps.filter((step) => step.done).length;
   const completedAll = steps.filter((step) => step.done).length;
   const progress = Math.round((completedCore / coreSteps.length) * 100);
-  const quickSteps = steps.filter((step) => !step.isMinigames);
   const nextMissingStep = coreSteps.find((step) => !step.done);
   const isCoreReady = completedCore === coreSteps.length;
 
-  const stageGroups = [
+  const stageSections = [
     {
       key: "qualifying",
       label:
@@ -308,6 +314,8 @@ export default function PredictionForm({
       active: selectionMode.includes("quali"),
       count: (coreSteps[0]?.done ? 1 : 0) + (coreSteps[1]?.done ? 1 : 0),
       max: 2,
+      modeKey: coreSteps[0]?.key,
+      steps: coreSteps.slice(0, 2),
     },
     {
       key: "race",
@@ -319,6 +327,8 @@ export default function PredictionForm({
       active: selectionMode.includes("race") || selectionMode === "race_winner",
       count: (coreSteps[2]?.done ? 1 : 0) + (coreSteps[3]?.done ? 1 : 0),
       max: 2,
+      modeKey: coreSteps[2]?.key,
+      steps: coreSteps.slice(2, 4),
     },
     {
       key: "bonus",
@@ -332,6 +342,8 @@ export default function PredictionForm({
       count:
         activeTab === "sprint" ? (isSprintBonusCompletee ? 1 : 0) : isMainBonusCompletee ? 1 : 0,
       max: 1,
+      modeKey: bonusModeKey,
+      steps: steps.filter((step) => step.isBonus),
     },
     {
       key: "minigames",
@@ -340,6 +352,8 @@ export default function PredictionForm({
       active: false,
       count: minigamesCompletee ? 1 : 0,
       max: 1,
+      modeKey: "",
+      steps: [],
     },
   ];
 
@@ -365,10 +379,14 @@ export default function PredictionForm({
       return;
     }
 
-    const scrollIntoView = wizardRef.current?.scrollIntoView;
-    if (typeof scrollIntoView === "function") {
-      scrollIntoView.call(wizardRef.current, { behavior: "smooth", block: "start" });
-    }
+    const timer = window.setTimeout(() => {
+      const scrollIntoView = wizardRef.current?.scrollIntoView;
+      if (typeof scrollIntoView === "function") {
+        scrollIntoView.call(wizardRef.current, { behavior: "smooth", block: "start" });
+      }
+    }, 80);
+
+    return () => window.clearTimeout(timer);
   }, [activeStepKey]);
 
   // -- Position helper for DriverPicker -----------------------------------
@@ -397,6 +415,19 @@ export default function PredictionForm({
 
   const driverName = (driverId: string | null): string =>
     drivers.find((driver) => driver.id === driverId)?.name ?? t("predictions.form.to_choose");
+
+  const compactDriverName = (driverId: string): string => {
+    const name = driverName(driverId);
+    const initials = name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase();
+
+    return initials || name;
+  };
 
   const currentOrderedSelection = (): string[] => {
     switch (selectionMode) {
@@ -447,226 +478,258 @@ export default function PredictionForm({
     selectionMode.includes("dnf") ||
     (!!singleSelection && !showBonus);
   const slotCount = selectionMode.includes("dnf") ? 5 : selectionMode.includes("top10") ? 10 : 1;
-  const slotGridClass = slotCount === 1 ? "grid-cols-1" : "grid-cols-2";
+  const slotGridClass = slotCount === 1 ? "grid-cols-1" : "grid-cols-5";
 
   // -- Render -------------------------------------------------------------
   return (
     <>
       <motion.section
         ref={wizardRef}
-        className="card-arcade overflow-hidden border-l-4 border-pk-red"
+        className="relative overflow-hidden rounded-md border border-white/[0.08] bg-pk-surface shadow-[0_12px_32px_rgba(0,0,0,0.18)]"
         initial="hidden"
         animate="visible"
         variants={fadeUp}
+        data-testid="prediction-wizard"
       >
-        <div className="border-b border-white/[0.08] p-4">
-          <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-pk-red via-pk-red to-transparent" />
+        <div className="relative border-b border-white/[0.08] bg-[radial-gradient(circle_at_12%_0%,rgba(225,6,0,0.12),transparent_30%)] px-3 py-3">
+          <div className="mb-2 flex items-center justify-between gap-3">
             <div>
-              <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-red">
+              <p className="font-data text-[0.5rem] uppercase tracking-[0.16em] text-pk-red">
                 {t("predictions.form.guided_path")}
               </p>
-              <h2 className="font-heading text-lg uppercase text-white">
+              <h2 className="font-heading text-[0.95rem] uppercase leading-tight text-white">
                 {t("predictions.form.build_ticket")}
               </h2>
             </div>
-            <div className="text-right">
-              <p className="font-data text-2xl text-white tabular-nums">{progress}%</p>
-              <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-titane">
+            <div className="shrink-0 text-right">
+              <p className="font-data text-lg leading-none text-white tabular-nums">{progress}%</p>
+              <p className="mt-1 font-data text-[0.5rem] uppercase tracking-[0.12em] text-pk-titane">
                 {completedCore}/{coreSteps.length} {t("predictions.form.essential")}
               </p>
             </div>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-sm bg-white/[0.05]">
+          <div className="h-1 overflow-hidden rounded-sm bg-white/[0.05]">
             <div
-              className="h-full rounded-sm bg-pk-red transition-all duration-pk-medium"
+              className="h-full rounded-sm bg-gradient-to-r from-pk-red to-[#ff463f] transition-all duration-pk-medium"
               style={{ width: `${progress}%` }}
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 border-b border-white/[0.08] sm:grid-cols-4">
-          {stageGroups.map((stage, index) => (
-            <button
-              key={stage.key}
-              type="button"
-              onClick={() => {
-                if (stage.key === "qualifying") setSelectionMode(coreSteps[0].key);
-                if (stage.key === "race") setSelectionMode(coreSteps[2].key);
-                if (stage.key === "bonus") setSelectionMode(bonusModeKey);
-                if (stage.key === "minigames") navigate("/minigames");
-              }}
-              aria-current={stage.active ? "step" : undefined}
-              className={`group relative min-h-[78px] border-b border-r border-white/[0.06] px-3 py-3 text-left transition-colors last:border-r-0 sm:border-b-0 ${
-                stage.active ? "bg-white/[0.055]" : "bg-transparent hover:bg-white/[0.025]"
-              }`}
-              data-testid={`stage-${stage.key}`}
-            >
-              <span
-                className={`mb-2 flex h-6 w-6 items-center justify-center rounded-sm border font-data text-[10px] ${
-                  stage.done
-                    ? "border-pk-emerald/40 bg-pk-emerald/10 text-pk-emerald"
-                    : stage.active
-                      ? "border-pk-red/40 bg-pk-red-subtle text-pk-red"
-                      : "border-white/[0.08] text-pk-titane"
-                }`}
-              >
-                {stage.done ? <Check className="h-3.5 w-3.5" /> : index + 1}
-              </span>
-              <p className="truncate font-display text-[0.66rem] uppercase leading-none text-white">
-                {stage.label}
-              </p>
-              <p className="font-data text-[0.55rem] text-pk-titane">
-                {stage.count}/{stage.max}
-              </p>
-              {stage.active && (
-                <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-sm bg-pk-red" />
-              )}
-            </button>
-          ))}
-        </div>
-
-        <div className="p-4">
-          <div className="rounded-md border border-white/[0.08] bg-white/[0.035] p-3 shadow-[inset_3px_0_0_rgba(225,6,0,0.55)]">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-titane">
-                  {t("predictions.form.active_step")}
-                </p>
-                <h3 className="mt-1 font-heading text-xl uppercase text-white">
-                  {activeStep.label}
-                  <span className="ml-2 text-pk-titane">{activeStep.sublabel}</span>
-                </h3>
-                <p className="mt-2 font-body text-xs leading-5 text-pk-titane">
-                  {stepHelp(selectionMode, activeTab, t)}
-                </p>
-              </div>
-              <span
-                className={`shrink-0 rounded-sm border px-2 py-1 font-data text-[10px] uppercase ${
-                  activeStep.done
-                    ? "border-pk-emerald/30 bg-pk-emerald/10 text-pk-emerald"
-                    : "border-pk-red/30 bg-pk-red-subtle text-pk-red"
-                }`}
-              >
-                {activeStep.done
-                  ? t("predictions.form.validated")
-                  : `${activeStep.count}/${activeStep.max || 1}`}
-              </span>
-            </div>
-
-            {showSlots && (
-              <div className={`mt-3 grid ${slotGridClass} gap-2`}>
-                {Array.from({ length: slotCount }).map((_, index) => {
-                  const driverId =
-                    orderedSelection[index] ?? (slotCount === 1 ? singleSelection : null);
-                  return (
-                    <div
-                      key={`${selectionMode}-${index}`}
-                      className={`min-h-[46px] rounded-sm border px-2.5 py-2 ${
-                        driverId
-                          ? "border-pk-red/25 bg-pk-red-subtle"
-                          : "border-white/[0.08] bg-black/20"
-                      }`}
-                    >
-                      <p className="font-data text-[10px] text-pk-titane">
-                        {selectionMode.includes("dnf") ? `DNF ${index + 1}` : `P${index + 1}`}
-                      </p>
-                      <p className="truncate font-body text-xs text-white">
-                        {driverId ? driverName(driverId) : t("predictions.form.free_slot")}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
+        <div className="p-3">
           <div
-            className="mt-3 grid grid-cols-2 gap-2"
-            role="tablist"
+            className="space-y-1.5"
+            role="list"
             aria-label={t("predictions.form.quick_steps_label")}
+            data-testid="prediction-step-accordion"
           >
-            {quickSteps.map((step) => {
-              const Icon = step.icon;
-              const isActive = selectionMode === step.key || !!(step.isBonus && showBonus);
-              const tone = stepTone(step, isActive, activeTab);
+            {stageSections.map((stage, index) => {
+              const expanded = stage.active;
+              const isLast = index === stageSections.length - 1;
 
               return (
-                <motion.button
-                  key={step.key}
-                  role="tab"
-                  aria-selected={isActive}
-                  aria-label={`${step.label} ${step.sublabel}`}
-                  onClick={() => {
-                    haptic("selection");
-                    setSelectionMode(step.isBonus ? bonusModeKey : step.key);
-                  }}
-                  className={`flex min-h-[78px] items-center gap-3 rounded-md border p-3 text-left transition-all hover:-translate-y-0.5 hover:border-white/[0.16] ${tone.bg} ${tone.border}`}
-                  data-testid={`step-${step.key}`}
-                  variants={fadeUp}
-                  whileTap={{ scale: 0.96 }}
-                >
-                  <Icon className={`h-5 w-5 shrink-0 ${tone.icon}`} />
-                  <div className="min-w-0">
-                    <p className={`font-display text-[0.7rem] uppercase ${tone.label}`}>
-                      {step.label}
-                    </p>
-                    <p className="font-data text-[0.55rem] uppercase text-pk-titane">
-                      {step.sublabel}
-                    </p>
-                    {!step.isBonus && (
-                      <p className="mt-1 font-data text-xs text-pk-titane">
-                        {step.count}/{step.max}
-                      </p>
-                    )}
-                    {step.isBonus && (
-                      <p className="mt-1 font-data text-xs text-pk-titane">
-                        {step.done ? "3/3" : t("predictions.form.todo")}
-                      </p>
-                    )}
+                <div key={stage.key} className="relative" role="listitem">
+                  {!isLast && (
+                    <span
+                      className={`absolute bottom-[-0.375rem] left-[1.0625rem] top-9 w-px ${
+                        stage.done ? "bg-pk-emerald/35" : "bg-white/[0.08]"
+                      }`}
+                      aria-hidden="true"
+                    />
+                  )}
+                  <div
+                    className={`relative overflow-hidden rounded-md border transition-colors ${
+                      expanded
+                        ? "border-pk-red/30 bg-white/[0.035] shadow-[inset_2px_0_0_rgba(225,6,0,0.55)]"
+                        : stage.done
+                          ? "border-pk-emerald/25 bg-pk-emerald/[0.04]"
+                          : "border-white/[0.08] bg-black/20"
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        haptic("selection");
+                        if (stage.key === "minigames") {
+                          navigate("/minigames");
+                          return;
+                        }
+                        if (stage.modeKey) setSelectionMode(stage.modeKey);
+                      }}
+                      aria-current={expanded ? "step" : undefined}
+                      aria-expanded={expanded}
+                      className="flex min-h-[44px] w-full items-center gap-2.5 px-2.5 py-2 text-left"
+                      data-testid={`stage-${stage.key}`}
+                    >
+                      <span
+                        className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border font-data text-[0.625rem] ${
+                          stage.done
+                            ? "border-pk-emerald/40 bg-pk-emerald/10 text-pk-emerald"
+                            : expanded
+                              ? "border-pk-red/45 bg-pk-red-subtle text-pk-red"
+                              : "border-white/[0.1] bg-pk-surface text-pk-titane"
+                        }`}
+                      >
+                        {stage.done ? <Check className="h-3.5 w-3.5" /> : index + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-display text-[0.72rem] uppercase leading-none text-white">
+                          {stage.label}
+                        </p>
+                        <p
+                          className={`mt-1 font-data text-[0.52rem] uppercase leading-none ${
+                            stage.done ? "text-pk-emerald" : "text-pk-titane"
+                          }`}
+                        >
+                          {stage.count}/{stage.max}
+                        </p>
+                      </div>
+                      <ChevronRight
+                        size={14}
+                        strokeWidth={1.8}
+                        className={`shrink-0 text-pk-titane transition-transform duration-pk-short ${
+                          expanded ? "rotate-90 text-pk-red" : ""
+                        }`}
+                      />
+                    </button>
+
+                    <AnimatePresence initial={false}>
+                      {expanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                          className="overflow-hidden"
+                        >
+                          <div
+                            className="space-y-1.5 border-t border-white/[0.08] px-2.5 py-2"
+                            role="tablist"
+                            aria-label={stage.label}
+                          >
+                            {stage.steps.map((step) => {
+                              const Icon = step.icon;
+                              const isActive =
+                                selectionMode === step.key || !!(step.isBonus && showBonus);
+                              const tone = stepTone(step, isActive, activeTab);
+
+                              return (
+                                <motion.button
+                                  key={step.key}
+                                  role="tab"
+                                  aria-selected={isActive}
+                                  aria-label={`${step.label} ${step.sublabel}`}
+                                  onClick={() => {
+                                    haptic("selection");
+                                    setSelectionMode(step.isBonus ? bonusModeKey : step.key);
+                                  }}
+                                  className={`flex min-h-[36px] w-full items-center gap-2 rounded-sm border px-2 py-1.5 text-left transition-all hover:border-white/[0.16] ${tone.bg} ${tone.border}`}
+                                  data-testid={`step-${step.key}`}
+                                  whileTap={{ scale: 0.98 }}
+                                >
+                                  <Icon className={`h-3.5 w-3.5 shrink-0 ${tone.icon}`} />
+                                  <div className="min-w-0 flex-1">
+                                    <p
+                                      className={`truncate font-display text-[0.6rem] uppercase ${tone.label}`}
+                                    >
+                                      {step.label}
+                                    </p>
+                                    <p className="truncate font-data text-[0.48rem] uppercase text-pk-titane">
+                                      {step.sublabel}
+                                    </p>
+                                  </div>
+                                  <span className="shrink-0 rounded-sm bg-black/20 px-1.5 py-0.5 font-data text-[0.54rem] text-pk-titane">
+                                    {step.isBonus
+                                      ? step.done
+                                        ? "3/3"
+                                        : t("predictions.form.todo")
+                                      : `${step.count}/${step.max}`}
+                                  </span>
+                                </motion.button>
+                              );
+                            })}
+
+                            <div className="rounded-sm border border-white/[0.08] bg-black/20 px-2.5 py-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <p className="flex items-center gap-1.5 font-data text-[0.48rem] uppercase tracking-[0.14em] text-pk-titane">
+                                    <CircleDot
+                                      size={11}
+                                      strokeWidth={1.8}
+                                      className="text-pk-red"
+                                    />
+                                    {t("predictions.form.active_step")}
+                                  </p>
+                                  <p className="mt-1 truncate font-body text-[0.72rem] leading-4 text-pk-titane">
+                                    {stepHelp(selectionMode, activeTab, t)}
+                                  </p>
+                                </div>
+                                <span
+                                  className={`shrink-0 rounded-sm border px-2 py-1 font-data text-[0.54rem] uppercase ${
+                                    activeStep.done
+                                      ? "border-pk-emerald/30 bg-pk-emerald/10 text-pk-emerald"
+                                      : "border-pk-red/30 bg-pk-red-subtle text-pk-red"
+                                  }`}
+                                >
+                                  {activeStep.done
+                                    ? t("predictions.form.validated")
+                                    : activeStep.isBonus
+                                      ? t("predictions.form.todo")
+                                      : `${activeStep.count}/${activeStep.max || 1}`}
+                                </span>
+                              </div>
+
+                              {showSlots && (
+                                <div className={`mt-2 grid ${slotGridClass} gap-1.5`}>
+                                  {Array.from({ length: slotCount }).map((_, slotIndex) => {
+                                    const driverId =
+                                      orderedSelection[slotIndex] ??
+                                      (slotCount === 1 ? singleSelection : null);
+                                    return (
+                                      <div
+                                        key={`${selectionMode}-${slotIndex}`}
+                                        className={`min-h-[34px] rounded-sm border px-2 py-1.5 transition-colors ${
+                                          driverId
+                                            ? "border-pk-red/25 bg-pk-red-subtle"
+                                            : "border-white/[0.08] bg-black/20"
+                                        }`}
+                                      >
+                                        <p className="font-data text-[0.5rem] leading-none text-pk-titane">
+                                          {selectionMode.includes("dnf")
+                                            ? `DNF ${slotIndex + 1}`
+                                            : `P${slotIndex + 1}`}
+                                        </p>
+                                        <p className="mt-1 truncate font-data text-[0.625rem] uppercase leading-none text-white">
+                                          {driverId
+                                            ? slotCount === 1
+                                              ? driverName(driverId)
+                                              : compactDriverName(driverId)
+                                            : t("predictions.form.free_slot")}
+                                        </p>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
-                </motion.button>
+                </div>
               );
             })}
-            <button
-              type="button"
-              onClick={() => navigate("/minigames")}
-              className={`flex min-h-[78px] items-center gap-3 rounded-md border p-3 text-left transition-all hover:-translate-y-0.5 hover:border-white/[0.16] ${
-                minigamesCompletee
-                  ? "border-pk-emerald/30 bg-pk-emerald/[0.08]"
-                  : "border-pk-info/30 bg-pk-info/[0.06]"
-              }`}
-              data-testid="step-minigames"
-            >
-              <Gamepad2
-                className={`h-5 w-5 shrink-0 ${
-                  minigamesCompletee ? "text-pk-emerald" : "text-pk-info"
-                }`}
-              />
-              <div>
-                <p
-                  className={`font-display text-[0.7rem] uppercase ${
-                    minigamesCompletee ? "text-pk-emerald" : "text-pk-info"
-                  }`}
-                >
-                  {t("predictions.form.games")}
-                </p>
-                <p className="font-data text-[0.55rem] uppercase text-pk-titane">
-                  {t("predictions.form.mini")}
-                </p>
-                <p className="mt-1 font-data text-xs text-pk-titane">
-                  {minigamesCompletee ? t("predictions.form.done") : t("predictions.form.optional")}
-                </p>
-              </div>
-            </button>
           </div>
 
-          <div className="mt-3 rounded-md border border-white/[0.08] bg-black/20 p-3">
-            <div className="flex items-center justify-between gap-3">
+          <div className="mt-2 rounded-md border border-white/[0.08] bg-black/20 px-3 py-2">
+            <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-titane">
+                <p className="font-data text-[0.5rem] uppercase tracking-[0.14em] text-pk-titane">
                   {t("predictions.form.ticket_status")}
                 </p>
-                <p className="mt-1 font-body text-xs text-gray-300">
+                <p className="mt-0.5 truncate font-body text-[0.72rem] text-gray-300">
                   {isCoreReady
                     ? t("predictions.form.ticket_ready")
                     : nextMissingStep
@@ -681,13 +744,23 @@ export default function PredictionForm({
                 {completedAll}/{steps.length}
               </span>
             </div>
+            {!isCoreReady && nextMissingStep && (
+              <button
+                type="button"
+                onClick={() => setSelectionMode(nextMissingStep.key)}
+                className="mt-2 flex h-9 w-full items-center justify-center gap-2 rounded-sm border border-pk-red/25 bg-pk-red-subtle font-display text-[0.7rem] uppercase text-pk-red transition-colors hover:border-pk-red/45"
+                data-testid="next-missing-step-btn"
+              >
+                {t("predictions.form.continue_to_next")}
+                <ChevronRight size={14} strokeWidth={2} />
+              </button>
+            )}
           </div>
         </div>
       </motion.section>
 
       {/* Selection Info */}
       <SelectionInfo
-        activeTab={activeTab}
         selectionMode={selectionMode}
         sprintQualiTop10={sprintQualiTop10}
         sprintRaceTop10={sprintRaceTop10}

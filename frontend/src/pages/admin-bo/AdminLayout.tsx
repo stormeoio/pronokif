@@ -187,17 +187,31 @@ export default function AdminLayout() {
     navigate(ADMIN_AUTH_PATH);
   };
 
-  const handleSelectTab = (destination: AdminDestinationKey) => {
+  const handleSelectTab = (destination: AdminDestinationKey, entityId?: string | null) => {
     const nextSelection = normalizeDestination(destination);
     setActiveTab(nextSelection.tab);
     setActiveDevOpsSection(nextSelection.devOpsSection);
     setSidebarOpen(false);
     const searchParams = new URLSearchParams(location.search);
+    searchParams.delete("race");
+    searchParams.delete("user");
+    searchParams.delete("prediction");
     searchParams.set("tab", nextSelection.tab);
     if (nextSelection.tab === "devops") {
       searchParams.set("devops", nextSelection.devOpsSection);
     } else {
       searchParams.delete("devops");
+    }
+    if (entityId) {
+      if (nextSelection.tab === "races" || nextSelection.tab === "scoring") {
+        searchParams.set("race", entityId);
+      }
+      if (nextSelection.tab === "users") {
+        searchParams.set("user", entityId);
+      }
+      if (nextSelection.tab === "predictions") {
+        searchParams.set("prediction", entityId);
+      }
     }
     navigate({ pathname: "/admin", search: `?${searchParams.toString()}` }, { replace: true });
     window.requestAnimationFrame(() => {
@@ -270,15 +284,22 @@ export default function AdminLayout() {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-4 border-b border-white/[0.08]">
-            <div className="min-w-0">
+            <button
+              type="button"
+              onClick={() => handleSelectTab("dashboard")}
+              className="group min-w-0 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pk-red/40"
+              aria-label="Retour au tableau de bord admin"
+              title="Retour au tableau de bord"
+              data-testid="admin-logo-home"
+            >
               <img
                 src={brandAssets.wordmarkWhiteRed}
                 alt="PronoKif"
-                className="h-6 w-auto max-w-[154px] object-contain"
+                className="h-6 w-auto max-w-[154px] object-contain transition-opacity group-hover:opacity-85"
                 draggable={false}
               />
               <p className="mt-1 text-[10px] text-pk-titane font-body">Administration</p>
-            </div>
+            </button>
           </div>
 
           {/* Nav items */}

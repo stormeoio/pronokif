@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Edit2, Trash2, Loader2, Trophy, RefreshCw, Flag, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { adminApi } from "../adminApi";
+import { AdminMediaThumbnailPicker } from "../AdminMediaThumbnailPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -34,7 +35,13 @@ export default function ChampionshipsTab() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Championship | null>(null);
-  const [form, setForm] = useState({ name: "", season: 2026, description: "", is_active: true });
+  const [form, setForm] = useState({
+    name: "",
+    season: 2026,
+    description: "",
+    thumbnail_url: "",
+    is_active: true,
+  });
 
   const { data: championships = [], isLoading } = useQuery({
     queryKey: ["admin-bo", "championships"],
@@ -66,7 +73,7 @@ export default function ChampionshipsTab() {
       }
       setShowForm(false);
       setEditing(null);
-      setForm({ name: "", season: 2026, description: "", is_active: true });
+      setForm({ name: "", season: 2026, description: "", thumbnail_url: "", is_active: true });
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "championships"] });
     } catch {
       toast.error("Erreur");
@@ -79,6 +86,7 @@ export default function ChampionshipsTab() {
       name: champ.name,
       season: champ.season,
       description: champ.description || "",
+      thumbnail_url: champ.thumbnail_url || "",
       is_active: champ.is_active,
     });
     setShowForm(true);
@@ -119,7 +127,13 @@ export default function ChampionshipsTab() {
             onClick={() => {
               setShowForm(!showForm);
               setEditing(null);
-              setForm({ name: "", season: 2026, description: "", is_active: true });
+              setForm({
+                name: "",
+                season: 2026,
+                description: "",
+                thumbnail_url: "",
+                is_active: true,
+              });
             }}
             className="btn-racing text-xs"
             size="sm"
@@ -162,6 +176,15 @@ export default function ChampionshipsTab() {
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             placeholder="Description (optionnel)"
             className="bg-gray-900 border-gray-700 text-white"
+          />
+          <AdminMediaThumbnailPicker
+            value={form.thumbnail_url}
+            onValueChange={(thumbnail_url) => setForm({ ...form, thumbnail_url })}
+            entityType="championship"
+            entityId={editing?.id}
+            folder="championnats"
+            label="Vignette championnat"
+            testId="championship-thumbnail-picker"
           />
           <label className="flex items-center gap-2 text-sm text-gray-400">
             <input

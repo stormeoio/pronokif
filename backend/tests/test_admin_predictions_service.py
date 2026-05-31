@@ -40,6 +40,56 @@ def test_prediction_batch_update_payload_requires_review_status():
     assert exc.value.status_code == 400
 
 
+def test_prediction_activity_since_query_checks_all_submission_markers():
+    query = admin_predictions.prediction_activity_since_query("2026-05-30T00:00:00+00:00")
+
+    assert query == {
+        "$or": [
+            {"updated_at": {"$gte": "2026-05-30T00:00:00+00:00"}},
+            {"main_updated_at": {"$gte": "2026-05-30T00:00:00+00:00"}},
+            {"sprint_updated_at": {"$gte": "2026-05-30T00:00:00+00:00"}},
+            {"created_at": {"$gte": "2026-05-30T00:00:00+00:00"}},
+        ]
+    }
+
+
+@pytest.mark.asyncio
+async def test_prediction_query_supports_attention_review_queue():
+    query = await admin_predictions._prediction_query_from_admin_filters(
+        user_id=None,
+        race_id=None,
+        championship_id=None,
+        q="",
+        review_status="attention",
+        submitted_after=None,
+        locked=None,
+    )
+
+    assert query["review_status"] == {
+        "$in": list(admin_predictions.REVIEW_ATTENTION_STATUSES)
+    }
+
+
+@pytest.mark.asyncio
+async def test_prediction_query_supports_submitted_after_filter():
+    query = await admin_predictions._prediction_query_from_admin_filters(
+        user_id="user-1",
+        race_id=None,
+        championship_id=None,
+        q="",
+        review_status=None,
+        submitted_after="2026-05-30T00:00:00+00:00",
+        locked=None,
+    )
+
+    assert query == {
+        "$and": [
+            {"user_id": "user-1"},
+            admin_predictions.prediction_activity_since_query("2026-05-30T00:00:00+00:00"),
+        ]
+    }
+
+
 def test_score_ledger_row_normalizes_official_and_custom_scores():
     official = admin_predictions.score_ledger_row(
         {

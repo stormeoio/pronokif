@@ -1,3 +1,6 @@
+import pytest
+
+from services import knowledge_seed as knowledge_seed_service
 from services.championships import F1_2026_CHAMPIONSHIP_ID
 from services.knowledge_seed import (
     LOCAL_EMBEDDING_DIMENSIONS,
@@ -7,6 +10,29 @@ from services.knowledge_seed import (
     prediction_brief_from_context,
     team_brief_from_context,
 )
+
+
+class _FakeKnowledgeEntitiesCollection:
+    def __init__(self, document: dict) -> None:
+        self.document = document
+        self.last_update: tuple[dict, dict] | None = None
+
+    async def find_one(self, query: dict, projection: dict | None = None) -> dict | None:
+        if query.get("id") != self.document.get("id"):
+            return None
+        document = dict(self.document)
+        if projection == {"_id": 0}:
+            document.pop("_id", None)
+        return document
+
+    async def update_one(self, query: dict, update: dict) -> None:
+        self.last_update = (query, update)
+        self.document.update(update.get("$set", {}))
+
+
+class _FakeKnowledgeDb:
+    def __init__(self, document: dict) -> None:
+        self.knowledge_entities = _FakeKnowledgeEntitiesCollection(document)
 
 
 def _entities(bundle: dict, entity_type: str) -> list[dict]:
@@ -109,6 +135,9 @@ def test_prediction_brief_from_context_summarizes_race_circuit_and_location():
             "circuit": "Circuito de Madrid",
             "location": "Madrid",
             "timezone": "Europe/Madrid",
+            "visual": {"image_url": "/media/races/madrid.png", "url": "/media/races/madrid.png"},
+            "image_url": "/media/races/madrid.png",
+            "circuit_image_url": "/media/circuits/madrid.png",
         },
         "entities": [
             {
@@ -136,6 +165,8 @@ def test_prediction_brief_from_context_summarizes_race_circuit_and_location():
 
     assert brief["found"] is True
     assert brief["title"] == "Brief pronostic - Madrid Grand Prix"
+    assert brief["image_url"] == "/media/races/madrid.png"
+    assert brief["circuit_image_url"] == "/media/circuits/madrid.png"
     assert brief["source_document_ids"] == ["f1_2026:doc:race:madrid-2026:profile"]
     assert any(section["id"] == "prediction_focus" for section in brief["sections"])
 
@@ -150,6 +181,33 @@ def test_local_embedding_vector_is_deterministic_and_normalized():
     assert round(sum(value * value for value in first), 3) == 1.0
 
 
+@pytest.mark.asyncio
+async def test_update_knowledge_entity_accepts_admin_visual_metadata(monkeypatch):
+    fake_db = _FakeKnowledgeDb(
+        {
+            "_id": "mongo-id",
+            "id": "f1_2026:team:mclaren",
+            "name": "McLaren",
+            "entity_type": "team",
+            "admin_locked_fields": ["name"],
+        }
+    )
+    monkeypatch.setattr(knowledge_seed_service, "db", fake_db)
+
+    entity = await knowledge_seed_service.update_knowledge_entity(
+        "f1_2026:team:mclaren",
+        {"visual": {"logo_url": "/api/admin-bo/media/media-1/file"}},
+        actor="admin@pronokif.eu",
+    )
+
+    assert entity["visual"]["logo_url"] == "/api/admin-bo/media/media-1/file"
+    assert fake_db.knowledge_entities.last_update is not None
+    update = fake_db.knowledge_entities.last_update[1]["$set"]
+    assert update["visual"] == {"logo_url": "/api/admin-bo/media/media-1/file"}
+    assert "visual" in update["admin_locked_fields"]
+    assert update["admin_managed"] is True
+
+
 def test_team_brief_from_context_summarizes_drivers_and_technical_data():
     context = {
         "team_id": "mclaren",
@@ -158,8 +216,13 @@ def test_team_brief_from_context_summarizes_drivers_and_technical_data():
         "summary": {
             "team": "McLaren",
             "full_team_name": "McLaren Mastercard F1 Team",
+            "visual": {"logo_url": "/media/teams/mclaren.png", "url": "/media/teams/mclaren.png"},
+            "logo_url": "/media/teams/mclaren.png",
             "base": {"city": "Woking", "country": "United Kingdom"},
-            "drivers": [{"name": "Lando Norris"}, {"name": "Oscar Piastri"}],
+            "drivers": [
+                {"name": "Lando Norris", "photo_url": "/media/drivers/norris.png"},
+                {"name": "Oscar Piastri", "photo_url": "/media/drivers/piastri.png"},
+            ],
             "chassis": "MCL40",
             "power_unit": "Mercedes",
             "team_chief": "Andrea Stella",
@@ -172,6 +235,7 @@ def test_team_brief_from_context_summarizes_drivers_and_technical_data():
     brief = team_brief_from_context(context)
 
     assert brief["title"] == "Brief ecurie - McLaren"
+    assert brief["logo_url"] == "/media/teams/mclaren.png"
     assert "Lando Norris" in brief["sections"][1]["content"]
     assert "MCL40" in brief["sections"][2]["content"]
 
@@ -186,7 +250,10 @@ def test_driver_brief_from_context_summarizes_team_links():
             "code": "NOR",
             "number": 1,
             "country": "Royaume-Uni",
+            "visual": {"photo_url": "/media/drivers/norris.png", "url": "/media/drivers/norris.png"},
+            "photo_url": "/media/drivers/norris.png",
             "team": "McLaren",
+            "team_logo_url": "/media/teams/mclaren.png",
             "chassis": "MCL40",
             "power_unit": "Mercedes",
         },
@@ -197,5 +264,7 @@ def test_driver_brief_from_context_summarizes_team_links():
     brief = driver_brief_from_context(context)
 
     assert brief["title"] == "Brief pilote - Lando Norris"
+    assert brief["photo_url"] == "/media/drivers/norris.png"
+    assert brief["team_logo_url"] == "/media/teams/mclaren.png"
     assert "NOR" in brief["sections"][0]["content"]
     assert "McLaren" in brief["sections"][1]["content"]

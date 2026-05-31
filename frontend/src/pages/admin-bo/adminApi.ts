@@ -12,6 +12,11 @@ const api = axios.create({
   withCredentials: true,
 });
 
+type MediaListParams = {
+  entityType?: string;
+  folder?: string;
+};
+
 export const adminApi = {
   // Auth
   sendMagicLink: (email: string) => api.post("/auth/magic-link", { email }),
@@ -209,6 +214,7 @@ export const adminApi = {
       q?: string;
       status?: string;
       review_status?: string;
+      submitted_after?: string;
       locked?: boolean;
       skip?: number;
       limit?: number;
@@ -220,6 +226,7 @@ export const adminApi = {
       q?: string;
       status?: string;
       review_status?: string;
+      submitted_after?: string;
       locked?: boolean;
     }) => api.get("/predictions/analytics", { params }).then((r) => r.data),
     exportCsv: (params?: {
@@ -229,6 +236,7 @@ export const adminApi = {
       q?: string;
       status?: string;
       review_status?: string;
+      submitted_after?: string;
       locked?: boolean;
       export_limit?: number;
     }) => api.get("/predictions/export", { params, responseType: "blob" }).then((r) => r.data),
@@ -398,21 +406,33 @@ export const adminApi = {
 
   // Media
   media: {
-    list: (entityType?: string) =>
-      api
-        .get("/media", { params: entityType ? { entity_type: entityType } : {} })
-        .then((r) => r.data),
-    upload: (file: File, entityType?: string, entityId?: string) => {
+    list: (filters?: string | MediaListParams) => {
+      const params =
+        typeof filters === "string"
+          ? { entity_type: filters }
+          : {
+              ...(filters?.entityType ? { entity_type: filters.entityType } : {}),
+              ...(filters?.folder ? { folder: filters.folder } : {}),
+            };
+      return api.get("/media", { params }).then((r) => r.data);
+    },
+    folders: () => api.get("/media/folders").then((r) => r.data),
+    renameFolder: (data: { from_folder: string; to_folder: string }) =>
+      api.put("/media/folders/rename", data).then((r) => r.data),
+    upload: (file: File, entityType?: string, entityId?: string, folder?: string) => {
       const formData = new FormData();
       formData.append("file", file);
       if (entityType) formData.append("entity_type", entityType);
       if (entityId) formData.append("entity_id", entityId);
+      if (folder) formData.append("folder", folder);
       return api
         .post("/media/upload", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         })
         .then((r) => r.data);
     },
+    update: (id: string, data: { folder?: string; entity_type?: string; entity_id?: string }) =>
+      api.patch(`/media/${id}`, data).then((r) => r.data),
     delete: (id: string) => api.delete(`/media/${id}`).then((r) => r.data),
     fileUrl: (id: string) => `${BACKEND_URL}/api/admin-bo/media/${id}/file`,
   },

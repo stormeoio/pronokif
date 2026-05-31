@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from fastapi import HTTPException
@@ -15,6 +16,9 @@ from services.race_calendar import (
 )
 from services.scoring import calculate_points
 from services.scoring_reconciliation import score_championship_query
+
+PREDICTION_ACTIVITY_FIELDS = ("updated_at", "main_updated_at", "sprint_updated_at", "created_at")
+REVIEW_ATTENTION_STATUSES = ("in_review", "needs_review", "flagged")
 
 
 def _and_query(*clauses: dict | None) -> dict:
@@ -318,6 +322,28 @@ def prediction_score_preview(prediction: dict, result_doc: dict | None) -> dict 
     }
 
 
+def prediction_activity_timestamp(prediction: dict) -> str | None:
+    values = [
+        prediction.get("updated_at"),
+        prediction.get("main_updated_at"),
+        prediction.get("sprint_updated_at"),
+        prediction.get("created_at"),
+    ]
+    timestamps = [
+        value.isoformat() if isinstance(value, datetime) else str(value)
+        for value in values
+        if value
+    ]
+    return max(timestamps) if timestamps else None
+
+
+def prediction_activity_since_query(submitted_after: str | None) -> dict | None:
+    value = (submitted_after or "").strip()
+    if not value:
+        return None
+    return {"$or": [{field: {"$gte": value}} for field in PREDICTION_ACTIVITY_FIELDS]}
+
+
 def prediction_admin_payload(
     prediction: dict,
     *,
@@ -329,6 +355,7 @@ def prediction_admin_payload(
     user_doc = user or {}
     missing_fields = prediction_missing_fields(prediction, race_doc)
     score_preview = prediction_score_preview(prediction, result_doc)
+    submitted_at = prediction_activity_timestamp(prediction)
     return {
         **prediction,
         "user": {
@@ -355,6 +382,7 @@ def prediction_admin_payload(
         },
         "race_name": race_doc.get("name"),
         "race_date": race_doc.get("date"),
+        "submitted_at": submitted_at,
         "is_complete": not missing_fields,
         "completion_status": "complete" if not missing_fields else "incomplete",
         "missing_fields": missing_fields,
@@ -602,6 +630,7 @@ async def _prediction_query_from_admin_filters(
     championship_id: str | None,
     q: str,
     review_status: str | None,
+    submitted_after: str | None,
     locked: bool | None,
 ) -> dict:
     query: dict[str, Any] = {}
@@ -610,7 +639,11 @@ async def _prediction_query_from_admin_filters(
     if race_id:
         query["race_id"] = race_id
     if review_status:
-        query["review_status"] = review_status
+        query["review_status"] = (
+            {"$in": list(REVIEW_ATTENTION_STATUSES)}
+            if review_status == "attention"
+            else review_status
+        )
     if locked is not None:
         query["locked"] = locked
     if championship_id:
@@ -646,6 +679,10 @@ async def _prediction_query_from_admin_filters(
         }
         query = {"$and": [query, search_query]} if query else search_query
 
+    activity_query = prediction_activity_since_query(submitted_after)
+    if activity_query:
+        query = _and_query(query, activity_query)
+
     return query
 
 
@@ -657,6 +694,7 @@ async def filtered_admin_predictions(
     q: str = "",
     status: str | None = None,
     review_status: str | None = None,
+    submitted_after: str | None = None,
     locked: bool | None = None,
     skip: int = 0,
     limit: int = 50,
@@ -670,6 +708,7 @@ async def filtered_admin_predictions(
         championship_id=championship_id,
         q=q.strip(),
         review_status=review_status,
+        submitted_after=submitted_after,
         locked=locked,
     )
 

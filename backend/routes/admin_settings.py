@@ -37,6 +37,8 @@ def default_app_settings() -> dict:
         "app_description": "F1 prediction game",
         "primary_color": "#f97316",
         "accent_color": "#06b6d4",
+        "logo_url": "",
+        "favicon_url": "",
         "maintenance_mode": False,
         "registration_open": True,
         "max_leagues_per_user": 5,
@@ -58,9 +60,7 @@ async def get_settings(admin: dict = Depends(get_current_admin)) -> dict:
 
 
 @router.put("/settings")
-async def update_settings(
-    data: AppSettings, admin: dict = Depends(get_current_admin)
-) -> dict:
+async def update_settings(data: AppSettings, admin: dict = Depends(get_current_admin)) -> dict:
     """Update app settings."""
     updates = {key: value for key, value in data.model_dump().items() if value is not None}
     if not updates:

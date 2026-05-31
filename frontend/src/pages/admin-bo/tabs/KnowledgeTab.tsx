@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { adminApi } from "../adminApi";
+import { AdminMediaThumbnailPicker } from "../AdminMediaThumbnailPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,6 +34,7 @@ type KnowledgeEntity = {
   admin_notes?: string;
   search_terms?: string[];
   linked_race_ids?: string[];
+  visual?: Record<string, string | null | undefined>;
   useful_links?: { label: string; url?: string; type: string }[];
 };
 
@@ -51,6 +53,11 @@ type KnowledgeDocument = {
 
 type PredictionBrief = {
   title: string;
+  visual?: Record<string, string | null | undefined>;
+  image_url?: string | null;
+  logo_url?: string | null;
+  photo_url?: string | null;
+  circuit_image_url?: string | null;
   sections: { id: string; title: string; content: string }[];
   source_document_ids?: string[];
 };
@@ -67,6 +74,7 @@ type EntityDraft = {
   review_status: string;
   owner_admin_email: string;
   admin_notes: string;
+  visual_url: string;
 };
 
 type DocumentDraft = {
@@ -107,6 +115,72 @@ function typeLabel(type: string) {
   return ENTITY_TYPES.find((item) => item.value === type)?.label || type;
 }
 
+function visualFieldForEntity(type: string) {
+  if (type === "driver") return "photo_url";
+  if (["team", "constructor", "technical_team"].includes(type)) return "logo_url";
+  return "image_url";
+}
+
+function visualFolderForEntity(type: string) {
+  if (type === "driver") return "drivers";
+  if (["team", "constructor", "technical_team"].includes(type)) return "teams";
+  if (type === "race") return "courses";
+  if (type === "circuit") return "circuits";
+  if (["location", "country"].includes(type)) return "locations";
+  if (["championship", "season"].includes(type)) return "championships";
+  return "knowledge";
+}
+
+function visualLabelForEntity(type: string) {
+  if (type === "driver") return "Photo pilote";
+  if (["team", "constructor", "technical_team"].includes(type)) return "Logo écurie";
+  if (type === "circuit") return "Image circuit";
+  if (type === "race") return "Image course";
+  return "Image entité";
+}
+
+function entityVisualUrl(entity: KnowledgeEntity) {
+  const visual = entity.visual || {};
+  const field = visualFieldForEntity(entity.entity_type);
+  return String(visual[field] || visual.image_url || visual.logo_url || visual.photo_url || "");
+}
+
+function entityVisualPayload(entity: KnowledgeEntity, nextUrl: string) {
+  const previousUrl = entityVisualUrl(entity);
+  const trimmedUrl = nextUrl.trim();
+  if (trimmedUrl === previousUrl) return undefined;
+
+  const field = visualFieldForEntity(entity.entity_type);
+  if (!trimmedUrl) {
+    return {
+      ...(entity.visual || {}),
+      image_url: null,
+      logo_url: null,
+      photo_url: null,
+    };
+  }
+
+  return {
+    ...(entity.visual || {}),
+    [field]: trimmedUrl,
+  };
+}
+
+function briefVisualUrl(brief: PredictionBrief) {
+  const visual = brief.visual || {};
+  return String(
+    brief.image_url ||
+      brief.logo_url ||
+      brief.photo_url ||
+      visual.url ||
+      visual.image_url ||
+      visual.logo_url ||
+      visual.photo_url ||
+      brief.circuit_image_url ||
+      "",
+  );
+}
+
 export default function KnowledgeTab({ currentAdminEmail = "" }: KnowledgeTabProps) {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -122,6 +196,7 @@ export default function KnowledgeTab({ currentAdminEmail = "" }: KnowledgeTabPro
     review_status: "",
     owner_admin_email: "",
     admin_notes: "",
+    visual_url: "",
   });
   const [documentDraft, setDocumentDraft] = useState<DocumentDraft>({
     title: "",
@@ -262,6 +337,7 @@ export default function KnowledgeTab({ currentAdminEmail = "" }: KnowledgeTabPro
       review_status: entity.review_status || "",
       owner_admin_email: entity.owner_admin_email || currentAdminEmail || "",
       admin_notes: entity.admin_notes || "",
+      visual_url: entityVisualUrl(entity),
     });
   };
 
@@ -278,11 +354,13 @@ export default function KnowledgeTab({ currentAdminEmail = "" }: KnowledgeTabPro
     });
   };
 
-  const saveEntity = (id: string) => {
+  const saveEntity = (entity: KnowledgeEntity) => {
+    const visual = entityVisualPayload(entity, entityDraft.visual_url);
     updateEntityMutation.mutate({
-      id,
+      id: entity.id,
       data: compactPayload({
         name: entityDraft.name.trim(),
+        visual,
         data_status: entityDraft.data_status.trim() || undefined,
         review_status: entityDraft.review_status || undefined,
         owner_admin_email: entityDraft.owner_admin_email.trim() || undefined,
@@ -438,7 +516,24 @@ export default function KnowledgeTab({ currentAdminEmail = "" }: KnowledgeTabPro
         </div>
         {brief && (
           <div className="mt-4 rounded-md border border-white/10 bg-black/25 p-3">
-            <p className="mb-2 font-body text-sm text-white">{brief.title}</p>
+            <div className="mb-3 flex items-start gap-3">
+              {briefVisualUrl(brief) ? (
+                <img
+                  src={briefVisualUrl(brief)}
+                  alt=""
+                  className="h-20 w-28 shrink-0 rounded-sm border border-white/10 object-cover"
+                  loading="lazy"
+                />
+              ) : null}
+              <div className="min-w-0">
+                <p className="font-body text-sm text-white">{brief.title}</p>
+                {brief.circuit_image_url && brief.circuit_image_url !== briefVisualUrl(brief) ? (
+                  <p className="mt-1 font-body text-[11px] text-gray-500">
+                    Visuel circuit disponible dans le contexte RAG.
+                  </p>
+                ) : null}
+              </div>
+            </div>
             <div className="space-y-2">
               {brief.sections.map((section) => (
                 <div key={section.id}>
@@ -467,141 +562,163 @@ export default function KnowledgeTab({ currentAdminEmail = "" }: KnowledgeTabPro
             <p className="py-8 text-center font-body text-sm text-gray-500">Aucune entité</p>
           ) : (
             <div className="space-y-2">
-              {entities.map((entity) => (
-                <article
-                  key={entity.id}
-                  className="rounded-md border border-white/10 bg-black/25 p-3"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate font-body text-sm text-white">{entity.name}</p>
-                      <p className="font-body text-xs text-gray-500">{entity.id}</p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1">
-                      <Button
-                        onClick={() => claimEntityMutation.mutate(entity)}
-                        disabled={claimEntityMutation.isPending}
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-[10px] text-emerald-300 hover:text-emerald-200"
-                        title="Prendre en main"
-                      >
-                        <UserCheck className="mr-1 h-3 w-3" />
-                        Prendre
-                      </Button>
-                      <Button
-                        onClick={() => startEntityEdit(entity)}
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-[10px] text-cyan-300 hover:text-cyan-200"
-                        title="Éditer"
-                      >
-                        <Edit3 className="mr-1 h-3 w-3" />
-                        Éditer
-                      </Button>
-                      <span className="rounded bg-cyan-500/10 px-2 py-1 font-body text-[10px] uppercase text-cyan-300">
-                        {typeLabel(entity.entity_type)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2 font-body text-[10px] text-gray-500">
-                    {entity.data_status && <span>{entity.data_status}</span>}
-                    {entity.review_status && <span>{entity.review_status}</span>}
-                    {entity.owner_admin_email && <span>Owner : {entity.owner_admin_email}</span>}
-                    {!!entity.linked_race_ids?.length && (
-                      <span>{entity.linked_race_ids.length} course(s)</span>
-                    )}
-                    {!!entity.useful_links?.length && (
-                      <span>{entity.useful_links.length} lien(s)</span>
-                    )}
-                  </div>
-                  {entity.admin_notes && (
-                    <p className="mt-2 line-clamp-2 font-body text-xs leading-relaxed text-gray-400">
-                      {entity.admin_notes}
-                    </p>
-                  )}
-                  {editingEntityId === entity.id && (
-                    <div className="mt-3 grid gap-3 border-t border-white/10 pt-3">
-                      <Input
-                        value={entityDraft.name}
-                        onChange={(event) =>
-                          setEntityDraft({ ...entityDraft, name: event.target.value })
-                        }
-                        placeholder="Nom canonique"
-                        className="bg-gray-900 border-gray-700 text-white"
-                      />
-                      <div className="grid gap-3 md:grid-cols-3">
-                        <Input
-                          value={entityDraft.data_status}
-                          onChange={(event) =>
-                            setEntityDraft({ ...entityDraft, data_status: event.target.value })
-                          }
-                          placeholder="Statut data"
-                          className="bg-gray-900 border-gray-700 text-white"
+              {entities.map((entity) => {
+                const visualUrl = entityVisualUrl(entity);
+                return (
+                  <article
+                    key={entity.id}
+                    className="rounded-md border border-white/10 bg-black/25 p-3"
+                  >
+                    <div className="flex items-start gap-3">
+                      {visualUrl ? (
+                        <img
+                          src={visualUrl}
+                          alt=""
+                          className="h-14 w-20 shrink-0 rounded-sm border border-white/10 object-cover"
+                          loading="lazy"
                         />
-                        <select
-                          value={entityDraft.review_status}
-                          onChange={(event) =>
-                            setEntityDraft({ ...entityDraft, review_status: event.target.value })
-                          }
-                          className="h-10 rounded-md border border-gray-700 bg-gray-900 px-3 font-body text-sm text-white"
-                        >
-                          {REVIEW_STATUS_OPTIONS.map((status) => (
-                            <option key={status.value || "empty"} value={status.value}>
-                              {status.label}
-                            </option>
-                          ))}
-                        </select>
-                        <Input
-                          value={entityDraft.owner_admin_email}
-                          onChange={(event) =>
-                            setEntityDraft({
-                              ...entityDraft,
-                              owner_admin_email: event.target.value,
-                            })
-                          }
-                          placeholder="Admin propriétaire"
-                          className="bg-gray-900 border-gray-700 text-white"
-                        />
+                      ) : null}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-body text-sm text-white">{entity.name}</p>
+                        <p className="font-body text-xs text-gray-500">{entity.id}</p>
                       </div>
-                      <Textarea
-                        value={entityDraft.admin_notes}
-                        onChange={(event) =>
-                          setEntityDraft({ ...entityDraft, admin_notes: event.target.value })
-                        }
-                        placeholder="Notes admin, sources à vérifier, décisions de curation..."
-                        rows={3}
-                        className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
-                      />
-                      <div className="flex justify-end gap-2">
+                      <div className="flex shrink-0 items-center gap-1">
                         <Button
-                          onClick={() => setEditingEntityId(null)}
+                          onClick={() => claimEntityMutation.mutate(entity)}
+                          disabled={claimEntityMutation.isPending}
                           variant="ghost"
                           size="sm"
-                          className="text-gray-400"
+                          className="h-7 px-2 text-[10px] text-emerald-300 hover:text-emerald-200"
+                          title="Prendre en main"
                         >
-                          <X className="mr-1 h-4 w-4" />
-                          Annuler
+                          <UserCheck className="mr-1 h-3 w-3" />
+                          Prendre
                         </Button>
                         <Button
-                          onClick={() => saveEntity(entity.id)}
-                          disabled={updateEntityMutation.isPending || !entityDraft.name.trim()}
+                          onClick={() => startEntityEdit(entity)}
                           variant="ghost"
                           size="sm"
-                          className="text-cyan-300 hover:text-cyan-200"
+                          className="h-7 px-2 text-[10px] text-cyan-300 hover:text-cyan-200"
+                          title="Éditer"
                         >
-                          {updateEntityMutation.isPending ? (
-                            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                          ) : (
-                            <Save className="mr-1 h-4 w-4" />
-                          )}
-                          Sauver
+                          <Edit3 className="mr-1 h-3 w-3" />
+                          Éditer
                         </Button>
+                        <span className="rounded bg-cyan-500/10 px-2 py-1 font-body text-[10px] uppercase text-cyan-300">
+                          {typeLabel(entity.entity_type)}
+                        </span>
                       </div>
                     </div>
-                  )}
-                </article>
-              ))}
+                    <div className="mt-2 flex flex-wrap gap-2 font-body text-[10px] text-gray-500">
+                      {entity.data_status && <span>{entity.data_status}</span>}
+                      {entity.review_status && <span>{entity.review_status}</span>}
+                      {entity.owner_admin_email && <span>Owner : {entity.owner_admin_email}</span>}
+                      {!!entity.linked_race_ids?.length && (
+                        <span>{entity.linked_race_ids.length} course(s)</span>
+                      )}
+                      {!!entity.useful_links?.length && (
+                        <span>{entity.useful_links.length} lien(s)</span>
+                      )}
+                    </div>
+                    {entity.admin_notes && (
+                      <p className="mt-2 line-clamp-2 font-body text-xs leading-relaxed text-gray-400">
+                        {entity.admin_notes}
+                      </p>
+                    )}
+                    {editingEntityId === entity.id && (
+                      <div className="mt-3 grid gap-3 border-t border-white/10 pt-3">
+                        <Input
+                          value={entityDraft.name}
+                          onChange={(event) =>
+                            setEntityDraft({ ...entityDraft, name: event.target.value })
+                          }
+                          placeholder="Nom canonique"
+                          className="bg-gray-900 border-gray-700 text-white"
+                        />
+                        <AdminMediaThumbnailPicker
+                          value={entityDraft.visual_url}
+                          onValueChange={(visual_url) =>
+                            setEntityDraft({ ...entityDraft, visual_url })
+                          }
+                          entityType={entity.entity_type}
+                          entityId={entity.id}
+                          folder={visualFolderForEntity(entity.entity_type)}
+                          label={visualLabelForEntity(entity.entity_type)}
+                          testId={`knowledge-entity-visual-picker-${entity.id}`}
+                        />
+                        <div className="grid gap-3 md:grid-cols-3">
+                          <Input
+                            value={entityDraft.data_status}
+                            onChange={(event) =>
+                              setEntityDraft({ ...entityDraft, data_status: event.target.value })
+                            }
+                            placeholder="Statut data"
+                            className="bg-gray-900 border-gray-700 text-white"
+                          />
+                          <select
+                            value={entityDraft.review_status}
+                            onChange={(event) =>
+                              setEntityDraft({ ...entityDraft, review_status: event.target.value })
+                            }
+                            className="h-10 rounded-md border border-gray-700 bg-gray-900 px-3 font-body text-sm text-white"
+                          >
+                            {REVIEW_STATUS_OPTIONS.map((status) => (
+                              <option key={status.value || "empty"} value={status.value}>
+                                {status.label}
+                              </option>
+                            ))}
+                          </select>
+                          <Input
+                            value={entityDraft.owner_admin_email}
+                            onChange={(event) =>
+                              setEntityDraft({
+                                ...entityDraft,
+                                owner_admin_email: event.target.value,
+                              })
+                            }
+                            placeholder="Admin propriétaire"
+                            className="bg-gray-900 border-gray-700 text-white"
+                          />
+                        </div>
+                        <Textarea
+                          value={entityDraft.admin_notes}
+                          onChange={(event) =>
+                            setEntityDraft({ ...entityDraft, admin_notes: event.target.value })
+                          }
+                          placeholder="Notes admin, sources à vérifier, décisions de curation..."
+                          rows={3}
+                          className="resize-none border-gray-700 bg-gray-900 text-white placeholder:text-gray-500"
+                        />
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            onClick={() => setEditingEntityId(null)}
+                            variant="ghost"
+                            size="sm"
+                            className="text-gray-400"
+                          >
+                            <X className="mr-1 h-4 w-4" />
+                            Annuler
+                          </Button>
+                          <Button
+                            onClick={() => saveEntity(entity)}
+                            disabled={updateEntityMutation.isPending || !entityDraft.name.trim()}
+                            variant="ghost"
+                            size="sm"
+                            className="text-cyan-300 hover:text-cyan-200"
+                          >
+                            {updateEntityMutation.isPending ? (
+                              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Save className="mr-1 h-4 w-4" />
+                            )}
+                            Sauver
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>

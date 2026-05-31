@@ -1,6 +1,15 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ChevronLeft, Check, AlertTriangle, Zap, Flag, Trash2 } from "lucide-react";
+import {
+  ChevronLeft,
+  Check,
+  AlertTriangle,
+  Zap,
+  Flag,
+  Trash2,
+  CheckCircle2,
+  CircleDot,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import PredictionTimer from "./PredictionTimer";
 import PredictionForm from "./PredictionForm";
@@ -97,6 +106,32 @@ export default function PredictionsPage() {
 
   const canPredictSprint = race.can_predict_sprint;
   const canPredictMain = race.can_predict;
+  const activeReady = form.activeTab === "sprint" ? form.isSprintCompletee : form.isMainCompletee;
+  const activeCanPredict = form.activeTab === "sprint" ? canPredictSprint : canPredictMain;
+  const activeCompletedSteps =
+    form.activeTab === "sprint"
+      ? [
+          form.sprintQualiPole,
+          form.sprintQualiTop10.length === 10,
+          form.sprintRaceWinner,
+          form.sprintRaceTop10.length === 10,
+        ].filter(Boolean).length
+      : [
+          form.qualiPole,
+          form.qualiTop10.length === 10,
+          form.raceWinner,
+          form.raceTop10.length === 10,
+        ].filter(Boolean).length;
+  const activeTotalSteps = 4;
+  const activeProgress = Math.round((activeCompletedSteps / activeTotalSteps) * 100);
+  const activeStatusLabel =
+    form.activeTab === "sprint"
+      ? form.isSprintCompletee
+        ? t("predictions.status.sprint_ready")
+        : t("predictions.status.sprint_incomplete")
+      : form.isMainCompletee
+        ? t("predictions.status.race_ready")
+        : t("predictions.status.race_incomplete");
 
   return (
     <div
@@ -132,6 +167,7 @@ export default function PredictionsPage() {
           border-b border-white/[0.08]"
       >
         <button
+          type="button"
           onClick={() => navigate(-1)}
           className="w-8 h-8 rounded-full
             flex items-center justify-center
@@ -139,6 +175,7 @@ export default function PredictionsPage() {
             text-pk-piste hover:border-white/[0.15]
             transition-colors duration-pk-short"
           data-testid="back-btn"
+          aria-label={t("predictions.back")}
         >
           <ChevronLeft size={16} strokeWidth={2} />
         </button>
@@ -146,12 +183,21 @@ export default function PredictionsPage() {
           <h1 className="font-display text-[1rem] uppercase leading-tight">
             {race.name.replace(" Grand Prix", "")}
           </h1>
-          <p className="font-mono text-[0.5625rem] text-pk-titane uppercase tracking-[0.1em]">
-            {t("predictions.header_subtitle")}
-          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <p className="font-mono text-[0.5625rem] text-pk-titane uppercase tracking-[0.1em]">
+              {t("predictions.header_subtitle")}
+            </p>
+            {form.existingPrediction && (
+              <span className="inline-flex items-center gap-1 rounded-sm border border-pk-emerald/25 bg-pk-emerald/10 px-1.5 py-0.5 font-data text-[0.5rem] uppercase text-pk-emerald">
+                <CheckCircle2 size={10} strokeWidth={2} />
+                {t("predictions.form.saved")}
+              </span>
+            )}
+          </div>
         </div>
         {form.existingPrediction && (canPredictMain || canPredictSprint) && (
           <button
+            type="button"
             onClick={() => form.setShowDeleteConfirm(true)}
             className="w-8 h-8 rounded-full
               flex items-center justify-center
@@ -159,6 +205,7 @@ export default function PredictionsPage() {
               transition-colors duration-pk-short"
             data-testid="delete-predictions-btn"
             title={t("predictions.delete_title")}
+            aria-label={t("predictions.delete_title")}
           >
             <Trash2 size={16} strokeWidth={1.5} />
           </button>
@@ -176,6 +223,7 @@ export default function PredictionsPage() {
         {race.is_sprint_weekend && (
           <div className="flex rounded-md bg-white/[0.03] border border-white/[0.08] overflow-hidden">
             <button
+              type="button"
               onClick={() => form.setActiveTab("sprint")}
               disabled={!canPredictSprint}
               className={`flex-1 py-3 text-center relative
@@ -206,6 +254,7 @@ export default function PredictionsPage() {
               )}
             </button>
             <button
+              type="button"
               onClick={() => form.setActiveTab("main")}
               disabled={!canPredictMain}
               className={`flex-1 py-3 text-center relative
@@ -282,42 +331,54 @@ export default function PredictionsPage() {
           flex items-center gap-3
           px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]
           bg-pk-carbon/95 backdrop-blur-[20px] saturate-[1.3]
-          border-t border-white/[0.08]"
+          border-t border-white/[0.08] shadow-[0_-16px_40px_rgba(0,0,0,0.35)]"
+        data-testid="prediction-bottom-action-bar"
       >
         <div className="flex-1">
-          <p className="font-mono text-[0.625rem] text-pk-titane uppercase tracking-[0.1em]">
-            {form.activeTab === "sprint"
-              ? form.isSprintCompletee
-                ? t("predictions.status.sprint_ready")
-                : t("predictions.status.sprint_incomplete")
-              : form.isMainCompletee
-                ? t("predictions.status.race_ready")
-                : t("predictions.status.race_incomplete")}
-          </p>
-          <div className="w-full h-[3px] bg-white/[0.04] rounded-sm mt-1 overflow-hidden">
+          <div className="flex items-center justify-between gap-2">
+            <p
+              className={`flex min-w-0 items-center gap-1.5 font-mono text-[0.625rem] uppercase tracking-[0.1em] ${
+                activeReady ? "text-pk-emerald" : "text-pk-titane"
+              }`}
+            >
+              {activeReady ? (
+                <CheckCircle2 size={12} strokeWidth={2} />
+              ) : (
+                <CircleDot size={12} strokeWidth={1.7} />
+              )}
+              <span className="truncate">{activeStatusLabel}</span>
+            </p>
+            <span
+              className={`shrink-0 font-data text-[0.625rem] tabular-nums ${
+                activeReady ? "text-pk-emerald" : "text-pk-titane"
+              }`}
+              data-testid="prediction-bottom-progress-count"
+            >
+              {activeCompletedSteps}/{activeTotalSteps}
+            </span>
+          </div>
+          <div
+            className="mt-1 h-[3px] w-full overflow-hidden rounded-sm bg-white/[0.04]"
+            role="progressbar"
+            aria-label={activeStatusLabel}
+            aria-valuemin={0}
+            aria-valuemax={activeTotalSteps}
+            aria-valuenow={activeCompletedSteps}
+            data-testid="prediction-bottom-progress"
+          >
             <div
-              className="h-full bg-pk-red rounded-sm transition-all duration-pk-medium ease-pk-enter"
+              className={`h-full rounded-sm transition-all duration-pk-medium ease-pk-enter ${
+                activeReady ? "bg-pk-emerald" : "bg-pk-red"
+              }`}
               style={{
-                width: `${
-                  form.activeTab === "sprint"
-                    ? form.isSprintCompletee
-                      ? 100
-                      : 50
-                    : form.isMainCompletee
-                      ? 100
-                      : 50
-                }%`,
+                width: `${activeProgress}%`,
               }}
             />
           </div>
         </div>
         <BorderGlowButton
           onClick={form.handleSave}
-          disabled={
-            form.saving ||
-            (form.activeTab === "sprint" ? !form.isSprintCompletee : !form.isMainCompletee) ||
-            (form.activeTab === "sprint" ? !canPredictSprint : !canPredictMain)
-          }
+          disabled={form.saving || !activeReady || !activeCanPredict}
           className="text-[0.75rem] whitespace-nowrap min-h-[40px]
             disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
           edgeSensitivity={24}
@@ -327,9 +388,9 @@ export default function PredictionsPage() {
         >
           {form.saving ? (
             t("predictions.saving")
-          ) : (form.activeTab === "sprint" ? !canPredictSprint : !canPredictMain) ? (
+          ) : !activeCanPredict ? (
             t("predictions.closed")
-          ) : (form.activeTab === "sprint" ? form.isSprintCompletee : form.isMainCompletee) ? (
+          ) : activeReady ? (
             <>
               <Check size={14} strokeWidth={2} />
               {t("predictions.save")}

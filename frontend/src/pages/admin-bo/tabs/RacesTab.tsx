@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { adminApi } from "../adminApi";
+import { AdminMediaThumbnailPicker } from "../AdminMediaThumbnailPicker";
 import { DriverEntityList, DriverEntityToken } from "@/components/entities/DriverEntityToken";
 import {
   CircuitEntityToken,
@@ -870,12 +871,17 @@ export default function RacesTab() {
                 </option>
               ))}
             </select>
-            <Input
-              value={form.thumbnail_url}
-              onChange={(e) => setForm({ ...form, thumbnail_url: e.target.value })}
-              placeholder="Miniature"
-              className="bg-gray-900 border-gray-700 text-white md:col-span-2"
-            />
+            <div className="md:col-span-2">
+              <AdminMediaThumbnailPicker
+                value={form.thumbnail_url}
+                onValueChange={(thumbnail_url) => setForm({ ...form, thumbnail_url })}
+                entityType="race"
+                entityId={editing?.id}
+                folder="courses"
+                label="Vignette course"
+                testId="race-thumbnail-picker"
+              />
+            </div>
           </div>
           <label className="flex items-center gap-2 text-sm text-gray-400">
             <input

@@ -39,6 +39,8 @@ router = APIRouter(prefix="/admin-bo", tags=["admin-backoffice-users"])
 class UserUpdate(BaseModel):
     username: str | None = None
     email: str | None = None
+    avatar_id: str | None = None
+    custom_avatar_url: str | None = None
     level: int | None = None
     xp: int | None = None
     is_banned: bool | None = None
@@ -321,7 +323,18 @@ async def update_user(
     user_id: str, data: UserUpdate, admin: dict = Depends(get_current_admin)
 ) -> dict:
     """Update a user."""
-    updates = {key: value for key, value in data.model_dump().items() if value is not None}
+    raw_updates = data.model_dump(exclude_unset=True)
+    updates = {key: value for key, value in raw_updates.items() if value is not None}
+
+    if "custom_avatar_url" in raw_updates:
+        custom_avatar_url = str(raw_updates.get("custom_avatar_url") or "").strip()
+        updates["custom_avatar_url"] = custom_avatar_url or None
+        updates["avatar_id"] = None
+    elif "avatar_id" in raw_updates:
+        avatar_id = str(raw_updates.get("avatar_id") or "").strip()
+        updates["avatar_id"] = avatar_id or None
+        updates["custom_avatar_url"] = None
+
     if not updates:
         raise HTTPException(status_code=400, detail="Aucune modification fournie")
     result = await db.users.update_one({"id": user_id}, {"$set": updates})

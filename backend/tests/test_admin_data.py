@@ -17,9 +17,14 @@ class FakeUsersCollection:
     def __init__(self, user: dict | None) -> None:
         self.user = user
         self.deleted = False
+        self.updated: tuple[dict, dict] | None = None
 
     async def find_one(self, query: dict) -> dict | None:
         return self.user
+
+    async def update_one(self, query: dict, update: dict):
+        self.updated = (query, update)
+        return type("Result", (), {"matched_count": 1 if self.user else 0})()
 
     async def delete_one(self, query: dict) -> None:
         self.deleted = True
@@ -148,6 +153,8 @@ def test_prediction_admin_payload_marks_missing_fields_and_context():
             "id": "prediction-1",
             "user_id": "user-1",
             "race_id": "race-1",
+            "created_at": "2026-03-07T10:00:00+00:00",
+            "main_updated_at": "2026-03-07T18:00:00+00:00",
             "quali_pole": "VER",
             "quali_top10": ["VER"],
             "race_winner": "NOR",
@@ -159,6 +166,7 @@ def test_prediction_admin_payload_marks_missing_fields_and_context():
 
     assert payload["user_email"] == "pilot@example.com"
     assert payload["race_name"] == "Test GP"
+    assert payload["submitted_at"] == "2026-03-07T18:00:00+00:00"
     assert payload["is_complete"] is False
     assert "Top 10 qualifications" in payload["missing_fields"]
     assert "Top 10 course" in payload["missing_fields"]
@@ -218,6 +226,36 @@ def test_user_analytics_from_docs_includes_inactive_and_league_counts():
     assert analytics["top_users"][0]["user_id"] == "user-1"
     assert analytics["top_users"][0]["leagues_count"] == 1
     assert analytics["inactive_users"][0]["user_id"] == "user-2"
+
+
+def test_recent_user_dashboard_payloads_adds_onboarding_context():
+    rows = admin_users_service.recent_user_dashboard_payloads(
+        [
+            {"id": "user-1", "email": "pilot@example.com", "username": "Pilot"},
+            {"id": "user-2", "email": "rookie@example.com", "username": "Rookie"},
+        ],
+        [
+            {
+                "id": "prediction-1",
+                "user_id": "user-1",
+                "created_at": "2026-03-07T10:00:00+00:00",
+                "main_updated_at": "2026-03-07T18:00:00+00:00",
+            },
+            {
+                "id": "prediction-2",
+                "user_id": "user-1",
+                "created_at": "2026-03-08T10:00:00+00:00",
+            },
+        ],
+        [{"id": "league-1", "created_by": "user-1", "members": ["user-1", "user-2"]}],
+    )
+
+    assert rows[0]["predictions_count"] == 2
+    assert rows[0]["leagues_count"] == 1
+    assert rows[0]["last_prediction_at"] == "2026-03-08T10:00:00+00:00"
+    assert rows[1]["predictions_count"] == 0
+    assert rows[1]["leagues_count"] == 1
+    assert rows[1]["last_prediction_at"] is None
 
 
 def test_users_search_query_matches_username_or_email():
@@ -519,6 +557,71 @@ def test_prediction_batch_update_payload_requires_review_status():
         admin_predictions_service.prediction_batch_update_payload(request, {"email": "admin@pronokif.eu"})
 
     assert exc.value.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_update_user_can_set_media_avatar(monkeypatch):
+    fake_db = FakeDb({"id": "user-1", "email": "pilot@example.com"})
+    logged: list[dict] = []
+    monkeypatch.setattr(admin_users_routes, "db", fake_db)
+
+    async def fake_log_backoffice_activity(admin: dict, **kwargs: dict) -> None:
+        logged.append(kwargs)
+
+    monkeypatch.setattr(
+        admin_users_routes,
+        "log_backoffice_activity",
+        fake_log_backoffice_activity,
+    )
+
+    response = await admin_users_routes.update_user(
+        "user-1",
+        admin_users_routes.UserUpdate(
+            username="Pilot One",
+            custom_avatar_url="/api/admin-bo/media/media-1/file",
+        ),
+        admin={"email": "admin@pronokif.eu"},
+    )
+
+    assert response == {"message": "User updated"}
+    assert fake_db.users.updated == (
+        {"id": "user-1"},
+        {
+            "$set": {
+                "username": "Pilot One",
+                "custom_avatar_url": "/api/admin-bo/media/media-1/file",
+                "avatar_id": None,
+            }
+        },
+    )
+    assert logged[0]["metadata"]["fields"] == ["avatar_id", "custom_avatar_url", "username"]
+
+
+@pytest.mark.asyncio
+async def test_update_user_can_clear_custom_avatar(monkeypatch):
+    fake_db = FakeDb({"id": "user-1", "email": "pilot@example.com"})
+    monkeypatch.setattr(admin_users_routes, "db", fake_db)
+
+    async def fake_log_backoffice_activity(admin: dict, **kwargs: dict) -> None:
+        return None
+
+    monkeypatch.setattr(
+        admin_users_routes,
+        "log_backoffice_activity",
+        fake_log_backoffice_activity,
+    )
+
+    response = await admin_users_routes.update_user(
+        "user-1",
+        admin_users_routes.UserUpdate(custom_avatar_url=""),
+        admin={"email": "admin@pronokif.eu"},
+    )
+
+    assert response == {"message": "User updated"}
+    assert fake_db.users.updated == (
+        {"id": "user-1"},
+        {"$set": {"custom_avatar_url": None, "avatar_id": None}},
+    )
 
 
 @pytest.mark.asyncio

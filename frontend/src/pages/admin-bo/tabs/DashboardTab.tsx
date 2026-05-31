@@ -2,12 +2,15 @@
  * Admin Dashboard — overview stats.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import {
   Activity,
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
+  ClipboardCheck,
   Database,
+  Eye,
   Flag,
   Gauge,
   Loader2,
@@ -16,11 +19,14 @@ import {
   RefreshCw,
   TrendingUp,
   Trophy,
+  UserPlus,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { adminApi } from "../adminApi";
 import { Button } from "@/components/ui/button";
+import { DateEntityToken, RaceEntityToken } from "@/components/entities/RaceEntityToken";
+import { UserIdentity } from "@/components/users/UserIdentity";
 
 type AdminTabKey =
   | "dashboard"
@@ -37,7 +43,7 @@ type AdminTabKey =
   | "legal";
 
 type DashboardTabProps = {
-  onNavigate?: (tab: AdminTabKey) => void;
+  onNavigate?: (tab: AdminTabKey, entityId?: string | null) => void;
 };
 
 type BusinessActionItem = {
@@ -56,10 +62,12 @@ type BusinessRace = {
   name: string;
   round_number?: number;
   status?: string;
+  is_cancelled?: boolean;
   predictions_close_at?: string | null;
   content_status?: string;
   completion_rate?: number;
   missing_predictions?: number;
+  has_results?: boolean;
   scoring_pending?: number;
 };
 
@@ -75,6 +83,42 @@ type BusinessOperations = {
   action_items: BusinessActionItem[];
   next_races: BusinessRace[];
   metrics: Record<string, number>;
+};
+
+type DashboardRecentUser = {
+  id?: string;
+  username?: string | null;
+  email?: string | null;
+  avatar_id?: string | null;
+  custom_avatar_url?: string | null;
+  created_at?: string;
+  last_login_at?: string | null;
+  last_prediction_at?: string | null;
+  level?: number | null;
+  is_banned?: boolean;
+  email_verified?: boolean;
+  predictions_count?: number;
+  leagues_count?: number;
+};
+
+type DashboardRecentPrediction = {
+  id?: string;
+  user_id?: string;
+  user_email?: string | null;
+  user_username?: string | null;
+  user_avatar_id?: string | null;
+  user_custom_avatar_url?: string | null;
+  race_id?: string;
+  race_name?: string | null;
+  race_date?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  main_updated_at?: string;
+  sprint_updated_at?: string;
+  submitted_at?: string | null;
+  is_complete?: boolean;
+  locked?: boolean;
+  score_total?: number | null;
 };
 
 const cardStyles = {
@@ -132,6 +176,43 @@ function scoreTone(score: number) {
   if (score >= 80) return "text-pk-emerald";
   if (score >= 55) return "text-pk-amber";
   return "text-pk-red";
+}
+
+function raceStatusLabel(status?: string) {
+  if (status === "in_progress") return "live";
+  if (status === "finished") return "à traiter";
+  return "à venir";
+}
+
+function raceStatusClass(status?: string) {
+  if (status === "in_progress") return "text-pk-red";
+  if (status === "finished") return "text-pk-amber";
+  return "text-pk-emerald";
+}
+
+function raceResultLabel(race: BusinessRace) {
+  if (race.status !== "finished") return "pré-course";
+  return race.has_results ? "résultats OK" : "résultats manquants";
+}
+
+function predictionSubmittedAt(prediction: DashboardRecentPrediction) {
+  return (
+    prediction.submitted_at ??
+    prediction.updated_at ??
+    prediction.main_updated_at ??
+    prediction.sprint_updated_at ??
+    prediction.created_at
+  );
+}
+
+function formatCompactCount(value: unknown, singular: string, plural: string) {
+  const count = Number(value ?? 0);
+  return `${count} ${count > 1 ? plural : singular}`;
+}
+
+function adminPredictionsHref(filters: Record<string, string>) {
+  const params = new URLSearchParams({ tab: "predictions", ...filters });
+  return `/admin?${params.toString()}`;
 }
 
 export default function DashboardTab({ onNavigate }: DashboardTabProps) {
@@ -229,6 +310,8 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
   };
   const actionItems = operations?.action_items ?? [];
   const nextRaces = operations?.next_races ?? [];
+  const recentUsers = (stats?.recent_users ?? []) as DashboardRecentUser[];
+  const recentPredictions = (stats?.recent_predictions ?? []) as DashboardRecentPrediction[];
 
   return (
     <div>
@@ -294,8 +377,9 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => onNavigate?.(item.target_tab)}
+                  onClick={() => onNavigate?.(item.target_tab, item.entity_id)}
                   className="group flex w-full items-start justify-between gap-3 rounded-md px-2 py-3 text-left transition-colors hover:bg-white/[0.035]"
+                  data-testid={`dashboard-business-action-${item.id}`}
                 >
                   <div className="flex min-w-0 items-start gap-3">
                     <span
@@ -327,28 +411,36 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
           <div className="border-t border-white/[0.08] p-4 lg:border-l lg:border-t-0">
             <div className="mb-3 flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-pk-amber" />
-              <h4 className="font-heading text-sm uppercase text-white">Prochains GP</h4>
+              <h4 className="font-heading text-sm uppercase text-white">GP à surveiller</h4>
             </div>
             <div className="divide-y divide-white/[0.06]">
               {nextRaces.slice(0, 5).map((race) => (
                 <button
                   key={race.id}
                   type="button"
-                  onClick={() => onNavigate?.("races")}
+                  onClick={() => onNavigate?.("races", race.id)}
                   className="w-full py-3 text-left"
+                  data-testid={`dashboard-next-race-${race.id}`}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <p className="truncate font-body text-sm text-white">
                       {race.round_number ? `${race.round_number}. ` : ""}
                       {race.name}
                     </p>
-                    <span className="font-data text-xs text-pk-amber">
-                      {race.completion_rate ?? 0}%
-                    </span>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span
+                        className={`font-data text-[10px] uppercase tracking-[0.12em] ${raceStatusClass(race.status)}`}
+                      >
+                        {raceStatusLabel(race.status)}
+                      </span>
+                      <span className="font-data text-xs text-pk-amber">
+                        {race.completion_rate ?? 0}%
+                      </span>
+                    </div>
                   </div>
                   <p className="mt-1 font-body text-[11px] text-pk-titane">
                     {race.missing_predictions ?? 0} à relancer · {race.scoring_pending ?? 0} scoring
-                    · {String(race.content_status ?? "draft")}
+                    · {raceResultLabel(race)} · {String(race.content_status ?? "draft")}
                   </p>
                 </button>
               ))}
@@ -363,55 +455,256 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
       </section>
 
       {isLoading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-28 rounded-md border border-white/[0.06] bg-white/[0.04] animate-pulse"
-            />
-          ))}
+        <div className="mb-6 overflow-x-auto pb-1">
+          <div className="grid min-w-[980px] grid-cols-7 gap-3">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-[88px] rounded-md border border-white/[0.06] bg-white/[0.04] animate-pulse"
+              />
+            ))}
+          </div>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            {cards.map(({ label, value, icon: Icon, tone, target }) => {
-              const styles = cardStyles[tone];
-              return (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => onNavigate?.(target)}
-                  className={`card-arcade group min-h-[128px] p-4 border-l-4 ${styles.border} text-left transition-all hover:-translate-y-0.5 ${styles.hover}`}
-                  data-testid={`dashboard-card-${target}`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span
-                      className={`flex h-9 w-9 items-center justify-center rounded-md border ${styles.chip}`}
-                    >
-                      <Icon className={`w-4 h-4 ${styles.icon}`} />
-                    </span>
-                    <ArrowRight className="h-4 w-4 text-pk-titane transition-transform group-hover:translate-x-0.5 group-hover:text-pk-piste" />
-                  </div>
-                  <p className="font-data text-3xl text-white tabular-nums">{value}</p>
-                  <p className="mt-1 font-data text-[10px] uppercase tracking-[0.14em] text-pk-titane">
-                    {label}
-                  </p>
-                </button>
-              );
-            })}
+          <div className="mb-6 overflow-x-auto pb-1" data-testid="dashboard-kpi-row">
+            <div className="grid min-w-[980px] grid-cols-7 gap-3">
+              {cards.map(({ label, value, icon: Icon, tone, target }) => {
+                const styles = cardStyles[tone];
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => onNavigate?.(target)}
+                    className={`card-arcade group min-h-[88px] border-l-4 p-3 ${styles.border} text-left transition-all hover:-translate-y-0.5 ${styles.hover}`}
+                    data-testid={`dashboard-card-${target}`}
+                  >
+                    <div className="mb-2 flex items-start justify-between gap-2">
+                      <span
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md border ${styles.chip}`}
+                      >
+                        <Icon className={`h-4 w-4 ${styles.icon}`} />
+                      </span>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-pk-titane transition-transform group-hover:translate-x-0.5 group-hover:text-pk-piste" />
+                    </div>
+                    <div className="flex items-end justify-between gap-2">
+                      <p className="font-data text-2xl leading-none text-white tabular-nums">
+                        {value}
+                      </p>
+                      <p className="min-w-0 flex-1 text-right font-data text-[9px] uppercase leading-tight tracking-[0.12em] text-pk-titane">
+                        {label}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {stats?.new_users_week !== undefined && (
-            <div className="card-arcade p-4 border-l-4 border-l-pk-emerald">
-              <h3 className="font-heading text-sm text-pk-piste uppercase mb-2">
-                Activité récente
-              </h3>
-              <p className="font-body text-pk-titane">
-                <span className="text-pk-emerald font-data text-lg">{stats.new_users_week}</span>{" "}
-                nouveaux utilisateurs cette semaine
-              </p>
-            </div>
-          )}
+          <div className="mb-4 grid gap-4 xl:grid-cols-2">
+            <section
+              className="card-arcade overflow-hidden border-l-4 border-l-pk-emerald"
+              data-testid="dashboard-latest-users"
+            >
+              <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] p-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-pk-emerald/20 bg-pk-emerald/[0.08]">
+                    <UserPlus className="h-4 w-4 text-pk-emerald" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-emerald">
+                      Acquisition
+                    </p>
+                    <h3 className="font-heading text-sm uppercase text-pk-piste">
+                      Derniers inscrits
+                    </h3>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onNavigate?.("users")}
+                  className="shrink-0 rounded-sm border border-white/[0.08] px-2 py-1 font-data text-[10px] uppercase tracking-[0.12em] text-pk-titane transition-colors hover:border-pk-emerald/25 hover:text-pk-piste"
+                >
+                  {stats?.new_users_week ?? 0} / 7j
+                </button>
+              </div>
+              <div className="divide-y divide-white/[0.06]">
+                {recentUsers.slice(0, 6).map((user) => (
+                  <div
+                    key={String(user.id ?? user.email)}
+                    className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center"
+                  >
+                    <UserIdentity
+                      user={{
+                        id: user.id,
+                        username: user.username,
+                        email: user.email,
+                        avatar_id: user.avatar_id,
+                        custom_avatar_url: user.custom_avatar_url,
+                        level: user.level,
+                      }}
+                      surface="admin"
+                      size="sm"
+                      showEmail
+                      className="max-w-full"
+                      data-testid={`dashboard-latest-user-${user.id ?? user.email}`}
+                    />
+                    <div className="flex flex-wrap items-center gap-1.5 md:justify-end">
+                      <span
+                        className={`rounded-sm px-2 py-1 font-data text-[10px] uppercase ${
+                          Number(user.predictions_count ?? 0) > 0
+                            ? "bg-pk-emerald/[0.12] text-pk-emerald"
+                            : "bg-pk-amber/[0.12] text-pk-amber"
+                        }`}
+                      >
+                        {formatCompactCount(user.predictions_count, "prono", "pronos")}
+                      </span>
+                      <span className="rounded-sm border border-white/[0.08] bg-white/[0.03] px-2 py-1 font-data text-[10px] uppercase text-pk-titane">
+                        {formatCompactCount(user.leagues_count, "ligue", "ligues")}
+                      </span>
+                      {user.email_verified === false ? (
+                        <span className="rounded-sm border border-pk-amber/25 bg-pk-amber/[0.08] px-2 py-1 font-data text-[10px] uppercase text-pk-amber">
+                          email
+                        </span>
+                      ) : null}
+                      {user.is_banned ? (
+                        <span className="rounded-sm border border-pk-red/25 bg-pk-red-subtle px-2 py-1 font-data text-[10px] uppercase text-pk-red">
+                          banni
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="flex shrink-0 items-center justify-between gap-2 md:justify-end">
+                      <div className="text-left md:text-right">
+                        <p className="font-data text-[9px] uppercase tracking-[0.12em] text-pk-titane">
+                          inscrit
+                        </p>
+                        <p className="font-data text-[10px] uppercase tracking-[0.12em] text-pk-piste">
+                          {formatDateTime(user.created_at)}
+                        </p>
+                        {user.last_prediction_at ? (
+                          <p className="mt-1 font-body text-[11px] text-pk-titane">
+                            dépôt {formatDateTime(user.last_prediction_at)}
+                          </p>
+                        ) : null}
+                      </div>
+                      {user.id ? (
+                        <Link
+                          to={`/admin?tab=users&user=${encodeURIComponent(user.id)}`}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-white/[0.08] text-pk-titane transition-colors hover:border-pk-emerald/25 hover:text-pk-piste focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pk-emerald/40"
+                          aria-label="Ouvrir la fiche du joueur"
+                          title="Ouvrir la fiche du joueur"
+                          data-testid={`dashboard-latest-user-open-${user.id}`}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+                {recentUsers.length === 0 && (
+                  <p className="px-4 py-6 font-body text-sm text-pk-titane">
+                    Aucun nouvel inscrit pour l’instant.
+                  </p>
+                )}
+              </div>
+            </section>
+
+            <section
+              className="card-arcade overflow-hidden border-l-4 border-l-pk-red"
+              data-testid="dashboard-latest-predictions"
+            >
+              <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] p-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-pk-red/25 bg-pk-red-subtle">
+                    <ClipboardCheck className="h-4 w-4 text-pk-red" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-red">
+                      Pronostics
+                    </p>
+                    <h3 className="font-heading text-sm uppercase text-pk-piste">
+                      Derniers dépôts
+                    </h3>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onNavigate?.("predictions")}
+                  className="group inline-flex shrink-0 items-center gap-1 rounded-sm border border-white/[0.08] px-2 py-1 font-data text-[10px] uppercase tracking-[0.12em] text-pk-titane transition-colors hover:border-pk-red/30 hover:text-pk-piste"
+                >
+                  voir
+                  <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                </button>
+              </div>
+              <div className="divide-y divide-white/[0.06]">
+                {recentPredictions.slice(0, 6).map((prediction) => (
+                  <div
+                    key={String(prediction.id ?? `${prediction.user_id}-${prediction.race_id}`)}
+                    className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)_auto_auto] md:items-center"
+                  >
+                    <UserIdentity
+                      user={{
+                        id: prediction.user_id,
+                        username: prediction.user_username,
+                        email: prediction.user_email,
+                        avatar_id: prediction.user_avatar_id,
+                        custom_avatar_url: prediction.user_custom_avatar_url,
+                      }}
+                      surface="admin"
+                      size="sm"
+                      showEmail
+                      className="max-w-full"
+                      data-testid={`dashboard-latest-prediction-user-${prediction.id ?? prediction.user_id}`}
+                    />
+                    <div className="min-w-0">
+                      <RaceEntityToken
+                        raceId={prediction.race_id}
+                        raceName={prediction.race_name}
+                        href={prediction.race_id ? `/race/${prediction.race_id}` : undefined}
+                        className="max-w-full font-display text-xs tracking-normal"
+                      />
+                      <p className="mt-1 font-body text-[11px] text-pk-titane">
+                        <DateEntityToken
+                          value={prediction.race_date}
+                          href={prediction.race_id ? `/race/${prediction.race_id}` : undefined}
+                        />
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 md:block md:text-right">
+                      <span
+                        className={`rounded-sm px-2 py-1 font-data text-[10px] uppercase ${
+                          prediction.is_complete
+                            ? "bg-pk-emerald/[0.12] text-pk-emerald"
+                            : "bg-pk-amber/[0.12] text-pk-amber"
+                        }`}
+                      >
+                        {prediction.is_complete ? "complet" : "incomplet"}
+                      </span>
+                      <p className="mt-0 md:mt-2 font-data text-[10px] uppercase tracking-[0.12em] text-pk-titane">
+                        {formatDateTime(predictionSubmittedAt(prediction))}
+                      </p>
+                    </div>
+                    {prediction.id ? (
+                      <Link
+                        to={`/admin?tab=predictions&prediction=${encodeURIComponent(prediction.id)}`}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-white/[0.08] text-pk-titane transition-colors hover:border-pk-red/30 hover:text-pk-piste focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pk-red/40"
+                        aria-label="Ouvrir la fiche du pronostic"
+                        title="Ouvrir la fiche du pronostic"
+                        data-testid={`dashboard-latest-prediction-open-${prediction.id}`}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Link>
+                    ) : null}
+                  </div>
+                ))}
+                {recentPredictions.length === 0 && (
+                  <p className="px-4 py-6 font-body text-sm text-pk-titane">
+                    Aucun pronostic déposé pour l’instant.
+                  </p>
+                )}
+              </div>
+            </section>
+          </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="card-arcade p-4">
@@ -419,38 +712,58 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
                 Santé pronostics
               </h3>
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+                <Link
+                  to={adminPredictionsHref({ submitted_window: "7d" })}
+                  className="rounded-md border border-white/10 bg-white/[0.03] p-3 transition-colors hover:border-pk-red/30 hover:bg-pk-red-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pk-red/40"
+                  aria-label="Voir les pronostics déposés sur 7 jours"
+                  data-testid="dashboard-health-week-predictions"
+                >
                   <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-titane">
                     7 jours
                   </p>
                   <p className="mt-1 font-data text-xl text-pk-red">
                     {stats?.predictions_week ?? 0}
                   </p>
-                </div>
-                <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+                </Link>
+                <Link
+                  to={adminPredictionsHref({ submitted_window: "24h" })}
+                  className="rounded-md border border-white/10 bg-white/[0.03] p-3 transition-colors hover:border-white/20 hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+                  aria-label="Voir les pronostics déposés sur 24h"
+                  data-testid="dashboard-health-day-predictions"
+                >
                   <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-titane">
                     24h
                   </p>
                   <p className="mt-1 font-data text-xl text-pk-piste">
                     {stats?.predictions_day ?? 0}
                   </p>
-                </div>
-                <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+                </Link>
+                <Link
+                  to={adminPredictionsHref({ locked: "locked" })}
+                  className="rounded-md border border-white/10 bg-white/[0.03] p-3 transition-colors hover:border-pk-red/30 hover:bg-pk-red-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pk-red/40"
+                  aria-label="Voir les pronostics verrouillés"
+                  data-testid="dashboard-health-locked-predictions"
+                >
                   <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-titane">
                     Verrouillés
                   </p>
                   <p className="mt-1 font-data text-xl text-pk-red">
                     {stats?.locked_predictions ?? 0}
                   </p>
-                </div>
-                <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+                </Link>
+                <Link
+                  to={adminPredictionsHref({ review_status: "attention" })}
+                  className="rounded-md border border-white/10 bg-white/[0.03] p-3 transition-colors hover:border-pk-amber/30 hover:bg-pk-amber/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pk-amber/40"
+                  aria-label="Voir les pronostics à revoir"
+                  data-testid="dashboard-health-review-predictions"
+                >
                   <p className="font-data text-[10px] uppercase tracking-[0.16em] text-pk-titane">
                     À revoir
                   </p>
                   <p className="mt-1 font-data text-xl text-pk-amber">
                     {stats?.predictions_to_review ?? 0}
                   </p>
-                </div>
+                </Link>
               </div>
             </div>
 

@@ -16,6 +16,12 @@ from fastapi import APIRouter, Depends
 
 from config import db
 from routes.admin_auth import get_current_admin
+from services.admin_predictions import (
+    enrich_prediction_docs,
+    prediction_activity_since_query,
+    prediction_activity_timestamp,
+)
+from services.admin_users import recent_user_dashboard_rows
 from services.race_calendar import (
     has_complete_race_results,
     race_timing_payload,
@@ -83,6 +89,7 @@ def _race_ops_payload(
         "name": race.get("name"),
         "round_number": race.get("round_number"),
         "status": race.get("status"),
+        "is_cancelled": bool(race.get("is_cancelled")),
         "race_start_at": race.get("race_start_at"),
         "predictions_close_at": race.get("predictions_close_at"),
         "content_status": race.get("content_status") or "draft",
@@ -96,6 +103,22 @@ def _race_ops_payload(
     }
 
 
+def _dashboard_watchlist_races(race_rows: list[dict]) -> list[dict]:
+    live_or_upcoming = [
+        race
+        for race in race_rows
+        if not race.get("is_cancelled") and race.get("status") in {"in_progress", "upcoming"}
+    ]
+    pending_finished = [
+        race
+        for race in race_rows
+        if not race.get("is_cancelled")
+        and race.get("status") == "finished"
+        and (not race.get("has_results") or int(race.get("scoring_pending") or 0) > 0)
+    ]
+    return [*live_or_upcoming, *pending_finished]
+
+
 def _sort_business_items(items: list[dict]) -> list[dict]:
     order = {"critical": 0, "warning": 1, "info": 2}
     return sorted(
@@ -106,6 +129,56 @@ def _sort_business_items(items: list[dict]) -> list[dict]:
             item.get("id", ""),
         ),
     )
+
+
+async def _recent_dashboard_predictions(limit: int = 6) -> list[dict]:
+    raw_predictions = await db.predictions.aggregate(
+        [
+            {
+                "$addFields": {
+                    "submitted_at": {
+                        "$max": [
+                            "$updated_at",
+                            "$main_updated_at",
+                            "$sprint_updated_at",
+                            "$created_at",
+                        ]
+                    }
+                }
+            },
+            {"$sort": {"submitted_at": -1, "created_at": -1}},
+            {"$limit": limit},
+            {"$project": {"_id": 0}},
+        ]
+    ).to_list(limit)
+    predictions = await enrich_prediction_docs(raw_predictions)
+    rows = []
+    for prediction in predictions:
+        submitted_at = prediction_activity_timestamp(prediction)
+        rows.append(
+            {
+                "id": prediction.get("id"),
+                "user_id": prediction.get("user_id"),
+                "user_email": prediction.get("user_email"),
+                "user_username": prediction.get("user_username"),
+                "user_avatar_id": prediction.get("user_avatar_id"),
+                "user_custom_avatar_url": prediction.get("user_custom_avatar_url"),
+                "race_id": prediction.get("race_id"),
+                "race_name": prediction.get("race_name"),
+                "race_date": prediction.get("race_date"),
+                "created_at": prediction.get("created_at"),
+                "updated_at": prediction.get("updated_at"),
+                "main_updated_at": prediction.get("main_updated_at"),
+                "sprint_updated_at": prediction.get("sprint_updated_at"),
+                "submitted_at": submitted_at,
+                "completion_status": prediction.get("completion_status"),
+                "is_complete": prediction.get("is_complete"),
+                "locked": prediction.get("locked"),
+                "score_total": prediction.get("score_total"),
+            }
+        )
+    rows.sort(key=lambda row: str(row.get("submitted_at") or ""), reverse=True)
+    return rows[:limit]
 
 
 # ═══════════════════════════════════════ STATS DASHBOARD ══════════════════════
@@ -215,12 +288,7 @@ async def _race_business_operations(now: datetime) -> tuple[list[dict], list[dic
                     )
                 )
 
-    relevant_races = [
-        race
-        for race in race_rows
-        if race.get("status") in {"upcoming", "in_progress", "finished"}
-    ]
-    return relevant_races[:8], action_items
+    return _dashboard_watchlist_races(race_rows)[:8], action_items
 
 
 async def _business_operations_payload() -> dict:
@@ -370,8 +438,12 @@ async def get_dashboard_stats(admin: dict = Depends(get_current_admin)) -> dict:
     week_ago = (datetime.now(UTC) - timedelta(days=7)).isoformat()
     day_ago = (datetime.now(UTC) - timedelta(days=1)).isoformat()
     new_users_week = await db.users.count_documents({"created_at": {"$gte": week_ago}})
-    predictions_week = await db.predictions.count_documents({"created_at": {"$gte": week_ago}})
-    predictions_day = await db.predictions.count_documents({"created_at": {"$gte": day_ago}})
+    predictions_week = await db.predictions.count_documents(
+        prediction_activity_since_query(week_ago) or {}
+    )
+    predictions_day = await db.predictions.count_documents(
+        prediction_activity_since_query(day_ago) or {}
+    )
     activity_day = await db.admin_activity_logs.count_documents({"created_at": {"$gte": day_ago}})
     recent_activity_logs = (
         await db.admin_activity_logs.find({}, {"_id": 0})
@@ -379,6 +451,22 @@ async def get_dashboard_stats(admin: dict = Depends(get_current_admin)) -> dict:
         .limit(5)
         .to_list(5)
     )
+    raw_recent_users = (
+        await db.users.find(
+            {},
+            {
+                "_id": 0,
+                "password_hash": 0,
+                "email_verification_token": 0,
+                "reset_password_token": 0,
+            },
+        )
+        .sort("created_at", -1)
+        .limit(6)
+        .to_list(6)
+    )
+    recent_users = await recent_user_dashboard_rows(raw_recent_users)
+    recent_predictions = await _recent_dashboard_predictions(limit=6)
 
     return {
         "total_users": total_users,
@@ -397,5 +485,7 @@ async def get_dashboard_stats(admin: dict = Depends(get_current_admin)) -> dict:
         "total_activity_logs": total_activity_logs,
         "activity_day": activity_day,
         "recent_activity_logs": recent_activity_logs,
+        "recent_users": recent_users,
+        "recent_predictions": recent_predictions,
         "new_users_week": new_users_week,
     }

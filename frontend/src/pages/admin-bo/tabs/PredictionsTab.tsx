@@ -1,7 +1,8 @@
 /**
  * Admin predictions tab — moderation, scoring preview and corrective editing.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BarChart3,
@@ -42,6 +43,9 @@ type AdminPrediction = {
   race_date?: string;
   created_at?: string;
   updated_at?: string;
+  main_updated_at?: string;
+  sprint_updated_at?: string;
+  submitted_at?: string | null;
   completion_status?: "complete" | "incomplete";
   is_complete?: boolean;
   missing_fields?: string[];
@@ -129,6 +133,16 @@ function parseDrivers(value: string) {
     .filter(Boolean);
 }
 
+function predictionSubmittedAt(prediction: AdminPrediction) {
+  return (
+    prediction.submitted_at ??
+    prediction.updated_at ??
+    prediction.main_updated_at ??
+    prediction.sprint_updated_at ??
+    prediction.created_at
+  );
+}
+
 function predictionToDraft(prediction: AdminPrediction): PredictionDraft {
   return {
     quali_pole: prediction.quali_pole ?? "",
@@ -189,17 +203,50 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+function lockedFilterFromParam(value: string | null) {
+  if (value === "locked" || value === "true") return "locked";
+  if (value === "unlocked" || value === "false") return "unlocked";
+  return "";
+}
+
+function submittedAfterFromWindow(window: string) {
+  if (window === "24h") return new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  if (window === "7d") return new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  return "";
+}
+
 export default function PredictionsTab() {
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [page, setPage] = useState(0);
-  const [q, setQ] = useState("");
-  const [status, setStatus] = useState("");
-  const [lockedFilter, setLockedFilter] = useState("");
+  const [q, setQ] = useState(() => searchParams.get("q") ?? "");
+  const [status, setStatus] = useState(() => searchParams.get("status") ?? "");
+  const [lockedFilter, setLockedFilter] = useState(() =>
+    lockedFilterFromParam(searchParams.get("locked")),
+  );
+  const [reviewStatus, setReviewStatus] = useState(() => searchParams.get("review_status") ?? "");
+  const [submittedWindow, setSubmittedWindow] = useState(
+    () => searchParams.get("submitted_window") ?? "",
+  );
+  const [submittedAfterParam, setSubmittedAfterParam] = useState(
+    () => searchParams.get("submitted_after") ?? "",
+  );
   const [selectedPrediction, setSelectedPrediction] = useState<AdminPrediction | null>(null);
   const [draft, setDraft] = useState<PredictionDraft>(EMPTY_DRAFT);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [batchReviewStatus, setBatchReviewStatus] = useState("in_review");
   const limit = 20;
+  const selectedPredictionId = searchParams.get("prediction");
+
+  useEffect(() => {
+    setQ(searchParams.get("q") ?? "");
+    setStatus(searchParams.get("status") ?? "");
+    setLockedFilter(lockedFilterFromParam(searchParams.get("locked")));
+    setReviewStatus(searchParams.get("review_status") ?? "");
+    setSubmittedWindow(searchParams.get("submitted_window") ?? "");
+    setSubmittedAfterParam(searchParams.get("submitted_after") ?? "");
+    setPage(0);
+  }, [searchParams]);
 
   const { data: drivers = [] } = useQuery({
     queryKey: ["drivers", "admin-prediction-tokens"],
@@ -210,10 +257,16 @@ export default function PredictionsTab() {
     () => buildDriverLookup(Array.isArray(drivers) ? drivers : []),
     [drivers],
   );
+  const submittedAfter = useMemo(
+    () => submittedAfterParam || submittedAfterFromWindow(submittedWindow) || undefined,
+    [submittedAfterParam, submittedWindow],
+  );
 
   const filterParams = {
     q: q.trim() || undefined,
     status: status || undefined,
+    review_status: reviewStatus || undefined,
+    submitted_after: submittedAfter,
     locked: lockedFilter === "" ? undefined : lockedFilter === "locked",
   };
 
@@ -228,6 +281,12 @@ export default function PredictionsTab() {
     queryFn: () => adminApi.predictions.list(listParams),
   });
 
+  const selectedPredictionQuery = useQuery({
+    queryKey: ["admin-bo", "predictions", "detail", selectedPredictionId],
+    queryFn: () => adminApi.predictions.get(String(selectedPredictionId)),
+    enabled: !!selectedPredictionId,
+  });
+
   const { data: analytics } = useQuery({
     queryKey: ["admin-bo", "predictions", "analytics", filterParams],
     queryFn: () => adminApi.predictions.analytics(filterParams),
@@ -236,6 +295,39 @@ export default function PredictionsTab() {
   const predictions = (data?.predictions ?? []) as AdminPrediction[];
   const total = data?.total ?? 0;
   const summary = data?.summary ?? {};
+
+  useEffect(() => {
+    if (!selectedPredictionQuery.data) return;
+    const prediction = selectedPredictionQuery.data as AdminPrediction;
+    setSelectedPrediction(prediction);
+    setDraft(predictionToDraft(prediction));
+  }, [selectedPredictionQuery.data]);
+
+  const clearSelectedPredictionParam = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("prediction");
+    nextParams.set("tab", "predictions");
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  const clearFilters = () => {
+    setQ("");
+    setStatus("");
+    setLockedFilter("");
+    setReviewStatus("");
+    setSubmittedWindow("");
+    setSubmittedAfterParam("");
+    setPage(0);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("q");
+    nextParams.delete("status");
+    nextParams.delete("locked");
+    nextParams.delete("review_status");
+    nextParams.delete("submitted_window");
+    nextParams.delete("submitted_after");
+    nextParams.set("tab", "predictions");
+    setSearchParams(nextParams, { replace: true });
+  };
 
   const updateMutation = useMutation({
     mutationFn: () => {
@@ -246,6 +338,7 @@ export default function PredictionsTab() {
       toast.success("Pronostic mis à jour");
       setSelectedPrediction(null);
       setDraft(EMPTY_DRAFT);
+      clearSelectedPredictionParam();
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "predictions"] });
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "activity-logs"] });
     },
@@ -292,6 +385,9 @@ export default function PredictionsTab() {
     mutationFn: (predictionId: string) => adminApi.predictions.delete(predictionId),
     onSuccess: () => {
       toast.success("Pronostic supprimé");
+      setSelectedPrediction(null);
+      setDraft(EMPTY_DRAFT);
+      clearSelectedPredictionParam();
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "predictions"] });
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "activity-logs"] });
     },
@@ -301,6 +397,12 @@ export default function PredictionsTab() {
   const openEditor = (prediction: AdminPrediction) => {
     setSelectedPrediction(prediction);
     setDraft(predictionToDraft(prediction));
+    if (prediction.id) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set("tab", "predictions");
+      nextParams.set("prediction", prediction.id);
+      setSearchParams(nextParams, { replace: true });
+    }
   };
 
   const pageIds = predictions.map((prediction) => prediction.id).filter(Boolean) as string[];
@@ -451,7 +553,7 @@ export default function PredictionsTab() {
       )}
 
       <div className="card-arcade mb-4 p-4">
-        <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px_auto]">
+        <div className="grid gap-3 lg:grid-cols-[1fr_150px_150px_170px_170px_auto]">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
             <Input
@@ -479,6 +581,35 @@ export default function PredictionsTab() {
             <option value="unscored">Non scorés</option>
           </select>
           <select
+            value={submittedWindow}
+            onChange={(e) => {
+              setSubmittedWindow(e.target.value);
+              setSubmittedAfterParam("");
+              setPage(0);
+            }}
+            className="h-10 rounded-sm border border-gray-700 bg-gray-900 px-3 font-body text-sm text-white"
+          >
+            <option value="">Toute période</option>
+            <option value="24h">24h</option>
+            <option value="7d">7 jours</option>
+          </select>
+          <select
+            value={reviewStatus}
+            onChange={(e) => {
+              setReviewStatus(e.target.value);
+              setPage(0);
+            }}
+            className="h-10 rounded-sm border border-gray-700 bg-gray-900 px-3 font-body text-sm text-white"
+          >
+            <option value="">Toute revue</option>
+            <option value="attention">À traiter</option>
+            <option value="in_review">En revue</option>
+            <option value="needs_review">Besoin revue</option>
+            <option value="flagged">Signalés</option>
+            <option value="validated">Validés</option>
+            <option value="archived">Archivés</option>
+          </select>
+          <select
             value={lockedFilter}
             onChange={(e) => {
               setLockedFilter(e.target.value);
@@ -490,16 +621,7 @@ export default function PredictionsTab() {
             <option value="locked">Verrouillés</option>
             <option value="unlocked">Ouverts</option>
           </select>
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setQ("");
-              setStatus("");
-              setLockedFilter("");
-              setPage(0);
-            }}
-            className="text-xs text-gray-400"
-          >
+          <Button variant="ghost" onClick={clearFilters} className="text-xs text-gray-400">
             Réinitialiser
           </Button>
         </div>
@@ -625,6 +747,7 @@ export default function PredictionsTab() {
                 onClick={() => {
                   setSelectedPrediction(null);
                   setDraft(EMPTY_DRAFT);
+                  clearSelectedPredictionParam();
                 }}
                 className="text-xs text-gray-400"
               >
@@ -744,7 +867,7 @@ export default function PredictionsTab() {
                   <th className="p-3 text-left">État</th>
                   <th className="p-3 text-left">Pick principal</th>
                   <th className="p-3 text-left">Score</th>
-                  <th className="p-3 text-left">Date</th>
+                  <th className="p-3 text-left">Dernier dépôt</th>
                   <th className="p-3 text-right">Actions</th>
                 </tr>
               </thead>
@@ -833,7 +956,7 @@ export default function PredictionsTab() {
                       {prediction.score_preview ? `${prediction.score_preview.total} pts` : "—"}
                     </td>
                     <td className="p-3 font-body text-xs text-gray-500">
-                      {formatDateTime(prediction.updated_at ?? prediction.created_at)}
+                      {formatDateTime(predictionSubmittedAt(prediction))}
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">

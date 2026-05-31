@@ -1,7 +1,8 @@
 /**
  * Admin scoring tab — leaderboard reconciliation against scoring ledgers.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -184,16 +185,26 @@ function SourceBadge({ source }: { source: ScoreLedgerRow["source"] }) {
 
 export default function ScoringTab() {
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const urlRaceId = searchParams.get("race") ?? searchParams.get("race_id") ?? "";
   const [championshipId, setChampionshipId] = useState(DEFAULT_CHAMPIONSHIP_ID);
-  const [raceId, setRaceId] = useState("");
+  const [raceId, setRaceId] = useState(urlRaceId);
   const [limit, setLimit] = useState(500);
   const [mismatchesOnly, setMismatchesOnly] = useState(true);
   const [ledgerPage, setLedgerPage] = useState(0);
-  const [scoreType, setScoreType] = useState<ScoreType>("all");
+  const [scoreType, setScoreType] = useState<ScoreType>(urlRaceId ? "official_race" : "all");
   const [ledgerQ, setLedgerQ] = useState("");
-  const [ledgerRaceId, setLedgerRaceId] = useState("");
+  const [ledgerRaceId, setLedgerRaceId] = useState(urlRaceId);
   const [ledgerUserId, setLedgerUserId] = useState("");
   const [ledgerLeagueId, setLedgerLeagueId] = useState("");
+
+  useEffect(() => {
+    if (!urlRaceId) return;
+    setRaceId(urlRaceId);
+    setLedgerRaceId(urlRaceId);
+    setScoreType("official_race");
+    setLedgerPage(0);
+  }, [urlRaceId]);
 
   const params = {
     championship_id: championshipId.trim() || DEFAULT_CHAMPIONSHIP_ID,
@@ -293,9 +304,20 @@ export default function ScoringTab() {
     () => (Array.isArray(raceOptionsData) ? raceOptionsData : []),
     [raceOptionsData],
   );
+  const raceOptionsForControls = useMemo(() => {
+    if (!urlRaceId || raceOptions.some((race) => race.id === urlRaceId)) return raceOptions;
+    return [
+      {
+        id: urlRaceId,
+        name: `Course ciblée (${urlRaceId})`,
+        has_results: true,
+      },
+      ...raceOptions,
+    ];
+  }, [raceOptions, urlRaceId]);
   const rescoreRaceOptions = useMemo(
-    () => raceOptions.filter((race) => race.has_results && !race.is_cancelled),
-    [raceOptions],
+    () => raceOptionsForControls.filter((race) => race.has_results && !race.is_cancelled),
+    [raceOptionsForControls],
   );
 
   const summary = data?.summary;
@@ -522,7 +544,7 @@ export default function ScoringTab() {
               data-testid="scoring-ledger-race"
             >
               <option value="">Toutes courses</option>
-              {raceOptions.map((race) => (
+              {raceOptionsForControls.map((race) => (
                 <option key={race.id} value={race.id}>
                   {race.round_number ? `${race.round_number}. ` : ""}
                   {race.name}

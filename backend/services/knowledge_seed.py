@@ -44,6 +44,7 @@ VALID_SEARCH_MODES = {"hybrid", "lexical", "vector"}
 ENTITY_ADMIN_EDITABLE_FIELDS = {
     "name",
     "name_translations",
+    "visual",
     "data_status",
     "review_status",
     "admin_notes",
@@ -1305,6 +1306,29 @@ def _entities_by_type(entities: list[dict[str, Any]]) -> dict[str, list[dict[str
     return grouped
 
 
+def _entity_visual_url(
+    entity: dict[str, Any] | None,
+    preferred_fields: tuple[str, ...] = ("image_url", "logo_url", "photo_url"),
+) -> str | None:
+    visual = (entity or {}).get("visual") or {}
+    for field in preferred_fields:
+        url = str(visual.get(field) or "").strip()
+        if url:
+            return url
+    return None
+
+
+def _entity_visual(
+    entity: dict[str, Any] | None,
+    preferred_fields: tuple[str, ...] = ("image_url", "logo_url", "photo_url"),
+) -> dict[str, Any] | None:
+    visual = dict((entity or {}).get("visual") or {})
+    url = _entity_visual_url(entity, preferred_fields)
+    if url:
+        visual["url"] = url
+    return visual or None
+
+
 async def get_race_knowledge_context(
     *,
     race_id: str,
@@ -1347,14 +1371,22 @@ async def get_race_knowledge_context(
 
     circuit = (entities_by_type.get("circuit") or [None])[0]
     location = (entities_by_type.get("location") or [None])[0]
+    circuit_profile = (circuit or {}).get("circuit") or {}
+    image_url = _entity_visual_url(race_entity)
+    circuit_image_url = _entity_visual_url(circuit) or circuit_profile.get("map_image_url")
     summary = {
         "race": race_entity.get("name"),
         "date": race_entity.get("date"),
         "round_number": race_entity.get("round_number"),
         "format": "sprint" if race_entity.get("is_sprint") else "classic",
         "calendar_status": race_entity.get("calendar_status"),
+        "visual": _entity_visual(race_entity),
+        "image_url": image_url,
         "circuit": circuit.get("name") if circuit else None,
+        "circuit_visual": _entity_visual(circuit),
+        "circuit_image_url": circuit_image_url,
         "location": location.get("name") if location else None,
+        "location_visual": _entity_visual(location),
         "country": (location or {}).get("location", {}).get("country"),
         "timezone": race_entity.get("timezone"),
     }
@@ -1418,10 +1450,13 @@ async def get_team_knowledge_context(
     constructor = (entities_by_type.get("constructor") or [None])[0]
     technical_team = (entities_by_type.get("technical_team") or [None])[0]
     drivers = entities_by_type.get("driver") or []
+    logo_url = _entity_visual_url(team_entity, ("logo_url", "image_url", "photo_url"))
     summary = {
         "team": team_entity.get("display_name") or team_entity.get("name"),
         "team_id": team_entity.get("team_id"),
         "full_team_name": team_entity.get("full_team_name"),
+        "visual": _entity_visual(team_entity, ("logo_url", "image_url", "photo_url")),
+        "logo_url": logo_url,
         "base": team_entity.get("base"),
         "drivers": [
             {
@@ -1429,6 +1464,8 @@ async def get_team_knowledge_context(
                 "name": driver.get("name"),
                 "code": driver.get("code"),
                 "number": driver.get("number"),
+                "visual": _entity_visual(driver, ("photo_url", "image_url", "logo_url")),
+                "photo_url": _entity_visual_url(driver, ("photo_url", "image_url", "logo_url")),
             }
             for driver in drivers
         ],
@@ -1496,14 +1533,19 @@ async def get_driver_knowledge_context(
     team = (entities_by_type.get("team") or [None])[0]
     constructor = (entities_by_type.get("constructor") or [None])[0]
     technical_team = (entities_by_type.get("technical_team") or [None])[0]
+    photo_url = _entity_visual_url(driver_entity, ("photo_url", "image_url", "logo_url"))
     summary = {
         "driver": driver_entity.get("name"),
         "driver_id": driver_entity.get("driver_id"),
         "code": driver_entity.get("code"),
         "number": driver_entity.get("number"),
         "country": driver_entity.get("country_name") or driver_entity.get("country_code"),
+        "visual": _entity_visual(driver_entity, ("photo_url", "image_url", "logo_url")),
+        "photo_url": photo_url,
         "team": (team or {}).get("display_name") or (team or {}).get("name"),
         "team_id": driver_entity.get("team_id"),
+        "team_visual": _entity_visual(team, ("logo_url", "image_url", "photo_url")),
+        "team_logo_url": _entity_visual_url(team, ("logo_url", "image_url", "photo_url")),
         "chassis": (constructor or {}).get("chassis"),
         "power_unit": (constructor or {}).get("power_unit"),
         "team_chief": (technical_team or {}).get("team_chief"),
@@ -1583,6 +1625,9 @@ def prediction_brief_from_context(context: dict[str, Any]) -> dict[str, Any]:
         "found": True,
         "title": f"Brief pronostic - {summary.get('race')}",
         "summary": summary,
+        "visual": summary.get("visual"),
+        "image_url": summary.get("image_url"),
+        "circuit_image_url": summary.get("circuit_image_url"),
         "sections": sections,
         "source_document_ids": [document["id"] for document in context.get("documents", [])],
         "useful_links": context.get("useful_links", []),
@@ -1635,6 +1680,8 @@ def team_brief_from_context(context: dict[str, Any]) -> dict[str, Any]:
         "found": True,
         "title": f"Brief ecurie - {summary.get('team')}",
         "summary": summary,
+        "visual": summary.get("visual"),
+        "logo_url": summary.get("logo_url"),
         "sections": sections,
         "source_document_ids": [document["id"] for document in context.get("documents", [])],
         "useful_links": context.get("useful_links", []),
@@ -1683,6 +1730,9 @@ def driver_brief_from_context(context: dict[str, Any]) -> dict[str, Any]:
         "found": True,
         "title": f"Brief pilote - {summary.get('driver')}",
         "summary": summary,
+        "visual": summary.get("visual"),
+        "photo_url": summary.get("photo_url"),
+        "team_logo_url": summary.get("team_logo_url"),
         "sections": sections,
         "source_document_ids": [document["id"] for document in context.get("documents", [])],
         "useful_links": context.get("useful_links", []),

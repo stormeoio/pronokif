@@ -58,6 +58,7 @@ class KnowledgeClaimRequest(BaseModel):
 class KnowledgeEntityUpdate(BaseModel):
     name: str | None = Field(default=None, max_length=200)
     name_translations: dict[str, str] | None = None
+    visual: dict[str, Any] | None = None
     data_status: str | None = Field(default=None, max_length=80)
     review_status: str | None = Field(default=None, max_length=50)
     admin_notes: str | None = Field(default=None, max_length=4000)

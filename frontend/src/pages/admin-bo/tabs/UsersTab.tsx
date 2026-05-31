@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { adminApi } from "../adminApi";
+import { AdminMediaThumbnailPicker } from "../AdminMediaThumbnailPicker";
 import { Button } from "@/components/ui/button";
 import { DateEntityToken, RaceEntityToken } from "@/components/entities/RaceEntityToken";
 import { Input } from "@/components/ui/input";
@@ -122,6 +123,7 @@ export default function UsersTab() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [editingUser, setEditingUser] = useState<Record<string, unknown> | null>(null);
+  const [editingAvatarDirty, setEditingAvatarDirty] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [inviteInput, setInviteInput] = useState("");
   const [inviteMessage, setInviteMessage] = useState("");
@@ -153,6 +155,11 @@ export default function UsersTab() {
       nextParams.delete("user");
     }
     setSearchParams(nextParams, { replace: true });
+  };
+
+  const openUserEdit = (user: Record<string, unknown>) => {
+    setEditingUser(user);
+    setEditingAvatarDirty(false);
   };
 
   const { data, isLoading } = useQuery({
@@ -323,13 +330,19 @@ export default function UsersTab() {
 
   const handleSaveEdit = async () => {
     if (!editingUser) return;
+    const payload: Record<string, unknown> = {
+      username: editingUser.username,
+      email: editingUser.email,
+    };
+    if (editingAvatarDirty) {
+      payload.custom_avatar_url = editingUser.custom_avatar_url ?? "";
+    }
+
     try {
-      await adminApi.users.update(editingUser.id as string, {
-        username: editingUser.username,
-        email: editingUser.email,
-      });
+      await adminApi.users.update(editingUser.id as string, payload);
       toast.success("Utilisateur mis à jour");
       setEditingUser(null);
+      setEditingAvatarDirty(false);
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "users"] });
       queryClient.invalidateQueries({ queryKey: ["admin-bo", "activity-logs"] });
       if (selectedUserId === editingUser.id) {
@@ -576,6 +589,24 @@ export default function UsersTab() {
               className="bg-gray-900 border-gray-700 text-white"
             />
           </div>
+          <div className="mb-3">
+            <AdminMediaThumbnailPicker
+              value={(editingUser.custom_avatar_url as string) || ""}
+              onValueChange={(custom_avatar_url) => {
+                setEditingAvatarDirty(true);
+                setEditingUser({
+                  ...editingUser,
+                  custom_avatar_url,
+                  avatar_id: custom_avatar_url ? null : editingUser.avatar_id,
+                });
+              }}
+              entityType="user"
+              entityId={String(editingUser.id)}
+              folder="avatars"
+              label="Avatar joueur"
+              testId={`admin-user-avatar-picker-${String(editingUser.id)}`}
+            />
+          </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={handleSaveEdit} className="btn-racing text-xs">
               Enregistrer
@@ -583,7 +614,10 @@ export default function UsersTab() {
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => setEditingUser(null)}
+              onClick={() => {
+                setEditingUser(null);
+                setEditingAvatarDirty(false);
+              }}
               className="text-gray-400 text-xs"
             >
               Annuler
@@ -609,6 +643,18 @@ export default function UsersTab() {
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              {selectedUser && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => openUserEdit(selectedUser as Record<string, unknown>)}
+                  className="text-xs text-cyan-300"
+                  data-testid="admin-selected-user-edit"
+                >
+                  <Edit2 className="mr-1 h-4 w-4" />
+                  Modifier
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="ghost"
@@ -1031,7 +1077,7 @@ export default function UsersTab() {
                           <Eye className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => setEditingUser(user)}
+                          onClick={() => openUserEdit(user)}
                           className="p-1.5 text-gray-400 hover:text-cyan-400 rounded"
                           title="Modifier"
                         >

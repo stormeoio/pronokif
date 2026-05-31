@@ -36,6 +36,61 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+type RoadmapState = {
+  tasks: RoadmapTask[];
+  phases: Phase[];
+};
+
+type StoredRoadmapState = {
+  tasks?: RoadmapTask[];
+  phases?: Phase[];
+};
+
+function mergeDefaultsById<T extends { id: string }>(saved: T[] | undefined, defaults: T[]): T[] {
+  const merged = new Map<string, T>();
+
+  defaults.forEach((item) => merged.set(item.id, item));
+  saved?.forEach((item) => {
+    const defaultItem = merged.get(item.id);
+    merged.set(item.id, defaultItem ? { ...defaultItem, ...item } : item);
+  });
+
+  return Array.from(merged.values());
+}
+
+function loadRoadmapState(): RoadmapState {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (!saved) {
+    return { tasks: DEFAULT_TASKS, phases: DEFAULT_PHASES };
+  }
+
+  try {
+    const data = JSON.parse(saved) as StoredRoadmapState;
+    return {
+      tasks: mergeDefaultsById(Array.isArray(data.tasks) ? data.tasks : undefined, DEFAULT_TASKS),
+      phases: mergeDefaultsById(
+        Array.isArray(data.phases) ? data.phases : undefined,
+        DEFAULT_PHASES,
+      ),
+    };
+  } catch (error) {
+    console.warn("Roadmap locale illisible, rechargement depuis les données par défaut.", error);
+    return { tasks: DEFAULT_TASKS, phases: DEFAULT_PHASES };
+  }
+}
+
+function formatRoadmapDate(date: string | undefined): string | null {
+  if (!date) return null;
+  const parsedDate = new Date(`${date}T00:00:00`);
+  if (Number.isNaN(parsedDate.getTime())) return date;
+
+  return new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(parsedDate);
+}
+
 // ── Main component ──────────────────────────────────────────────────────────
 
 export default function RoadmapTab() {
@@ -49,17 +104,12 @@ export default function RoadmapTab() {
   const [editingTask, setEditingTask] = useState<RoadmapTask | null>(null);
   const [filterStatus, setFilterStatus] = useState<TaskStatus | "all">("all");
 
-  // Load from localStorage
+  // Load from localStorage and merge new default roadmap items without losing admin edits.
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const data = JSON.parse(saved);
-      setTasks(data.tasks || DEFAULT_TASKS);
-      setPhases(data.phases || DEFAULT_PHASES);
-    } else {
-      setTasks(DEFAULT_TASKS);
-      setPhases(DEFAULT_PHASES);
-    }
+    const roadmapState = loadRoadmapState();
+    setTasks(roadmapState.tasks);
+    setPhases(roadmapState.phases);
+    setExpandedPhases(new Set(roadmapState.phases.map((phase) => phase.id)));
   }, []);
 
   // Save to localStorage
@@ -298,6 +348,8 @@ function ChecklistView({
                   {phaseTasks.map((task) => {
                     const StatusIcon = STATUS_CONFIG[task.status].icon;
                     const CatConfig = CATEGORY_CONFIG[task.category];
+                    const completedDate =
+                      task.status === "done" ? formatRoadmapDate(task.completedAt) : null;
                     return (
                       <div
                         key={task.id}
@@ -307,11 +359,18 @@ function ChecklistView({
                           <StatusIcon className={`w-4 h-4 ${STATUS_CONFIG[task.status].color}`} />
                         </button>
                         <div className="flex-1 min-w-0">
-                          <p
-                            className={`font-body text-sm ${task.status === "done" ? "text-gray-500 line-through" : "text-white"}`}
-                          >
-                            {task.title}
-                          </p>
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <p
+                              className={`font-body text-sm ${task.status === "done" ? "text-gray-500 line-through" : "text-white"}`}
+                            >
+                              {task.title}
+                            </p>
+                            {completedDate && (
+                              <span className="font-data text-[10px] uppercase tracking-[0.12em] text-green-400/80">
+                                Livré le {completedDate}
+                              </span>
+                            )}
+                          </div>
                           {task.description && (
                             <p className="font-body text-xs text-gray-600 truncate">
                               {task.description}

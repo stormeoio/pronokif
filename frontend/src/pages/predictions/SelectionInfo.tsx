@@ -1,11 +1,10 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { Radio } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { easing, duration } from "@/lib/motion";
 
 // ----------------------------------------------------------- types ---
 
 export interface SelectionInfoProps {
-  activeTab: string;
   selectionMode: string;
   sprintQualiTop10: string[];
   sprintRaceTop10: string[];
@@ -18,7 +17,6 @@ export interface SelectionInfoProps {
 // ----------------------------------------------------------- component ---
 
 export default function SelectionInfo({
-  activeTab,
   selectionMode,
   sprintQualiTop10,
   sprintRaceTop10,
@@ -54,18 +52,32 @@ export default function SelectionInfo({
   };
 
   return (
-    <div className="bg-pk-surface border border-white/[0.08] rounded-md px-4 py-3">
+    <div
+      className="rounded-sm border border-white/[0.08] bg-pk-surface/80 px-3 py-2 shadow-[inset_2px_0_0_rgba(225,6,0,0.5)]"
+      role="status"
+      data-testid="prediction-selection-info"
+    >
       <AnimatePresence mode="wait">
-        <motion.p
+        <motion.div
           key={selectionMode}
-          className="text-[0.8125rem] text-pk-titane"
+          className="flex items-center gap-2"
           initial={{ opacity: 0, x: -6 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 6 }}
           transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
         >
-          {messageByMode[selectionMode] ?? ""}
-        </motion.p>
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border border-pk-red/25 bg-pk-red-subtle text-pk-red">
+            <Radio size={12} strokeWidth={1.7} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="font-data text-[0.48rem] uppercase tracking-[0.14em] text-pk-titane">
+              {t("predictions.form.now_selecting")}
+            </p>
+            <p className="truncate text-[0.75rem] leading-4 text-pk-piste">
+              {messageByMode[selectionMode] ?? ""}
+            </p>
+          </div>
+        </motion.div>
       </AnimatePresence>
     </div>
   );

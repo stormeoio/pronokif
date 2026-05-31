@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Settings, Save, Loader2, KeyRound, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { adminApi } from "../adminApi";
+import { AdminMediaThumbnailPicker } from "../AdminMediaThumbnailPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -17,6 +18,8 @@ export default function SettingsTab() {
     app_description: "",
     primary_color: "#f97316",
     accent_color: "#06b6d4",
+    logo_url: "",
+    favicon_url: "",
     maintenance_mode: false,
     registration_open: true,
     max_leagues_per_user: 5,
@@ -46,6 +49,8 @@ export default function SettingsTab() {
         app_description: settings.app_description || "",
         primary_color: settings.primary_color || "#f97316",
         accent_color: settings.accent_color || "#06b6d4",
+        logo_url: settings.logo_url || "",
+        favicon_url: settings.favicon_url || "",
         maintenance_mode: settings.maintenance_mode ?? false,
         registration_open: settings.registration_open ?? true,
         max_leagues_per_user: settings.max_leagues_per_user ?? 5,
@@ -179,6 +184,26 @@ export default function SettingsTab() {
               value={form.app_description}
               onChange={(e) => setForm({ ...form, app_description: e.target.value })}
               className="bg-gray-900 border-gray-700 text-white"
+            />
+          </div>
+          <div className="col-span-2 grid gap-3 lg:grid-cols-2">
+            <AdminMediaThumbnailPicker
+              value={form.logo_url}
+              onValueChange={(logo_url) => setForm({ ...form, logo_url })}
+              entityType="app_setting"
+              entityId="global"
+              folder="branding"
+              label="Logo applicatif"
+              testId="settings-logo-picker"
+            />
+            <AdminMediaThumbnailPicker
+              value={form.favicon_url}
+              onValueChange={(favicon_url) => setForm({ ...form, favicon_url })}
+              entityType="app_setting"
+              entityId="global"
+              folder="branding"
+              label="Favicon / icône PWA"
+              testId="settings-favicon-picker"
             />
           </div>
         </div>
