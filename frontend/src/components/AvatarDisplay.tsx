@@ -19,7 +19,6 @@ import {
   User,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { ChangeEvent } from "react";
 import { AvatarGenerator } from "./AvatarGenerator";
 import { haptic } from "@/lib/haptics";
 
@@ -180,22 +179,14 @@ interface Category {
   label: string;
 }
 
-export function AvatarSelector({
-  avatars,
-  selectedId,
-  onSelect,
-  customUrl,
-  onUpload,
-}: AvatarSelectorProps) {
-  const [category, setCategory] = useState("default");
-  const [uploading, setUploading] = useState(false);
+export function AvatarSelector({ avatars, selectedId, onSelect, onUpload }: AvatarSelectorProps) {
+  const [category, setCategory] = useState("generator");
 
   const categories: Category[] = [
-    { id: "default", label: "Classiques" },
-    { id: "teams", label: "Ecuries" },
+    { id: "generator", label: "Générer Avatar" },
     { id: "drivers", label: "Pilotes" },
-    { id: "custom", label: "Photo" },
-    { id: "generator", label: "Generateur" },
+    { id: "teams", label: "Écuries" },
+    { id: "default", label: "Classiques" },
   ];
 
   const filteredAvatars: AvatarObject[] =
@@ -204,23 +195,6 @@ export function AvatarSelector({
         a.category === category ||
         (category === "default" && ["animals", "gaming", "abstract"].includes(a.category)),
     ) ?? [];
-
-  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>): Promise<void> => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 500000) {
-      alert("Image trop lourde (max 500Ko)");
-      return;
-    }
-
-    setUploading(true);
-    try {
-      await onUpload(file);
-    } finally {
-      setUploading(false);
-    }
-  };
 
   return (
     <div className="space-y-4">
@@ -244,44 +218,14 @@ export function AvatarSelector({
         ))}
       </div>
 
-      {/* Avatar grid, upload, or generator */}
+      {/* Generator or predefined avatar grid */}
       {category === "generator" ? (
         <AvatarGenerator
           onGenerated={async (file: File) => {
-            setUploading(true);
-            try {
-              await onUpload(file);
-            } finally {
-              setUploading(false);
-            }
+            await onUpload(file);
           }}
-          onCancel={() => setCategory("default")}
+          onCancel={() => setCategory("drivers")}
         />
-      ) : category === "custom" ? (
-        <div className="space-y-4">
-          <div className="flex items-center justify-center p-8 border-2 border-dashed border-white/[0.12] rounded-lg">
-            <label className="cursor-pointer text-center">
-              <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
-              <div className="space-y-2">
-                <div className="w-16 h-16 mx-auto rounded-lg bg-pk-surface flex items-center justify-center">
-                  {customUrl ? (
-                    <img
-                      src={customUrl}
-                      alt="Avatar actuel"
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  ) : (
-                    <User className="w-8 h-8 text-pk-titane" />
-                  )}
-                </div>
-                <p className="text-sm text-pk-titane">
-                  {uploading ? "Envoi en cours..." : "Clique pour envoyer une photo"}
-                </p>
-                <p className="font-data text-[0.5625rem] text-pk-titane/60">Max 500Ko, JPG/PNG</p>
-              </div>
-            </label>
-          </div>
-        </div>
       ) : (
         <div className="grid grid-cols-5 gap-3">
           {filteredAvatars.map((avatar) => (

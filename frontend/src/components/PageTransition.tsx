@@ -39,12 +39,16 @@ const pageVariants = {
   },
 };
 
-// Slide from right (for drill-down pages)
+// Slide from right (for drill-down pages).
+// Keep the horizontal travel small: a large translateX overflows the viewport
+// during the transition (the global `overflow-x: clip` clips it, but a big
+// offset still produces a visible clipped "wipe"). A short slide reads as a
+// directional drill-down without spilling content off-screen.
 const slideVariants = {
   initial: {
     opacity: 0,
-    x: 60,
-    scale: 0.97,
+    x: 24,
+    scale: 0.98,
   },
   animate: {
     opacity: 1,
@@ -57,8 +61,8 @@ const slideVariants = {
   },
   exit: {
     opacity: 0,
-    x: -30,
-    scale: 0.98,
+    x: -12,
+    scale: 0.99,
     transition: {
       duration: 0.2,
     },
@@ -96,7 +100,7 @@ function getVariants(pathname: string) {
     pathname.includes("/results/") ||
     pathname.includes("/race/") ||
     pathname.includes("/driver/") ||
-    pathname.includes("/league/") && pathname.includes("/")
+    (pathname.includes("/league/") && pathname.includes("/"))
   ) {
     return slideVariants;
   }

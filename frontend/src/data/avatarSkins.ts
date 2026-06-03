@@ -37,9 +37,7 @@ export const AVATAR_TEAMS: AvatarTeam[] = [
     color: "#E8002D",
     skins: [
       { id: "ferrari1", team: "Ferrari", file: "ferrari1", color: "#E8002D" },
-      { id: "ferrari2", team: "Ferrari", file: "ferrari2", color: "#E8002D" },
       { id: "ferrari3", team: "Ferrari", file: "ferrari3", color: "#E8002D" },
-      { id: "ferrari4", team: "Ferrari", file: "ferrari4", color: "#E8002D" },
     ],
   },
   {
@@ -47,7 +45,6 @@ export const AVATAR_TEAMS: AvatarTeam[] = [
     name: "Red Bull",
     color: "#3671C6",
     skins: [
-      { id: "redbull1", team: "Red Bull", file: "redbull1", color: "#3671C6" },
       { id: "redbull2", team: "Red Bull", file: "redbull2", color: "#3671C6" },
       { id: "redbull3", team: "Red Bull", file: "redbull3", color: "#3671C6" },
     ],
@@ -59,7 +56,6 @@ export const AVATAR_TEAMS: AvatarTeam[] = [
     skins: [
       { id: "mclaren1", team: "McLaren", file: "mclaren1", color: "#FF8000" },
       { id: "mclaren2", team: "McLaren", file: "mclaren2", color: "#FF8000" },
-      { id: "mclaren3", team: "McLaren", file: "mclaren3", color: "#FF8000" },
     ],
   },
   {
@@ -69,8 +65,6 @@ export const AVATAR_TEAMS: AvatarTeam[] = [
     skins: [
       { id: "mercedes1", team: "Mercedes", file: "mercedes1", color: "#27F4D2" },
       { id: "mercedes2", team: "Mercedes", file: "mercedes2", color: "#27F4D2" },
-      { id: "mercedes3", team: "Mercedes", file: "mercedes3", color: "#27F4D2" },
-      { id: "mercedes4", team: "Mercedes", file: "mercedes4", color: "#27F4D2" },
     ],
   },
   {
@@ -79,9 +73,7 @@ export const AVATAR_TEAMS: AvatarTeam[] = [
     color: "#FF87BC",
     skins: [
       { id: "alpine1", team: "Alpine", file: "alpine1", color: "#FF87BC" },
-      { id: "alpine2", team: "Alpine", file: "alpine2", color: "#FF87BC" },
       { id: "alpine3", team: "Alpine", file: "alpine3", color: "#FF87BC" },
-      { id: "alpine4", team: "Alpine", file: "alpine4", color: "#FF87BC" },
     ],
   },
   {
@@ -89,8 +81,6 @@ export const AVATAR_TEAMS: AvatarTeam[] = [
     name: "Aston Martin",
     color: "#229971",
     skins: [
-      { id: "astonmartin1", team: "Aston Martin", file: "astonmartin1", color: "#229971" },
-      { id: "astonmartin2", team: "Aston Martin", file: "astonmartin2", color: "#229971" },
       { id: "astonmartin3", team: "Aston Martin", file: "astonmartin3", color: "#229971" },
       { id: "astonmartin4", team: "Aston Martin", file: "astonmartin4", color: "#229971" },
     ],

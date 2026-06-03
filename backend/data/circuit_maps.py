@@ -2162,6 +2162,49 @@ CIRCUIT_MAPS: list[dict[str, Any]] = [
 ]
 
 
+def _apply_generated_geometry() -> None:
+    """Overlay machine-generated SVG geometry onto the curated editorial data.
+
+    Track shapes, racing lines and hotspot coordinates are derived from official
+    GPS circuit traces by ``scripts/generate_circuit_traces.py`` and stored in
+    ``circuit_geometry.json``. The curated labels/notes/turn numbers above stay
+    the source of truth for editorial content; only geometry is overridden here.
+    No-ops gracefully if the generated file is missing (e.g. before first run).
+    """
+    import json
+    from pathlib import Path
+
+    geometry_path = Path(__file__).with_name("circuit_geometry.json")
+    try:
+        geometry = json.loads(geometry_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return
+
+    for circuit_map in CIRCUIT_MAPS:
+        geo = geometry.get(circuit_map["key"])
+        if not geo:
+            continue
+        if geo.get("viewBox"):
+            circuit_map["viewBox"] = geo["viewBox"]
+        if geo.get("trackPath"):
+            circuit_map["trackPath"] = geo["trackPath"]
+        if geo.get("racingLinePath"):
+            circuit_map["racingLinePath"] = geo["racingLinePath"]
+        feature_xy = geo.get("features", {})
+        for feature in circuit_map.get("features", []):
+            xy = feature_xy.get(feature["id"])
+            if xy and len(xy) == 2:
+                feature["x"], feature["y"] = xy[0], xy[1]
+        zone_paths = geo.get("zones", {})
+        for zone in circuit_map.get("zones", []):
+            path = zone_paths.get(zone["id"])
+            if path:
+                zone["path"] = path
+
+
+_apply_generated_geometry()
+
+
 _FIRST_CORNERS_BY_KEY = {
     "albert-park": _first_corner("turn-1", "Virage 1", "Turn 1"),
     "suzuka": _first_corner("turn-1", "Virage 1", "Turn 1"),

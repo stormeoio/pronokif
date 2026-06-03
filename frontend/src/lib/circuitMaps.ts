@@ -1,3 +1,5 @@
+import { CIRCUIT_GEOMETRY } from "./circuitGeometry";
+
 export interface LocalizedCircuitText {
   fr: string;
   en: string;
@@ -2247,6 +2249,29 @@ export const CIRCUIT_MAPS: CircuitMapData[] = [
     ],
   },
 ];
+
+// Overlay machine-generated SVG geometry (official GPS traces) onto the curated
+// editorial data above. Track shapes, racing lines and hotspot coordinates come
+// from scripts/generate_circuit_traces.py -> circuitGeometry.ts. Editorial
+// content (labels/notes/turns) stays the source of truth here.
+for (const circuitMap of CIRCUIT_MAPS) {
+  const geo = CIRCUIT_GEOMETRY[circuitMap.key];
+  if (!geo) continue;
+  if (geo.viewBox) circuitMap.viewBox = geo.viewBox;
+  if (geo.trackPath) circuitMap.trackPath = geo.trackPath;
+  if (geo.racingLinePath) circuitMap.racingLinePath = geo.racingLinePath;
+  for (const feature of circuitMap.features) {
+    const xy = geo.features[feature.id];
+    if (xy) {
+      feature.x = xy[0];
+      feature.y = xy[1];
+    }
+  }
+  for (const zone of circuitMap.zones) {
+    const path = geo.zones[zone.id];
+    if (path) zone.path = path;
+  }
+}
 
 const FIRST_CORNERS_BY_KEY: Record<string, CircuitFirstCorner> = {
   "albert-park": firstCorner("turn-1", "Virage 1", "Turn 1"),

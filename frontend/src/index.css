@@ -99,12 +99,18 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scroll-behavior: smooth;
+    /* Block horizontal page scroll. Route-transition transforms (scale/slide)
+       transiently push content past the viewport; `clip` contains them without
+       creating a scroll container (preserves `position: sticky` headers). */
+    overflow-x: clip;
   }
 
   body {
     background-color: var(--pk-carbon);
     color: var(--pk-piste);
     min-height: 100vh;
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   /* Strict type hierarchy: Racing Sans One = impact only */
