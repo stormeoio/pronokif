@@ -140,10 +140,7 @@ def extract_coords(geojson: dict) -> list[Point]:
         coords = geom.get("coordinates")
         if gtype == "LineString":
             candidates.append([(float(c[0]), float(c[1])) for c in coords])
-        elif gtype == "MultiLineString":
-            for ring in coords:
-                candidates.append([(float(c[0]), float(c[1])) for c in ring])
-        elif gtype == "Polygon":
+        elif gtype in ("MultiLineString", "Polygon"):
             for ring in coords:
                 candidates.append([(float(c[0]), float(c[1])) for c in ring])
         elif gtype == "MultiPolygon":

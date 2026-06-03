@@ -6,7 +6,10 @@ describe("circuitMaps", () => {
     const map = getCircuitMapData("Circuit de Monaco");
 
     expect(map?.key).toBe("monaco");
-    expect(map?.trackPath).toContain("M78");
+    // Track path is a closed SVG curve (geometry is generated from official GPS
+    // traces, so assert shape rather than specific coordinates).
+    expect(map?.trackPath).toMatch(/^M[-\d.\s]+C/);
+    expect(map?.trackPath?.trim().endsWith("Z")).toBe(true);
     expect(map?.features.some((feature) => feature.id === "sainte-devote")).toBe(true);
   });
 
