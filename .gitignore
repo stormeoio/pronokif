@@ -1,3 +1,11 @@
+# ═══════════════════════ LOCAL WORKING ASSETS / DRAFTS (not product code) ════════
+# Source assets & scratch material kept locally, never committed.
+Player AvataR Generator/
+captures/
+NEWSLETTER_CEO_BACKOFFICE_*.html
+NEWSLETTER_CEO_BACKOFFICE_*.md
+backend/scripts/send_ceo_newsletter_test.py
+
 # ═══════════════════════════════════════ DEPENDENCIES ═══════════════════════════
 node_modules/
 .pnp
