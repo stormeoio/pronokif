@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ChangeEvent } from "react";
+import { AvatarGenerator } from "./AvatarGenerator";
 import { haptic } from "@/lib/haptics";
 
 // ------------------------------------------------------------------ types ---
@@ -194,6 +195,7 @@ export function AvatarSelector({
     { id: "teams", label: "Ecuries" },
     { id: "drivers", label: "Pilotes" },
     { id: "custom", label: "Photo" },
+    { id: "generator", label: "Generateur" },
   ];
 
   const filteredAvatars: AvatarObject[] =
@@ -242,8 +244,20 @@ export function AvatarSelector({
         ))}
       </div>
 
-      {/* Avatar grid or upload */}
-      {category === "custom" ? (
+      {/* Avatar grid, upload, or generator */}
+      {category === "generator" ? (
+        <AvatarGenerator
+          onGenerated={async (file: File) => {
+            setUploading(true);
+            try {
+              await onUpload(file);
+            } finally {
+              setUploading(false);
+            }
+          }}
+          onCancel={() => setCategory("default")}
+        />
+      ) : category === "custom" ? (
         <div className="space-y-4">
           <div className="flex items-center justify-center p-8 border-2 border-dashed border-white/[0.12] rounded-lg">
             <label className="cursor-pointer text-center">
