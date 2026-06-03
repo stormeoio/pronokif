@@ -153,6 +153,42 @@ export default function AuthPage() {
     }
   };
 
+  // ── DEV ONLY — 5 taps on the logo signs in a seeded test account. ──
+  // Gated by import.meta.env.DEV so the whole block (and the creds) is
+  // dead-code-eliminated from production builds. Override creds with
+  // VITE_DEV_TEST_EMAIL / VITE_DEV_TEST_PASSWORD if needed.
+  const devTapsRef = useRef(0);
+  const devTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleLogoTap = useCallback(() => {
+    if (!import.meta.env.DEV) return;
+    if (devTapTimerRef.current) clearTimeout(devTapTimerRef.current);
+    devTapsRef.current += 1;
+    devTapTimerRef.current = setTimeout(() => {
+      devTapsRef.current = 0;
+    }, 1500);
+    if (devTapsRef.current < 5) return;
+
+    devTapsRef.current = 0;
+    if (devTapTimerRef.current) clearTimeout(devTapTimerRef.current);
+
+    const email = import.meta.env.VITE_DEV_TEST_EMAIL ?? "patou@demo.pronokif.com";
+    const password = import.meta.env.VITE_DEV_TEST_PASSWORD ?? "demo1234";
+    setIsLoading(true);
+    toast.info(`Dev · connexion compte de test (${email})…`);
+    login(email, password)
+      .then((user) => {
+        toast.success("Dev · connecté");
+        navigateAfterAuth(user);
+      })
+      .catch((error: unknown) => {
+        const message =
+          (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
+          "Dev · échec de connexion du compte de test (DB seedée ?)";
+        toast.error(message);
+      })
+      .finally(() => setIsLoading(false));
+  }, [login, navigateAfterAuth]);
+
   const handleSendMagicLink = async () => {
     const email = loginEmail.trim();
     if (!email) {
@@ -228,8 +264,13 @@ export default function AuthPage() {
             shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.15),0_24px_48px_rgba(0,0,0,0.25)]"
           data-testid="auth-card"
         >
-          {/* Logo */}
-          <div className="mb-2 text-center">
+          {/* Logo — DEV: 5 taps signs in a seeded test account */}
+          <div
+            className={`mb-2 text-center select-none${import.meta.env.DEV ? " cursor-pointer" : ""}`}
+            onClick={import.meta.env.DEV ? handleLogoTap : undefined}
+            title={import.meta.env.DEV ? "Dev · 5 clics = connexion compte de test" : undefined}
+            data-testid="auth-logo"
+          >
             <img
               src={assets.wordmarkDark}
               alt="PronoKif"
