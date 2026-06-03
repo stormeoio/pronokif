@@ -10,7 +10,7 @@ const en = {
   // ── Navigation ────────────────────────────────────
   nav: {
     home: "Home",
-    predictions: "Preds",
+    predictions: "Races",
     championship: "Champ.",
     leagues: "Leagues",
     profile: "Profile",

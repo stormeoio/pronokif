@@ -3,7 +3,7 @@ PRONOKIF - Avatar routes.
 
     GET  /avatars                — public catalog (no auth, mirrors legacy)
     POST /user/avatar            — switch avatar (id or custom URL)
-    POST /user/avatar/upload     — upload a custom image (<= 500KB)
+    POST /user/avatar/upload     — upload a custom image (<= 5MB)
 """
 
 from __future__ import annotations

@@ -29,13 +29,17 @@ def test_race_start_and_end_use_circuit_timezone() -> None:
     assert race_end_at_utc(race) == datetime(2026, 10, 25, 20, 30, tzinfo=UTC)
 
 
-def test_predictions_close_uses_qualifying_timezone() -> None:
+def test_predictions_close_at_race_start() -> None:
+    # Predictions stay open until the race starts (lights out), then lock.
+    assert predictions_close_at_utc(_austin_test_race()) == race_start_at_utc(
+        _austin_test_race()
+    )
     assert predictions_close_at_utc(_austin_test_race()) == datetime(
         2026,
         10,
-        24,
-        21,
-        45,
+        25,
+        19,
+        0,
         tzinfo=UTC,
     )
 

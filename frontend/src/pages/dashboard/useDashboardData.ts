@@ -28,6 +28,56 @@ function useUpcomingRaces() {
   });
 }
 
+/** Full season calendar (past + upcoming + cancelled) for the race carousel. */
+function useAllRaces() {
+  return useQuery({
+    queryKey: queryKeys.races.list(),
+    queryFn: async () => {
+      const data = await api.races.list();
+      return data || [];
+    },
+    refetchInterval: 30_000,
+  });
+}
+
+/**
+ * Coerce the /predictions/history payload into a flat array of entries.
+ *
+ * The endpoint normally returns a bare list, but defensively handle envelope
+ * shapes ({ items: [...] }, { results: [...] }, { race_ids: [...] }) and maps
+ * so a shape change upstream can never make `new Set(predictedRaceIds)` throw.
+ */
+function toHistoryEntries(history: unknown): Array<{ race_id?: unknown }> {
+  if (Array.isArray(history)) return history;
+  if (history && typeof history === "object") {
+    const obj = history as Record<string, unknown>;
+    for (const key of ["items", "results", "history", "predictions", "race_ids", "data"]) {
+      if (Array.isArray(obj[key])) return obj[key] as Array<{ race_id?: unknown }>;
+    }
+    // Fall back to treating the object's values as entries (e.g. a map).
+    return Object.values(obj) as Array<{ race_id?: unknown }>;
+  }
+  return [];
+}
+
+/**
+ * IDs of races the user has already submitted a prediction for.
+ * One request (history) instead of one per race — used to flag races that
+ * still need predictions in the carousel. Always returns a plain string[]
+ * (cache-safe); consumers build a Set from it.
+ */
+function usePredictedRaceIds() {
+  return useQuery({
+    queryKey: ["/predictions/history"],
+    queryFn: async () => {
+      const history = await api.predictions.history();
+      return toHistoryEntries(history)
+        .map((entry) => (entry?.race_id != null ? String(entry.race_id) : null))
+        .filter((id): id is string => id !== null);
+    },
+  });
+}
+
 function useAvatars() {
   return useQuery({
     queryKey: queryKeys.avatars.list(),
@@ -110,6 +160,8 @@ function useLeagueLeaderboards(leagues: League[]) {
 
 export function useDashboardData(userId?: string) {
   const racesQuery = useUpcomingRaces();
+  const allRacesQuery = useAllRaces();
+  const predictedRaceIdsQuery = usePredictedRaceIds();
   const avatarsQuery = useAvatars();
   const leaguesQuery = useMyLeagues();
   const unreadQuery = useUnreadMessages();
@@ -153,6 +205,8 @@ export function useDashboardData(userId?: string) {
   return {
     loading,
     upcomingRaces,
+    allRaces: allRacesQuery.data ?? [],
+    predictedRaceIds: Array.isArray(predictedRaceIdsQuery.data) ? predictedRaceIdsQuery.data : [],
     avatars: avatarsQuery.data ?? {},
     userLeagues,
     leagueRanks,

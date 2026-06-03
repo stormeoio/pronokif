@@ -1,9 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Search,
-  Bell,
   ChevronRight,
   Trophy,
   Target,
@@ -15,14 +13,13 @@ import {
   Radio,
   Zap,
 } from "lucide-react";
-import RaceHeroCard from "./RaceHeroCard";
+import RaceCarousel from "./RaceCarousel";
+import WelcomeHeader from "./WelcomeHeader";
 import { useDashboardData } from "./useDashboardData";
 import { iconSmall } from "@/lib/icons";
 import { fadeUp, staggerContainer } from "@/lib/motion";
 import { useAuth } from "@/lib/auth";
-import { openDeepSearch } from "@/components/search/deepSearchEvents";
 import { DateEntityToken, RaceEntityToken } from "@/components/entities/RaceEntityToken";
-import { UserIdentity } from "@/components/users/UserIdentity";
 
 const RACE_FLAGS: Record<string, string> = {
   australia: "\u{1F1E6}\u{1F1FA}",
@@ -81,76 +78,17 @@ export default function DashboardPage() {
   const {
     loading,
     upcomingRaces,
+    allRaces,
+    predictedRaceIds,
     userLeagues,
-    predictions,
     leagueRanks,
     predictionStats,
     pointsHistory,
     globalLeaderboard,
   } = useDashboardData(user?.id);
 
-  const [currentRaceIndex] = useState(0);
-  const [countdown, setCountdown] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-    phase: "upcoming" as "upcoming" | "in_progress" | "finished" | "cancelled",
-  });
-
-  // Race state timer: upcoming -> in progress -> finished using circuit-local API timestamps.
-  useEffect(() => {
-    const currentRace = upcomingRaces[currentRaceIndex];
-    if (!currentRace) return;
-
-    const update = () => {
-      if (currentRace.status === "cancelled" || currentRace.is_cancelled) {
-        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, phase: "cancelled" });
-        return;
-      }
-
-      const startAt = new Date(currentRace.race_start_at ?? currentRace.date).getTime();
-      const durationMs = (currentRace.race_duration_minutes ?? 120) * 60_000;
-      const endAt = currentRace.race_end_at
-        ? new Date(currentRace.race_end_at).getTime()
-        : startAt + durationMs;
-      if (Number.isNaN(startAt) || Number.isNaN(endAt)) {
-        setCountdown({
-          days: 0,
-          hours: 0,
-          minutes: 0,
-          seconds: 0,
-          phase: currentRace.status ?? "upcoming",
-        });
-        return;
-      }
-
-      const now = Date.now();
-      if (now >= endAt) {
-        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, phase: "finished" });
-        return;
-      }
-      if (now >= startAt) {
-        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0, phase: "in_progress" });
-        return;
-      }
-
-      const diff = startAt - now;
-      setCountdown({
-        days: Math.floor(diff / 86_400_000),
-        hours: Math.floor((diff / 3_600_000) % 24),
-        minutes: Math.floor((diff / 60_000) % 60),
-        seconds: Math.floor((diff / 1000) % 60),
-        phase: "upcoming",
-      });
-    };
-    update();
-    const id = setInterval(update, 1000);
-    return () => clearInterval(id);
-  }, [upcomingRaces, currentRaceIndex]);
-
-  const currentRace = upcomingRaces[currentRaceIndex];
-  const currentPrediction = currentRace ? (predictions[currentRace.id] ?? null) : null;
+  // Soonest upcoming race — drives the quick-action shortcuts below.
+  const currentRace = upcomingRaces[0];
 
   const resultHistory = useMemo(
     () => pointsHistory.history.filter((race) => race.has_results),
@@ -219,59 +157,13 @@ export default function DashboardPage() {
       className="min-h-dvh bg-pk-carbon pb-24 max-w-[430px] mx-auto"
       data-testid="dashboard-page"
     >
-      {/* ---- STICKY HEADER ---- */}
-      <header
-        className="sticky top-0 z-50 flex items-center justify-between
-          px-4 py-3
-          bg-pk-carbon/85 backdrop-blur-[20px] saturate-[1.3]
-          border-b border-white/[0.08]"
-        data-testid="dashboard-header"
-      >
-        <button
-          type="button"
-          onClick={() => navigate("/profile")}
-          className="min-w-0 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pk-red/40"
-          data-testid="dashboard-profile-link"
-        >
-          <p className="mb-0.5 text-[0.75rem] leading-tight text-pk-titane">Salut</p>
-          <UserIdentity
-            user={{
-              id: user?.id,
-              username: user?.username || "Driver",
-              email: user?.email,
-              avatar_id: user?.avatar_id,
-              custom_avatar_url: user?.custom_avatar_url,
-              level: user?.level,
-            }}
-            linked={false}
-            size="md"
-            textClassName="font-display text-[1rem] uppercase leading-tight"
-          />
-        </button>
-        <div className="flex items-center gap-1">
-          <button
-            className="w-9 h-9 rounded-full flex items-center justify-center
-              text-pk-titane hover:text-pk-piste transition-colors duration-pk-short"
-            onClick={openDeepSearch}
-            aria-label="Rechercher"
-            data-testid="dashboard-open-deep-search"
-          >
-            <Search {...iconSmall} size={18} />
-          </button>
-          <button
-            className="relative w-9 h-9 rounded-full flex items-center justify-center
-              text-pk-titane hover:text-pk-piste transition-colors duration-pk-short"
-            onClick={() => navigate("/notifications")}
-            aria-label="Notifications"
-          >
-            <Bell {...iconSmall} size={18} />
-            <span
-              className="absolute top-[6px] right-[6px] w-[5px] h-[5px]
-                rounded-full bg-pk-red"
-            />
-          </button>
-        </div>
-      </header>
+      {/* ---- WELCOME HEADER ---- */}
+      <WelcomeHeader
+        user={user}
+        rank={stats.rank}
+        totalPlayers={stats.totalPlayers}
+        points={stats.points}
+      />
 
       {/* ---- SCROLL CONTENT ---- */}
       <motion.div
@@ -280,15 +172,9 @@ export default function DashboardPage() {
         initial="hidden"
         animate="visible"
       >
-        {/* ---- HERO — NEXT RACE ---- */}
+        {/* ---- RACE CALENDAR CAROUSEL ---- */}
         <motion.div variants={fadeUp}>
-          <RaceHeroCard
-            race={currentRace}
-            countdown={countdown}
-            hasPrediction={!!currentPrediction}
-            onPredict={() => currentRace && navigate(`/predictions/${currentRace.id}`)}
-            onViewDetails={() => currentRace && navigate(`/race/${currentRace.id}`)}
-          />
+          <RaceCarousel races={allRaces} predictedRaceIds={predictedRaceIds} />
         </motion.div>
 
         {/* ---- BENTO STATS ---- */}

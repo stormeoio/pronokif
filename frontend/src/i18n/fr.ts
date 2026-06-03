@@ -10,7 +10,7 @@ const fr = {
   // ── Navigation ────────────────────────────────────
   nav: {
     home: "Accueil",
-    predictions: "Pronos",
+    predictions: "Courses",
     championship: "Champ.",
     leagues: "Ligues",
     profile: "Profil",
