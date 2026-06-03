@@ -83,8 +83,8 @@ export default function RaceDetailHero({
         <div className="absolute inset-0 bg-gradient-to-r from-pk-carbon/70 via-transparent to-transparent" />
       </div>
 
-      {/* Content */}
-      <div className="relative z-[1] flex flex-col justify-end px-4 pb-4 pt-28">
+      {/* Content — tall, immersive header anchored to the bottom */}
+      <div className="relative z-[1] flex min-h-[56vh] flex-col justify-end px-4 pb-5 pt-40">
         <div className="flex items-center gap-2">
           {isSprintWeekend && (
             <span className="rounded-sm border border-pk-amber/30 bg-pk-amber/15 px-1.5 py-0.5 font-mono text-[0.5rem] font-bold uppercase tracking-[0.12em] text-pk-amber">
