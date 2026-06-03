@@ -266,6 +266,21 @@ export default function GrandPrixDetailPage() {
     return (raceDetails.circuit_map as CircuitMapData | null | undefined) ?? null;
   }, [raceDetails]);
 
+  // The /races/:id/details payload exposes race_start_at (not `date`), so fall
+  // back to it and guard against an invalid value (avoids "Invalid Date").
+  const raceDateLabel = useMemo(() => {
+    const iso = (raceDetails?.race_start_at ?? raceDetails?.date) as string | undefined;
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toLocaleDateString("fr-FR", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  }, [raceDetails]);
+
   const selectedHotspotId = searchParams.get("hotspot");
 
   const selectCircuitHotspot = (hotspotId: string) => {
@@ -511,17 +526,12 @@ export default function GrandPrixDetailPage() {
                 className="bg-pk-surface border border-white/[0.08] rounded-lg p-3.5"
               >
                 <div className="space-y-2.5">
-                  <div className="flex items-center gap-2.5">
-                    <Calendar className="w-3.5 h-3.5 text-pk-titane flex-shrink-0" />
-                    <span className="text-[0.8125rem] text-pk-piste">
-                      {new Date(raceDetails.date as string).toLocaleDateString("fr-FR", {
-                        weekday: "long",
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </span>
-                  </div>
+                  {raceDateLabel && (
+                    <div className="flex items-center gap-2.5">
+                      <Calendar className="w-3.5 h-3.5 text-pk-titane flex-shrink-0" />
+                      <span className="text-[0.8125rem] text-pk-piste">{raceDateLabel}</span>
+                    </div>
+                  )}
                   {Boolean(raceDetails.predictions_close_at) && (
                     <div className="flex items-center gap-2.5">
                       <Clock className="w-3.5 h-3.5 text-pk-titane flex-shrink-0" />
