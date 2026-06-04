@@ -188,6 +188,18 @@ export const adminApi = {
         .then((r) => r.data),
   },
 
+  // Drivers & Teams
+  drivers: {
+    list: (params?: { q?: string; team?: string; active_only?: boolean }) =>
+      api.get("/drivers", { params }).then((r) => r.data),
+    seed: (force = false) => api.post(`/drivers/seed?force=${force}`).then((r) => r.data),
+    get: (id: string) => api.get(`/drivers/${encodeURIComponent(id)}`).then((r) => r.data),
+    update: (id: string, data: Record<string, unknown>) =>
+      api.put(`/drivers/${encodeURIComponent(id)}`, data).then((r) => r.data),
+    create: (data: Record<string, unknown>) => api.post("/drivers", data).then((r) => r.data),
+    delete: (id: string) => api.delete(`/drivers/${encodeURIComponent(id)}`).then((r) => r.data),
+  },
+
   // Races
   races: {
     list: (params?: { season?: number; championship_id?: string }) =>

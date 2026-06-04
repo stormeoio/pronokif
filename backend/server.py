@@ -40,6 +40,7 @@ from routes.admin_auth import router as admin_auth_router
 from routes.admin_activity_logs import router as admin_activity_logs_router
 from routes.admin_championships import router as admin_championships_router
 from routes.admin_content import router as admin_content_router
+from routes.admin_drivers import router as admin_drivers_router
 from routes.admin_feedbacks import router as admin_feedbacks_router
 from routes.admin_invitations import router as admin_invitations_router
 from routes.admin_knowledge import router as admin_knowledge_router
@@ -124,6 +125,7 @@ for _router in (
     admin_activity_logs_router,
     admin_championships_router,
     admin_content_router,
+    admin_drivers_router,
     admin_feedbacks_router,
     admin_invitations_router,
     admin_knowledge_router,

@@ -39,6 +39,7 @@ import MediaTab from "./tabs/MediaTab";
 import SettingsTab from "./tabs/SettingsTab";
 import ActivityLogsTab from "./tabs/ActivityLogsTab";
 import CircuitMapsTab from "./tabs/CircuitMapsTab";
+import DriversTab from "./tabs/DriversTab";
 import DevOpsTab, { devOpsSectionFromKey, type DevOpsSectionKey } from "./tabs/DevOpsTab";
 import PreviewPanel from "./PreviewPanel";
 import AdminDeepSearch from "./AdminDeepSearch";
@@ -57,6 +58,7 @@ type AdminTabKey =
   | "leagues"
   | "championships"
   | "races"
+  | "drivers"
   | "circuitMaps"
   | "invitations"
   | "media"
@@ -95,6 +97,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: "leagues", label: "Ligues", icon: Network, section: "general" },
   { key: "championships", label: "Championnats", icon: Trophy, section: "general" },
   { key: "races", label: "Courses", icon: Flag, section: "general" },
+  { key: "drivers", label: "Pilotes & Écuries", icon: Users, section: "general" },
   { key: "circuitMaps", label: "Cartes circuits", icon: Route, section: "general" },
   { key: "invitations", label: "Invitations", icon: Mail, section: "general" },
   { key: "media", label: "Médias", icon: Image, section: "general" },
@@ -107,6 +110,9 @@ const ADMIN_TAB_ALIASES: Record<string, AdminTabKey> = {
   circuitmaps: "circuitMaps",
   "circuit-maps": "circuitMaps",
   circuits: "circuitMaps",
+  pilotes: "drivers",
+  ecuries: "drivers",
+  "pilotes-ecuries": "drivers",
 };
 
 function selectionFromSearch(search: string): AdminSelection {
@@ -244,6 +250,8 @@ export default function AdminLayout() {
         return <ChampionshipsTab />;
       case "races":
         return <RacesTab />;
+      case "drivers":
+        return <DriversTab />;
       case "circuitMaps":
         return <CircuitMapsTab currentAdminEmail={adminEmail} />;
       case "invitations":
