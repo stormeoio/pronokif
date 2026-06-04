@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="FER">
+  <defs><linearGradient id="g-ferrari" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#E80020" stop-opacity="0.16"/>
+    <stop offset="100%" stop-color="#E80020" stop-opacity="0.02"/></linearGradient></defs>
+  <rect x="1" y="1" width="62" height="62" rx="15" fill="#0E1116"/>
+  <rect x="1" y="1" width="62" height="62" rx="15" fill="url(#g-ferrari)"/>
+  <rect x="1.75" y="1.75" width="60.5" height="60.5" rx="14" fill="none" stroke="#E80020" stroke-opacity="0.40" stroke-width="1.5"/>
+  <rect x="16" y="47" width="32" height="3" rx="1.5" fill="#E80020"/>
+  <text x="32" y="38" text-anchor="middle" font-family="'Arial Black', Arial, Helvetica, sans-serif" font-size="19" font-weight="900" letter-spacing="0.5" fill="#E80020">FER</text>
+</svg>

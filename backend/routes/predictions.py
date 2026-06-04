@@ -36,7 +36,7 @@ router = APIRouter(prefix="/predictions", tags=["Predictions"])
 
 
 def get_predictions_close_time(race: dict) -> datetime:
-    """Get the time when main race predictions close (15 min before Q1)"""
+    """Get the time when main race predictions close (race start / lights out)."""
     close_at = predictions_close_at_utc(race)
     if close_at is None:
         raise ValueError(f"Invalid qualifying schedule for {race.get('id')}")
@@ -80,7 +80,7 @@ async def create_prediction(data: PredictionCreate, user: dict = Depends(get_cur
 
     predictions_close = get_predictions_close_time(race)
     if datetime.now(UTC) > predictions_close:
-        raise HTTPException(status_code=400, detail="Pronos fermés (15 min avant les EL1)")
+        raise HTTPException(status_code=400, detail="Pronos verrouillés : la course a démarré")
 
     if len(data.quali_top10) != 10 or len(data.race_top10) != 10:
         raise HTTPException(status_code=400, detail="Le Top 10 doit contenir exactement 10 pilotes")

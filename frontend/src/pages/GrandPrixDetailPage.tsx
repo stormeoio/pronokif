@@ -25,6 +25,8 @@ import { haptic } from "@/lib/haptics";
 import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
 import { CircuitMap } from "@/components/CircuitMap";
 import { EmptyFullPage } from "@/components/EmptyState";
+import RaceGrid from "@/components/RaceGrid";
+import RaceDetailHero from "@/components/RaceDetailHero";
 
 /* ── Country flags ────────────────────────────────────────── */
 
@@ -54,11 +56,12 @@ const COUNTRY_FLAGS: Record<string, string> = {
 
 /* ── Types ─────────────────────────────────────────────────── */
 
-type TabKey = "info" | "programme" | "picks";
+type TabKey = "info" | "programme" | "grille" | "picks";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "info", label: "Circuit" },
   { key: "programme", label: "Programme" },
+  { key: "grille", label: "Grille" },
   { key: "picks", label: "Picks" },
 ];
 
@@ -263,6 +266,21 @@ export default function GrandPrixDetailPage() {
     return (raceDetails.circuit_map as CircuitMapData | null | undefined) ?? null;
   }, [raceDetails]);
 
+  // The /races/:id/details payload exposes race_start_at (not `date`), so fall
+  // back to it and guard against an invalid value (avoids "Invalid Date").
+  const raceDateLabel = useMemo(() => {
+    const iso = (raceDetails?.race_start_at ?? raceDetails?.date) as string | undefined;
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toLocaleDateString("fr-FR", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  }, [raceDetails]);
+
   const selectedHotspotId = searchParams.get("hotspot");
 
   const selectCircuitHotspot = (hotspotId: string) => {
@@ -286,7 +304,24 @@ export default function GrandPrixDetailPage() {
 
   const isFinished = raceDetails?.status === "finished";
   const isUpcoming = raceDetails?.status === "upcoming";
-  const canPredict = (raceDetails?.can_predict as boolean) || false;
+  // Predictions stay open until the race starts (status flips to in_progress).
+  // The /details payload may omit can_predict, so derive it from the status.
+  const canPredict =
+    (raceDetails?.can_predict as boolean | undefined) ?? (isUpcoming && !raceDetails?.is_cancelled);
+
+  // User's prediction for this race — drives the hero CTA (Pronostiquer / Modifier).
+  const { data: myPrediction } = useQuery({
+    queryKey: ["/predictions/race", raceId],
+    queryFn: async () => {
+      try {
+        return await api.predictions.get(raceId!);
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!raceId,
+  });
+  const hasPrediction = !!myPrediction;
 
   /* ── Loading ── */
 
@@ -370,6 +405,31 @@ export default function GrandPrixDetailPage() {
           </div>
         </div>
       </header>
+
+      {/* ── Immersive hero + prediction CTA ── */}
+      <RaceDetailHero
+        name={raceDetails.name as string}
+        circuit={circuitName}
+        country={raceDetails.country as string}
+        flag={countryFlag}
+        date={(raceDetails.race_start_at as string) || (raceDetails.date as string)}
+        thumbnailRace={{
+          id: raceDetails.id as string,
+          name: raceDetails.name as string,
+          circuit: circuitName,
+          thumbnail_url: (raceDetails.thumbnail_url as string) || null,
+        }}
+        status={raceDetails.status as string}
+        isCancelled={Boolean(raceDetails.is_cancelled)}
+        canPredict={canPredict}
+        hasPrediction={hasPrediction}
+        isSprintWeekend={Boolean(raceDetails.is_sprint_weekend)}
+        onPredict={() => {
+          haptic("medium");
+          navigate(`/predictions/${raceId}`);
+        }}
+        onResults={() => navigate(`/results/${raceId}`)}
+      />
 
       {/* ── Content ── */}
       <AnimatePresence mode="wait">
@@ -466,17 +526,12 @@ export default function GrandPrixDetailPage() {
                 className="bg-pk-surface border border-white/[0.08] rounded-lg p-3.5"
               >
                 <div className="space-y-2.5">
-                  <div className="flex items-center gap-2.5">
-                    <Calendar className="w-3.5 h-3.5 text-pk-titane flex-shrink-0" />
-                    <span className="text-[0.8125rem] text-pk-piste">
-                      {new Date(raceDetails.date as string).toLocaleDateString("fr-FR", {
-                        weekday: "long",
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </span>
-                  </div>
+                  {raceDateLabel && (
+                    <div className="flex items-center gap-2.5">
+                      <Calendar className="w-3.5 h-3.5 text-pk-titane flex-shrink-0" />
+                      <span className="text-[0.8125rem] text-pk-piste">{raceDateLabel}</span>
+                    </div>
+                  )}
                   {Boolean(raceDetails.predictions_close_at) && (
                     <div className="flex items-center gap-2.5">
                       <Clock className="w-3.5 h-3.5 text-pk-titane flex-shrink-0" />
@@ -574,6 +629,9 @@ export default function GrandPrixDetailPage() {
               )}
             </>
           )}
+
+          {/* ════════════════ GRILLE TAB ════════════════ */}
+          {activeTab === "grille" && <RaceGrid />}
 
           {/* ════════════════ PRONOS TAB ════════════════ */}
           {activeTab === "picks" && (

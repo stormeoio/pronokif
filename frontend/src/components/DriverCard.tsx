@@ -78,6 +78,11 @@ export function getDriverPhotoUrl(driverId: string): string {
   return DRIVER_PHOTOS[driverId] || DRIVER_PHOTOS.norris;
 }
 
+/** Photo URL if we have a real headshot for this driver, else null (for fallbacks). */
+export function getDriverPhoto(driverId: string): string | null {
+  return DRIVER_PHOTOS[driverId] ?? null;
+}
+
 // ----------------------------------------------------------- rank helpers ---
 
 function RankBadge({ position }: { position: number }) {

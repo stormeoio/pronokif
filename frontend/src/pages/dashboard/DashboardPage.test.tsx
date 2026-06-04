@@ -23,6 +23,7 @@ vi.mock("@/lib/api", () => {
     api: {
       races: {
         upcoming: () => unwrap(mockApiClient.get("/races/upcoming")),
+        list: () => unwrap(mockApiClient.get("/races")),
       },
       avatars: {
         list: () => unwrap(mockApiClient.get("/avatars")),
@@ -33,6 +34,7 @@ vi.mock("@/lib/api", () => {
       },
       predictions: {
         get: (raceId: string) => unwrap(mockApiClient.get(`/predictions/race/${raceId}`)),
+        history: () => unwrap(mockApiClient.get("/predictions/history")),
       },
       notifications: {
         unreadCount: () => unwrap(mockApiClient.get("/notifications/unread-count")),
@@ -76,6 +78,21 @@ function setupApiResponses(overrides: Record<string, unknown> = {}) {
         flag_emoji: "🇲🇨",
       },
     ],
+    "/races": [
+      {
+        id: "race-1",
+        name: "GP de Monaco",
+        round: 6,
+        status: "upcoming",
+        date: "2026-06-07T13:00:00Z",
+        predictions_close_at: "2026-06-01T14:00:00Z",
+        is_sprint_weekend: false,
+        circuit: "Monte Carlo",
+        country: "Monaco",
+        can_predict: true,
+      },
+    ],
+    "/predictions/history": [],
     "/avatars": { all: [{ id: "1", name: "Default", url: "/avatars/default.png" }] },
     "/leagues/my": [{ id: "league-1", name: "Les Pistonnés" }],
     "/leagues/unread-messages": { by_league: {} },

@@ -232,13 +232,12 @@ def race_end_at_utc(race: dict) -> datetime | None:
 
 
 def predictions_close_at_utc(race: dict) -> datetime | None:
-    """Main prediction close time: 15 minutes before qualifying, in circuit time."""
-    quali_at = session_at_utc(race, "quali_date", "quali_time", default_time="14:00")
-    if not quali_at:
-        quali_at = race_start_at_utc(race)
-    if not quali_at:
-        return None
-    return quali_at - timedelta(minutes=15)
+    """Main predictions stay open until the race starts (lights out).
+
+    Players can pronosticate on every championship race up to the very last
+    second of the start countdown; once the race is under way predictions lock.
+    """
+    return race_start_at_utc(race)
 
 
 def sprint_predictions_close_at_utc(race: dict) -> datetime | None:

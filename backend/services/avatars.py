@@ -12,8 +12,9 @@ import base64
 from config import db
 from features import ALL_AVATARS, DEFAULT_AVATARS, DRIVER_AVATARS, TEAM_AVATARS
 
-# Custom uploads are stored inline as a data URL — keep them small.
-MAX_AVATAR_BYTES = 500_000
+# Custom uploads are stored inline as a data URL. Allow up to 5 MB so users can
+# upload a photo straight from their phone camera without manual resizing.
+MAX_AVATAR_BYTES = 5 * 1024 * 1024  # 5 MB
 
 
 class AvatarError(Exception):
@@ -64,7 +65,7 @@ async def upload_custom_avatar(user_id: str, contents: bytes, content_type: str 
     Returns the resulting data URL.
     """
     if len(contents) > MAX_AVATAR_BYTES:
-        raise AvatarError("Image too large (max 500KB)")
+        raise AvatarError("Image too large (max 5MB)")
 
     mime = content_type or "image/jpeg"
     data_url = f"data:{mime};base64,{base64.b64encode(contents).decode('utf-8')}"

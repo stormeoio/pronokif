@@ -637,3 +637,46 @@ button:active:not(:disabled) {
 .animate-tagline-in {
   animation: pk-tagline-in 0.6s ease-out 0.3s both;
 }
+
+/* --- RaceCarousel range slider (discreet scrollbar) --------------------- */
+.pk-carousel-range {
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+}
+.pk-carousel-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 7px;
+  border-radius: 9999px;
+  background: var(--pk-red, #e10600);
+  border: none;
+  box-shadow: 0 0 4px rgba(225, 6, 0, 0.35);
+  cursor: grab;
+}
+.pk-carousel-range::-webkit-slider-thumb:active {
+  cursor: grabbing;
+}
+.pk-carousel-range::-moz-range-thumb {
+  width: 16px;
+  height: 7px;
+  border-radius: 9999px;
+  background: var(--pk-red, #e10600);
+  border: none;
+  box-shadow: 0 0 4px rgba(225, 6, 0, 0.35);
+  cursor: grab;
+}
+.pk-carousel-range:focus-visible {
+  box-shadow: 0 0 0 2px rgba(225, 6, 0, 0.35);
+}
+
+/* --- RaceDetailHero subtle parallax-style zoom -------------------------- */
+@keyframes heroZoom {
+  from {
+    transform: scale(1.02);
+  }
+  to {
+    transform: scale(1.12);
+  }
+}
