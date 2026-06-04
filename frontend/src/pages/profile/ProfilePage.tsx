@@ -3,6 +3,7 @@
  * Broadcast Premium theme: glass header, pk-* cards, tabbed layout.
  */
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
@@ -343,40 +344,43 @@ export default function ProfilePage() {
         <p className="text-center font-data text-[0.5rem] text-pk-titane/40 pb-2">PRONOKIF v3.0</p>
       </motion.div>
 
-      {/* Avatar Selection Modal */}
-      {showAvatarModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-          onClick={() => setShowAvatarModal(false)}
-        >
-          <motion.div
-            className="bg-pk-surface border border-white/[0.08] rounded-lg w-full max-w-lg max-h-[80vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.2 }}
+      {/* Avatar Selection Modal — rendered in a portal so `fixed` is relative to
+          the viewport, not the (transformed) PageTransition wrapper. */}
+      {showAvatarModal &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setShowAvatarModal(false)}
           >
-            <div className="sticky top-0 bg-pk-surface/95 backdrop-blur-lg border-b border-white/[0.08] px-4 py-3 flex items-center justify-between">
-              <h2 className="font-display text-base">Choisir un Avatar</h2>
-              <button
-                onClick={() => setShowAvatarModal(false)}
-                className="w-8 h-8 rounded-md flex items-center justify-center text-pk-titane hover:bg-white/[0.06] transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="p-4">
-              <AvatarSelector
-                avatars={avatars ?? undefined}
-                selectedId={user!.avatar_id ?? undefined}
-                onSelect={handleAvatarSelect}
-                customUrl={user!.custom_avatar_url}
-                onUpload={handleAvatarUpload}
-              />
-            </div>
-          </motion.div>
-        </div>
-      )}
+            <motion.div
+              className="bg-pk-surface border border-white/[0.08] rounded-lg w-full max-w-lg max-h-[80vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="sticky top-0 bg-pk-surface/95 backdrop-blur-lg border-b border-white/[0.08] px-4 py-3 flex items-center justify-between">
+                <h2 className="font-display text-base">Choisir un Avatar</h2>
+                <button
+                  onClick={() => setShowAvatarModal(false)}
+                  className="w-8 h-8 rounded-md flex items-center justify-center text-pk-titane hover:bg-white/[0.06] transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="p-4">
+                <AvatarSelector
+                  avatars={avatars ?? undefined}
+                  selectedId={user!.avatar_id ?? undefined}
+                  onSelect={handleAvatarSelect}
+                  customUrl={user!.custom_avatar_url}
+                  onUpload={handleAvatarUpload}
+                />
+              </div>
+            </motion.div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
