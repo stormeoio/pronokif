@@ -4,11 +4,11 @@
  * Route definitions live in routes.tsx (extracted Sprint 4).
  * This file is pure orchestration: providers + layout + suspense + 3D background.
  */
-import { Suspense, lazy, useCallback, useEffect, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { BrowserRouter, useLocation } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { apiClient } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
@@ -187,6 +187,72 @@ function useAppPreload(enabled: boolean): boolean {
   return ready;
 }
 
+// --------------------------------------------------------- PWA update hook ---
+
+/**
+ * Detects an available service-worker update and shows a sonner toast with a
+ * "Recharger" action. VitePWA with registerType:"autoUpdate" installs the new
+ * SW automatically, but the page only switches to it after reload — this hook
+ * surfaces that to the user instead of staying silently stale.
+ *
+ * Also polls every hour so long-running sessions don't miss a deploy.
+ */
+function usePWAUpdate() {
+  const toastShownRef = useRef(false);
+
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+
+    const showUpdateToast = () => {
+      if (toastShownRef.current) return;
+      toastShownRef.current = true;
+      toast("Nouvelle version disponible", {
+        description: "Rechargez pour bénéficier des dernières mises à jour.",
+        duration: Infinity,
+        action: {
+          label: "Recharger",
+          onClick: () => window.location.reload(),
+        },
+        onDismiss: () => {
+          // Allow re-showing after user dismisses
+          toastShownRef.current = false;
+        },
+      });
+    };
+
+    const checkForUpdate = async () => {
+      try {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg) await reg.update();
+      } catch {
+        /* non-critical */
+      }
+    };
+
+    // Listen for the SW "updatefound" event on any existing registration
+    navigator.serviceWorker.getRegistration().then((reg) => {
+      if (!reg) return;
+      reg.addEventListener("updatefound", () => {
+        const newWorker = reg.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener("statechange", () => {
+          // New SW is installed and a previous one was controlling the page
+          if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+            showUpdateToast();
+          }
+        });
+      });
+    });
+
+    // Poll every hour so long-running sessions catch updates
+    const interval = window.setInterval(checkForUpdate, 60 * 60 * 1000);
+    // Check immediately on mount (catches updates from previous visits)
+    void checkForUpdate();
+
+    return () => window.clearInterval(interval);
+  }, []);
+}
+
 // --------------------------------------------------------------------- app ---
 
 export default function App() {
@@ -195,6 +261,8 @@ export default function App() {
   const { assets } = useBranding();
   // Detect locale from IP + browser language (runs once, caches result)
   useLocaleDetect();
+  // Check for available service-worker updates on startup and hourly
+  usePWAUpdate();
 
   const handleSplashStart = useCallback(() => {
     markSplashSeen();

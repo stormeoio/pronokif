@@ -779,6 +779,12 @@ export default function CircuitMapsTab({ currentAdminEmail = "" }: CircuitMapsTa
   }, [isDirty, owner, priority, query, reviewStatus, searchParams, selectedKey, source]);
 
   useEffect(() => {
+    // Guard: only manage circuit-map URL params while this tab is active.
+    // Without this check, the effect fires during the unmount transition when
+    // the user navigates to another tab and force-writes tab=circuitMaps back,
+    // causing the sidebar navigation to appear locked on this tab.
+    if (searchParams.get("tab") !== "circuitMaps") return;
+
     const next = buildCircuitMapSearchParams(searchParams, {
       query,
       reviewStatus,
