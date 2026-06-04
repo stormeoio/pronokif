@@ -207,7 +207,10 @@ test.describe("Admin panel", () => {
     await page.waitForLoadState("networkidle");
 
     await selectAdminTab(page, "DevOps");
-    await expect(page.getByTestId("devops-tab-beta")).toBeVisible();
+
+    // DevOps opens on the "Audit" section by default; activate "Beta" to reach
+    // the feedbacks panel before asserting on its content.
+    await page.getByTestId("devops-tab-beta").click();
 
     await expect(page.getByText("Le classement ne se met pas a jour")).toBeVisible({
       timeout: 10000,
