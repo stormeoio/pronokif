@@ -206,6 +206,17 @@ export async function mockDashboardAPIs(page: Page) {
     });
   });
 
+  // Full-season list — the refonte dashboard carousel reads api.races.list()
+  // (GET /races). Registered before the more specific /races/* routes below,
+  // which still take precedence (Playwright matches last-registered first).
+  await page.route("**/api/races", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([TEST_RACE]),
+    }),
+  );
+
   await page.route("**/api/races/next", (route) =>
     route.fulfill({
       status: 200,

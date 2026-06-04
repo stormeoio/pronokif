@@ -127,11 +127,14 @@ export default function RaceCarousel({ races, predictedRaceIds }: RaceCarouselPr
 
   // Order: upcoming (chronological) → past + cancelled (chronological)
   const ordered = useMemo(() => {
+    // Defensive: the /races payload should be an array, but never let an
+    // unexpected envelope shape crash the whole dashboard.
+    const list = Array.isArray(races) ? races : [];
     const byDate = (a: Race, b: Race) => new Date(a.date).getTime() - new Date(b.date).getTime();
-    const upcoming = races
+    const upcoming = list
       .filter((r) => r.status === "upcoming" || r.status === "in_progress")
       .sort(byDate);
-    const past = races
+    const past = list
       .filter((r) => r.status === "finished" || r.status === "cancelled" || r.is_cancelled)
       .sort(byDate);
     return [...upcoming, ...past];
