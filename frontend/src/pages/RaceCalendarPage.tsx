@@ -262,15 +262,18 @@ export default function RaceCalendarPage() {
     queryFn: async () => (await api.races.list()) || [],
   });
 
-  const { data: predictedIds, isLoading: predsLoading } = useQuery({
+  // Return a plain string[] — TanStack Query serialises cache values to JSON,
+  // and a Set round-trips as {} (always falsy via instanceof Set). Same queryKey
+  // as useDashboardData so the home carousel and calendar share the cache entry.
+  const { data: predictedIds = [], isLoading: predsLoading } = useQuery({
     queryKey: ["/predictions/history"],
     queryFn: async () => {
       const data = await api.predictions.history();
-      return new Set((data || []).map((p: { race_id: string }) => String(p.race_id)));
+      return (data || []).map((p: { race_id: string }) => String(p.race_id));
     },
   });
   const predictedSet = useMemo(
-    () => (predictedIds instanceof Set ? predictedIds : new Set<string>()),
+    () => new Set(Array.isArray(predictedIds) ? predictedIds : []),
     [predictedIds],
   );
 
