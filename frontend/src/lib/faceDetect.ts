@@ -20,6 +20,11 @@ export interface FaceBox {
   /** Face width / height, normalised to [0,1] of the image. */
   w: number;
   h: number;
+  /** Eye-line midpoint, normalised to [0,1] (when keypoints are available). */
+  eyeMidX?: number;
+  eyeMidY?: number;
+  /** Inter-eye distance, normalised to [0,1] of the image width. */
+  eyeDist?: number;
 }
 
 let detectorPromise: Promise<FaceDetector | null> | null = null;
@@ -53,29 +58,41 @@ export async function detectFace(img: HTMLImageElement): Promise<FaceBox | null>
   try {
     const detector = await getDetector();
     if (!detector) return null;
-    const result = detector.detect(img);
-    const detections = result.detections ?? [];
+    const detections = detector.detect(img).detections ?? [];
     if (!detections.length) return null;
 
-    let best = detections[0].boundingBox;
-    let bestArea = best ? best.width * best.height : 0;
+    // Largest detection by bounding-box area.
+    let best = detections[0];
+    let bestArea = best.boundingBox ? best.boundingBox.width * best.boundingBox.height : 0;
     for (const d of detections) {
       const bb = d.boundingBox;
       if (!bb) continue;
       const area = bb.width * bb.height;
       if (area > bestArea) {
-        best = bb;
+        best = d;
         bestArea = area;
       }
     }
-    if (!best) return null;
+    const bb = best.boundingBox;
+    if (!bb) return null;
 
-    return {
-      cx: (best.originX + best.width / 2) / iw,
-      cy: (best.originY + best.height / 2) / ih,
-      w: best.width / iw,
-      h: best.height / ih,
+    const face: FaceBox = {
+      cx: (bb.originX + bb.width / 2) / iw,
+      cy: (bb.originY + bb.height / 2) / ih,
+      w: bb.width / iw,
+      h: bb.height / ih,
     };
+
+    // BlazeFace keypoints (normalised): index 0 = one eye, 1 = the other.
+    const kp = best.keypoints;
+    if (kp && kp.length >= 2) {
+      const a = kp[0];
+      const b = kp[1];
+      face.eyeMidX = (a.x + b.x) / 2;
+      face.eyeMidY = (a.y + b.y) / 2;
+      face.eyeDist = Math.hypot(a.x - b.x, a.y - b.y);
+    }
+    return face;
   } catch {
     return null;
   }

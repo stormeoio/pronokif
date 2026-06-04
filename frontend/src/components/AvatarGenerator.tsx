@@ -491,20 +491,23 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
     const S = CANVAS_SIZE;
     const aspect = photo.width / photo.height;
     const fb = faceBoxRef.current;
-    const fcx = fb?.cx ?? 0.5;
-    const fcy = fb?.cy ?? 0.45;
-    const fwn = Math.max(fb?.w ?? 0.45, 0.05);
-    // Size the face a touch wider than the visor opening, then map its centre.
-    const targetFaceW = box.w * 1.15;
-    let drawW = targetFaceW / fwn;
+    // Centre the EYE line in the visor opening and size by the inter-eye
+    // distance (not the face width) so the face isn't too wide and the gaze
+    // lands right in the slot.
+    const eyeMidX = fb?.eyeMidX ?? fb?.cx ?? 0.5;
+    const eyeMidY = fb?.eyeMidY ?? (fb ? fb.cy - fb.h * 0.12 : 0.42);
+    const eyeDistN = Math.max(fb?.eyeDist ?? (fb ? fb.w * 0.46 : 0.22), 0.02);
+    // Draw the eyes ~half the opening width apart → comfortably inside the slot.
+    const targetEyeDist = box.w * 0.5;
+    let drawW = targetEyeDist / eyeDistN;
     let drawH = drawW / aspect;
     let scale = drawH / S;
     scale = Math.min(Math.max(scale, 0.5), 3);
     drawH = S * scale;
     drawW = drawH * aspect;
     setPhotoScale(scale);
-    setPhotoX(box.cx - fcx * drawW - (S - drawW) / 2);
-    setPhotoY(box.cy - fcy * drawH - (S - drawH) / 2);
+    setPhotoX(box.cx - eyeMidX * drawW - (S - drawW) / 2);
+    setPhotoY(box.cy - eyeMidY * drawH - (S - drawH) / 2);
   }, []);
 
   const gotoSkin = useCallback(
