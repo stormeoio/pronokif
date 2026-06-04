@@ -41,6 +41,7 @@ class DriverCreate(BaseModel):
     country: str = Field(default="", max_length=10)
     code: str | None = Field(default=None, max_length=5)
     photo_url: str | None = None
+    team_logo_url: str | None = None
     active: bool = True
     notes: str | None = None
 
@@ -52,6 +53,7 @@ class DriverUpdate(BaseModel):
     country: str | None = Field(default=None, max_length=10)
     code: str | None = Field(default=None, max_length=5)
     photo_url: str | None = None
+    team_logo_url: str | None = None
     active: bool | None = None
     notes: str | None = None
 
@@ -64,7 +66,11 @@ def _now_iso() -> str:
 
 
 def _driver_to_doc(d: dict) -> dict:
-    """Normalise a static F1_DRIVERS_2026 entry into a DB document shape."""
+    """Normalise a static F1_DRIVERS_2026 entry into a DB document shape.
+
+    F1_DRIVERS_2026 now carries ``photo_url`` and ``team_logo_url`` directly
+    so the seed populates media fields without a separate lookup.
+    """
     return {
         "_id": d["id"],
         "id": d["id"],
@@ -73,7 +79,8 @@ def _driver_to_doc(d: dict) -> dict:
         "number": d.get("number", 0),
         "country": d.get("country", ""),
         "code": d.get("code"),
-        "photo_url": None,
+        "photo_url": d.get("photo_url"),
+        "team_logo_url": d.get("team_logo_url"),
         "active": True,
         "notes": None,
         "seeded": True,

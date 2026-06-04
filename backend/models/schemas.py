@@ -245,6 +245,8 @@ class DriverResponse(BaseModel):
     number: int
     country: str
     code: str | None = None
+    photo_url: str | None = None
+    team_logo_url: str | None = None
 
 
 # ==================== NOTIFICATION & FEEDBACK MODELS ====================
