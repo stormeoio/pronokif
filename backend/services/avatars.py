@@ -21,13 +21,43 @@ class AvatarError(Exception):
     """Raised on invalid avatar payloads. Routes map to 400."""
 
 
-def list_catalog() -> dict:
-    """Return the full avatar catalog grouped by category."""
+async def list_catalog() -> dict:
+    """Return the full avatar catalog grouped by category.
+
+    Driver entries are enriched with ``photo_url`` and ``team_logo_url``
+    from the ``drivers`` MongoDB collection (populated by the admin seed).
+    Falls back to static data gracefully when the collection is empty.
+    The frontend renders these as Pronokif-branded pilot avatars:
+    real F1 headshot framed with team-color ring + race-number badge.
+    """
+    # Fetch all drivers with media fields
+    driver_docs = await db.drivers.find(
+        {},
+        {"_id": 0, "id": 1, "photo_url": 1, "team_logo_url": 1, "number": 1},
+    ).to_list(length=100)
+
+    # Build number → doc lookup (DRIVER_AVATARS keys by race number)
+    by_number: dict[int, dict] = {
+        int(d["number"]): d for d in driver_docs if d.get("photo_url") and d.get("number") is not None
+    }
+
+    enriched_drivers = []
+    for av in DRIVER_AVATARS:
+        entry = dict(av)
+        doc = by_number.get(int(av.get("number", -1) or -1))
+        if doc:
+            entry["photo_url"] = doc["photo_url"]
+            if doc.get("team_logo_url"):
+                entry["team_logo_url"] = doc["team_logo_url"]
+        enriched_drivers.append(entry)
+
+    enriched_all = [a for a in ALL_AVATARS if a.get("category") != "drivers"] + enriched_drivers
+
     return {
         "default": DEFAULT_AVATARS,
         "teams": TEAM_AVATARS,
-        "drivers": DRIVER_AVATARS,
-        "all": ALL_AVATARS,
+        "drivers": enriched_drivers,
+        "all": enriched_all,
     }
 
 

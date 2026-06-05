@@ -21,7 +21,7 @@ router = APIRouter(tags=["avatars"])
 @router.get("/avatars")
 async def get_available_avatars() -> dict[str, list[dict]]:
     """List all available avatars grouped by category."""
-    return avatar_service.list_catalog()
+    return await avatar_service.list_catalog()
 
 
 @router.post("/user/avatar", response_model=UserResponse)

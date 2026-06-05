@@ -500,6 +500,17 @@ export default function DriversTab() {
     onError: () => toast.error("Erreur lors du seed."),
   });
 
+  const syncAvatarsMut = useMutation({
+    mutationFn: () => adminApi.drivers.syncAvatars(),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["admin-bo", "drivers"] });
+      toast.success(
+        `Avatars : ${data.ready}/${data.total} pilotes prêts.${data.missing?.length ? ` ${data.missing.length} manquants.` : ""}`,
+      );
+    },
+    onError: () => toast.error("Erreur lors de la synchronisation."),
+  });
+
   const updateMut = useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Driver> }) =>
       adminApi.drivers.update(id, updates),
@@ -585,6 +596,22 @@ export default function DriversTab() {
             )}
             {drivers.length === 0 ? "Seed F1 2026" : "Re-seed"}
           </Button>
+          {drivers.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => syncAvatarsMut.mutate()}
+              disabled={syncAvatarsMut.isPending}
+              className="gap-2 border-pk-red/30 text-pk-red hover:text-white hover:bg-pk-red/10"
+            >
+              {syncAvatarsMut.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Users className="h-3.5 w-3.5" />
+              )}
+              Générer avatars
+            </Button>
+          )}
         </div>
       </div>
 
