@@ -492,7 +492,7 @@ export default function DriversTab() {
 
   // ── mutations ──
   const seedMut = useMutation({
-    mutationFn: () => adminApi.drivers.seed(),
+    mutationFn: () => adminApi.drivers.seed(true), // force=true: update existing records with latest URLs
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["admin-bo", "drivers"] });
       toast.success(`${data.seeded} pilotes seedés, ${data.skipped} ignorés.`);
