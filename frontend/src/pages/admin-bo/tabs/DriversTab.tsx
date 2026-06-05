@@ -764,9 +764,9 @@ export default function DriversTab() {
                         className="h-9 w-9 overflow-hidden rounded-full border-2"
                         style={{ borderColor: teamColor(d.team) }}
                       >
-                        {d.photo_url ? (
+                        {d.photo_url_dark || d.photo_url_light || d.photo_url ? (
                           <img
-                            src={d.photo_url}
+                            src={d.photo_url_dark || d.photo_url_light || d.photo_url || ""}
                             alt={d.name}
                             loading="lazy"
                             className="h-full w-full object-cover object-top"

@@ -106,7 +106,7 @@ async def upload_media(
     # 4. Driver photo processing — normalize to F1 CDN visual style
     #    (centre-crop, 1024x1024, team gradient, contrast normalization)
     processed_content_type = file.content_type
-    if entity_type == "driver" and entity_id:
+    if entity_type in ("driver", "driver_dark", "driver_light") and entity_id:
         try:
             from services.image_processing import process_driver_photo
 
