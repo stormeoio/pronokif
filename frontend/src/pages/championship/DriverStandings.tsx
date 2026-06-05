@@ -7,7 +7,8 @@ import { motion } from "framer-motion";
 import { getTeamColor, DRIVER_ID_MAP } from "./championshipUtils";
 import { staggerContainer, fadeUp } from "@/lib/motion";
 import { EmptyMinimal } from "@/components/EmptyState";
-import { DriverCard, getDriverPhotoUrl } from "@/components/DriverCard";
+import { DriverCard } from "@/components/DriverCard";
+import { resolveDriverPhotoUrl } from "@/lib/driverPhotos";
 
 interface DriverEntry {
   position: string;
@@ -61,7 +62,7 @@ export default function DriverStandings({ driversStandings }: DriverStandingsPro
               number={driver.permanentNumber || "?"}
               points={entry.points}
               wins={parseInt(entry.wins) || 0}
-              photoUrl={getDriverPhotoUrl(mappedDriverId)}
+              photoUrl={resolveDriverPhotoUrl(mappedDriverId)}
               teamColor={teamColor}
               onClick={() => navigate(`/driver/${mappedDriverId}`)}
             />
