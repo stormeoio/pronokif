@@ -103,15 +103,31 @@ async def upload_media(
             detail=f"MIME déclaré ({file.content_type}) ne correspond pas au contenu réel ({real_mime})",
         )
 
+    # 4. Driver photo processing — normalize to F1 CDN visual style
+    #    (centre-crop, 1024x1024, team gradient, contrast normalization)
+    processed_content_type = file.content_type
+    if entity_type == "driver" and entity_id:
+        try:
+            from services.image_processing import process_driver_photo
+
+            # Look up the driver's team for the gradient colour
+            driver_doc = await db.drivers.find_one({"_id": entity_id})
+            team_name = driver_doc.get("team") if driver_doc else None
+            content = process_driver_photo(content, team=team_name)
+            processed_content_type = "image/jpeg"  # always outputs JPEG
+        except Exception:
+            pass  # graceful degradation — upload the raw image if processing fails
+
     file_id = str(uuid.uuid4())
-    filename = f"{file_id}.{_media_extension(file.filename)}"
+    ext = "jpg" if processed_content_type == "image/jpeg" else _media_extension(file.filename)
+    filename = f"{file_id}.{ext}"
     normalized_folder = _normalize_media_folder(folder)
 
     media_doc = {
         "id": file_id,
         "filename": filename,
         "original_name": file.filename,
-        "content_type": file.content_type,
+        "content_type": processed_content_type,
         "size": len(content),
         "data": base64.b64encode(content).decode("utf-8"),
         "entity_type": entity_type,
