@@ -27,19 +27,23 @@ import {
   Wrench,
   History,
 } from "lucide-react";
-import DashboardTab from "./tabs/DashboardTab";
-import UsersTab from "./tabs/UsersTab";
-import PredictionsTab from "./tabs/PredictionsTab";
-import ScoringTab from "./tabs/ScoringTab";
-import LeaguesTab from "./tabs/LeaguesTab";
-import ChampionshipsTab from "./tabs/ChampionshipsTab";
-import RacesTab from "./tabs/RacesTab";
-import InvitationsTab from "./tabs/InvitationsTab";
-import MediaTab from "./tabs/MediaTab";
-import SettingsTab from "./tabs/SettingsTab";
-import ActivityLogsTab from "./tabs/ActivityLogsTab";
-import CircuitMapsTab from "./tabs/CircuitMapsTab";
-import DriversTab from "./tabs/DriversTab";
+// Lazy-load every admin tab to split the 373 KB AdminLayout chunk.
+// Each tab becomes its own async chunk; only the active tab is loaded.
+import { lazy, Suspense } from "react";
+const DashboardTab = lazy(() => import("./tabs/DashboardTab"));
+const UsersTab = lazy(() => import("./tabs/UsersTab"));
+const PredictionsTab = lazy(() => import("./tabs/PredictionsTab"));
+const ScoringTab = lazy(() => import("./tabs/ScoringTab"));
+const LeaguesTab = lazy(() => import("./tabs/LeaguesTab"));
+const ChampionshipsTab = lazy(() => import("./tabs/ChampionshipsTab"));
+const RacesTab = lazy(() => import("./tabs/RacesTab"));
+const InvitationsTab = lazy(() => import("./tabs/InvitationsTab"));
+const MediaTab = lazy(() => import("./tabs/MediaTab"));
+const SettingsTab = lazy(() => import("./tabs/SettingsTab"));
+const ActivityLogsTab = lazy(() => import("./tabs/ActivityLogsTab"));
+const CircuitMapsTab = lazy(() => import("./tabs/CircuitMapsTab"));
+const DriversTab = lazy(() => import("./tabs/DriversTab"));
+// DevOpsTab also exports devOpsSectionFromKey — keep as static import
 import DevOpsTab, { devOpsSectionFromKey, type DevOpsSectionKey } from "./tabs/DevOpsTab";
 import PreviewPanel from "./PreviewPanel";
 import AdminDeepSearch from "./AdminDeepSearch";
@@ -435,7 +439,15 @@ export default function AdminLayout() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
             >
-              {renderTab()}
+              <Suspense
+                fallback={
+                  <div className="flex items-center justify-center py-20">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-pk-red/25 border-t-pk-red" />
+                  </div>
+                }
+              >
+                {renderTab()}
+              </Suspense>
             </motion.div>
           </AnimatePresence>
           <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.08] pt-4">

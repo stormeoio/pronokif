@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import { haptic } from "@/lib/haptics";
+import type { DriverDetails } from "@/types/api";
 
 // Map team IDs (snake_case) to team colors
 const teamIdColors: Record<string, string> = {
@@ -30,7 +31,7 @@ export function getTeamColor(teamId: string | undefined): string {
 /* ── Driver Card ──────────────────────────────────────── */
 
 interface DriverCardProps {
-  driver: Record<string, any>;
+  driver: DriverDetails;
 }
 
 export function DriverCard({ driver }: DriverCardProps) {
@@ -145,8 +146,8 @@ interface EfficiencyCardProps {
   label: string;
   value1: number;
   value2: number;
-  driver1: Record<string, any>;
-  driver2: Record<string, any>;
+  driver1: DriverDetails;
+  driver2: DriverDetails;
   suffix: string;
 }
 

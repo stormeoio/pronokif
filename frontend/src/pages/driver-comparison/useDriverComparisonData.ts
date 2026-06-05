@@ -5,18 +5,19 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import type { DriverDetails, DriverComparison } from "@/types/api";
 
 export function useAllDrivers() {
   return useQuery({
     queryKey: ["/drivers/all"],
-    queryFn: () => api.drivers.all() as Promise<any>,
+    queryFn: (): Promise<DriverDetails[]> => api.drivers.all(),
   });
 }
 
 export function useDriverComparison(driver1Id: string, driver2Id: string) {
   return useQuery({
     queryKey: ["/drivers/compare", driver1Id, driver2Id],
-    queryFn: () => api.drivers.compare(driver1Id, driver2Id) as Promise<any>,
+    queryFn: (): Promise<DriverComparison> => api.drivers.compare(driver1Id, driver2Id),
     enabled: !!driver1Id && !!driver2Id && driver1Id !== driver2Id,
   });
 }

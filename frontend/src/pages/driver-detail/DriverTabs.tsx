@@ -17,9 +17,10 @@ import {
 } from "lucide-react";
 import { InfoRow, StatCard, formatDate, factIcons, type TeamColors } from "./driverHelpers";
 import { staggerContainer, fadeUp } from "@/lib/motion";
+import type { DriverDetails } from "@/types/api";
 
 interface TabProps {
-  driver: Record<string, any>;
+  driver: DriverDetails;
   colors: TeamColors;
 }
 

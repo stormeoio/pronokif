@@ -137,6 +137,32 @@ _DEFAULT_HEADERS: dict[str, str] = {
     "Referrer-Policy": "strict-origin-when-cross-origin",
     # Disable browser features the API doesn't need.
     "Permissions-Policy": "geolocation=(), microphone=(), camera=(), payment=()",
+    # Content-Security-Policy (report-only phase).
+    # Sources allowed:
+    #   - self: same origin (app + API on same domain)
+    #   - media.formula1.com: F1 CDN driver photos + team logos
+    #   - cdn.jsdelivr.net: MediaPipe WASM runtime
+    #   - storage.googleapis.com: MediaPipe tflite model
+    #   - data: URIs: base64 avatars stored inline
+    #   - blob: URLs: AvatarGenerator canvas output + dynamic manifests
+    # Inline scripts/styles are blocked by default — tighten once violations
+    # are audited via the report-uri. Switch to Content-Security-Policy
+    # (enforcement) once 0 violations in prod for 2 weeks.
+    "Content-Security-Policy-Report-Only": (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "  # inline kept for Vite HMR compat → will tighten
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: blob: https://media.formula1.com https://storage.googleapis.com; "
+        "connect-src 'self' https://cdn.jsdelivr.net https://storage.googleapis.com; "
+        "font-src 'self' data:; "
+        "media-src 'self' blob:; "
+        "object-src 'none'; "
+        "frame-ancestors 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'; "
+        "worker-src 'self' blob:; "
+        "report-uri /api/csp-report"
+    ),
 }
 
 

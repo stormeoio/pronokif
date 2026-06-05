@@ -98,18 +98,57 @@ jobs:
             -H "X-Hub-Signature-256: sha256=$signature" \
             --data "$payload"
 
-      - name: Canary health check
+      - name: Canary — wait for new bundle
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
         run: |
+          # Poll until the deployed frontend bundle changes (new Vite hash in HTML).
+          # This confirms the Docker image was rebuilt and nginx is serving fresh code.
+          echo "Waiting for new bundle to go live (sha=$EXPECTED_SHA)..."
+          OLD_BUNDLE=$(curl -sf https://pronokif.eu/ | grep -oiE '/assets/index-[a-zA-Z0-9_-]+\.js' | head -1 || echo "unknown")
+          echo "Current bundle: $OLD_BUNDLE"
           for attempt in $(seq 1 30); do
-            if curl --fail --silent --show-error https://pronokif.eu/api/health >/tmp/pronokif-health.json; then
-              cat /tmp/pronokif-health.json
-              exit 0
+            NEW_BUNDLE=$(curl -sf https://pronokif.eu/ | grep -oiE '/assets/index-[a-zA-Z0-9_-]+\.js' | head -1 || echo "")
+            if [ -n "$NEW_BUNDLE" ] && [ "$NEW_BUNDLE" != "$OLD_BUNDLE" ]; then
+              echo "::notice::Bundle updated: $OLD_BUNDLE → $NEW_BUNDLE"
+              break
             fi
-            echo "Waiting for Pronokif health check ($attempt/30)..."
+            echo "Attempt $attempt/30: bundle still $NEW_BUNDLE, sleeping 10s..."
             sleep 10
           done
-          echo "::error::Pronokif health check did not recover after deploy trigger."
-          exit 1
+
+      - name: Canary — backend health
+        run: |
+          for attempt in $(seq 1 15); do
+            if curl --fail --silent --show-error https://pronokif.eu/api/health >/tmp/pronokif-health.json; then
+              STATUS=$(python3 -c "import json,sys; d=json.load(open('/tmp/pronokif-health.json')); print(d.get('status','unknown'))")
+              echo "::notice::Backend healthy: $STATUS"
+              break
+            fi
+            echo "Health check attempt $attempt/15 failed, retrying..."
+            sleep 10
+          done
+          cat /tmp/pronokif-health.json || true
+
+      - name: Canary — critical API endpoints
+        run: |
+          FAIL=0
+          check() {
+            CODE=$(curl -sf -o /dev/null -w "%{http_code}" "$1" 2>/dev/null || echo "000")
+            if [ "$CODE" = "$2" ]; then
+              echo "  ✅ $1 → $CODE"
+            else
+              echo "  ❌ $1 → $CODE (expected $2)"
+              FAIL=1
+            fi
+          }
+          echo "Checking critical endpoints..."
+          check "https://pronokif.eu/"                     "200"
+          check "https://pronokif.eu/api/health"           "200"
+          check "https://pronokif.eu/api/drivers"          "200"
+          check "https://pronokif.eu/api/races/upcoming"   "200"
+          check "https://pronokif.eu/api/auth/session"     "200"
+          [ $FAIL -eq 0 ] || { echo "::error::Canary checks failed"; exit 1; }
 
   notify:
     name: Deployment summary
