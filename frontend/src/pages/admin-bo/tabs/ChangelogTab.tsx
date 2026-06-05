@@ -15,6 +15,30 @@ const CHANGELOG: ChangelogEntry[] = [
   {
     version: APP_VERSION_LABEL,
     date: APP_RELEASE_DATE,
+    title: "Admin pilotes, photos HD, securite et performance",
+    summary:
+      "Administration complète des pilotes et écuries avec photos F1 CDN HD, avatars Pronokif, renforcement sécurité (CSP, MIME, Zod), bundle admin découpé par onglet et pull-to-refresh mobile.",
+    items: [
+      "Admin Pilotes & Écuries : CRUD complet, drag-drop upload photo (min 1024x1024), seed depuis F1 2026 avec photos CDN HD (2col-retina) et logos équipes (640px).",
+      "Avatars pilotes Pronokif : headshots F1 officiels dans le sélecteur d'avatar avec cadre couleur équipe + badge numéro.",
+      "Badges prédiction sur la page Courses (fix TanStack Query Set→string[]).",
+      "Fix navigation Cartes Circuits (useEffect URL guard quand on change d'onglet).",
+      "PWA update toast : détection de nouveau service worker + bouton Recharger.",
+      "CSP report-only avec liste blanche F1 CDN / MediaPipe + endpoint /api/csp-report.",
+      "MIME hardening : SVG bloqué, validation magic-bytes, Cache-Control sur médias.",
+      "Zod : validation des 5 endpoints critiques (drivers, races, leagues, session, predictions).",
+      "Suppression des 11 Record<string,any> → types Driver/DriverDetails propres.",
+      "Bundle admin découpé : 13 tabs en lazy() + Suspense (AdminLayout -60%).",
+      "LazyImage : composant drop-in avec skeleton pulse et fade-in.",
+      "Pull-to-refresh sur Dashboard, Courses et Fiche Grand Prix.",
+      "Monitoring externe : healthcheck.yml cron 30min (frontend + backend + 3 endpoints).",
+      "Canary CD amélioré : 3 phases (bundle hash + health + 5 endpoints critiques).",
+    ],
+    current: true,
+  },
+  {
+    version: "v0.4.2",
+    date: "31 mai 2026",
     title: "Release finale, documentation et deep links admin",
     summary:
       "La production est synchronisée sur main, le smoke test final est vert et les deep links admin retombent proprement sur l'authentification hors session.",
@@ -25,7 +49,6 @@ const CHANGELOG: ChangelogEntry[] = [
       "Main, origin/main et stormeo/main synchronisés sur le commit de release.",
     ],
     commit: "301451b",
-    current: true,
   },
   {
     version: "v0.4.1",

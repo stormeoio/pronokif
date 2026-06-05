@@ -38,18 +38,18 @@ const SCORES = [
 ];
 
 const METRICS = [
-  { label: "LOC backend", before: "15,710", after: "24,371", mult: "+55%" },
-  { label: "LOC frontend", before: "36,598", after: "57,063", mult: "+56%" },
-  { label: "Endpoints API", before: "131", after: "209", mult: "+78" },
-  { label: "Routes backend", before: "20", after: "33", mult: "+13" },
-  { label: "Services backend", before: "19", after: "36", mult: "+17" },
-  { label: "Modeles Pydantic", before: "40", after: "87", mult: "+47" },
-  { label: "Pages front", before: "74", after: "100", mult: "+26" },
-  { label: "Composants", before: "83", after: "100", mult: "+17" },
-  { label: "React Query hooks", before: "133", after: "155", mult: "+22" },
-  { label: "Tests backend", before: "15", after: "41", mult: "+26" },
-  { label: "Tests front/E2E", before: "18", after: "39", mult: "+21" },
-  { label: '"as any" TS', before: "0", after: "0", mult: "✅ fixé" },
+  { label: "LOC backend", before: "24,371", after: "33,209", mult: "+36%" },
+  { label: "LOC frontend", before: "57,063", after: "65,864", mult: "+15%" },
+  { label: "Endpoints API", before: "209", after: "216", mult: "+7" },
+  { label: "Routes backend", before: "33", after: "34", mult: "+1" },
+  { label: "Services backend", before: "36", after: "36", mult: "=" },
+  { label: "Modeles Pydantic", before: "87", after: "90", mult: "+3" },
+  { label: "Pages front", before: "100", after: "102", mult: "+2" },
+  { label: "Composants", before: "100", after: "106", mult: "+6" },
+  { label: "React Query hooks", before: "155", after: "160", mult: "+5" },
+  { label: "Tests backend", before: "41", after: "40", mult: "=" },
+  { label: "Tests front/E2E", before: "39", after: "40", mult: "+1" },
+  { label: '"as any" TS', before: "11", after: "0", mult: "✅ fixé" },
 ];
 
 const SECURITY = [

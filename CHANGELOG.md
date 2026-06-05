@@ -2,6 +2,35 @@
 
 Toutes les dates sont en heure Europe/Paris. Le changelog applicatif visible dans le back-office est maintenu dans `frontend/src/pages/admin-bo/tabs/ChangelogTab.tsx`.
 
+## v0.5.0 — 5 juin 2026
+
+### Admin Pilotes & Ecuries
+- Interface admin CRUD complete : liste groupee par ecurie, photos F1 CDN HD (2col-retina), logos 640px, drag-drop upload (min 1024x1024px).
+- Avatars pilotes Pronokif : headshots F1 officiels dans le selecteur d'avatar, cadre couleur ecurie + badge numero.
+- Seed endpoint `/admin-bo/drivers/seed` + sync-avatars depuis le catalogue F1 2026.
+
+### Securite et qualite
+- CSP report-only : header sur toutes les reponses API, endpoint `/api/csp-report` pour les violations.
+- MIME hardening : SVG bloque (vecteur XSS), validation magic-bytes, Cache-Control sur medias.
+- Zod : validation des 5 endpoints critiques (drivers, races, leagues, session, predictions).
+- Suppression des 11 `Record<string,any>` : types Driver/DriverDetails propres.
+
+### Performance
+- Bundle admin decoupe : 13 tabs → lazy() + Suspense (AdminLayout -60%).
+- LazyImage : composant drop-in avec skeleton pulse et fade-in.
+- Pull-to-refresh sur Dashboard, Courses et Fiche Grand Prix.
+
+### DevOps et monitoring
+- Canary CD ameliore : 3 phases (bundle hash + health + 5 endpoints critiques).
+- Monitoring externe : healthcheck.yml cron 30min (frontend + backend + 3 endpoints).
+- PWA update toast : detection de nouveau service worker + bouton Recharger.
+
+### Corrections
+- Badges prediction sur la page Courses (fix TanStack Query Set→string[]).
+- Fix navigation Cartes Circuits (useEffect URL guard quand on change d'onglet).
+- Photos pilotes HD : transform 1col→2col-retina (fix fallback pour Verstappen, Perez, Bottas).
+- Re-seed force=true pour mettre a jour les URLs existantes en DB.
+
 ## v0.4.2 — 31 mai 2026
 
 ### Production et documentation
