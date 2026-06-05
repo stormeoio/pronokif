@@ -9,6 +9,14 @@
  *   queryFn: () => api.leagues.my()
  */
 import axios from "axios";
+import {
+  DriversSchema,
+  RacesSchema,
+  LeaguesSchema,
+  SessionSchema,
+  PredictionHistorySchema,
+  safeParse,
+} from "@/lib/schemas";
 import type {
   AvatarsResponse,
   ChatMessageResponse,
@@ -226,8 +234,9 @@ export const api = {
 
   // ── Races ────────────────────────────────────────────────────
   races: {
-    list: () => get<Race[]>("/races"),
-    upcoming: () => get<Race[]>("/races/upcoming"),
+    list: () => get<Race[]>("/races").then((d) => safeParse(RacesSchema, d, []) as Race[]),
+    upcoming: () =>
+      get<Race[]>("/races/upcoming").then((d) => safeParse(RacesSchema, d, []) as Race[]),
     next: () => get<Race>("/races/next"),
     get: (id: string) => get<RaceDetails>(`/races/${id}`),
     details: (id: string) => get<RaceDetails>(`/races/${id}/details`),
@@ -238,7 +247,7 @@ export const api = {
 
   // ── Drivers ──────────────────────────────────────────────────
   drivers: {
-    list: () => get<Driver[]>("/drivers"),
+    list: () => get<Driver[]>("/drivers").then((d) => safeParse(DriversSchema, d, []) as Driver[]),
     all: () => get<Driver[]>("/drivers/all"),
     get: (id: string) => get<DriverDetails>(`/drivers/${id}`),
     details: (id: string) => get<DriverDetails>(`/drivers/${id}/details`),
@@ -248,7 +257,7 @@ export const api = {
 
   // ── Leagues ──────────────────────────────────────────────────
   leagues: {
-    my: () => get<League[]>("/leagues/my"),
+    my: () => get<League[]>("/leagues/my").then((d) => safeParse(LeaguesSchema, d, []) as League[]),
     get: (id: string) => get<League>(`/leagues/${id}`),
     byCode: (code: string) => get<LeaguePreview>(`/leagues/by-code/${code}`),
     create: (body: { name: string }) => post<League>("/leagues", body),
@@ -282,7 +291,10 @@ export const api = {
     saveMain: (body: unknown) => post<Prediction>("/predictions/main", body),
     delete: (raceId: string) => del<void>(`/predictions/race/${raceId}`),
     stats: () => get<PredictionStats>("/predictions/stats"),
-    history: () => get<PointsHistoryEntry[]>("/predictions/history"),
+    history: () =>
+      get<PointsHistoryEntry[]>("/predictions/history").then(
+        (d) => safeParse(PredictionHistorySchema, d, []) as PointsHistoryEntry[],
+      ),
     pointsHistory: () => get<PointsHistoryResponse>("/predictions/points-history"),
   },
 

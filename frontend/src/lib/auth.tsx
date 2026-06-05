@@ -10,6 +10,7 @@ import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "@/lib/api";
+import { SessionSchema, safeParse } from "@/lib/schemas";
 import { setStoredLocale } from "@/i18n";
 import type { Locale } from "@/i18n";
 
@@ -98,14 +99,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     apiClient
       .get<SessionResponse>("/auth/session")
       .then((res) => {
-        if (!res.data.user) {
+        // Validate session shape with Zod before trusting it
+        const parsed = safeParse(SessionSchema, res.data, { user: null });
+        if (!parsed.user) {
           localStorage.removeItem("user");
           setUser(null);
           return;
         }
-        setUser(res.data.user);
-        localStorage.setItem("user", JSON.stringify(res.data.user));
-        syncLocale(res.data.user);
+        // Cast to User type — Zod schema is a subset, extra fields pass through
+        const u = parsed.user as SessionResponse["user"];
+        setUser(u);
+        localStorage.setItem("user", JSON.stringify(u));
+        if (u) syncLocale(u as unknown as Record<string, unknown>);
       })
       .catch(() => {
         // No valid session — clear cached user

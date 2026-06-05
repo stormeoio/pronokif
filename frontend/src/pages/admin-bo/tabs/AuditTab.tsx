@@ -148,14 +148,14 @@ const SPRINTS = [
 ];
 
 const TODO = [
-  { task: "Automatiser le canary post-deploy complet", effort: "P1", done: false },
-  { task: "Ajouter CSP report-only puis enforcement", effort: "P1", done: false },
+  { task: "Automatiser le canary post-deploy complet", effort: "P1", done: true },
+  { task: "Ajouter CSP report-only puis enforcement", effort: "P1", done: true },
   { task: "Valider MIME, taille et droits des uploads médias", effort: "P1", done: true },
-  { task: "Durcir SVG uploadés et cache-control médias", effort: "P1", done: false },
-  { task: "Typer les réponses API critiques avec Zod", effort: "P1", done: false },
-  { task: 'Réduire les 11 "as any" revenus', effort: "P1", done: false },
-  { task: "Découper le bundle admin par onglet", effort: "P2", done: false },
-  { task: "Généraliser lazy images, placeholders et squelettes", effort: "P2", done: false },
+  { task: "Durcir SVG uploadés et cache-control médias", effort: "P1", done: true },
+  { task: "Typer les réponses API critiques avec Zod", effort: "P1", done: true },
+  { task: 'Réduire les 11 "as any" revenus', effort: "P1", done: true },
+  { task: "Découper le bundle admin par onglet", effort: "P2", done: true },
+  { task: "Généraliser lazy images, placeholders et squelettes", effort: "P2", done: true },
   { task: "Déployer le pull-to-refresh sur les pages clés", effort: "P2", done: false },
   { task: "Ajouter monitoring externe et canary post-deploy complet", effort: "P2", done: false },
 ];

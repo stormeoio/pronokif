@@ -19,6 +19,7 @@ import {
   User,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { LazyImage } from "./LazyImage";
 import { AvatarGenerator } from "./AvatarGenerator";
 import { haptic } from "@/lib/haptics";
 
@@ -106,9 +107,12 @@ export function AvatarDisplay({ avatar, size = "md", customUrl = null }: AvatarD
   // Custom uploaded photo
   if (customUrl) {
     return (
-      <div className={`${sizeClasses[size]} rounded-lg overflow-hidden border-2 border-pk-red`}>
-        <img src={customUrl} alt="Avatar personnalise" className="w-full h-full object-cover" />
-      </div>
+      <LazyImage
+        src={customUrl}
+        alt="Avatar personnalisé"
+        wrapperClassName={`${sizeClasses[size]} rounded-lg border-2 border-pk-red`}
+        className="h-full w-full object-cover"
+      />
     );
   }
 
