@@ -136,7 +136,7 @@ export default function PronoKifSplashScreen({
   loadingLabel = "Synchronisation paddock",
   loadingLogs = DEFAULT_LOADING_LOGS,
   skipLabel = "Passer",
-  ctaLabel = "Commencer",
+  ctaLabel: _ctaLabel,
   ariaContent = "Écran de lancement PronoKif F1",
   ariaLoading = "Chargement de PronoKif F1",
   ariaSteps = "Étapes de chargement",
@@ -292,9 +292,9 @@ export default function PronoKifSplashScreen({
             </div>
           </div>
 
-          <BorderGlowButton onClick={completeSplash} className="pk-splash__startButton">
-            {ctaLabel}
-          </BorderGlowButton>
+          {/* CTA button removed — auto-transition fires via the useEffect
+              above when `ready` becomes true (450ms delay for a smooth exit).
+              The maxDurationMs safety timer ensures the splash always clears. */}
         </div>
       </section>
     </main>
@@ -603,8 +603,7 @@ const styles = `
   justify-items: center;
 }
 
-.pk-progress,
-.pk-splash__startButton {
+.pk-progress {
   grid-area: 1 / 1;
 }
 
