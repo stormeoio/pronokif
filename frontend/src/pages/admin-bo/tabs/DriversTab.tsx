@@ -666,7 +666,7 @@ export default function DriversTab() {
                         <img
                           src={logoSrc}
                           alt={teamName}
-                          className="h-5 w-5 rounded object-contain"
+                          className="h-7 w-7 rounded object-contain"
                           onError={(e) => {
                             if (meta.logo) (e.currentTarget as HTMLImageElement).src = meta.logo;
                           }}

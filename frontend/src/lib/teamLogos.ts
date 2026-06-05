@@ -8,8 +8,9 @@
  */
 
 // Official F1 media CDN base paths (mirrors backend data/f1_data.py _TL_*)
+// HD: q_auto + w_640,h_640 (up from q_75 w_160,h_160)
 const _TL_BASE =
-  "https://media.formula1.com/image/upload/f_auto,c_limit,q_75,w_160,h_160/content/dam/fom-website/2018-redesign-assets/team%20logos";
+  "https://media.formula1.com/image/upload/f_auto,c_limit,q_auto,w_640,h_640/content/dam/fom-website/2018-redesign-assets/team%20logos";
 const _TL_2026 =
   "https://media.formula1.com/d_default_fallback_image.png/content/dam/fom-website/teams/2026";
 
