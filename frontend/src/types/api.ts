@@ -165,7 +165,11 @@ export interface Driver {
   name: string;
   first_name: string;
   last_name: string;
+  /** "First Last" combined — present on detailed endpoints */
+  full_name?: string;
   team: string;
+  /** Constructor identifier (snake_case) for team-color lookups */
+  team_id?: string;
   number: number;
   country: string;
   code: string;
@@ -173,29 +177,39 @@ export interface Driver {
 }
 
 export interface DriverDetails extends Driver {
-  date_of_birth: string;
-  place_of_birth: string;
-  country_name: string;
+  /** Combined "First Last" — from the detailed /drivers/all endpoint */
+  full_name?: string;
+  date_of_birth?: string;
+  place_of_birth?: string;
+  country_name?: string;
   height_cm?: number;
+  weight_kg?: number;
   license_points?: number;
+  /** Constructor identifier (snake_case) used for team color lookups */
+  team_id?: string;
   palmares?: DriverPalmares;
   contract?: DriverContract;
-  useful_facts: DriverFact[];
+  useful_facts?: DriverFact[];
+  social?: {
+    instagram?: string;
+    twitter?: string;
+    [key: string]: string | undefined;
+  };
 }
 
 export interface DriverPalmares {
-  f1: {
-    world_championships: number;
-    wins: number;
-    podiums: number;
-    poles: number;
-    fastest_laps: number;
-    points: number;
-    entries: number;
-    seasons: string;
-    first_team: string;
+  f1?: {
+    world_championships?: number;
+    wins?: number;
+    podiums?: number;
+    poles?: number;
+    fastest_laps?: number;
+    points?: number;
+    entries?: number;
+    seasons?: string;
+    first_team?: string;
   };
-  junior: Array<{
+  junior?: Array<{
     year: number;
     series: string;
     team: string;
@@ -204,8 +218,11 @@ export interface DriverPalmares {
 }
 
 export interface DriverContract {
-  end_year: number;
+  start_year?: number;
+  end_year?: number;
+  option_years?: number | null;
   salary_estimate?: string;
+  verified?: boolean;
   notes?: string;
 }
 

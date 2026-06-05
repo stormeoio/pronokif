@@ -20,9 +20,31 @@ from routes.admin_auth import get_current_admin
 
 router = APIRouter(prefix="/admin-bo", tags=["admin-backoffice-media"])
 
-ALLOWED_MEDIA_TYPES = {"image/jpeg", "image/png", "image/webp", "image/svg+xml", "image/gif"}
+ALLOWED_MEDIA_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+# SVG removed: can embed <script> / event-handlers → stored XSS vector.
+# Admin can reference external SVG URLs instead of uploading them.
 MAX_MEDIA_BYTES = 5 * 1024 * 1024
 DEFAULT_MEDIA_FOLDER = "general"
+
+# Magic-byte signatures for real MIME validation (first bytes of file).
+_MAGIC: dict[bytes, str] = {
+    b"\xff\xd8\xff": "image/jpeg",
+    b"\x89PNG": "image/png",
+    bytes("RIFF", "ascii"): "image/webp",   # RIFF….WEBP
+    b"GIF87a": "image/gif",
+    b"GIF89a": "image/gif",
+}
+
+
+def _detect_mime(content: bytes) -> str | None:
+    """Return a validated MIME type from magic bytes, or None if unknown."""
+    for sig, mime in _MAGIC.items():
+        if content[: len(sig)] == sig:
+            return mime
+    # WebP: RIFF????WEBP
+    if len(content) >= 12 and content[:4] == b"RIFF" and content[8:12] == b"WEBP":
+        return "image/webp"
+    return None
 
 
 class MediaUpdate(BaseModel):
@@ -58,15 +80,28 @@ async def upload_media(
     admin: dict = Depends(get_current_admin),
 ) -> dict:
     """Upload a media file (image/thumbnail)."""
+    # 1. Declared content-type check (fast, first gate)
     if file.content_type not in ALLOWED_MEDIA_TYPES:
         raise HTTPException(
             status_code=400,
-            detail=f"Type de fichier non supporte: {file.content_type}",
+            detail=f"Type de fichier non supporte: {file.content_type}. SVG non autorisé (risque XSS).",
         )
 
     content = await file.read()
+
+    # 2. Size check
     if len(content) > MAX_MEDIA_BYTES:
         raise HTTPException(status_code=400, detail="Fichier trop volumineux (max 5 Mo)")
+
+    # 3. Magic-byte validation — prevents MIME-type spoofing
+    real_mime = _detect_mime(content)
+    if real_mime is None:
+        raise HTTPException(status_code=400, detail="Format de fichier non reconnu (magic bytes invalides)")
+    if real_mime != file.content_type:
+        raise HTTPException(
+            status_code=400,
+            detail=f"MIME déclaré ({file.content_type}) ne correspond pas au contenu réel ({real_mime})",
+        )
 
     file_id = str(uuid.uuid4())
     filename = f"{file_id}.{_media_extension(file.filename)}"
@@ -210,7 +245,18 @@ async def get_media_file(media_id: str) -> Response:
         raise HTTPException(status_code=404, detail="Fichier non trouve")
 
     content = base64.b64decode(media["data"])
-    return Response(content=content, media_type=media["content_type"])
+    # Content-Disposition: inline (display in browser, not download)
+    # Cache: private 1h — admin media isn't public but benefits from short cache.
+    # Content-Type-Options: nosniff — prevent browser MIME sniffing.
+    return Response(
+        content=content,
+        media_type=media["content_type"],
+        headers={
+            "Content-Disposition": f'inline; filename="{media.get("filename", "file")}"',
+            "Cache-Control": "private, max-age=3600",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @router.delete("/media/{media_id}")

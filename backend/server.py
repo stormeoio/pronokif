@@ -17,6 +17,7 @@ import contextlib
 import os
 
 from fastapi import FastAPI
+from starlette.requests import Request as StarletteRequest
 import sentry_sdk
 
 from config import client, logger
@@ -117,6 +118,25 @@ app = FastAPI(
 )
 
 app.include_router(root_router)
+
+
+# ── CSP violation report endpoint ─────────────────────────────────────────
+# Receives JSON reports from browsers when Content-Security-Policy-Report-Only
+# fires. Logged to stdout so Dokploy/StormDeploy picks them up. Remove or
+# restrict once enforcement mode is active.
+import json as _json
+import logging as _logging
+
+_csp_log = _logging.getLogger("csp.violations")
+
+
+@app.post("/api/csp-report", status_code=204, include_in_schema=False)
+async def csp_report(request: StarletteRequest):
+    try:
+        body = await request.json()
+        _csp_log.warning("CSP violation: %s", _json.dumps(body))
+    except Exception:
+        pass
 
 # Mount every domain router under /api. Keep this list alphabetical so
 # diffs stay clean as new domains arrive.

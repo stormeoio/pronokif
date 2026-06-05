@@ -32,6 +32,7 @@ import {
 import { useAllDrivers, useDriverComparison } from "./useDriverComparisonData";
 import { haptic } from "@/lib/haptics";
 import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
+import type { Driver } from "@/types/api";
 
 /* ── Skeleton ─────────────────────────────────────────── */
 
@@ -46,7 +47,7 @@ function ComparisonSkeleton() {
 /* ── Driver Selector ──────────────────────────────────── */
 
 interface DriverSelectorProps {
-  drivers: Record<string, any>[];
+  drivers: Driver[];
   excludeId: string;
   selectedId: string;
   onSelect: (id: string) => void;
