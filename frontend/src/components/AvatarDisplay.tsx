@@ -21,6 +21,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { LazyImage } from "./LazyImage";
 import { AvatarGenerator } from "./AvatarGenerator";
+import { resolveDriverPhoto } from "@/lib/driverPhotos";
 import { haptic } from "@/lib/haptics";
 
 // ------------------------------------------------------------------ types ---
@@ -147,8 +148,12 @@ export function AvatarDisplay({ avatar, size = "md", customUrl = null }: AvatarD
   if (avatar.category === "drivers") {
     const colors = avatar.colors ?? ["#666", "#333"];
 
-    // If we have a real headshot (from admin seed), render it with team-color framing.
-    if (avatar.photo_url) {
+    // Resolve photo: API photo_url → local asset → CDN fallback
+    // Extract driver id from avatar id (format: "driver_<number>")
+    const driverNumber = avatar.number ? String(avatar.number) : null;
+    const photoSrc = avatar.photo_url || resolveDriverPhoto(avatar.id.replace("driver_", ""));
+
+    if (photoSrc) {
       return (
         <div
           className={`${sizeClasses[size]} rounded-lg border-2 flex items-center justify-center relative overflow-hidden`}
@@ -156,7 +161,7 @@ export function AvatarDisplay({ avatar, size = "md", customUrl = null }: AvatarD
         >
           {/* Headshot */}
           <img
-            src={avatar.photo_url}
+            src={photoSrc}
             alt={avatar.name ?? "Pilote"}
             className="absolute inset-0 w-full h-full object-cover object-top"
           />

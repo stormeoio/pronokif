@@ -13,7 +13,7 @@ import { Users } from "lucide-react";
 import { api } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
 import { getTeamMeta } from "@/lib/teamLogos";
-import { getDriverPhoto } from "@/components/DriverCard";
+import { resolveDriverPhoto } from "@/lib/driverPhotos";
 import { fadeUp } from "@/lib/motion";
 import { haptic } from "@/lib/haptics";
 import { EmptyFullPage } from "@/components/EmptyState";
@@ -122,7 +122,7 @@ export default function RaceGrid() {
           <div className="grid grid-cols-2 gap-px bg-white/[0.04]">
             {group.drivers.map((driver) => {
               // Prefer photo_url from API (populated by admin seed), fall back to local dict
-              const photo = getDriverPhoto(driver as { id: string; photo_url?: string | null });
+              const photo = resolveDriverPhoto(driver);
               const initials =
                 (driver.first_name?.[0] ?? driver.name?.[0] ?? "") + (driver.last_name?.[0] ?? "");
               return (

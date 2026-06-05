@@ -94,17 +94,18 @@ describe("RaceGrid", () => {
     const ferrariLogo = screen.getByAltText("Ferrari") as HTMLImageElement;
     expect(ferrariLogo.getAttribute("src")).toContain("/images/teams/ferrari.svg");
 
-    // Mapped driver gets a real photo headshot
+    // Mapped driver gets a photo (local asset or CDN — resolver picks best available)
     const leclercPhoto = screen.getByAltText("Charles Leclerc") as HTMLImageElement;
-    expect(leclercPhoto.getAttribute("src")).toContain("media.formula1.com");
+    expect(leclercPhoto.getAttribute("src")).toMatch(/leclerc/);
 
     // Driver names + codes present
     expect(screen.getByText("Leclerc")).toBeInTheDocument();
     expect(screen.getByText("HAM")).toBeInTheDocument();
 
-    // Unknown-photo driver falls back to initials (no <img>)
-    expect(screen.queryByAltText("Jane Doe")).not.toBeInTheDocument();
-    expect(screen.getByText("JD")).toBeInTheDocument();
+    // Unknown-photo driver gets a local asset URL optimistically
+    // (onError fallback to initials happens at runtime, not in JSDOM)
+    const doePhoto = screen.getByAltText("Jane Doe") as HTMLImageElement;
+    expect(doePhoto.getAttribute("src")).toContain("newguy");
   });
 
   it("shows empty state when no drivers", async () => {

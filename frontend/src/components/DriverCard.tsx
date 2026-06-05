@@ -72,30 +72,14 @@ const DRIVER_PHOTOS: Record<string, string> = {
     "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/V/VALBOT01_Valtteri_Bottas/valbot01.png.transform/1col/image.png",
 };
 
-export function getDriverPhotoUrl(driverId: string): string {
-  return DRIVER_PHOTOS[driverId] || DRIVER_PHOTOS.norris;
-}
-
 /**
- * Resolve a driver's headshot URL.
- *
- * Prefers `photo_url` from the API response (populated by the admin seed from
- * the F1 CDN), falls back to the local hardcoded dict so existing callers that
- * only pass an id string keep working. Returns null if no photo is available.
- *
- * Overloads:
- *   getDriverPhoto("norris")            → string | null (id lookup)
- *   getDriverPhoto({ id, photo_url })   → string | null (prefers API value)
+ * @deprecated Use resolveDriverPhotoUrl from "@/lib/driverPhotos" instead.
+ * Kept for backward compat with components that import from DriverCard.
  */
-export function getDriverPhoto(
-  driverOrId: string | { id: string; photo_url?: string | null },
-): string | null {
-  if (typeof driverOrId === "string") {
-    return DRIVER_PHOTOS[driverOrId] ?? null;
-  }
-  // Driver object: prefer photo_url from API, fall back to local dict
-  return driverOrId.photo_url || DRIVER_PHOTOS[driverOrId.id] || null;
-}
+export {
+  resolveDriverPhotoUrl as getDriverPhotoUrl,
+  resolveDriverPhoto as getDriverPhoto,
+} from "@/lib/driverPhotos";
 
 // ----------------------------------------------------------- rank helpers ---
 

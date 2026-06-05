@@ -1,0 +1,4 @@
+# Driver Photos (Light Mode)
+
+Same filenames as dark/. Used when admin light theme is active.
+If a light variant doesn't exist, the dark version is used.
