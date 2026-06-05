@@ -316,7 +316,7 @@ export default function AdminLayout() {
               data-testid="admin-logo-home"
             >
               <img
-                src={assets.wordmarkDark}
+                src={isDark ? assets.wordmarkDark : assets.wordmarkLight}
                 alt="PronoKif"
                 className="h-6 w-auto max-w-[154px] object-contain transition-opacity group-hover:opacity-85"
                 draggable={false}

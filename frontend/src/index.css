@@ -186,6 +186,378 @@
   background-color: rgba(248, 249, 251, 0.85);
 }
 
+/* --- Structural grays (dark cards/surfaces → light equivalents) --- */
+.admin-light .bg-gray-900 {
+  background-color: #ffffff;
+}
+.admin-light .bg-gray-900\/70 {
+  background-color: rgba(255, 255, 255, 0.85);
+}
+.admin-light .bg-gray-950 {
+  background-color: #f8f9fb;
+}
+.admin-light .bg-gray-950\/40 {
+  background-color: rgba(248, 249, 251, 0.6);
+}
+.admin-light .bg-gray-950\/60 {
+  background-color: rgba(248, 249, 251, 0.75);
+}
+.admin-light .bg-gray-800 {
+  background-color: #eef0f4;
+}
+.admin-light .bg-gray-800\/50 {
+  background-color: rgba(238, 240, 244, 0.6);
+}
+.admin-light .bg-gray-700 {
+  background-color: #e5e7eb;
+}
+.admin-light .bg-gray-500 {
+  background-color: #9ca3af;
+}
+.admin-light .bg-black {
+  background-color: #f3f4f6;
+}
+.admin-light .bg-black\/15 {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+.admin-light .bg-black\/20 {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+.admin-light .bg-black\/25 {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+.admin-light .bg-black\/50 {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+.admin-light .bg-black\/60 {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+.admin-light .bg-black\/70 {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+.admin-light .bg-white\/10 {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* --- Borders --- */
+.admin-light .border-gray-700 {
+  border-color: #e5e7eb;
+}
+.admin-light .border-gray-800 {
+  border-color: #e5e7eb;
+}
+.admin-light .border-gray-800\/30 {
+  border-color: rgba(229, 231, 235, 0.5);
+}
+.admin-light .border-gray-800\/50 {
+  border-color: rgba(229, 231, 235, 0.6);
+}
+.admin-light .border-gray-600 {
+  border-color: #d1d5db;
+}
+.admin-light .border-white {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+.admin-light .border-white\/5 {
+  border-color: rgba(0, 0, 0, 0.04);
+}
+.admin-light .border-white\/15 {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+.admin-light .border-white\/20 {
+  border-color: rgba(0, 0, 0, 0.12);
+}
+.admin-light .border-white\/25 {
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* --- Text grays (light text on dark → dark text on light) --- */
+.admin-light .text-gray-200 {
+  color: #374151;
+}
+.admin-light .text-gray-300 {
+  color: #4b5563;
+}
+.admin-light .text-gray-600 {
+  color: #6b7280;
+}
+.admin-light .text-gray-700 {
+  color: #4b5563;
+}
+.admin-light .text-white\/70 {
+  color: rgba(17, 24, 39, 0.7);
+}
+
+/* --- Status: red --- */
+.admin-light .text-red-100 {
+  color: #991b1b;
+}
+.admin-light .text-red-100\/90 {
+  color: rgba(153, 27, 27, 0.9);
+}
+.admin-light .text-red-200 {
+  color: #b91c1c;
+}
+.admin-light .text-red-300 {
+  color: #dc2626;
+}
+.admin-light .text-red-400 {
+  color: #dc2626;
+}
+.admin-light .text-red-500 {
+  color: #ef4444;
+}
+
+/* --- Status: emerald/green --- */
+.admin-light .text-emerald-200 {
+  color: #047857;
+}
+.admin-light .text-emerald-300 {
+  color: #059669;
+}
+.admin-light .text-emerald-400 {
+  color: #10b981;
+}
+.admin-light .text-green-200 {
+  color: #047857;
+}
+.admin-light .text-green-300 {
+  color: #059669;
+}
+.admin-light .text-green-400 {
+  color: #16a34a;
+}
+.admin-light .text-green-400\/80 {
+  color: rgba(22, 163, 74, 0.8);
+}
+.admin-light .text-green-500 {
+  color: #16a34a;
+}
+
+/* --- Status: amber/yellow --- */
+.admin-light .text-amber-100 {
+  color: #92400e;
+}
+.admin-light .text-amber-200 {
+  color: #b45309;
+}
+.admin-light .text-amber-300 {
+  color: #d97706;
+}
+.admin-light .text-amber-400 {
+  color: #d97706;
+}
+.admin-light .text-yellow-300 {
+  color: #ca8a04;
+}
+.admin-light .text-yellow-400 {
+  color: #ca8a04;
+}
+
+/* --- Status: orange --- */
+.admin-light .text-orange-200 {
+  color: #c2410c;
+}
+.admin-light .text-orange-300 {
+  color: #ea580c;
+}
+.admin-light .text-orange-300\/80 {
+  color: rgba(234, 88, 12, 0.8);
+}
+.admin-light .text-orange-400 {
+  color: #ea580c;
+}
+.admin-light .text-orange-500 {
+  color: #f97316;
+}
+
+/* --- Status: blue --- */
+.admin-light .text-blue-300 {
+  color: #2563eb;
+}
+.admin-light .text-blue-400 {
+  color: #3b82f6;
+}
+
+/* --- Badge/pill backgrounds (keep vivid, just soften) --- */
+.admin-light .bg-red-500 {
+  background-color: #ef4444;
+}
+.admin-light .bg-red-500\/10 {
+  background-color: rgba(239, 68, 68, 0.08);
+}
+.admin-light .bg-red-500\/15 {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+.admin-light .bg-red-500\/20 {
+  background-color: rgba(239, 68, 68, 0.12);
+}
+.admin-light .bg-red-500\/80 {
+  background-color: rgba(239, 68, 68, 0.85);
+}
+.admin-light .bg-red-600 {
+  background-color: #dc2626;
+}
+.admin-light .bg-red-700 {
+  background-color: #b91c1c;
+}
+.admin-light .bg-emerald-500 {
+  background-color: #10b981;
+}
+.admin-light .bg-emerald-500\/5 {
+  background-color: rgba(16, 185, 129, 0.06);
+}
+.admin-light .bg-emerald-500\/10 {
+  background-color: rgba(16, 185, 129, 0.08);
+}
+.admin-light .bg-emerald-500\/15 {
+  background-color: rgba(16, 185, 129, 0.1);
+}
+.admin-light .bg-green-500 {
+  background-color: #22c55e;
+}
+.admin-light .bg-green-500\/10 {
+  background-color: rgba(34, 197, 94, 0.08);
+}
+.admin-light .bg-green-500\/15 {
+  background-color: rgba(34, 197, 94, 0.1);
+}
+.admin-light .bg-green-500\/20 {
+  background-color: rgba(34, 197, 94, 0.12);
+}
+.admin-light .bg-amber-400 {
+  background-color: #f59e0b;
+}
+.admin-light .bg-amber-400\/10 {
+  background-color: rgba(245, 158, 11, 0.08);
+}
+.admin-light .bg-amber-500 {
+  background-color: #f59e0b;
+}
+.admin-light .bg-amber-500\/5 {
+  background-color: rgba(245, 158, 11, 0.06);
+}
+.admin-light .bg-amber-500\/10 {
+  background-color: rgba(245, 158, 11, 0.08);
+}
+.admin-light .bg-amber-500\/15 {
+  background-color: rgba(245, 158, 11, 0.1);
+}
+.admin-light .bg-orange-500 {
+  background-color: #f97316;
+}
+.admin-light .bg-orange-500\/5 {
+  background-color: rgba(249, 115, 22, 0.06);
+}
+.admin-light .bg-orange-500\/10 {
+  background-color: rgba(249, 115, 22, 0.08);
+}
+.admin-light .bg-orange-500\/50 {
+  background-color: rgba(249, 115, 22, 0.15);
+}
+.admin-light .bg-blue-500 {
+  background-color: #3b82f6;
+}
+.admin-light .bg-blue-500\/10 {
+  background-color: rgba(59, 130, 246, 0.08);
+}
+.admin-light .bg-yellow-500 {
+  background-color: #eab308;
+}
+.admin-light .bg-yellow-500\/15 {
+  background-color: rgba(234, 179, 8, 0.1);
+}
+.admin-light .border-green-500 {
+  border-color: #22c55e;
+}
+.admin-light .border-green-500\/20 {
+  border-color: rgba(34, 197, 94, 0.15);
+}
+.admin-light .border-red-400\/20 {
+  border-color: rgba(239, 68, 68, 0.15);
+}
+.admin-light .border-red-400\/25 {
+  border-color: rgba(239, 68, 68, 0.18);
+}
+.admin-light .border-red-500 {
+  border-color: #ef4444;
+}
+.admin-light .border-red-500\/25 {
+  border-color: rgba(239, 68, 68, 0.18);
+}
+
+/* --- Hover states --- */
+.admin-light .hover\:bg-white:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+.admin-light .hover\:bg-red-500:hover {
+  background-color: #dc2626;
+}
+.admin-light .hover\:bg-red-700:hover {
+  background-color: #b91c1c;
+}
+.admin-light .hover\:text-gray-300:hover {
+  color: #374151;
+}
+.admin-light .hover\:text-gray-400:hover {
+  color: #6b7280;
+}
+.admin-light .hover\:text-red-100:hover {
+  color: #991b1b;
+}
+.admin-light .hover\:text-red-200:hover {
+  color: #b91c1c;
+}
+.admin-light .hover\:text-red-300:hover {
+  color: #dc2626;
+}
+.admin-light .hover\:text-red-400:hover {
+  color: #dc2626;
+}
+.admin-light .hover\:text-emerald-200:hover {
+  color: #047857;
+}
+.admin-light .hover\:text-amber-200:hover {
+  color: #b45309;
+}
+.admin-light .hover\:text-amber-300:hover {
+  color: #d97706;
+}
+.admin-light .hover\:text-green-200:hover {
+  color: #047857;
+}
+.admin-light .hover\:text-green-300:hover {
+  color: #059669;
+}
+.admin-light .hover\:text-orange-200:hover {
+  color: #c2410c;
+}
+.admin-light .hover\:text-orange-300:hover {
+  color: #ea580c;
+}
+.admin-light .hover\:text-orange-400:hover {
+  color: #ea580c;
+}
+.admin-light .hover\:border-orange-400:hover {
+  border-color: #ea580c;
+}
+.admin-light .hover\:border-white:hover {
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* --- Ring & divide --- */
+.admin-light .ring-white {
+  --tw-ring-color: rgba(0, 0, 0, 0.1);
+}
+.admin-light .divide-white > :not(:first-child) {
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* --- AdminLayout main area gradient override --- */
+.admin-light main {
+  background: linear-gradient(180deg, #f8f9fb 0%, #f3f4f6 100%) !important;
+}
+
 /* ============================================
    BASE STYLES
    ============================================ */
