@@ -680,3 +680,35 @@ button:active:not(:disabled) {
     transform: scale(1.12);
   }
 }
+
+/* ── Pull-to-refresh indicator ─────────────────────────────────────────────── */
+/* Triggered by usePullToRefresh hook via --ptr-progress CSS variable.        */
+
+.ptr-indicator {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(calc(-100% + var(--ptr-progress, 0) * 56px));
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--pk-red);
+  box-shadow: 0 4px 14px rgba(225, 6, 0, 0.4);
+  transition: transform 0.1s linear;
+  pointer-events: none;
+}
+
+.ptr-refreshing .ptr-indicator {
+  transform: translateX(-50%) translateY(12px);
+  animation: ptr-spin 0.8s linear infinite;
+}
+
+@keyframes ptr-spin {
+  to {
+    rotate: 360deg;
+  }
+}

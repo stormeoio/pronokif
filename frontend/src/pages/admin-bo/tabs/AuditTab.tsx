@@ -49,7 +49,7 @@ const METRICS = [
   { label: "React Query hooks", before: "133", after: "155", mult: "+22" },
   { label: "Tests backend", before: "15", after: "41", mult: "+26" },
   { label: "Tests front/E2E", before: "18", after: "39", mult: "+21" },
-  { label: '"as any" TS', before: "0", after: "11", mult: "a revoir" },
+  { label: '"as any" TS', before: "0", after: "0", mult: "✅ fixé" },
 ];
 
 const SECURITY = [
@@ -156,8 +156,8 @@ const TODO = [
   { task: 'Réduire les 11 "as any" revenus', effort: "P1", done: true },
   { task: "Découper le bundle admin par onglet", effort: "P2", done: true },
   { task: "Généraliser lazy images, placeholders et squelettes", effort: "P2", done: true },
-  { task: "Déployer le pull-to-refresh sur les pages clés", effort: "P2", done: false },
-  { task: "Ajouter monitoring externe et canary post-deploy complet", effort: "P2", done: false },
+  { task: "Déployer le pull-to-refresh sur les pages clés", effort: "P2", done: true },
+  { task: "Ajouter monitoring externe et canary post-deploy complet", effort: "P2", done: true },
 ];
 
 /* ── Helpers ────────────────────────────────────────── */
