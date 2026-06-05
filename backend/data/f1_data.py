@@ -52,7 +52,9 @@ F1_DRIVERS_2026 = [
     {
         "id": "antonelli", "name": "Kimi Antonelli", "team": "Mercedes", "number": 12,
         "country": "ITA", "code": "ANT",
-        "photo_url": f"{_D}/A/ANDANT01_Andrea_Kimi_Antonelli/andant01.png.transform/2col-retina/image.png",
+        # F1 CDN returns a grey placeholder for this 2026 rookie — no real headshot yet.
+        # Set to None so the frontend shows team-colored initials instead of a broken image.
+        "photo_url": None,
         "team_logo_url": _TEAM_LOGOS["Mercedes"],
     },
     {
@@ -100,7 +102,8 @@ F1_DRIVERS_2026 = [
     {
         "id": "lindblad", "name": "Arvid Lindblad", "team": "Racing Bulls", "number": 41,
         "country": "GBR", "code": "LIN",
-        "photo_url": f"{_D}/A/ARVLIN01_Arvid_Lindblad/arvlin01.png.transform/2col-retina/image.png",
+        # F1 CDN returns a grey placeholder for this 2026 rookie — no real headshot yet.
+        "photo_url": None,
         "team_logo_url": _TEAM_LOGOS["Racing Bulls"],
     },
     {
