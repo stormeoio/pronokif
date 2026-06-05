@@ -11,8 +11,10 @@ import {
   CheckCircle2,
   Edit2,
   Loader2,
+  Moon,
   RefreshCw,
   Search,
+  Sun,
   Trash2,
   UploadCloud,
   UserPlus,
@@ -62,6 +64,8 @@ interface Driver {
   country: string;
   code?: string | null;
   photo_url?: string | null;
+  photo_url_dark?: string | null;
+  photo_url_light?: string | null;
   active: boolean;
   notes?: string | null;
   seeded?: boolean;
@@ -103,20 +107,22 @@ function EditForm({ driver, onSave, onDelete, saving, deleting }: EditFormProps)
   const [code, setCode] = useState(driver.code ?? "");
   const [country, setCountry] = useState(driver.country ?? "");
   const [photoUrl, setPhotoUrl] = useState(driver.photo_url ?? "");
+  const [photoDark, setPhotoDark] = useState(driver.photo_url_dark ?? "");
+  const [photoLight, setPhotoLight] = useState(driver.photo_url_light ?? "");
   const [active, setActive] = useState(driver.active);
   const [notes, setNotes] = useState(driver.notes ?? "");
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [draggingVariant, setDraggingVariant] = useState<"dark" | "light" | null>(null);
+  const [uploadingVariant, setUploadingVariant] = useState<"dark" | "light" | null>(null);
+  const fileRefDark = useRef<HTMLInputElement>(null);
+  const fileRefLight = useRef<HTMLInputElement>(null);
 
-  // ── Photo upload ──────────────────────────────────────────────────────
-  const uploadPhoto = async (file: File) => {
+  // ── Photo upload (dark or light variant) ──────────────────────────────
+  const uploadPhoto = async (file: File, variant: "dark" | "light") => {
     if (!file.type.startsWith("image/")) {
       toast.error("Seuls les fichiers image sont acceptés (PNG, JPG, WEBP).");
       return;
     }
-    // Validate 1024×1024 minimum before upload
     const img = new Image();
     const objectUrl = URL.createObjectURL(file);
     try {
@@ -135,32 +141,38 @@ function EditForm({ driver, onSave, onDelete, saving, deleting }: EditFormProps)
       URL.revokeObjectURL(objectUrl);
     }
 
-    setIsUploading(true);
+    setUploadingVariant(variant);
     try {
-      const uploaded = await adminApi.media.upload(file, "driver", driver.id, "drivers");
+      const uploaded = await adminApi.media.upload(file, `driver_${variant}`, driver.id, "drivers");
       const url = adminApi.media.fileUrl(uploaded.id);
-      setPhotoUrl(url);
-      // Auto-save photo immediately so it's visible in the list right away
-      onSave({ photo_url: url });
-      toast.success("Photo mise à jour.");
+      if (variant === "dark") {
+        setPhotoDark(url);
+        onSave({ photo_url_dark: url });
+      } else {
+        setPhotoLight(url);
+        onSave({ photo_url_light: url });
+      }
+      toast.success(`Photo ${variant} mise à jour.`);
     } catch {
       toast.error("Erreur lors de l'upload.");
     } finally {
-      setIsUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
+      setUploadingVariant(null);
+      const ref = variant === "dark" ? fileRefDark : fileRefLight;
+      if (ref.current) ref.current.value = "";
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (f) void uploadPhoto(f);
-  };
+  const handleFileChange =
+    (variant: "dark" | "light") => (e: React.ChangeEvent<HTMLInputElement>) => {
+      const f = e.target.files?.[0];
+      if (f) void uploadPhoto(f, variant);
+    };
 
-  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+  const handleDrop = (variant: "dark" | "light") => (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setIsDragging(false);
+    setDraggingVariant(null);
     const f = e.dataTransfer.files?.[0];
-    if (f) void uploadPhoto(f);
+    if (f) void uploadPhoto(f, variant);
   };
 
   const isDirty =
@@ -170,6 +182,8 @@ function EditForm({ driver, onSave, onDelete, saving, deleting }: EditFormProps)
     code !== (driver.code ?? "") ||
     country !== (driver.country ?? "") ||
     photoUrl !== (driver.photo_url ?? "") ||
+    photoDark !== (driver.photo_url_dark ?? "") ||
+    photoLight !== (driver.photo_url_light ?? "") ||
     active !== driver.active ||
     notes !== (driver.notes ?? "");
 
@@ -186,6 +200,8 @@ function EditForm({ driver, onSave, onDelete, saving, deleting }: EditFormProps)
       code: code.trim() || null,
       country: country.trim(),
       photo_url: photoUrl.trim() || null,
+      photo_url_dark: photoDark.trim() || null,
+      photo_url_light: photoLight.trim() || null,
       active,
       notes: notes.trim() || null,
     });
@@ -202,9 +218,9 @@ function EditForm({ driver, onSave, onDelete, saving, deleting }: EditFormProps)
             className="h-12 w-12 overflow-hidden rounded-full border-2"
             style={{ borderColor: accent }}
           >
-            {photoUrl ? (
+            {photoDark || photoLight || photoUrl ? (
               <img
-                src={photoUrl}
+                src={photoDark || photoLight || photoUrl}
                 alt={driver.name}
                 className="h-full w-full object-cover object-top"
               />
@@ -243,71 +259,93 @@ function EditForm({ driver, onSave, onDelete, saving, deleting }: EditFormProps)
         </div>
       </div>
 
-      {/* Photo upload zone */}
-      <div className="grid grid-cols-[96px_1fr] gap-3 items-start">
-        {/* Preview */}
-        <div className="relative h-24 w-24 overflow-hidden rounded-lg border border-white/10 bg-pk-anthracite flex-shrink-0">
-          {photoUrl ? (
-            <>
-              <img
-                src={photoUrl}
-                alt={name}
-                className="h-full w-full object-cover object-top"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = "";
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => setPhotoUrl("")}
-                className="absolute right-1 top-1 rounded bg-black/70 p-0.5 text-white/70 hover:text-white"
-                title="Retirer la photo"
-              >
-                <XCircle className="h-3 w-3" />
-              </button>
-            </>
-          ) : (
-            <div className="flex h-full w-full items-center justify-center">
-              <Users className="h-8 w-8 text-pk-titane/40" />
-            </div>
-          )}
-        </div>
+      {/* Photo upload: dark + light variants */}
+      <div className="grid grid-cols-2 gap-3">
+        {(["dark", "light"] as const).map((variant) => {
+          const url = variant === "dark" ? photoDark : photoLight;
+          const setUrl = variant === "dark" ? setPhotoDark : setPhotoLight;
+          const fileRef = variant === "dark" ? fileRefDark : fileRefLight;
+          const isUploading = uploadingVariant === variant;
+          const isDragging = draggingVariant === variant;
+          const VariantIcon = variant === "dark" ? Moon : Sun;
+          const label = variant === "dark" ? "Dark" : "Light";
 
-        {/* Drop zone */}
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setIsDragging(true);
-          }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={handleDrop}
-          className={`flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-3 text-center transition-colors cursor-pointer min-h-[96px] ${
-            isDragging
-              ? "border-pk-red bg-pk-red/10"
-              : "border-white/15 bg-white/[0.02] hover:border-white/25"
-          }`}
-          onClick={() => fileRef.current?.click()}
-        >
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-          {isUploading ? (
-            <Loader2 className="h-5 w-5 animate-spin text-pk-red" />
-          ) : (
-            <UploadCloud className={`h-5 w-5 ${isDragging ? "text-pk-red" : "text-pk-titane"}`} />
-          )}
-          <p className="font-data text-[0.55rem] uppercase tracking-[0.1em] text-pk-titane leading-relaxed">
-            {isUploading ? "Upload en cours…" : "Glisser-déposer ou cliquer"}
-          </p>
-          <p className="font-body text-[0.5rem] text-pk-titane/60">
-            PNG · JPG · WEBP · min 1024×1024
-          </p>
-        </div>
+          return (
+            <div key={variant} className="flex flex-col gap-2">
+              <div className="flex items-center gap-1.5">
+                <VariantIcon className="h-3 w-3 text-pk-titane" />
+                <span className="font-data text-[0.55rem] uppercase tracking-[0.12em] text-pk-titane">
+                  {label}
+                </span>
+                {url && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUrl("");
+                      onSave({ [`photo_url_${variant}`]: null });
+                    }}
+                    className="ml-auto text-pk-titane/60 hover:text-red-400"
+                    title={`Retirer photo ${label}`}
+                  >
+                    <XCircle className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+
+              {/* Preview + drop zone */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDraggingVariant(variant);
+                }}
+                onDragLeave={() => setDraggingVariant(null)}
+                onDrop={handleDrop(variant)}
+                onClick={() => fileRef.current?.click()}
+                className={`relative flex flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed p-2 text-center transition-colors cursor-pointer min-h-[120px] ${
+                  variant === "dark" ? "bg-gray-950/60" : "bg-white/[0.06]"
+                } ${
+                  isDragging
+                    ? "border-pk-red bg-pk-red/10"
+                    : "border-white/15 hover:border-white/25"
+                }`}
+              >
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange(variant)}
+                />
+
+                {url ? (
+                  <img
+                    src={url}
+                    alt={`${name} ${label}`}
+                    className="h-20 w-20 rounded-lg object-cover object-top"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                ) : isUploading ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-pk-red" />
+                ) : (
+                  <>
+                    <UploadCloud
+                      className={`h-5 w-5 ${isDragging ? "text-pk-red" : "text-pk-titane/40"}`}
+                    />
+                    <p className="font-data text-[0.5rem] uppercase tracking-[0.08em] text-pk-titane/60">
+                      Drop ou clic
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
+      <p className="font-body text-[0.5rem] text-pk-titane/60 -mt-2">
+        PNG · JPG · WEBP · min 1024×1024 · les deux variantes sont affichées selon le theme
+      </p>
 
       {/* Fields */}
       <div className="grid grid-cols-2 gap-3">
@@ -371,17 +409,40 @@ function EditForm({ driver, onSave, onDelete, saving, deleting }: EditFormProps)
           />
         </div>
 
-        {photoUrl && (
-          <div className="col-span-2 flex items-center gap-2">
-            <p className="flex-1 truncate font-mono text-[0.5rem] text-pk-titane/60">{photoUrl}</p>
-            <a
-              href={photoUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="flex-shrink-0 text-pk-titane hover:text-white"
-            >
-              <ExternalLink className="h-3 w-3" />
-            </a>
+        {(photoDark || photoLight) && (
+          <div className="col-span-2 space-y-1">
+            {photoDark && (
+              <div className="flex items-center gap-2">
+                <Moon className="h-2.5 w-2.5 text-pk-titane/60 shrink-0" />
+                <p className="flex-1 truncate font-mono text-[0.5rem] text-pk-titane/60">
+                  {photoDark}
+                </p>
+                <a
+                  href={photoDark}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="shrink-0 text-pk-titane hover:text-white"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+            )}
+            {photoLight && (
+              <div className="flex items-center gap-2">
+                <Sun className="h-2.5 w-2.5 text-pk-titane/60 shrink-0" />
+                <p className="flex-1 truncate font-mono text-[0.5rem] text-pk-titane/60">
+                  {photoLight}
+                </p>
+                <a
+                  href={photoLight}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="shrink-0 text-pk-titane hover:text-white"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+            )}
           </div>
         )}
 

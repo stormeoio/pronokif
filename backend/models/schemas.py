@@ -246,6 +246,8 @@ class DriverResponse(BaseModel):
     country: str
     code: str | None = None
     photo_url: str | None = None
+    photo_url_dark: str | None = None
+    photo_url_light: str | None = None
     team_logo_url: str | None = None
 
 

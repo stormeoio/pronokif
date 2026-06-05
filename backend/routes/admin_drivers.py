@@ -41,6 +41,8 @@ class DriverCreate(BaseModel):
     country: str = Field(default="", max_length=10)
     code: str | None = Field(default=None, max_length=5)
     photo_url: str | None = None
+    photo_url_dark: str | None = None
+    photo_url_light: str | None = None
     team_logo_url: str | None = None
     active: bool = True
     notes: str | None = None
@@ -53,6 +55,8 @@ class DriverUpdate(BaseModel):
     country: str | None = Field(default=None, max_length=10)
     code: str | None = Field(default=None, max_length=5)
     photo_url: str | None = None
+    photo_url_dark: str | None = None
+    photo_url_light: str | None = None
     team_logo_url: str | None = None
     active: bool | None = None
     notes: str | None = None

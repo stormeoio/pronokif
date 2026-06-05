@@ -22,6 +22,8 @@ export type PhotoMode = "dark" | "light";
 interface DriverLike {
   id: string;
   photo_url?: string | null;
+  photo_url_dark?: string | null;
+  photo_url_light?: string | null;
 }
 
 // ── Local Pronokif assets ────────────────────────────────────────────────────
@@ -91,13 +93,22 @@ export function resolveDriverPhoto(
   options?: ResolveOptions,
 ): string | null {
   const id = typeof driverOrId === "string" ? driverOrId : driverOrId.id;
-  const apiUrl = typeof driverOrId !== "string" ? driverOrId.photo_url : undefined;
   const mode = options?.mode ?? "dark";
 
-  // 1. API photo_url (admin-uploaded or seeded from CDN)
+  // 1. Mode-specific photo URL (admin-uploaded dark/light variants)
+  if (typeof driverOrId !== "string") {
+    const modeUrl = mode === "dark" ? driverOrId.photo_url_dark : driverOrId.photo_url_light;
+    if (modeUrl) return modeUrl;
+    // Fall back to the other variant if only one is uploaded
+    const fallbackUrl = mode === "dark" ? driverOrId.photo_url_light : driverOrId.photo_url_dark;
+    if (fallbackUrl) return fallbackUrl;
+  }
+
+  // 2. Legacy photo_url (single URL, used for both modes)
+  const apiUrl = typeof driverOrId !== "string" ? driverOrId.photo_url : undefined;
   if (apiUrl) return apiUrl;
 
-  // 2. Local Pronokif asset (custom visuals provided by the team)
+  // 3. Local Pronokif asset (custom visuals provided by the team)
   //    Convention: /drivers/dark/{id}.png — served by nginx/Vite as static files.
   //    We return the URL optimistically; <img onError> handles 404s gracefully.
   return localAssetUrl(id, mode);
