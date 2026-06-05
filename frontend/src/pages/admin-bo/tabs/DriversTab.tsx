@@ -5,7 +5,7 @@
  * status, photo URLs. Mirrors the RacesTab pattern — list on the left,
  * detail/edit panel on the right (or stacked on small screens).
  */
-import { useMemo, useState } from "react";
+import { type DragEvent, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CheckCircle2,
@@ -14,6 +14,7 @@ import {
   RefreshCw,
   Search,
   Trash2,
+  UploadCloud,
   UserPlus,
   Users,
   XCircle,
@@ -105,6 +106,62 @@ function EditForm({ driver, onSave, onDelete, saving, deleting }: EditFormProps)
   const [active, setActive] = useState(driver.active);
   const [notes, setNotes] = useState(driver.notes ?? "");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // ── Photo upload ──────────────────────────────────────────────────────
+  const uploadPhoto = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Seuls les fichiers image sont acceptés (PNG, JPG, WEBP).");
+      return;
+    }
+    // Validate 1024×1024 minimum before upload
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("Impossible de lire l'image"));
+        img.src = objectUrl;
+      });
+      if (img.naturalWidth < 1024 || img.naturalHeight < 1024) {
+        toast.error(
+          `Image trop petite : ${img.naturalWidth}×${img.naturalHeight}px. Minimum 1024×1024px.`,
+        );
+        return;
+      }
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+
+    setIsUploading(true);
+    try {
+      const uploaded = await adminApi.media.upload(file, "driver", driver.id, "drivers");
+      const url = adminApi.media.fileUrl(uploaded.id);
+      setPhotoUrl(url);
+      // Auto-save photo immediately so it's visible in the list right away
+      onSave({ photo_url: url });
+      toast.success("Photo mise à jour.");
+    } catch {
+      toast.error("Erreur lors de l'upload.");
+    } finally {
+      setIsUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) void uploadPhoto(f);
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) void uploadPhoto(f);
+  };
 
   const isDirty =
     name !== driver.name ||
@@ -140,11 +197,32 @@ function EditForm({ driver, onSave, onDelete, saving, deleting }: EditFormProps)
     <div className="flex flex-col gap-5">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div
-          className="h-10 w-10 rounded-full flex items-center justify-center font-data text-sm font-bold text-pk-carbon"
-          style={{ background: accent }}
-        >
-          {driver.number}
+        <div className="relative shrink-0">
+          <div
+            className="h-12 w-12 overflow-hidden rounded-full border-2"
+            style={{ borderColor: accent }}
+          >
+            {photoUrl ? (
+              <img
+                src={photoUrl}
+                alt={driver.name}
+                className="h-full w-full object-cover object-top"
+              />
+            ) : (
+              <div
+                className="flex h-full w-full items-center justify-center font-data text-sm font-bold text-pk-carbon"
+                style={{ background: accent }}
+              >
+                {driver.number}
+              </div>
+            )}
+          </div>
+          <span
+            className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-md font-data text-[0.5rem] font-bold text-pk-carbon shadow"
+            style={{ background: accent }}
+          >
+            {driver.number}
+          </span>
         </div>
         <div>
           <p className="font-heading text-base uppercase tracking-wide text-white">{driver.name}</p>
@@ -165,17 +243,71 @@ function EditForm({ driver, onSave, onDelete, saving, deleting }: EditFormProps)
         </div>
       </div>
 
-      {/* Photo preview */}
-      {(photoUrl || driver.photo_url) && (
-        <img
-          src={photoUrl || driver.photo_url || ""}
-          alt={name}
-          className="h-28 w-28 rounded-lg object-cover border border-white/10 mx-auto"
-          onError={(e) => {
-            (e.target as HTMLImageElement).style.display = "none";
+      {/* Photo upload zone */}
+      <div className="grid grid-cols-[96px_1fr] gap-3 items-start">
+        {/* Preview */}
+        <div className="relative h-24 w-24 overflow-hidden rounded-lg border border-white/10 bg-pk-anthracite flex-shrink-0">
+          {photoUrl ? (
+            <>
+              <img
+                src={photoUrl}
+                alt={name}
+                className="h-full w-full object-cover object-top"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "";
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setPhotoUrl("")}
+                className="absolute right-1 top-1 rounded bg-black/70 p-0.5 text-white/70 hover:text-white"
+                title="Retirer la photo"
+              >
+                <XCircle className="h-3 w-3" />
+              </button>
+            </>
+          ) : (
+            <div className="flex h-full w-full items-center justify-center">
+              <Users className="h-8 w-8 text-pk-titane/40" />
+            </div>
+          )}
+        </div>
+
+        {/* Drop zone */}
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
           }}
-        />
-      )}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={handleDrop}
+          className={`flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-3 text-center transition-colors cursor-pointer min-h-[96px] ${
+            isDragging
+              ? "border-pk-red bg-pk-red/10"
+              : "border-white/15 bg-white/[0.02] hover:border-white/25"
+          }`}
+          onClick={() => fileRef.current?.click()}
+        >
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          {isUploading ? (
+            <Loader2 className="h-5 w-5 animate-spin text-pk-red" />
+          ) : (
+            <UploadCloud className={`h-5 w-5 ${isDragging ? "text-pk-red" : "text-pk-titane"}`} />
+          )}
+          <p className="font-data text-[0.55rem] uppercase tracking-[0.1em] text-pk-titane leading-relaxed">
+            {isUploading ? "Upload en cours…" : "Glisser-déposer ou cliquer"}
+          </p>
+          <p className="font-body text-[0.5rem] text-pk-titane/60">
+            PNG · JPG · WEBP · min 1024×1024
+          </p>
+        </div>
+      </div>
 
       {/* Fields */}
       <div className="grid grid-cols-2 gap-3">
@@ -239,29 +371,19 @@ function EditForm({ driver, onSave, onDelete, saving, deleting }: EditFormProps)
           />
         </div>
 
-        <div className="col-span-2">
-          <label className="mb-1 block font-data text-[0.6rem] uppercase tracking-[0.12em] text-pk-titane">
-            URL photo
-          </label>
-          <div className="flex gap-2">
-            <Input
-              value={photoUrl}
-              onChange={(e) => setPhotoUrl(e.target.value)}
-              placeholder="https://media.formula1.com/..."
-              className="border-white/10 bg-pk-surface text-white focus:border-pk-red text-xs"
-            />
-            {photoUrl && (
-              <a
-                href={photoUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center px-2 text-pk-titane hover:text-white"
-              >
-                <ExternalLink className="h-4 w-4" />
-              </a>
-            )}
+        {photoUrl && (
+          <div className="col-span-2 flex items-center gap-2">
+            <p className="flex-1 truncate font-mono text-[0.5rem] text-pk-titane/60">{photoUrl}</p>
+            <a
+              href={photoUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex-shrink-0 text-pk-titane hover:text-white"
+            >
+              <ExternalLink className="h-3 w-3" />
+            </a>
           </div>
-        </div>
+        )}
 
         <div className="col-span-2">
           <label className="mb-1 block font-data text-[0.6rem] uppercase tracking-[0.12em] text-pk-titane">
@@ -548,13 +670,38 @@ export default function DriversTab() {
                       d.id === selectedId ? "bg-pk-red/10" : "hover:bg-white/[0.03]"
                     }`}
                   >
-                    {/* Number badge */}
-                    <span
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-data text-xs font-bold text-pk-carbon"
-                      style={{ background: teamColor(d.team) }}
-                    >
-                      {d.number}
-                    </span>
+                    {/* Photo + number badge */}
+                    <div className="relative shrink-0">
+                      <div
+                        className="h-9 w-9 overflow-hidden rounded-full border-2"
+                        style={{ borderColor: teamColor(d.team) }}
+                      >
+                        {d.photo_url ? (
+                          <img
+                            src={d.photo_url}
+                            alt={d.name}
+                            loading="lazy"
+                            className="h-full w-full object-cover object-top"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <div
+                            className="flex h-full w-full items-center justify-center font-data text-[0.6rem] font-bold text-pk-carbon"
+                            style={{ background: teamColor(d.team) }}
+                          >
+                            {d.number}
+                          </div>
+                        )}
+                      </div>
+                      <span
+                        className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-md font-data text-[0.45rem] font-bold text-pk-carbon shadow"
+                        style={{ background: teamColor(d.team) }}
+                      >
+                        {d.number}
+                      </span>
+                    </div>
 
                     {/* Name + code */}
                     <div className="flex-1 min-w-0">
