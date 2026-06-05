@@ -108,9 +108,13 @@ export function resolveDriverPhoto(
   const apiUrl = typeof driverOrId !== "string" ? driverOrId.photo_url : undefined;
   if (apiUrl) return apiUrl;
 
-  // 3. Local Pronokif asset (custom visuals provided by the team)
+  // 3. F1 CDN headshot (high-res 2col-retina = 640px)
+  const cdnUrl = f1CdnUrl(id);
+  if (cdnUrl) return cdnUrl;
+
+  // 4. Local Pronokif asset (custom visuals provided by the team)
   //    Convention: /drivers/dark/{id}.png — served by nginx/Vite as static files.
-  //    We return the URL optimistically; <img onError> handles 404s gracefully.
+  //    Returned last because local files may not exist; <img onError> handles 404s.
   return localAssetUrl(id, mode);
 }
 

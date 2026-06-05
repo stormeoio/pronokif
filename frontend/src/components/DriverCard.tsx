@@ -166,7 +166,16 @@ export function DriverCard({
                 src={photoUrl}
                 alt={`${firstName} ${lastName}`}
                 className="w-full h-full object-cover object-top"
+                style={{ imageRendering: "auto" }}
                 loading="lazy"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  // Prevent infinite loop
+                  if (img.dataset.fallback) return;
+                  img.dataset.fallback = "true";
+                  img.src =
+                    "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/driver_fallback_image.png.transform/2col-retina/image.png";
+                }}
               />
             ) : (
               <div

@@ -96,7 +96,7 @@ describe("RaceGrid", () => {
 
     // Mapped driver gets a photo (local asset or CDN — resolver picks best available)
     const leclercPhoto = screen.getByAltText("Charles Leclerc") as HTMLImageElement;
-    expect(leclercPhoto.getAttribute("src")).toMatch(/leclerc/);
+    expect(leclercPhoto.getAttribute("src")).toMatch(/leclerc/i);
 
     // Driver names + codes present
     expect(screen.getByText("Leclerc")).toBeInTheDocument();
