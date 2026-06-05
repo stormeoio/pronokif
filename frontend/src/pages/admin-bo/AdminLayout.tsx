@@ -392,8 +392,8 @@ export default function AdminLayout() {
             </div>
           </nav>
 
-          {/* Footer */}
-          <div className="p-4 border-t border-white/[0.08]">
+          {/* Footer — shrink-0 so it never gets pushed off-screen by the nav */}
+          <div className="shrink-0 p-4 border-t border-white/[0.08]">
             <p className="font-body text-xs text-pk-titane truncate mb-3">{adminEmail}</p>
             <div className="flex gap-2">
               <Button
