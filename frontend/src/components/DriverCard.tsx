@@ -78,9 +78,25 @@ export function getDriverPhotoUrl(driverId: string): string {
   return DRIVER_PHOTOS[driverId] || DRIVER_PHOTOS.norris;
 }
 
-/** Photo URL if we have a real headshot for this driver, else null (for fallbacks). */
-export function getDriverPhoto(driverId: string): string | null {
-  return DRIVER_PHOTOS[driverId] ?? null;
+/**
+ * Resolve a driver's headshot URL.
+ *
+ * Prefers `photo_url` from the API response (populated by the admin seed from
+ * the F1 CDN), falls back to the local hardcoded dict so existing callers that
+ * only pass an id string keep working. Returns null if no photo is available.
+ *
+ * Overloads:
+ *   getDriverPhoto("norris")            → string | null (id lookup)
+ *   getDriverPhoto({ id, photo_url })   → string | null (prefers API value)
+ */
+export function getDriverPhoto(
+  driverOrId: string | { id: string; photo_url?: string | null },
+): string | null {
+  if (typeof driverOrId === "string") {
+    return DRIVER_PHOTOS[driverOrId] ?? null;
+  }
+  // Driver object: prefer photo_url from API, fall back to local dict
+  return driverOrId.photo_url || DRIVER_PHOTOS[driverOrId.id] || null;
 }
 
 // ----------------------------------------------------------- rank helpers ---

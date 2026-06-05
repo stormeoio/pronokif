@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { adminApi } from "../adminApi";
+import { getTeamMeta } from "@/lib/teamLogos";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -501,21 +502,41 @@ export default function DriversTab() {
             {grouped.map(([teamName, teamDrivers]) => (
               <div key={teamName} className="overflow-hidden rounded-md border border-white/[0.08]">
                 {/* Team header */}
-                <div
-                  className="flex items-center gap-2 px-3 py-2"
-                  style={{ borderLeft: `3px solid ${teamColor(teamName)}` }}
-                >
-                  <span
-                    className="h-2 w-2 rounded-full"
-                    style={{ background: teamColor(teamName) }}
-                  />
-                  <p className="font-data text-[0.65rem] uppercase tracking-[0.14em] text-white">
-                    {teamName}
-                  </p>
-                  <span className="ml-auto font-mono text-[0.55rem] text-pk-titane">
-                    {teamDrivers.length} pilote{teamDrivers.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
+                {(() => {
+                  const meta = getTeamMeta(teamName);
+                  const logoSrc =
+                    (teamDrivers[0] as { team_logo_url?: string | null })?.team_logo_url ||
+                    meta.logo_url ||
+                    meta.logo;
+                  return (
+                    <div
+                      className="flex items-center gap-2 px-3 py-2"
+                      style={{ borderLeft: `3px solid ${teamColor(teamName)}` }}
+                    >
+                      {logoSrc ? (
+                        <img
+                          src={logoSrc}
+                          alt={teamName}
+                          className="h-5 w-5 rounded object-contain"
+                          onError={(e) => {
+                            if (meta.logo) (e.currentTarget as HTMLImageElement).src = meta.logo;
+                          }}
+                        />
+                      ) : (
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{ background: teamColor(teamName) }}
+                        />
+                      )}
+                      <p className="font-data text-[0.65rem] uppercase tracking-[0.14em] text-white">
+                        {teamName}
+                      </p>
+                      <span className="ml-auto font-mono text-[0.55rem] text-pk-titane">
+                        {teamDrivers.length} pilote{teamDrivers.length !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  );
+                })()}
 
                 {/* Driver rows */}
                 {teamDrivers.map((d) => (

@@ -82,23 +82,34 @@ export default function RaceGrid() {
         >
           {/* Team header */}
           <div className="flex items-center gap-2.5 border-b border-white/[0.06] px-3 py-2.5">
-            {group.meta.logo ? (
-              <img
-                src={group.meta.logo}
-                alt={group.meta.name}
-                width={32}
-                height={32}
-                className="h-8 w-8 flex-shrink-0 rounded-md"
-                loading="lazy"
-              />
-            ) : (
-              <span
-                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md font-data text-[0.625rem] font-bold"
-                style={{ backgroundColor: `${group.meta.color}22`, color: group.meta.color }}
-              >
-                {group.meta.abbr}
-              </span>
-            )}
+            {/* Team logo: prefer official CDN from first driver's team_logo_url, fall back to local SVG */}
+            {(() => {
+              const logoSrc =
+                (group.drivers[0] as { team_logo_url?: string | null })?.team_logo_url ||
+                group.meta.logo;
+              return logoSrc ? (
+                <img
+                  src={logoSrc}
+                  alt={group.meta.name}
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 flex-shrink-0 rounded-md object-contain"
+                  loading="lazy"
+                  onError={(e) => {
+                    // CDN 404 → fall back to local SVG
+                    if (group.meta.logo)
+                      (e.currentTarget as HTMLImageElement).src = group.meta.logo;
+                  }}
+                />
+              ) : (
+                <span
+                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md font-data text-[0.625rem] font-bold"
+                  style={{ backgroundColor: `${group.meta.color}22`, color: group.meta.color }}
+                >
+                  {group.meta.abbr}
+                </span>
+              );
+            })()}
             <h3 className="flex-1 truncate font-display text-[0.9375rem] uppercase tracking-wide text-pk-piste">
               {group.meta.name}
             </h3>
@@ -110,7 +121,8 @@ export default function RaceGrid() {
           {/* Drivers */}
           <div className="grid grid-cols-2 gap-px bg-white/[0.04]">
             {group.drivers.map((driver) => {
-              const photo = getDriverPhoto(driver.id);
+              // Prefer photo_url from API (populated by admin seed), fall back to local dict
+              const photo = getDriverPhoto(driver as { id: string; photo_url?: string | null });
               const initials =
                 (driver.first_name?.[0] ?? driver.name?.[0] ?? "") + (driver.last_name?.[0] ?? "");
               return (
