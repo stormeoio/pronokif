@@ -89,8 +89,17 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   // Auth pages use their own video background — skip 3D particles to save GPU
   const isAuthRoute = location.pathname === "/auth" || isAdminBackOfficeRoute;
 
+  // Admin routes use their own full-width layout; public app is capped at
+  // mobile width (max-w-md = 448px) so it renders as a phone-sized column
+  // centered on desktop, with no horizontal overflow.
+  const isMobileConstrained = !isAdminBackOfficeRoute;
+
   return (
-    <div className="min-h-screen bg-background relative">
+    <div
+      className={`min-h-screen bg-background relative ${
+        isMobileConstrained ? "max-w-md mx-auto overflow-x-hidden shadow-2xl" : ""
+      }`}
+    >
       {/* Skip to content link for keyboard users */}
       <a
         href="#main-content"

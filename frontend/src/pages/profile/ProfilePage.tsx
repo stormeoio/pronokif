@@ -20,6 +20,9 @@ import {
   Globe,
   MessageSquare,
   ChevronLeft,
+  Download,
+  RefreshCw,
+  Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AvatarSelector } from "../../components/AvatarDisplay";
@@ -32,6 +35,7 @@ import { useAuth } from "@/lib/auth";
 import { haptic } from "@/lib/haptics";
 import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
 import { UserIdentity } from "@/components/users/UserIdentity";
+import { usePwaInstall, useSwUpdate } from "@/lib/usePwaInstall";
 
 /* ── Skeleton ──────────────────────────────────────────── */
 
@@ -74,6 +78,9 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
+
+  const { state: pwaState, canInstall, install: installPwa } = usePwaInstall();
+  const { hasUpdate, applyUpdate } = useSwUpdate();
 
   const { loading, leagues, avatars, globalPosition, pointsHistory, stats } = useProfileData(
     user!.id,
@@ -326,6 +333,125 @@ export default function ProfilePage() {
               <span className="font-display text-sm">Administration</span>
             </div>
             <ChevronRight className="w-4 h-4 text-pk-titane" />
+          </button>
+        </motion.div>
+
+        {/* PWA Install / Update */}
+        <motion.div
+          variants={fadeUp}
+          className="bg-pk-surface border border-white/[0.08] rounded-lg p-4 space-y-3"
+        >
+          <div className="flex items-center gap-2">
+            <Smartphone className="w-4 h-4 text-pk-info" />
+            <h3 className="font-display text-sm">Application</h3>
+          </div>
+
+          {/* Install CTA */}
+          {canInstall && (
+            <button
+              onClick={async () => {
+                haptic("medium");
+                const ok = await installPwa();
+                if (ok) toast.success("Installation lancee !");
+              }}
+              className="w-full flex items-center gap-3 p-3 rounded-lg bg-pk-info/[0.08] border border-pk-info/20 hover:bg-pk-info/[0.15] transition-colors"
+              data-testid="pwa-install-btn"
+            >
+              <div className="w-9 h-9 rounded-lg bg-pk-info/20 flex items-center justify-center shrink-0">
+                <Download className="w-4.5 h-4.5 text-pk-info" />
+              </div>
+              <div className="text-left flex-1">
+                <p className="font-display text-sm text-pk-info">Installer l'app</p>
+                <p className="font-data text-[0.5625rem] text-pk-titane">
+                  Ajoute PronoKif a ton ecran d'accueil
+                </p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-pk-info shrink-0" />
+            </button>
+          )}
+
+          {/* Update CTA */}
+          {hasUpdate && (
+            <button
+              onClick={() => {
+                haptic("medium");
+                applyUpdate();
+              }}
+              className="w-full flex items-center gap-3 p-3 rounded-lg bg-pk-emerald/[0.08] border border-pk-emerald/20 hover:bg-pk-emerald/[0.15] transition-colors"
+              data-testid="pwa-update-btn"
+            >
+              <div className="w-9 h-9 rounded-lg bg-pk-emerald/20 flex items-center justify-center shrink-0">
+                <RefreshCw className="w-4.5 h-4.5 text-pk-emerald" />
+              </div>
+              <div className="text-left flex-1">
+                <p className="font-display text-sm text-pk-emerald">Mise a jour disponible</p>
+                <p className="font-data text-[0.5625rem] text-pk-titane">
+                  Recharge pour appliquer la derniere version
+                </p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-pk-emerald shrink-0" />
+            </button>
+          )}
+
+          {/* Already installed state */}
+          {pwaState === "installed" && !hasUpdate && (
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02]">
+              <div className="w-9 h-9 rounded-lg bg-pk-emerald/10 flex items-center justify-center shrink-0">
+                <Smartphone className="w-4.5 h-4.5 text-pk-emerald" />
+              </div>
+              <div className="flex-1">
+                <p className="font-display text-sm text-pk-emerald">App installee</p>
+                <p className="font-data text-[0.5625rem] text-pk-titane">
+                  PronoKif tourne en mode app native
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Not installable — show manual instructions */}
+          {pwaState === "unsupported" && (
+            <div className="space-y-2">
+              <p className="font-body text-xs text-pk-titane">
+                Pour installer PronoKif sur ton ecran d'accueil :
+              </p>
+              <div className="space-y-1.5 pl-3">
+                <p className="font-data text-[0.5625rem] text-pk-titane">
+                  <span className="text-pk-piste">iOS Safari :</span> Partager &rarr; Sur l'ecran
+                  d'accueil
+                </p>
+                <p className="font-data text-[0.5625rem] text-pk-titane">
+                  <span className="text-pk-piste">Android Chrome :</span> Menu &rarr; Installer
+                  l'application
+                </p>
+                <p className="font-data text-[0.5625rem] text-pk-titane">
+                  <span className="text-pk-piste">Desktop :</span> Barre d'adresse &rarr; Installer
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Force refresh / reinstall */}
+          <button
+            onClick={() => {
+              haptic("light");
+              if ("serviceWorker" in navigator) {
+                navigator.serviceWorker.getRegistrations().then((regs) => {
+                  regs.forEach((r) => r.unregister());
+                });
+                caches.keys().then((names) => {
+                  names.forEach((name) => caches.delete(name));
+                });
+              }
+              toast.success("Cache vide. Rechargement...");
+              setTimeout(() => window.location.reload(), 500);
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.03] transition-colors"
+            data-testid="pwa-force-refresh"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-pk-titane" />
+            <span className="font-data text-[0.5625rem] text-pk-titane">
+              Vider le cache et recharger
+            </span>
           </button>
         </motion.div>
 
