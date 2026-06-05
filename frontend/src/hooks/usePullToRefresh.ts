@@ -10,9 +10,15 @@ import { haptic } from "@/lib/haptics";
 interface UsePullToRefreshOptions {
   onRefresh: () => Promise<void> | void;
   threshold?: number;
+  /** Set to false to temporarily disable (e.g. while loading). */
+  enabled?: boolean;
 }
 
-export function usePullToRefresh({ onRefresh, threshold = 80 }: UsePullToRefreshOptions) {
+export function usePullToRefresh({
+  onRefresh,
+  threshold = 80,
+  enabled = true,
+}: UsePullToRefreshOptions) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [pulling, setPulling] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);

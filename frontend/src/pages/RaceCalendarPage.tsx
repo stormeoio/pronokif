@@ -8,9 +8,10 @@
  */
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { RotateCw , Calendar, Check, Lock, Target, Pencil, Trophy, Ban, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Calendar, Check, Lock, Target, Pencil, Trophy, Ban, AlertCircle } from "lucide-react";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { api } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
 import { haptic } from "@/lib/haptics";
@@ -256,6 +257,7 @@ export default function RaceCalendarPage() {
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
   const [filter, setFilter] = useState<FilterKey>("upcoming");
+  const queryClient = useQueryClient();
 
   const { data: races = [], isLoading: racesLoading } = useQuery({
     queryKey: queryKeys.races.list(),
@@ -278,6 +280,11 @@ export default function RaceCalendarPage() {
   );
 
   const loading = racesLoading || predsLoading;
+
+  usePullToRefresh({
+    enabled: !loading,
+    onRefresh: () => queryClient.invalidateQueries({ queryKey: queryKeys.races.list() }),
+  });
 
   const sorted = useMemo(() => {
     const byDate = (a: Race, b: Race) => new Date(a.date).getTime() - new Date(b.date).getTime();
@@ -308,6 +315,10 @@ export default function RaceCalendarPage() {
 
   return (
     <div className="min-h-screen bg-pk-carbon pb-24" data-testid="race-calendar-page">
+      <div className="ptr-indicator" aria-hidden="true">
+        <RotateCw className="h-4 w-4 text-white" />
+      </div>
+
       {/* ── Glass Header ── */}
       <header className="sticky top-0 z-50 bg-pk-carbon/85 backdrop-blur-xl saturate-[1.3] border-b border-white/[0.08]">
         <div className="px-4 pt-3 pb-3">

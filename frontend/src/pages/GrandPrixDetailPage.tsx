@@ -4,9 +4,8 @@
  */
 import { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import {
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { RotateCw ,
   ChevronLeft,
   Calendar,
   Clock,
@@ -19,6 +18,8 @@ import {
   Route,
   CornerDownRight,
 } from "lucide-react";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { api } from "@/lib/api";
 import type { CircuitMapData } from "@/lib/circuitMaps";
 import { haptic } from "@/lib/haptics";
@@ -221,6 +222,7 @@ export default function GrandPrixDetailPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
+  const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<TabKey>("info");
 
@@ -232,6 +234,11 @@ export default function GrandPrixDetailPage() {
     queryKey: ["/races", raceId, "details"],
     queryFn: () => api.races.details(raceId!) as unknown as Promise<Record<string, unknown>>,
     enabled: !!raceId,
+  });
+
+  usePullToRefresh({
+    enabled: !loading,
+    onRefresh: () => queryClient.invalidateQueries({ queryKey: ["/races", raceId, "details"] }),
   });
 
   /* ── Derived data ── */
@@ -357,6 +364,10 @@ export default function GrandPrixDetailPage() {
 
   return (
     <div className="min-h-screen bg-pk-carbon pb-24" data-testid="grandprix-detail-page">
+      <div className="ptr-indicator" aria-hidden="true">
+        <RotateCw className="h-4 w-4 text-white" />
+      </div>
+
       {/* ── Glass Header ── */}
       <header className="sticky top-0 z-50 bg-pk-carbon/85 backdrop-blur-xl saturate-[1.3] border-b border-white/[0.08]">
         <div className="px-4 pt-3 pb-0">

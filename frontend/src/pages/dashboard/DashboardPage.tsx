@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import {
+import { useQueryClient } from "@tanstack/react-query";
+import { RotateCw ,
   ChevronRight,
   Trophy,
   Target,
@@ -13,9 +13,11 @@ import {
   Radio,
   Zap,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import RaceCarousel from "./RaceCarousel";
 import WelcomeHeader from "./WelcomeHeader";
 import { useDashboardData } from "./useDashboardData";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { iconSmall } from "@/lib/icons";
 import { fadeUp, staggerContainer } from "@/lib/motion";
 import { useAuth } from "@/lib/auth";
@@ -74,6 +76,7 @@ function tierLabel(rank: number, totalPlayers: number) {
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const {
     loading,
@@ -86,6 +89,12 @@ export default function DashboardPage() {
     pointsHistory,
     globalLeaderboard,
   } = useDashboardData(user?.id);
+
+  // Pull-to-refresh: invalidate all dashboard queries on pull
+  usePullToRefresh({
+    enabled: !loading,
+    onRefresh: () => queryClient.invalidateQueries(),
+  });
 
   // Soonest upcoming race — drives the quick-action shortcuts below.
   const currentRace = upcomingRaces[0];
@@ -157,6 +166,11 @@ export default function DashboardPage() {
       className="min-h-dvh bg-pk-carbon pb-24 max-w-[430px] mx-auto"
       data-testid="dashboard-page"
     >
+      {/* Pull-to-refresh indicator (CSS-driven via .ptr-refreshing on <html>) */}
+      <div className="ptr-indicator" aria-hidden="true">
+        <RotateCw className="h-4 w-4 text-white" />
+      </div>
+
       {/* ---- WELCOME HEADER ---- */}
       <WelcomeHeader
         user={user}
