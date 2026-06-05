@@ -112,9 +112,9 @@ function RadarChart({
   color: string;
 }) {
   const n = stats.length;
-  const cx = 100;
-  const cy = 100;
-  const maxR = 70;
+  const cx = 120;
+  const cy = 120;
+  const maxR = 65;
 
   const angleStep = (2 * Math.PI) / n;
   const startAngle = -Math.PI / 2;
@@ -134,7 +134,7 @@ function RadarChart({
     dataPoints.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x},${p.y}`).join(" ") + " Z";
 
   return (
-    <svg viewBox="0 0 200 200" className="w-full max-w-[160px]">
+    <svg viewBox="0 0 240 240" className="w-full max-w-[200px] mx-auto">
       {/* Grid */}
       {gridLevels.map((level) => {
         const pts = Array.from({ length: n }, (_, i) => getPoint(i, level));
@@ -171,7 +171,7 @@ function RadarChart({
 
       {/* Labels */}
       {stats.map((s, i) => {
-        const p = getPoint(i, 1.22);
+        const p = getPoint(i, 1.28);
         return (
           <text
             key={i}
@@ -181,7 +181,7 @@ function RadarChart({
             dominantBaseline="central"
             className="fill-pk-titane"
             style={{
-              fontSize: "6px",
+              fontSize: "7px",
               fontFamily: "var(--font-data, JetBrains Mono, monospace)",
               textTransform: "uppercase",
             }}
@@ -466,20 +466,15 @@ export default function DriverDetailPage() {
           transition={{ delay: 0.35 }}
         >
           <h2 className="font-heading text-sm uppercase tracking-wide mb-4">Points forts</h2>
-          <div className="flex items-center gap-4">
-            <div className="flex gap-4 flex-1">
-              {pointsForts.map((pf) => (
-                <CircularProgress
-                  key={pf.label}
-                  value={pf.value}
-                  label={pf.label}
-                  color={pf.color}
-                />
-              ))}
-            </div>
-            <div className="shrink-0">
-              <RadarChart stats={radarStats} color={colors.primary} />
-            </div>
+          {/* Circular scores */}
+          <div className="flex justify-center gap-5 mb-5">
+            {pointsForts.map((pf) => (
+              <CircularProgress key={pf.label} value={pf.value} label={pf.label} color={pf.color} />
+            ))}
+          </div>
+          {/* Radar chart centered below */}
+          <div className="flex justify-center">
+            <RadarChart stats={radarStats} color={colors.primary} />
           </div>
         </motion.div>
 

@@ -269,7 +269,16 @@ async def get_details(driver_id: str) -> dict | None:
     if not driver:
         return None
 
-    driver["photo_url"] = _photo_for(driver["id"])
+    # Check admin DB for custom photos (dark/light variants uploaded via BO)
+    admin_doc = await db.drivers.find_one({"_id": driver["id"]})
+    if admin_doc and (admin_doc.get("photo_url_dark") or admin_doc.get("photo_url_light")):
+        driver["photo_url"] = admin_doc.get("photo_url_dark") or admin_doc.get("photo_url_light")
+        driver["photo_url_dark"] = admin_doc.get("photo_url_dark")
+        driver["photo_url_light"] = admin_doc.get("photo_url_light")
+    elif admin_doc and admin_doc.get("photo_url"):
+        driver["photo_url"] = admin_doc["photo_url"]
+    else:
+        driver["photo_url"] = _photo_for(driver["id"])
 
     next_race = await db.races.find_one(
         {"status": {"$in": ["upcoming", "active"]}},
@@ -281,11 +290,33 @@ async def get_details(driver_id: str) -> dict | None:
     return driver
 
 
-def get_all() -> list[dict]:
-    """Return the full grid with photo URLs attached."""
+async def get_all() -> list[dict]:
+    """Return the full grid with photo URLs attached.
+
+    Checks the admin DB for custom photos first, falling back to the
+    hardcoded F1 CDN headshots.
+    """
     drivers = get_all_drivers_detailed()
+
+    # Bulk-fetch admin overrides in one query
+    admin_docs = {
+        doc["_id"]: doc
+        async for doc in db.drivers.find(
+            {},
+            {"_id": 1, "photo_url": 1, "photo_url_dark": 1, "photo_url_light": 1},
+        )
+    }
+
     for driver in drivers:
-        driver["photo_url"] = _photo_for(driver["id"])
+        admin = admin_docs.get(driver["id"])
+        if admin and (admin.get("photo_url_dark") or admin.get("photo_url_light")):
+            driver["photo_url"] = admin.get("photo_url_dark") or admin.get("photo_url_light")
+            driver["photo_url_dark"] = admin.get("photo_url_dark")
+            driver["photo_url_light"] = admin.get("photo_url_light")
+        elif admin and admin.get("photo_url"):
+            driver["photo_url"] = admin["photo_url"]
+        else:
+            driver["photo_url"] = _photo_for(driver["id"])
     return drivers
 
 

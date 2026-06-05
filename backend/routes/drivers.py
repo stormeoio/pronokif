@@ -28,7 +28,7 @@ router = APIRouter(tags=["drivers"])
 @router.get("/drivers/all")
 async def get_all_drivers_endpoint() -> list[dict]:
     """Return all drivers with basic info and photo URLs."""
-    return drivers_service.get_all()
+    return await drivers_service.get_all()
 
 
 @router.get("/drivers/compare")
