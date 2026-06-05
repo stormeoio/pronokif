@@ -198,6 +198,7 @@ export const adminApi = {
       api.put(`/drivers/${encodeURIComponent(id)}`, data).then((r) => r.data),
     create: (data: Record<string, unknown>) => api.post("/drivers", data).then((r) => r.data),
     delete: (id: string) => api.delete(`/drivers/${encodeURIComponent(id)}`).then((r) => r.data),
+    syncAvatars: () => api.post("/drivers/sync-avatars").then((r) => r.data),
   },
 
   // Races

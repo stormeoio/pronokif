@@ -31,6 +31,10 @@ export interface AvatarObject {
   icon?: string;
   colors?: [string, string];
   number?: string | number;
+  /** F1 CDN headshot — present after admin seed. Renders Pronokif-branded pilot avatar. */
+  photo_url?: string | null;
+  /** Official F1 team logo URL */
+  team_logo_url?: string | null;
 }
 
 export type AvatarSize = "sm" | "md" | "lg" | "xl";
@@ -135,9 +139,40 @@ export function AvatarDisplay({ avatar, size = "md", customUrl = null }: AvatarD
     );
   }
 
-  // Driver avatar (silhouette with number)
+  // Driver avatar — Pronokif-branded pilot card
   if (avatar.category === "drivers") {
     const colors = avatar.colors ?? ["#666", "#333"];
+
+    // If we have a real headshot (from admin seed), render it with team-color framing.
+    if (avatar.photo_url) {
+      return (
+        <div
+          className={`${sizeClasses[size]} rounded-lg border-2 flex items-center justify-center relative overflow-hidden`}
+          style={{ borderColor: colors[0] }}
+        >
+          {/* Headshot */}
+          <img
+            src={avatar.photo_url}
+            alt={avatar.name ?? "Pilote"}
+            className="absolute inset-0 w-full h-full object-cover object-top"
+          />
+          {/* Subtle team-color gradient overlay at bottom */}
+          <div
+            className="absolute bottom-0 left-0 right-0 h-1/3"
+            style={{ background: `linear-gradient(to top, ${colors[0]}cc, transparent)` }}
+          />
+          {/* Race number badge */}
+          <span
+            className="absolute bottom-0.5 right-0.5 font-data text-[0.45rem] font-bold text-white leading-none px-1 py-0.5 rounded"
+            style={{ background: colors[0] }}
+          >
+            {avatar.number}
+          </span>
+        </div>
+      );
+    }
+
+    // Fallback: gradient + helmet silhouette + number (no photo yet)
     return (
       <div
         className={`${sizeClasses[size]} rounded-lg border-2 flex items-center justify-center relative overflow-hidden`}
@@ -146,7 +181,6 @@ export function AvatarDisplay({ avatar, size = "md", customUrl = null }: AvatarD
           borderColor: colors[0],
         }}
       >
-        {/* Helmet silhouette background */}
         <div className="absolute inset-0 flex items-center justify-center opacity-30">
           <svg viewBox="0 0 100 100" className="w-full h-full">
             <ellipse cx="50" cy="60" rx="40" ry="35" fill="white" />

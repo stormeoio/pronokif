@@ -216,6 +216,61 @@ async def update_driver(
     return _doc_to_out(updated)
 
 
+@router.post("/drivers/sync-avatars")
+async def sync_driver_avatars(
+    admin: dict = Depends(get_current_admin),
+) -> dict:
+    """Ensure every DRIVER_AVATARS entry has a matching driver in DB.
+
+    For each static DRIVER_AVATAR, we find the DB driver by race number
+    and confirm photo_url is set. Returns a summary of how many pilots
+    have an avatar-ready photo and how many are still missing one.
+    """
+    from data.avatars import DRIVER_AVATARS
+    from data.f1_data import F1_DRIVERS_2026
+    from services.drivers import DRIVER_PHOTOS
+
+    ready = 0
+    missing = []
+
+    for av in DRIVER_AVATARS:
+        number = av.get("number")
+        if number is None:
+            continue
+        # Find driver in DB by race number
+        doc = await db.drivers.find_one({"number": int(number)})
+        if doc and doc.get("photo_url"):
+            ready += 1
+        else:
+            # If not in DB or missing photo, try to find in F1_DRIVERS_2026 and upsert
+            static = next((d for d in F1_DRIVERS_2026 if d.get("number") == int(number)), None)
+            if static:
+                photo = static.get("photo_url") or DRIVER_PHOTOS.get(static["id"])
+                logo = static.get("team_logo_url")
+                if photo:
+                    await db.drivers.update_one(
+                        {"_id": static["id"]},
+                        {"$set": {
+                            "photo_url": photo,
+                            "team_logo_url": logo,
+                            "updated_at": _now_iso(),
+                        }},
+                        upsert=False,  # Only update existing — run /seed first
+                    )
+                    ready += 1
+                else:
+                    missing.append({"number": number, "name": av.get("name")})
+            else:
+                missing.append({"number": number, "name": av.get("name")})
+
+    await log_backoffice_activity(
+        admin_email=admin.get("email", "unknown"),
+        action="drivers.sync_avatars",
+        details={"ready": ready, "missing": len(missing)},
+    )
+    return {"ready": ready, "missing": missing, "total": len(DRIVER_AVATARS)}
+
+
 @router.delete("/drivers/{driver_id}")
 async def delete_driver(
     driver_id: str,
