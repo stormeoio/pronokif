@@ -4,10 +4,14 @@ Static data for F1 drivers, circuits, and 2026 calendar
 """
 
 # Official F1 media CDN — driver headshots
-# Pattern: https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/<initial>/<slug>/<code>.png.transform/1col/image.png
+# Using 2col-retina transform (~880px wide, ~50KB) — verified to return real
+# photos for all 22 drivers. The smaller 1col transform returns the fallback
+# placeholder for some 2026 drivers (Verstappen, Perez, Bottas).
 _CDN = "https://media.formula1.com"
 _D = f"{_CDN}/d_driver_fallback_image.png/content/dam/fom-website/drivers"
-_TL_BASE = f"{_CDN}/image/upload/f_auto,c_limit,q_75,w_160,h_160/content/dam/fom-website/2018-redesign-assets/team%20logos"
+_PHOTO_TRANSFORM = "2col-retina"  # HD — was 1col (broke for some 2026 profiles)
+# Team logos: 640×640 Cloudinary for established teams (up from 160×160)
+_TL_BASE = f"{_CDN}/image/upload/f_auto,c_limit,q_auto,w_640,h_640/content/dam/fom-website/2018-redesign-assets/team%20logos"
 _TL_2026 = f"{_CDN}/d_default_fallback_image.png/content/dam/fom-website/teams/2026"
 
 # Official F1 team logo URLs (Cloudinary CDN for established teams, 2026 path for newer entries)
@@ -30,133 +34,133 @@ F1_DRIVERS_2026 = [
     {
         "id": "norris", "name": "Lando Norris", "team": "McLaren", "number": 1,
         "country": "GBR", "code": "NOR",
-        "photo_url": f"{_D}/L/LANNOR01_Lando_Norris/lannor01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/L/LANNOR01_Lando_Norris/lannor01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["McLaren"],
     },
     {
         "id": "piastri", "name": "Oscar Piastri", "team": "McLaren", "number": 81,
         "country": "AUS", "code": "PIA",
-        "photo_url": f"{_D}/O/OSCPIA01_Oscar_Piastri/oscpia01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/O/OSCPIA01_Oscar_Piastri/oscpia01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["McLaren"],
     },
     {
         "id": "russell", "name": "George Russell", "team": "Mercedes", "number": 63,
         "country": "GBR", "code": "RUS",
-        "photo_url": f"{_D}/G/GEORUS01_George_Russell/georus01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/G/GEORUS01_George_Russell/georus01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Mercedes"],
     },
     {
         "id": "antonelli", "name": "Kimi Antonelli", "team": "Mercedes", "number": 12,
         "country": "ITA", "code": "ANT",
-        "photo_url": f"{_D}/A/ANDANT01_Andrea_Kimi_Antonelli/andant01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/A/ANDANT01_Andrea_Kimi_Antonelli/andant01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Mercedes"],
     },
     {
         "id": "leclerc", "name": "Charles Leclerc", "team": "Ferrari", "number": 16,
         "country": "MON", "code": "LEC",
-        "photo_url": f"{_D}/C/CHALEC01_Charles_Leclerc/chalec01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/C/CHALEC01_Charles_Leclerc/chalec01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Ferrari"],
     },
     {
         "id": "hamilton", "name": "Lewis Hamilton", "team": "Ferrari", "number": 44,
         "country": "GBR", "code": "HAM",
-        "photo_url": f"{_D}/L/LEWHAM01_Lewis_Hamilton/lewham01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/L/LEWHAM01_Lewis_Hamilton/lewham01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Ferrari"],
     },
     {
         "id": "verstappen", "name": "Max Verstappen", "team": "Red Bull Racing", "number": 3,
         "country": "NED", "code": "VER",
-        "photo_url": f"{_D}/M/MAXVER01_Max_Verstappen/maxver01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/M/MAXVER01_Max_Verstappen/maxver01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Red Bull Racing"],
     },
     {
         "id": "hadjar", "name": "Isack Hadjar", "team": "Red Bull Racing", "number": 6,
         "country": "FRA", "code": "HAD",
-        "photo_url": f"{_D}/I/ISAHAD01_Isack_Hadjar/isahad01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/I/ISAHAD01_Isack_Hadjar/isahad01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Red Bull Racing"],
     },
     {
         "id": "sainz", "name": "Carlos Sainz", "team": "Williams", "number": 55,
         "country": "ESP", "code": "SAI",
-        "photo_url": f"{_D}/C/CARSAI01_Carlos_Sainz/carsai01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/C/CARSAI01_Carlos_Sainz/carsai01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Williams"],
     },
     {
         "id": "albon", "name": "Alexander Albon", "team": "Williams", "number": 23,
         "country": "THA", "code": "ALB",
-        "photo_url": f"{_D}/A/ALEALB01_Alexander_Albon/alealb01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/A/ALEALB01_Alexander_Albon/alealb01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Williams"],
     },
     {
         "id": "lawson", "name": "Liam Lawson", "team": "Racing Bulls", "number": 30,
         "country": "NZL", "code": "LAW",
-        "photo_url": f"{_D}/L/LIALAW01_Liam_Lawson/lialaw01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/L/LIALAW01_Liam_Lawson/lialaw01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Racing Bulls"],
     },
     {
         "id": "lindblad", "name": "Arvid Lindblad", "team": "Racing Bulls", "number": 41,
         "country": "GBR", "code": "LIN",
-        "photo_url": f"{_D}/A/ARVLIN01_Arvid_Lindblad/arvlin01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/A/ARVLIN01_Arvid_Lindblad/arvlin01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Racing Bulls"],
     },
     {
         "id": "alonso", "name": "Fernando Alonso", "team": "Aston Martin", "number": 14,
         "country": "ESP", "code": "ALO",
-        "photo_url": f"{_D}/F/FERALO01_Fernando_Alonso/feralo01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/F/FERALO01_Fernando_Alonso/feralo01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Aston Martin"],
     },
     {
         "id": "stroll", "name": "Lance Stroll", "team": "Aston Martin", "number": 18,
         "country": "CAN", "code": "STR",
-        "photo_url": f"{_D}/L/LANSTR01_Lance_Stroll/lanstr01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/L/LANSTR01_Lance_Stroll/lanstr01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Aston Martin"],
     },
     {
         "id": "ocon", "name": "Esteban Ocon", "team": "Haas", "number": 31,
         "country": "FRA", "code": "OCO",
-        "photo_url": f"{_D}/E/ESTOCO01_Esteban_Ocon/estoco01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/E/ESTOCO01_Esteban_Ocon/estoco01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Haas"],
     },
     {
         "id": "bearman", "name": "Oliver Bearman", "team": "Haas", "number": 87,
         "country": "GBR", "code": "BEA",
-        "photo_url": f"{_D}/O/OLIBEA01_Oliver_Bearman/olibea01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/O/OLIBEA01_Oliver_Bearman/olibea01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Haas"],
     },
     {
         "id": "gasly", "name": "Pierre Gasly", "team": "Alpine", "number": 10,
         "country": "FRA", "code": "GAS",
-        "photo_url": f"{_D}/P/PIEGAS01_Pierre_Gasly/piegas01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/P/PIEGAS01_Pierre_Gasly/piegas01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Alpine"],
     },
     {
         "id": "colapinto", "name": "Franco Colapinto", "team": "Alpine", "number": 43,
         "country": "ARG", "code": "COL",
-        "photo_url": f"{_D}/F/FRACOL01_Franco_Colapinto/fracol01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/F/FRACOL01_Franco_Colapinto/fracol01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Alpine"],
     },
     {
         "id": "hulkenberg", "name": "Nico Hülkenberg", "team": "Audi", "number": 27,
         "country": "GER", "code": "HUL",
-        "photo_url": f"{_D}/N/NICHUL01_Nico_Hulkenberg/nichul01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/N/NICHUL01_Nico_Hulkenberg/nichul01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Audi"],
     },
     {
         "id": "bortoleto", "name": "Gabriel Bortoleto", "team": "Audi", "number": 5,
         "country": "BRA", "code": "BOR",
-        "photo_url": f"{_D}/G/GABBOR01_Gabriel_Bortoleto/gabbor01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/G/GABBOR01_Gabriel_Bortoleto/gabbor01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Audi"],
     },
     {
         "id": "perez", "name": "Sergio Pérez", "team": "Cadillac", "number": 11,
         "country": "MEX", "code": "PER",
-        "photo_url": f"{_D}/S/SERPER01_Sergio_Perez/serper01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/S/SERPER01_Sergio_Perez/serper01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Cadillac"],
     },
     {
         "id": "bottas", "name": "Valtteri Bottas", "team": "Cadillac", "number": 77,
         "country": "FIN", "code": "BOT",
-        "photo_url": f"{_D}/V/VALBOT01_Valtteri_Bottas/valbot01.png.transform/1col/image.png",
+        "photo_url": f"{_D}/V/VALBOT01_Valtteri_Bottas/valbot01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Cadillac"],
     },
 ]
