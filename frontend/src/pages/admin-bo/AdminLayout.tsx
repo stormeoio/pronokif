@@ -9,6 +9,8 @@ import {
   BarChart3,
   Calculator,
   LayoutDashboard,
+  Moon,
+  Sun,
   Users,
   Trophy,
   Flag,
@@ -48,6 +50,7 @@ import DevOpsTab, { devOpsSectionFromKey, type DevOpsSectionKey } from "./tabs/D
 import PreviewPanel from "./PreviewPanel";
 import AdminDeepSearch from "./AdminDeepSearch";
 import { adminApi } from "./adminApi";
+import { useAdminTheme } from "@/lib/useAdminTheme";
 import { Button } from "@/components/ui/button";
 import { APP_VERSION_LABEL } from "@/lib/appVersion";
 import { useBranding } from "@/lib/branding";
@@ -156,6 +159,7 @@ export default function AdminLayout() {
   const [authChecked, setAuthChecked] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const { theme, toggle: toggleTheme, isDark } = useAdminTheme();
 
   useEffect(() => {
     adminApi
@@ -283,7 +287,9 @@ export default function AdminLayout() {
   const devItems = NAV_ITEMS.filter((i) => i.section === "dev");
 
   return (
-    <div className="min-h-screen bg-pk-carbon text-pk-piste flex">
+    <div
+      className={`min-h-screen bg-pk-carbon text-pk-piste flex ${theme === "light" ? "admin-light" : ""}`}
+    >
       {/* Mobile sidebar toggle */}
       <button
         className="fixed top-4 left-4 z-50 lg:hidden p-2 bg-pk-anthracite/90 border border-white/[0.08] rounded-md text-pk-titane"
@@ -398,6 +404,15 @@ export default function AdminLayout() {
               >
                 <ChevronLeft className="w-3 h-3 mr-1" />
                 App
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleTheme}
+                className="text-pk-titane hover:text-pk-piste text-xs px-2"
+                title={isDark ? "Mode clair" : "Mode sombre"}
+              >
+                {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
               </Button>
               <Button
                 variant="ghost"
