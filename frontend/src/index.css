@@ -90,6 +90,103 @@
 }
 
 /* ============================================
+   ADMIN LIGHT THEME
+   Scoped to .admin-light — only affects the admin BO,
+   never the public-facing app (stays Broadcast Premium dark).
+   ============================================ */
+.admin-light {
+  --pk-carbon: #f8f9fb;
+  --pk-surface: #ffffff;
+  --pk-anthracite: #eef0f4;
+  --pk-piste: #111827;
+  --pk-titane: #6b7280;
+
+  --pk-border: rgba(0, 0, 0, 0.08);
+  --pk-border-hover: rgba(0, 0, 0, 0.15);
+
+  --pk-glass: rgba(255, 255, 255, 0.85);
+
+  --pk-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --pk-shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  --pk-red-subtle: rgba(225, 6, 0, 0.06);
+  --pk-red-glow: rgba(225, 6, 0, 0.15);
+
+  color-scheme: light;
+}
+
+/* Invert the common patterns used in admin components */
+.admin-light .bg-pk-carbon {
+  background-color: var(--pk-carbon);
+}
+.admin-light .bg-pk-surface {
+  background-color: var(--pk-surface);
+}
+.admin-light .bg-pk-anthracite {
+  background-color: var(--pk-anthracite);
+}
+.admin-light .text-pk-piste {
+  color: var(--pk-piste);
+}
+.admin-light .text-pk-titane {
+  color: var(--pk-titane);
+}
+.admin-light .text-white {
+  color: var(--pk-piste);
+}
+.admin-light .text-gray-500 {
+  color: #6b7280;
+}
+.admin-light .text-gray-400 {
+  color: #9ca3af;
+}
+.admin-light .border-white\/\[0\.08\] {
+  border-color: var(--pk-border);
+}
+.admin-light .border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+.admin-light .border-white\/\[0\.06\] {
+  border-color: rgba(0, 0, 0, 0.06);
+}
+.admin-light .border-white\/\[0\.05\] {
+  border-color: rgba(0, 0, 0, 0.05);
+}
+.admin-light .border-white\/\[0\.15\] {
+  border-color: rgba(0, 0, 0, 0.12);
+}
+.admin-light .bg-white\/\[0\.04\] {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+.admin-light .bg-white\/\[0\.03\] {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+.admin-light .bg-white\/\[0\.06\] {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+.admin-light .bg-white\/5 {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+.admin-light .bg-black\/30 {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+.admin-light .hover\:bg-white\/\[0\.04\]:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+.admin-light .hover\:bg-white\/\[0\.03\]:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+.admin-light .hover\:text-white:hover {
+  color: var(--pk-piste);
+}
+.admin-light .bg-pk-carbon\/95 {
+  background-color: rgba(248, 249, 251, 0.95);
+}
+.admin-light .bg-pk-carbon\/85 {
+  background-color: rgba(248, 249, 251, 0.85);
+}
+
+/* ============================================
    BASE STYLES
    ============================================ */
 @layer base {
