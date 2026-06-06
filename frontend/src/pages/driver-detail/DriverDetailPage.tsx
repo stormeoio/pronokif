@@ -311,9 +311,9 @@ export default function DriverDetailPage() {
 
         {/* Hero content: info left, photo positioned absolutely right */}
         <div className="relative z-10 min-h-[440px]">
-          {/* Driver photo — absolute, larger, bleeds to edges */}
+          {/* Driver photo — absolute, fills full hero height, bleeds right */}
           <motion.div
-            className="absolute right-0 bottom-0 w-[65%] max-w-[320px] z-0"
+            className="absolute right-0 top-0 bottom-0 w-[70%] z-0 flex items-end justify-end"
             {...rmProps}
             initial={{ x: 20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
@@ -322,7 +322,7 @@ export default function DriverDetailPage() {
             <img
               src={driver.photo_url_dark || driver.photo_url_light || driver.photo_url}
               alt={driver.full_name}
-              className="w-full h-auto object-contain object-bottom"
+              className="max-w-none w-auto h-full object-contain object-bottom"
               style={{
                 filter: `drop-shadow(0 8px 24px rgba(0,0,0,0.5)) drop-shadow(0 0 60px ${colors.primary}20)`,
               }}
