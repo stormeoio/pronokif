@@ -21,7 +21,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { LazyImage } from "./LazyImage";
 import { AvatarGenerator } from "./AvatarGenerator";
-import { resolveDriverPhoto } from "@/lib/driverPhotos";
+import { resolveDriverPhoto, resolveDriverId } from "@/lib/driverPhotos";
 import { haptic } from "@/lib/haptics";
 
 // ------------------------------------------------------------------ types ---
@@ -151,7 +151,10 @@ export function AvatarDisplay({ avatar, size = "md", customUrl = null }: AvatarD
     // Resolve photo: API photo_url → local asset → CDN fallback
     // Extract driver id from avatar id (format: "driver_<number>")
     const driverNumber = avatar.number ? String(avatar.number) : null;
-    const photoSrc = avatar.photo_url || resolveDriverPhoto(avatar.id.replace("driver_", ""));
+    // Avatar ID is "driver_<number>" → strip prefix → resolve number to name slug
+    const rawId = avatar.id.replace("driver_", "");
+    const driverSlug = resolveDriverId(rawId);
+    const photoSrc = avatar.photo_url || resolveDriverPhoto(driverSlug);
 
     if (photoSrc) {
       return (

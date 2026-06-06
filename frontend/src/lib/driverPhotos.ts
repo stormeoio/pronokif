@@ -61,16 +61,48 @@ const F1_CDN_SLUGS: Record<string, string> = {
   ocon: "E/ESTOCO01_Esteban_Ocon/estoco01",
   bearman: "O/OLIBEA01_Oliver_Bearman/olibea01",
   gasly: "P/PIEGAS01_Pierre_Gasly/piegas01",
-  colapinto: "F/FRACOL01_Franco_Colapinto/fracol01",
+  doohan: "J/JACDOO01_Jack_Doohan/jacdoo01",
   hulkenberg: "N/NICHUL01_Nico_Hulkenberg/nichul01",
   bortoleto: "G/GABBOR01_Gabriel_Bortoleto/gabbor01",
-  perez: "S/SERPER01_Sergio_Perez/serper01",
-  bottas: "V/VALBOT01_Valtteri_Bottas/valbot01",
-  // antonelli + lindblad: no real headshot on F1 CDN (2026 rookies)
+  tsunoda: "Y/YUKTSU01_Yuki_Tsunoda/yuktsu01",
+  // antonelli: no real headshot on F1 CDN (2026 rookie)
 };
 
+// Map race numbers to driver name slugs (used by avatar selector where IDs
+// are "driver_4" → number "4" but CDN needs the name key "norris").
+const DRIVER_NUMBER_TO_ID: Record<string, string> = {
+  "1": "verstappen",
+  "4": "norris",
+  "5": "bortoleto",
+  "6": "hadjar",
+  "7": "doohan",
+  "10": "gasly",
+  "12": "antonelli",
+  "14": "alonso",
+  "16": "leclerc",
+  "18": "stroll",
+  "22": "tsunoda",
+  "23": "albon",
+  "27": "hulkenberg",
+  "30": "lawson",
+  "31": "ocon",
+  "44": "hamilton",
+  "55": "sainz",
+  "63": "russell",
+  "81": "piastri",
+  "87": "bearman",
+};
+
+/**
+ * Resolve a driver number (e.g. "4") to the driver name slug (e.g. "norris").
+ * Returns the input unchanged if it's already a name slug.
+ */
+export function resolveDriverId(idOrNumber: string): string {
+  return DRIVER_NUMBER_TO_ID[idOrNumber] ?? idOrNumber;
+}
+
 function f1CdnUrl(driverId: string): string | null {
-  const slug = F1_CDN_SLUGS[driverId];
+  const slug = F1_CDN_SLUGS[driverId] ?? F1_CDN_SLUGS[resolveDriverId(driverId)];
   if (!slug) return null;
   return `${_CDN}/${slug}.png.transform/2col-retina/image.png`;
 }
@@ -156,15 +188,13 @@ export const ALL_DRIVER_IDS = [
   "sainz",
   "albon",
   "lawson",
-  "lindblad",
+  "tsunoda",
   "alonso",
   "stroll",
   "ocon",
   "bearman",
   "gasly",
-  "colapinto",
+  "doohan",
   "hulkenberg",
   "bortoleto",
-  "perez",
-  "bottas",
 ] as const;
