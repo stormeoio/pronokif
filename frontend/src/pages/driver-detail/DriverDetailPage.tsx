@@ -303,10 +303,36 @@ export default function DriverDetailPage() {
           </div>
         </div>
 
-        {/* Hero content: info left, photo right */}
-        <div className="relative z-10 flex items-end px-4 pb-6 pt-4 min-h-[340px]">
-          {/* Left column: team + name + meta */}
-          <div className="flex-1 min-w-0 pb-2">
+        {/* Hero content: info left, photo positioned absolutely right */}
+        <div className="relative z-10 min-h-[400px]">
+          {/* Driver photo — absolute, right-aligned, bottom-anchored, bleeds into gradient */}
+          <motion.div
+            className="absolute right-0 bottom-0 w-[55%] max-w-[280px] z-0"
+            {...rmProps}
+            initial={{ x: 20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.15 }}
+          >
+            <img
+              src={driver.photo_url_dark || driver.photo_url_light || driver.photo_url}
+              alt={driver.full_name}
+              className="w-full h-auto object-contain object-bottom drop-shadow-2xl"
+              onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                e.currentTarget.src =
+                  "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/driver_fallback_image.png.transform/2col-retina/image.png";
+              }}
+            />
+            {/* Bottom fade into content area */}
+            <div
+              className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
+              style={{
+                background: "linear-gradient(to top, var(--pk-carbon) 0%, transparent 100%)",
+              }}
+            />
+          </motion.div>
+
+          {/* Left column: team + name + meta — sits above the photo */}
+          <div className="relative z-10 px-4 pt-4 pb-6 max-w-[60%]">
             {/* Team badge */}
             <div className="flex items-center gap-2 mb-3">
               {teamLogoSrc && (
@@ -323,7 +349,7 @@ export default function DriverDetailPage() {
             </p>
 
             {/* Name */}
-            <h1 className="font-display text-3xl sm:text-4xl leading-[0.95] uppercase mt-1">
+            <h1 className="font-display text-3xl leading-[0.95] uppercase mt-1">
               {driver.first_name}
               <br />
               <span className="text-pk-piste">{driver.last_name}</span>
@@ -336,7 +362,7 @@ export default function DriverDetailPage() {
             </div>
 
             {/* Quick stats */}
-            <div className="flex gap-5 mt-4">
+            <div className="flex gap-4 mt-5">
               {age && (
                 <div>
                   <p className="font-data text-[0.5rem] uppercase tracking-wider text-pk-titane">
@@ -346,7 +372,7 @@ export default function DriverDetailPage() {
                 </div>
               )}
               {height && (
-                <div className="border-l border-white/[0.08] pl-5">
+                <div className="border-l border-white/[0.08] pl-4">
                   <p className="font-data text-[0.5rem] uppercase tracking-wider text-pk-titane">
                     Taille
                   </p>
@@ -354,7 +380,7 @@ export default function DriverDetailPage() {
                 </div>
               )}
               {debutYear && (
-                <div className="border-l border-white/[0.08] pl-5">
+                <div className="border-l border-white/[0.08] pl-4">
                   <p className="font-data text-[0.5rem] uppercase tracking-wider text-pk-titane">
                     Depuis
                   </p>
@@ -369,31 +395,12 @@ export default function DriverDetailPage() {
                 haptic("medium");
                 toast.success("Pilote suivi !");
               }}
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-pk-red/40 text-pk-red font-data text-xs uppercase tracking-wider hover:bg-pk-red/10 transition-colors"
+              className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-pk-red/40 text-pk-red font-data text-xs uppercase tracking-wider hover:bg-pk-red/10 transition-colors"
             >
               <Star className="w-3.5 h-3.5" />
               Suivi
             </button>
           </div>
-
-          {/* Right column: driver photo */}
-          <motion.div
-            className="relative shrink-0 w-[45%] max-w-[220px]"
-            {...rmProps}
-            initial={{ x: 30, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.15 }}
-          >
-            <img
-              src={driver.photo_url}
-              alt={driver.full_name}
-              className="w-full h-auto object-cover object-top"
-              onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                e.currentTarget.src =
-                  "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/driver_fallback_image.png.transform/1col/image.png";
-              }}
-            />
-          </motion.div>
         </div>
 
         {/* Diagonal stripes overlay */}
