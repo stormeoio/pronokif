@@ -2,6 +2,39 @@
 
 Toutes les dates sont en heure Europe/Paris. Le changelog applicatif visible dans le back-office est maintenu dans `frontend/src/pages/admin-bo/tabs/ChangelogTab.tsx`.
 
+## v0.5.1 — 6 juin 2026
+
+### Fiches pilotes et visuels
+- Refonte page pilote immersive : hero bandeau plein ecran avec photo pilote en position absolue, gradient equipe, numero watermark geant, diagonales decoratives.
+- Upload photos pilotes dark/light dans l'admin : deux zones drag-drop (Moon/Sun), processing Pillow auto, resolver avec fallback multi-niveaux.
+- Photos admin visibles sur les pages publiques : `get_details()` et `get_all()` enrichis depuis la DB admin.
+- Photos admin dans le classement championnat : fetch `/drivers/all` pour enrichir les standings Ergast.
+- Radar chart SVG 5 axes (vitesse, depassements, regularite, gestion pneus, qualifications) + cercles de progression.
+- Photo CDN fallback 2col-retina (640px) au lieu de 1col (80px) pour les pilotes sans photo admin.
+- Format attendu : PNG 1024x1024 fond transparent (detoure).
+
+### Dark/light mode admin
+- 372 overrides CSS `.admin-light` couvrant tous les patterns Tailwind hardcodes : grays, borders, text, status colors, hover states, ring/divide, gradient.
+- Sidebar wordmark swap dark/light automatique.
+
+### Mobile-first et PWA
+- Viewport public cappe a `max-w-md` (448px) centre sur desktop — rendu mobile-only coherent.
+- Bottom nav et ScrollToTop contraints a la colonne mobile.
+- Section PWA dans le profil : installer (beforeinstallprompt), mettre a jour (SW waiting), installe (standalone), instructions manuelles iOS/Android/Desktop, vider le cache.
+- Hook `usePwaInstall` + `useSwUpdate` reutilisables.
+
+### Corrections
+- Toast erreur upload photo resolu : auto-save silent, plus de double toast.
+- Avatars liste admin : fallback `photo_url_dark > photo_url_light > photo_url`.
+- DriverCard onError fallback vers F1 CDN generique.
+- Dead code `DriverTabs.tsx` supprime (320 lignes).
+- `launch.json` corrige pour `npm run dev --prefix frontend` port 3000.
+
+### Backend
+- `photo_url_dark` et `photo_url_light` sur `DriverCreate`, `DriverUpdate`, `DriverResponse`.
+- `get_all()` devenu async avec bulk fetch admin photos.
+- Media upload : Pillow processing etendu a `driver_dark` et `driver_light`.
+
 ## v0.5.0 — 5 juin 2026
 
 ### Admin Pilotes & Ecuries

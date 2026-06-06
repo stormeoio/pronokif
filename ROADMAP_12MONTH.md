@@ -2,7 +2,7 @@
 **Objectif** : Application prête pour la production supportant 1 000+ utilisateurs simultanés
 **Lancement** : Mars 2027 (avant l'ouverture de la saison F1 2027)
 **Budget** : 150 000 € - 250 000 € (équipe à plein temps + infrastructure)
-**Dernière mise à jour livrables** : 31 mai 2026, 18:20 CEST
+**Dernière mise à jour livrables** : 6 juin 2026, 05:00 CEST
 
 ---
 
@@ -35,6 +35,19 @@
 - [x] Deep links admin `/admin/:tab`, `/bo-admin/:tab`, `/admin-bo/:tab` sans 404 — livré le 31 mai 2026 (`301451b`)
 - [x] Smoke test prod final : health, branding endpoint, bundle, `/admin/settings`, `/mentions-legales` — livré le 31 mai 2026 (`301451b`)
 - [x] Documentation projet, changelog, audit, runbook et fiche back-office actualisés — livré le 31 mai 2026 (`docs`)
+
+### 5-6 juin 2026 — Visuels pilotes, dark/light admin et mobile-first
+- [x] Dark/light mode admin complet (372 overrides CSS) — livré le 5 juin 2026 (`3713989`)
+- [x] Upload photos pilotes dark/light dans l'admin (backend + frontend + resolver) — livré le 5 juin 2026 (`a7431c1`)
+- [x] Refonte page pilote immersive (hero bandeau, radar chart SVG, cercles de progression) — livré le 6 juin 2026 (`6390a5c`)
+- [x] Viewport mobile-first max-w-md sur desktop + PWA install CTA profil — livré le 6 juin 2026 (`d3c8785`)
+- [x] Photos admin dans le classement championnat — livré le 6 juin 2026 (`6c08bed`)
+- [x] Photos admin sur l'API publique (get_details + get_all async) — livré le 6 juin 2026 (`07f537b`)
+- [x] Hero photo absolute positioning pour PNG detourees — livré le 6 juin 2026 (`2f799f4`)
+- [x] Fix toast erreur upload + dead code cleanup — livré le 6 juin 2026 (`fe11352`)
+- [x] Bottom nav + ScrollToTop contraints au viewport mobile — livré le 6 juin 2026 (`c26cb2d`)
+- [ ] Carrousel "Derniers résultats" sur fiche pilote (données API manquantes)
+- [ ] Dark/light mode étendu à l'app publique (gros chantier, après validation admin)
 
 ## Contexte stratégique
 
