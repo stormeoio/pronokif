@@ -260,17 +260,23 @@ export default function DriverDetailPage() {
       <motion.div
         className="relative overflow-hidden"
         style={{
-          background: `linear-gradient(135deg, ${colors.primary}20 0%, ${colors.primary}08 40%, #0B0D12 100%)`,
+          background: `linear-gradient(160deg, ${colors.primary}30 0%, ${colors.primary}15 30%, ${colors.primary}06 60%, #0B0D12 100%)`,
         }}
         {...rmProps}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
       >
-        {/* Giant number watermark */}
+        {/* Full-width team color band at top */}
         <div
-          className="absolute top-6 right-4 font-display text-[180px] leading-none font-bold pointer-events-none select-none"
-          style={{ color: `${colors.primary}10` }}
+          className="absolute top-0 left-0 right-0 h-1"
+          style={{ backgroundColor: colors.primary }}
+        />
+
+        {/* Giant number watermark — taller, further right */}
+        <div
+          className="absolute -top-4 -right-4 font-display text-[220px] leading-none font-bold pointer-events-none select-none"
+          style={{ color: `${colors.primary}12` }}
         >
           {driver.number}
         </div>
@@ -304,10 +310,10 @@ export default function DriverDetailPage() {
         </div>
 
         {/* Hero content: info left, photo positioned absolutely right */}
-        <div className="relative z-10 min-h-[400px]">
-          {/* Driver photo — absolute, right-aligned, bottom-anchored, bleeds into gradient */}
+        <div className="relative z-10 min-h-[440px]">
+          {/* Driver photo — absolute, larger, bleeds to edges */}
           <motion.div
-            className="absolute right-0 bottom-0 w-[55%] max-w-[280px] z-0"
+            className="absolute right-0 bottom-0 w-[65%] max-w-[320px] z-0"
             {...rmProps}
             initial={{ x: 20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
@@ -316,7 +322,10 @@ export default function DriverDetailPage() {
             <img
               src={driver.photo_url_dark || driver.photo_url_light || driver.photo_url}
               alt={driver.full_name}
-              className="w-full h-auto object-contain object-bottom drop-shadow-2xl"
+              className="w-full h-auto object-contain object-bottom"
+              style={{
+                filter: `drop-shadow(0 8px 24px rgba(0,0,0,0.5)) drop-shadow(0 0 60px ${colors.primary}20)`,
+              }}
               onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                 e.currentTarget.src =
                   "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/driver_fallback_image.png.transform/2col-retina/image.png";
@@ -324,7 +333,7 @@ export default function DriverDetailPage() {
             />
             {/* Bottom fade into content area */}
             <div
-              className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
+              className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
               style={{
                 background: "linear-gradient(to top, var(--pk-carbon) 0%, transparent 100%)",
               }}
@@ -332,24 +341,29 @@ export default function DriverDetailPage() {
           </motion.div>
 
           {/* Left column: team + name + meta — sits above the photo */}
-          <div className="relative z-10 px-4 pt-4 pb-6 max-w-[60%]">
-            {/* Team badge */}
-            <div className="flex items-center gap-2 mb-3">
+          <div className="relative z-10 px-4 pt-4 pb-6 max-w-[55%]">
+            {/* Team badge — logo with bright filter for visibility */}
+            <div className="flex items-center gap-2.5 mb-4">
               {teamLogoSrc && (
-                <img src={teamLogoSrc} alt={driver.team} className="h-8 w-8 object-contain" />
+                <img
+                  src={teamLogoSrc}
+                  alt={driver.team}
+                  className="h-10 w-10 object-contain"
+                  style={{ filter: "brightness(1.3) contrast(1.1)" }}
+                />
               )}
-              <span className="font-data text-[0.6rem] uppercase tracking-[0.14em] text-pk-piste">
+              <span className="font-data text-[0.65rem] uppercase tracking-[0.14em] text-white font-semibold">
                 {driver.team}
               </span>
             </div>
 
             {/* Number */}
-            <p className="font-data text-xl font-bold" style={{ color: colors.primary }}>
+            <p className="font-data text-2xl font-bold" style={{ color: colors.primary }}>
               #{driver.number}
             </p>
 
-            {/* Name */}
-            <h1 className="font-display text-3xl leading-[0.95] uppercase mt-1">
+            {/* Name — bigger */}
+            <h1 className="font-display text-[2.2rem] leading-[0.9] uppercase mt-1">
               {driver.first_name}
               <br />
               <span className="text-pk-piste">{driver.last_name}</span>
@@ -395,7 +409,11 @@ export default function DriverDetailPage() {
                 haptic("medium");
                 toast.success("Pilote suivi !");
               }}
-              className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-pk-red/40 text-pk-red font-data text-xs uppercase tracking-wider hover:bg-pk-red/10 transition-colors"
+              className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-xs uppercase tracking-wider hover:bg-white/5 transition-colors font-data"
+              style={{
+                borderColor: `${colors.primary}60`,
+                color: colors.primary,
+              }}
             >
               <Star className="w-3.5 h-3.5" />
               Suivi
@@ -403,11 +421,19 @@ export default function DriverDetailPage() {
           </div>
         </div>
 
-        {/* Diagonal stripes overlay */}
+        {/* Diagonal stripes overlay — more visible */}
         <div
-          className="absolute inset-0 pointer-events-none opacity-[0.03]"
+          className="absolute inset-0 pointer-events-none opacity-[0.04]"
           style={{
-            backgroundImage: `repeating-linear-gradient(135deg, transparent, transparent 20px, ${colors.primary} 20px, ${colors.primary} 21px)`,
+            backgroundImage: `repeating-linear-gradient(135deg, transparent, transparent 18px, ${colors.primary} 18px, ${colors.primary} 19px)`,
+          }}
+        />
+
+        {/* Bottom gradient to carbon */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
+          style={{
+            background: "linear-gradient(to top, var(--pk-carbon) 0%, transparent 100%)",
           }}
         />
       </motion.div>
