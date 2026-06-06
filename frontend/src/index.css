@@ -95,6 +95,7 @@
    never the public-facing app (stays Broadcast Premium dark).
    ============================================ */
 .admin-light {
+  /* ── Brand tokens (light) ── */
   --pk-carbon: #f8f9fb;
   --pk-surface: #ffffff;
   --pk-anthracite: #eef0f4;
@@ -111,6 +112,27 @@
 
   --pk-red-subtle: rgba(225, 6, 0, 0.06);
   --pk-red-glow: rgba(225, 6, 0, 0.15);
+
+  /* ── shadcn/ui variables (light) ── */
+  --background: 220 20% 98%; /* #f8f9fb */
+  --foreground: 224 71% 4%; /* #111827 */
+  --card: 0 0% 100%; /* #ffffff */
+  --card-foreground: 224 71% 4%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 224 71% 4%;
+  --primary: 1 100% 44%; /* #E10600 — rouge inchangé */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 14% 96%; /* #f1f5f9 — gris clair */
+  --secondary-foreground: 224 71% 4%;
+  --muted: 220 14% 96%; /* #f1f5f9 */
+  --muted-foreground: 220 9% 46%; /* #6b7280 */
+  --accent: 220 14% 96%;
+  --accent-foreground: 224 71% 4%;
+  --destructive: 0 84% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 13% 91%; /* #e5e7eb */
+  --input: 220 13% 91%;
+  --ring: 1 100% 44%; /* rouge inchangé */
 
   color-scheme: light;
 }
@@ -665,6 +687,29 @@
 /* --- AdminLayout main area gradient override --- */
 .admin-light main {
   background: linear-gradient(180deg, #f8f9fb 0%, #f3f4f6 100%) !important;
+}
+
+/* --- Native form elements in light mode --- */
+.admin-light select,
+.admin-light textarea,
+.admin-light input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) {
+  color-scheme: light;
+}
+
+/* --- Scrollbar (Webkit) --- */
+.admin-light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.admin-light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+.admin-light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* --- SVG icons: ensure lucide icons inherit text color --- */
+.admin-light .text-white svg {
+  color: inherit;
 }
 
 /* ============================================
