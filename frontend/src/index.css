@@ -552,6 +552,115 @@
 .admin-light .divide-white > :not(:first-child) {
   border-color: rgba(0, 0, 0, 0.08);
 }
+.admin-light .divide-white\/\[0\.06\] > :not(:first-child) {
+  border-color: rgba(0, 0, 0, 0.06);
+}
+.admin-light .focus-visible\:ring-white\/20:focus-visible {
+  --tw-ring-color: rgba(0, 0, 0, 0.12);
+}
+
+/* --- Hover backgrounds (table rows, list items) --- */
+.admin-light .hover\:bg-white\/5:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+.admin-light .hover\:bg-white\/\[0\.05\]:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* --- Hover borders --- */
+.admin-light .hover\:border-white\/20:hover {
+  border-color: rgba(0, 0, 0, 0.12);
+}
+.admin-light .hover\:border-white\/25:hover {
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* --- Semi-transparent white backgrounds --- */
+.admin-light .bg-white\/\[0\.02\] {
+  background-color: rgba(0, 0, 0, 0.015);
+}
+
+/* --- Placeholder text --- */
+.admin-light .placeholder\:text-gray-500::placeholder {
+  color: #9ca3af;
+}
+
+/* --- Cyan text (secondary accent color — links, actions) --- */
+.admin-light .text-cyan-100 {
+  color: #155e75;
+}
+.admin-light .text-cyan-200 {
+  color: #0e7490;
+}
+.admin-light .text-cyan-300 {
+  color: #0891b2;
+}
+.admin-light .text-cyan-400 {
+  color: #06b6d4;
+}
+
+/* --- Cyan hover text --- */
+.admin-light .hover\:text-cyan-200:hover {
+  color: #0e7490;
+}
+.admin-light .hover\:text-cyan-300:hover {
+  color: #0891b2;
+}
+.admin-light .hover\:text-cyan-400:hover {
+  color: #06b6d4;
+}
+
+/* --- Cyan borders (status badges, DevOps, Circuits) --- */
+.admin-light .border-cyan-400\/25 {
+  border-color: rgba(6, 182, 212, 0.2);
+}
+.admin-light .border-cyan-400\/30 {
+  border-color: rgba(6, 182, 212, 0.25);
+}
+.admin-light .border-cyan-500\/20 {
+  border-color: rgba(6, 182, 212, 0.15);
+}
+.admin-light .border-cyan-500\/30 {
+  border-color: rgba(6, 182, 212, 0.25);
+}
+.admin-light .border-cyan-500\/50 {
+  border-color: rgba(6, 182, 212, 0.4);
+}
+.admin-light .hover\:border-cyan-300\/70:hover {
+  border-color: rgba(8, 145, 178, 0.6);
+}
+
+/* --- Cyan backgrounds (DevOps, Circuits, Races badges) --- */
+.admin-light .bg-cyan-500\/10 {
+  background-color: rgba(6, 182, 212, 0.08);
+}
+.admin-light .bg-cyan-500\/15 {
+  background-color: rgba(6, 182, 212, 0.1);
+}
+.admin-light .bg-cyan-500\/20 {
+  background-color: rgba(6, 182, 212, 0.12);
+}
+.admin-light .bg-cyan-500\/\[0\.06\] {
+  background-color: rgba(6, 182, 212, 0.05);
+}
+
+/* --- Amber bracket notation (DevOps) --- */
+.admin-light .bg-amber-500\/\[0\.07\] {
+  background-color: rgba(245, 158, 11, 0.06);
+}
+.admin-light .border-amber-400\/25 {
+  border-color: rgba(245, 158, 11, 0.18);
+}
+
+/* --- Additional hover text --- */
+.admin-light .hover\:text-yellow-300:hover {
+  color: #ca8a04;
+}
+
+/* --- Shadow dark color --- */
+.admin-light .shadow-black\/50 {
+  --tw-shadow-color: rgba(0, 0, 0, 0.08);
+}
 
 /* --- AdminLayout main area gradient override --- */
 .admin-light main {
