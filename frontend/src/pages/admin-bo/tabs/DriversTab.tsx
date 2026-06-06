@@ -94,7 +94,7 @@ function EmptyDrivers({ onSeed }: { onSeed: () => void }) {
 
 interface EditFormProps {
   driver: Driver;
-  onSave: (updates: Partial<Driver>) => void;
+  onSave: (updates: Partial<Driver>, silent?: boolean) => void;
   onDelete: () => void;
   saving: boolean;
   deleting: boolean;
@@ -147,10 +147,10 @@ function EditForm({ driver, onSave, onDelete, saving, deleting }: EditFormProps)
       const url = adminApi.media.fileUrl(uploaded.id);
       if (variant === "dark") {
         setPhotoDark(url);
-        onSave({ photo_url_dark: url });
+        onSave({ photo_url_dark: url }, true);
       } else {
         setPhotoLight(url);
-        onSave({ photo_url_light: url });
+        onSave({ photo_url_light: url }, true);
       }
       toast.success(`Photo ${variant} mise à jour.`);
     } catch {
@@ -573,11 +573,20 @@ export default function DriversTab() {
   });
 
   const updateMut = useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<Driver> }) =>
-      adminApi.drivers.update(id, updates),
-    onSuccess: () => {
+    mutationFn: ({
+      id,
+      updates,
+      silent,
+    }: {
+      id: string;
+      updates: Partial<Driver>;
+      silent?: boolean;
+    }) => adminApi.drivers.update(id, updates).then((r) => ({ result: r, silent })),
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["admin-bo", "drivers"] });
-      toast.success("Pilote mis à jour.");
+      if (!(data as { silent?: boolean })?.silent) {
+        toast.success("Pilote mis à jour.");
+      }
     },
     onError: () => toast.error("Erreur lors de la mise à jour."),
   });
@@ -834,7 +843,9 @@ export default function DriversTab() {
                   driver={selectedDriver}
                   saving={updateMut.isPending}
                   deleting={deleteMut.isPending}
-                  onSave={(updates) => updateMut.mutate({ id: selectedDriver.id, updates })}
+                  onSave={(updates, silent) =>
+                    updateMut.mutate({ id: selectedDriver.id, updates, silent })
+                  }
                   onDelete={() => deleteMut.mutate(selectedDriver.id)}
                 />
               </div>
