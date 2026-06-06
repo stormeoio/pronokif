@@ -14,7 +14,9 @@ Toutes les dates sont en heure Europe/Paris. Le changelog applicatif visible dan
 - Format attendu : PNG 1024x1024 fond transparent (detoure).
 
 ### Dark/light mode admin
-- 372 overrides CSS `.admin-light` couvrant tous les patterns Tailwind hardcodes : grays, borders, text, status colors, hover states, ring/divide, gradient.
+- Variables shadcn/ui (--background, --foreground, --card, --input, --border, --muted, --accent, etc.) overridees pour light mode — tous les composants shadcn (Button, Input, Switch, Select) passent correctement en clair.
+- 177 overrides CSS `.admin-light` couvrant : grays, borders, text, status colors, hover states, ring/divide, gradient, cyan accent, placeholders, dividers, focus rings, shadows, scrollbar.
+- Native form elements avec `color-scheme: light`, scrollbar Webkit light.
 - Sidebar wordmark swap dark/light automatique.
 
 ### Mobile-first et PWA

@@ -49,9 +49,10 @@ Le pipeline CD a ete teste intensivement : 13 deploys consecutifs en une session
 
 #### S24 - Dark/light mode admin
 
-- 372 overrides CSS dans `.admin-light` couvrant tous les patterns Tailwind hardcodes.
+- Variables shadcn/ui (--background, --foreground, --card, --input, --border, --muted, --accent, etc.) overridees : tous les composants shadcn (Button, Input, Switch, Select, popover) passent correctement en light.
+- 177 overrides CSS `.admin-light` couvrant : structural grays, text grays, borders, status colors (red, emerald, green, amber, orange, blue, yellow, cyan), hover states, ring/divide, gradient, placeholders, dividers, focus rings, shadows, scrollbar.
+- Native form elements : `color-scheme: light`, scrollbar Webkit light.
 - Sidebar wordmark swap dark/light automatique.
-- Structural grays, text grays, status colors (red, emerald, green, amber, orange, blue, yellow), hover states, ring/divide, gradient main.
 - Approche CSS-only sans modification des 26 fichiers de tabs.
 
 #### S25 - Visuels pilotes dark/light
@@ -89,7 +90,7 @@ Le pipeline CD a ete teste intensivement : 13 deploys consecutifs en une session
 | Pages frontend TSX           | 100         | 100         | Refonte page pilote, pas de nouvelle page             |
 | Composants frontend TSX      | 100         | 101         | +usePwaInstall hook                                  |
 | Tests frontend               | 161         | 161         | Stable, test CDN regex corrige                       |
-| Admin light overrides CSS    | 25          | 141         | +116 patterns couverts                               |
+| Admin light overrides CSS    | 25          | 177         | +152 patterns + 15 shadcn vars + scrollbar/natifs    |
 | Endpoints API detectes       | 209         | 209         | Pas de nouveau endpoint                              |
 | Deploys CD consecutifs       | -           | 13          | Tous reussis en une session                           |
 | `as any`                     | 11          | 11          | Pas de regression                                    |
