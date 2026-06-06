@@ -95,59 +95,60 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   const isMobileConstrained = !isAdminBackOfficeRoute;
 
   return (
-    <div
-      className={`min-h-screen bg-background relative ${
-        isMobileConstrained ? "max-w-md mx-auto overflow-x-hidden shadow-2xl" : ""
-      }`}
-    >
-      {/* Skip to content link for keyboard users */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-pk-red focus:text-white focus:rounded-md focus:outline-none"
+    <>
+      <div
+        className={`min-h-screen bg-background relative ${
+          isMobileConstrained ? "max-w-md mx-auto overflow-x-hidden shadow-2xl" : ""
+        }`}
       >
-        {t("app.skip_to_content")}
-      </a>
+        {/* Skip to content link for keyboard users */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-pk-red focus:text-white focus:rounded-md focus:outline-none"
+        >
+          {t("app.skip_to_content")}
+        </a>
 
-      {/* 3D particle background (ambient, low perf cost) — skipped on auth pages (video bg) */}
-      {!shouldUseLightweightShell && !isAuthRoute && (
-        <Suspense fallback={null}>
-          <ParticleBackground />
-        </Suspense>
-      )}
-
-      {/* Email verification banner (shown for unverified users) */}
-      {!hideNav && <EmailVerificationBanner />}
-
-      {/* Main content with page transitions */}
-      <main id="main-content" className={`relative z-10 ${hideNav ? "" : "pb-safe"}`} role="main">
-        <ErrorBoundary key={location.pathname}>
-          <Suspense
-            fallback={
-              shouldUseLightweightShell ? (
-                <FallbackLoader />
-              ) : (
-                <Suspense fallback={<FallbackLoader />}>
-                  <LoadingScene />
-                </Suspense>
-              )
-            }
-          >
-            <PageTransition>{children}</PageTransition>
+        {/* 3D particle background (ambient, low perf cost) — skipped on auth pages (video bg) */}
+        {!shouldUseLightweightShell && !isAuthRoute && (
+          <Suspense fallback={null}>
+            <ParticleBackground />
           </Suspense>
-        </ErrorBoundary>
-      </main>
+        )}
 
-      {/* Animated bottom navigation */}
+        {/* Email verification banner (shown for unverified users) */}
+        {!hideNav && <EmailVerificationBanner />}
+
+        {/* Main content with page transitions */}
+        <main id="main-content" className={`relative z-10 ${hideNav ? "" : "pb-20"}`} role="main">
+          <ErrorBoundary key={location.pathname}>
+            <Suspense
+              fallback={
+                shouldUseLightweightShell ? (
+                  <FallbackLoader />
+                ) : (
+                  <Suspense fallback={<FallbackLoader />}>
+                    <LoadingScene />
+                  </Suspense>
+                )
+              }
+            >
+              <PageTransition>{children}</PageTransition>
+            </Suspense>
+          </ErrorBoundary>
+        </main>
+
+        <AppDeepSearch enabled={!isAdminBackOfficeRoute && !!user} />
+      </div>
+
+      {/* Fixed overlays — OUTSIDE overflow-x-hidden container so they're
+          never clipped by the parent. position:fixed references the viewport,
+          but some mobile browsers (iOS Safari) incorrectly clip fixed children
+          inside overflow:hidden ancestors. */}
       {!hideNav && <AnimatedBottomNav />}
-
-      {/* Network connectivity indicator */}
-      <NetworkStatus />
-
-      {/* Scroll to top FAB on long pages */}
       {!hideNav && <ScrollToTop />}
-
-      <AppDeepSearch enabled={!isAdminBackOfficeRoute && !!user} />
-    </div>
+      <NetworkStatus />
+    </>
   );
 }
 
