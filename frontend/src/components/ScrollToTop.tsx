@@ -28,7 +28,10 @@ export default function ScrollToTop() {
       {visible && (
         <motion.button
           onClick={scrollUp}
-          className="fixed bottom-24 right-4 z-50 w-10 h-10 rounded-full bg-orange-500/90 backdrop-blur-sm text-white shadow-lg shadow-orange-500/30 flex items-center justify-center"
+          className="fixed bottom-24 z-50 w-10 h-10 rounded-full bg-orange-500/90 backdrop-blur-sm text-white shadow-lg shadow-orange-500/30 flex items-center justify-center"
+          style={{
+            right: "max(1rem, calc(50% - 224px + 1rem))",
+          }}
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0, opacity: 0 }}

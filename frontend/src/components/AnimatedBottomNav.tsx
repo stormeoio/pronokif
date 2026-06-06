@@ -90,7 +90,10 @@ export default function AnimatedBottomNav() {
   }, []);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50" aria-label={t("nav.aria_label")}>
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto"
+      aria-label={t("nav.aria_label")}
+    >
       {/* Glass nav bar */}
       <div className="relative h-[72px] bg-pk-carbon/95 backdrop-blur-xl border-t border-white/[0.06]">
         {/* Animated glow indicator */}
