@@ -18,12 +18,14 @@ breaking change.
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import Depends, HTTPException, status
+from pymongo import ReturnDocument
+from pymongo.errors import DuplicateKeyError
 
-from config import db
+from config import db, logger
 from services.auth import get_current_user, send_user_notification
 from services.championships import championship_context_for_race_id
 from services.league_membership import (
@@ -146,8 +148,16 @@ async def _upsert_official_score(score: dict) -> dict | None:
         if prediction_id
         else {"score_type": "official_race", "race_id": score["race_id"], "user_id": score["user_id"]}
     )
-    previous_score = await db.prediction_scores.find_one(query, {"_id": 0})
-    await db.prediction_scores.update_one(
+    # Atomic read-modify-write: capture the previous snapshot AND persist the new
+    # one in a single operation so that concurrent scorers cannot both observe
+    # previous=None and double-apply the same XP / leaderboard delta. The auto-sync
+    # loop runs in every uvicorn worker (Dockerfile: --workers 2), so two passes
+    # can score the same prediction simultaneously during a race window. Mongo
+    # serializes find_one_and_update per document, so exactly one caller sees the
+    # pre-insert state (delta = full points); the other sees the snapshot we just
+    # wrote (delta = 0). Across any interleaving the deltas sum to the absolute
+    # total, which keeps the downstream $inc on user XP and leaderboard idempotent.
+    previous_score = await db.prediction_scores.find_one_and_update(
         query,
         {
             "$set": score,
@@ -157,6 +167,8 @@ async def _upsert_official_score(score: dict) -> dict | None:
             },
         },
         upsert=True,
+        return_document=ReturnDocument.BEFORE,
+        projection={"_id": 0},
     )
     return previous_score
 
@@ -168,7 +180,87 @@ def _results_notification_message(race_name: str, points_delta: int, points_tota
     return f"Correction {race_name}: {sign}{points_delta} pts, total course {points_total} pts."
 
 
+# Stale locks left behind by a crashed worker self-expire after this window
+# (also enforced by a TTL index on sync_locks.expires_at — see services.indexes).
+SCORE_LOCK_TTL_SECONDS = 600
+
+
+async def _acquire_score_lock(race_id: str, token: str) -> bool:
+    """Best-effort per-race advisory lock around the scoring pass.
+
+    Correctness does NOT depend on this lock: the scoring write itself is
+    idempotent under concurrency (see ``_upsert_official_score``). The lock only
+    stops a second worker from redundantly re-walking the pass — which would emit
+    duplicate level-up notifications and create duplicate leaderboard rows — and
+    avoids wasted work. Acquisition steals the lock if the prior holder's TTL has
+    lapsed, so a crashed worker can never wedge a race permanently.
+    """
+    key = f"score:{race_id}"
+    now = datetime.now(UTC)
+    expires_at = now + timedelta(seconds=SCORE_LOCK_TTL_SECONDS)
+    try:
+        await db.sync_locks.insert_one(
+            {"_id": key, "token": token, "locked_at": now, "expires_at": expires_at}
+        )
+        return True
+    except DuplicateKeyError:
+        stolen = await db.sync_locks.find_one_and_update(
+            {"_id": key, "expires_at": {"$lt": now}},
+            {"$set": {"token": token, "locked_at": now, "expires_at": expires_at}},
+        )
+        return stolen is not None
+
+
+async def _release_score_lock(race_id: str, token: str) -> None:
+    """Release the lock only if we still hold it (token guards against releasing
+    a lock another worker stole after our TTL expired)."""
+    await db.sync_locks.delete_one({"_id": f"score:{race_id}", "token": token})
+
+
 async def set_official_and_score(
+    *,
+    race_id: str,
+    results: dict,
+    entered_by: str,
+    auto_synced: bool = False,
+) -> int:
+    """Upsert official results then score every prediction for the race.
+
+    Wraps the auto-sync scoring pass in a best-effort per-race advisory lock so
+    the two uvicorn workers do not both re-score the same race. Returns ``0`` when
+    another worker already holds the lock; the lock holder performs the real work.
+
+    Manual entries (``auto_synced=False`` — admin / league-creator endpoints)
+    bypass the skip-if-locked guard and always run: they persist operator-entered
+    results that may differ from what auto-sync would fetch, so they must never be
+    silently dropped because a background pass briefly holds the lock. Scoring
+    correctness across any overlap is guaranteed by the idempotent snapshot delta,
+    not by the lock.
+    """
+    if not auto_synced:
+        return await _apply_official_results_and_score(
+            race_id=race_id,
+            results=results,
+            entered_by=entered_by,
+            auto_synced=auto_synced,
+        )
+
+    lock_token = str(uuid.uuid4())
+    if not await _acquire_score_lock(race_id, lock_token):
+        logger.info("[Scoring] Skipped %s: another worker holds the scoring lock", race_id)
+        return 0
+    try:
+        return await _apply_official_results_and_score(
+            race_id=race_id,
+            results=results,
+            entered_by=entered_by,
+            auto_synced=auto_synced,
+        )
+    finally:
+        await _release_score_lock(race_id, lock_token)
+
+
+async def _apply_official_results_and_score(
     *,
     race_id: str,
     results: dict,

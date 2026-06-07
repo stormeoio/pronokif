@@ -39,5 +39,8 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/docs')" || exit 1
 
-# Run with uvicorn — 2 workers for small VPS, configurable via env
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+# Run with uvicorn — 2 workers for small VPS, configurable via UVICORN_WORKERS.
+# The auto-sync loop runs in every worker, but scoring is safe under concurrency:
+# services/results.py uses atomic find_one_and_update + per-race advisory lock.
+# `exec` makes uvicorn PID 1 so it receives SIGTERM for graceful shutdown.
+CMD ["sh", "-c", "exec uvicorn server:app --host 0.0.0.0 --port 8000 --workers ${UVICORN_WORKERS:-2}"]

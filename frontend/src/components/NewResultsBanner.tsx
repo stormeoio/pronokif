@@ -25,6 +25,9 @@ export default function NewResultsBanner() {
     queryKey: ["/results/latest-unseen"],
     queryFn: () => api.results.latestUnseen() as Promise<LatestResult | null>,
     staleTime: 60_000,
+    // Poll so the banner surfaces live when results land during a race weekend,
+    // without the user needing to reload the dashboard.
+    refetchInterval: 60_000,
     retry: false,
   });
 

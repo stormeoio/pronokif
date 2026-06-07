@@ -69,6 +69,12 @@ async def ensure_indexes() -> None:
     await db.prediction_scores.create_index([("score_type", 1), ("prediction_id", 1)])
     await db.prediction_scores.create_index([("score_type", 1), ("race_id", 1), ("user_id", 1)])
 
+    # ── sync_locks (advisory locks for the scoring pass) ───────────
+    # _id is the lock key (race-scoped) and is implicitly unique. The TTL index
+    # auto-removes locks abandoned by a crashed worker as a janitor backstop;
+    # live contention is resolved by stale-takeover in services.results.
+    await db.sync_locks.create_index("expires_at", expireAfterSeconds=0)
+
     # ── championships ──────────────────────────────────────────────
     await db.championships.create_index("id", unique=True)
     await db.championships.create_index("slug", unique=True, sparse=True)
