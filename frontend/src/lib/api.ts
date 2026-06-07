@@ -27,6 +27,7 @@ import type {
   DriverDetails,
   FeedbackItem,
   GlobalLeaderboardResponse,
+  LeaguesLeaderboardResponse,
   League,
   LeaderboardEntry,
   LeagueMember,
@@ -317,6 +318,8 @@ export const api = {
   // ── Leaderboard ──────────────────────────────────────────────
   leaderboard: {
     global: (limit = 100) => get<GlobalLeaderboardResponse>(`/leaderboard/global?limit=${limit}`),
+    leaguesGlobal: (limit = 100) =>
+      get<LeaguesLeaderboardResponse>(`/leaderboard/leagues?limit=${limit}`),
   },
 
   // ── Minigames ────────────────────────────────────────────────
@@ -380,6 +383,10 @@ export const api = {
     races: () => get<Race[]>("/admin/races"),
     results: (raceId: string) => get<unknown>(`/admin/results/${raceId}`),
     saveResults: (raceId: string, body: unknown) => post<void>(`/admin/results/${raceId}`, body),
+    saveQualifyingGrid: (raceId: string, body: { driver_order: string[] }) =>
+      post<{ message: string; race_id: string }>(`/admin-bo/races/${raceId}/qualifying-grid`, body),
+    deleteQualifyingGrid: (raceId: string) =>
+      del<{ message: string }>(`/admin-bo/races/${raceId}/qualifying-grid`),
     syncResults: (raceId: string) => post<void>(`/admin/sync-results/${raceId}`),
     sendNotification: (body: { title: string; message: string; type: string }) =>
       post<void>("/admin/notifications", body),
@@ -389,8 +396,12 @@ export const api = {
 
   // ── Feedback ────────────────────────────────────────────────
   feedback: {
-    send: (body: { type: string; message: string }) =>
-      post<void>("/feedback", { category: body.type, message: body.message }),
+    send: (body: { type: string; message: string; screenshots?: string[] }) =>
+      post<void>("/feedback", {
+        category: body.type,
+        message: body.message,
+        screenshots: body.screenshots ?? [],
+      }),
   },
 
   // ── Profile ─────────────────────────────────────────────────

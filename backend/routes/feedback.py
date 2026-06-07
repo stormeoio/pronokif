@@ -25,13 +25,23 @@ router = APIRouter(tags=["feedback"])
 class FeedbackCreate(BaseModel):
     category: str = Field(..., description="One of: bug, suggestion, feedback")
     message: str = Field(..., min_length=1, max_length=2000)
+    screenshots: list[str] = Field(
+        default_factory=list,
+        max_length=3,
+        description="Up to 3 base64 image data URLs (captures d'écran)",
+    )
 
 
 @router.post("/feedback")
 async def submit_feedback(data: FeedbackCreate, user: dict = Depends(get_current_user)) -> dict:
-    """Submit feedback to admin."""
+    """Submit feedback to admin (with optional screenshots)."""
     try:
-        feedback = await feedback_service.submit(user=user, message=data.message, category=data.category)
+        feedback = await feedback_service.submit(
+            user=user,
+            message=data.message,
+            category=data.category,
+            screenshots=data.screenshots,
+        )
     except feedback_service.FeedbackValidationError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return {"message": "Feedback submitted successfully", "id": feedback["id"]}

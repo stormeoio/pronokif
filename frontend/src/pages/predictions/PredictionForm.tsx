@@ -3,7 +3,6 @@
  * Broadcast Premium: pk-* step cards, pk-red/amber/info active states.
  */
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Flag, Zap, Gamepad2, Trophy, Medal, CircleDot, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -157,7 +156,6 @@ export default function PredictionForm({
   handleDriverSelect,
   isDriverSelected,
 }: PredictionFormProps) {
-  const navigate = useNavigate();
   const { t } = useTranslation();
   const wizardRef = useRef<HTMLElement | null>(null);
   const previousActiveStepKey = useRef<string | null>(null);
@@ -344,16 +342,6 @@ export default function PredictionForm({
       max: 1,
       modeKey: bonusModeKey,
       steps: steps.filter((step) => step.isBonus),
-    },
-    {
-      key: "minigames",
-      label: t("predictions.form.stage_minigames"),
-      done: minigamesCompletee,
-      active: false,
-      count: minigamesCompletee ? 1 : 0,
-      max: 1,
-      modeKey: "",
-      steps: [],
     },
   ];
 
@@ -551,10 +539,6 @@ export default function PredictionForm({
                       type="button"
                       onClick={() => {
                         haptic("selection");
-                        if (stage.key === "minigames") {
-                          navigate("/minigames");
-                          return;
-                        }
                         if (stage.modeKey) setSelectionMode(stage.modeKey);
                       }}
                       aria-current={expanded ? "step" : undefined}

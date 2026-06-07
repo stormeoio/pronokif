@@ -14,6 +14,8 @@ import {
   Users,
   Radio,
   Zap,
+  Gamepad2,
+  ChevronsRight,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import RaceCarousel from "./RaceCarousel";
@@ -611,6 +613,67 @@ export default function DashboardPage() {
                   <p className="font-medium text-[0.8125rem]">{qa.label}</p>
                   <p className="font-mono text-[0.5625rem] text-pk-titane mt-0.5">{qa.sub}</p>
                 </div>
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* ---- MINI-GAMES (foot of home) ---- */}
+        <motion.div variants={fadeUp}>
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="font-display text-[1rem] uppercase">
+              {t("dashboard.minigames", "Mini-jeux")}
+            </h2>
+            <button
+              onClick={() => navigate("/minigames")}
+              className="flex items-center gap-1 font-mono text-[0.6875rem] text-pk-red"
+            >
+              {t("dashboard.see_all", "Tout voir")}
+              <ChevronRight size={12} strokeWidth={2} />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              {
+                icon: Zap,
+                label: t("dashboard.game_reaction", "Temps de réaction"),
+                sub: t("dashboard.game_reaction_sub", "5 feux · démarrage parfait"),
+                from: "from-[#ff8a00]/20",
+                ring: "text-[#ff8a00]",
+                bg: "bg-[#ff8a00]/10",
+              },
+              {
+                icon: Gamepad2,
+                label: t("dashboard.game_batak", "Batak"),
+                sub: t("dashboard.game_batak_sub", "Vitesse & précision"),
+                from: "from-pk-info/20",
+                ring: "text-pk-info",
+                bg: "bg-pk-info/10",
+              },
+            ].map((g) => (
+              <button
+                key={g.label}
+                onClick={() => navigate("/minigames")}
+                className="group relative flex flex-col gap-2 overflow-hidden rounded-md
+                  border border-white/[0.08] bg-pk-surface p-3 text-left
+                  transition-all duration-pk-short hover:border-white/[0.15] active:scale-[0.98]"
+              >
+                <div
+                  className={`pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-gradient-to-br ${g.from} to-transparent blur-md`}
+                />
+                <div
+                  className={`flex h-9 w-9 items-center justify-center rounded-md ${g.bg} ${g.ring}`}
+                >
+                  <g.icon size={18} strokeWidth={1.8} />
+                </div>
+                <div>
+                  <p className="font-medium text-[0.8125rem] leading-tight">{g.label}</p>
+                  <p className="mt-0.5 font-mono text-[0.5625rem] text-pk-titane">{g.sub}</p>
+                </div>
+                <ChevronsRight
+                  size={14}
+                  className="absolute bottom-3 right-3 text-pk-titane transition-transform duration-pk-short group-hover:translate-x-0.5 group-hover:text-pk-red"
+                />
               </button>
             ))}
           </div>

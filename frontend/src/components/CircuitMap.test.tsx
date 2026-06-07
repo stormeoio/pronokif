@@ -10,11 +10,11 @@ describe("CircuitMap", () => {
 
     expect(screen.getByTestId("circuit-map-interactive")).toBeInTheDocument();
     expect(screen.getByTestId("circuit-name")).toHaveTextContent("Circuit de Monaco");
-    expect(screen.getByTestId("circuit-active-feature")).toHaveTextContent("Ligne de départ");
+    expect(screen.getByTestId("circuit-hotspot-popover")).toHaveTextContent("Ligne de départ");
 
     fireEvent.click(screen.getByTestId("circuit-feature-button-tunnel"));
 
-    expect(screen.getByTestId("circuit-active-feature")).toHaveTextContent("Tunnel");
+    expect(screen.getByTestId("circuit-hotspot-popover")).toHaveTextContent("Tunnel");
   });
 
   it("falls back to the static image for circuits waiting for map metadata", () => {
@@ -42,7 +42,7 @@ describe("CircuitMap", () => {
 
     expect(screen.getByTestId("circuit-map-interactive")).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("circuit-feature-button-tight-section"));
-    expect(screen.getByTestId("circuit-active-feature")).toHaveTextContent("Section lente");
+    expect(screen.getByTestId("circuit-hotspot-popover")).toHaveTextContent("Section lente");
   });
 
   it("renders Zandvoort interactive highlights from the local seed", () => {
@@ -61,7 +61,7 @@ describe("CircuitMap", () => {
       "Premier virage",
     );
     fireEvent.click(screen.getByTestId("circuit-feature-button-tarzan"));
-    expect(screen.getByTestId("circuit-active-feature")).toHaveTextContent("Tarzanbocht");
+    expect(screen.getByTestId("circuit-hotspot-popover")).toHaveTextContent("Tarzanbocht");
     expect(screen.getByTestId("circuit-first-corner-badge")).toHaveTextContent("Premier virage");
   });
 
@@ -77,15 +77,15 @@ describe("CircuitMap", () => {
 
     expect(container.querySelector("filter")).not.toBeInTheDocument();
     expect(container.querySelector("foreignObject")).not.toBeInTheDocument();
-    expect(screen.getByTestId("circuit-active-feature")).toHaveTextContent("Ligne de départ");
+    expect(screen.getByTestId("circuit-hotspot-popover")).toHaveTextContent("Ligne de départ");
 
     fireEvent.mouseEnter(screen.getByTestId("circuit-feature-tarzan"));
 
-    expect(screen.getByTestId("circuit-active-feature")).toHaveTextContent("Ligne de départ");
+    expect(screen.getByTestId("circuit-hotspot-popover")).toHaveTextContent("Ligne de départ");
 
     fireEvent.click(screen.getByTestId("circuit-feature-tarzan"));
 
-    expect(screen.getByTestId("circuit-active-feature")).toHaveTextContent("Tarzanbocht");
+    expect(screen.getByTestId("circuit-hotspot-popover")).toHaveTextContent("Tarzanbocht");
   });
 
   it("filters circuit hotspots by business type without losing SVG selection", () => {
@@ -104,7 +104,7 @@ describe("CircuitMap", () => {
 
     fireEvent.click(screen.getByTestId("circuit-zone-drs-main"));
 
-    expect(screen.getByTestId("circuit-active-feature")).toHaveTextContent("DRS principal");
+    expect(screen.getByTestId("circuit-hotspot-popover")).toHaveTextContent("DRS principal");
   });
 
   it("can be focused and observed by a parent route", () => {
@@ -120,7 +120,7 @@ describe("CircuitMap", () => {
       />,
     );
 
-    expect(screen.getByTestId("circuit-active-feature")).toHaveTextContent("Tarzanbocht");
+    expect(screen.getByTestId("circuit-hotspot-popover")).toHaveTextContent("Tarzanbocht");
 
     fireEvent.click(screen.getByTestId("circuit-feature-button-drs-main"));
 
@@ -138,7 +138,7 @@ describe("CircuitMap", () => {
 
     expect(screen.getByTestId("circuit-map-interactive")).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("circuit-feature-button-la-caixa"));
-    expect(screen.getByTestId("circuit-active-feature")).toHaveTextContent("La Caixa");
+    expect(screen.getByTestId("circuit-hotspot-popover")).toHaveTextContent("La Caixa");
   });
 
   it("renders the late-summer circuit batch interactive cards", () => {
@@ -148,7 +148,7 @@ describe("CircuitMap", () => {
 
     expect(screen.getByTestId("circuit-map-interactive")).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("circuit-feature-button-castle"));
-    expect(screen.getByTestId("circuit-active-feature")).toHaveTextContent("Section château");
+    expect(screen.getByTestId("circuit-hotspot-popover")).toHaveTextContent("Section château");
   });
 
   it("renders the next flyaway circuit batch interactive cards", () => {
@@ -158,7 +158,7 @@ describe("CircuitMap", () => {
 
     expect(screen.getByTestId("circuit-map-interactive")).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("circuit-feature-button-esses"));
-    expect(screen.getByTestId("circuit-active-feature")).toHaveTextContent("Esses");
+    expect(screen.getByTestId("circuit-hotspot-popover")).toHaveTextContent("Esses");
   });
 
   it("renders the season finale circuit batch interactive cards", () => {
@@ -168,6 +168,6 @@ describe("CircuitMap", () => {
 
     expect(screen.getByTestId("circuit-map-interactive")).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("circuit-feature-button-hairpin"));
-    expect(screen.getByTestId("circuit-active-feature")).toHaveTextContent("Épingle");
+    expect(screen.getByTestId("circuit-hotspot-popover")).toHaveTextContent("Épingle");
   });
 });

@@ -2,6 +2,31 @@
 
 Toutes les dates sont en heure Europe/Paris. Le changelog applicatif visible dans le back-office est maintenu dans `frontend/src/pages/admin-bo/tabs/ChangelogTab.tsx`.
 
+## v0.6.0 — 7 juin 2026
+
+### Accueil & calendrier
+- Boîte de bienvenue enrichie : avatar avec anneau de progression XP, badge niveau, salutation contextuelle, chips rang/points.
+- Carousel des courses : grande card centrée + slider discret ; statut par course (à pronostiquer / prono fait / terminé / annulé) pour repérer d'un coup d'œil les pronos manquants.
+- Section « Mini-jeux » au pied de la home (Temps de réaction, Batak).
+
+### Courses & pronostics
+- Onglet « Pronos » renommé « Courses » : grille 2 colonnes avec vignettes ; chaque carte ouvre la fiche course ou lance/modifie les pronos.
+- Pronostics ouverts jusqu'au départ de la course (lights out), verrouillés ensuite.
+- Hero immersif de fiche course avec CTA d'état (Pronostiquer / Modifier / Verrouillé / Résultats).
+- Nouvel onglet « Grille » : pilotes groupés par écurie avec photos et logos d'écuries.
+
+### Circuits, ligues, profil
+- Infos des hotspots de circuit affichées au clic dans un popover sur la carte (plus sous la carte) + léger volume extrudé.
+- Onglet Ligues : classements globaux des ligues et des joueurs.
+- Profil : préférences (thème clair/sombre persistant sur toutes les routes, langue FR/EN).
+
+### Mini-jeu & feedback
+- Mini-jeu Temps de réaction : 5 feux orange séquentiels, zone d'accélération, « démarrage parfait ».
+- Système de feedback accessible via un toggle discret en pied de page, avec captures d'écran (upload, ≤ 3, ≤ 2 Mo) ; affichage des captures dans le back-office.
+
+### Divers
+- Upload d'avatar : limite portée à 5 Mo.
+
 ## v0.5.1 — 6 juin 2026
 
 ### Fiches pilotes et visuels

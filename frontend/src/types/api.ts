@@ -400,6 +400,22 @@ export interface GlobalLeaderboardResponse {
   total_players: number;
 }
 
+export interface LeagueLeaderboardEntry {
+  league_id: string;
+  name: string;
+  code?: string | null;
+  member_count: number;
+  total_points: number;
+  average_points: number;
+  position: number;
+}
+
+export interface LeaguesLeaderboardResponse {
+  leaderboard: LeagueLeaderboardEntry[];
+  total_leagues: number;
+  my_league_ids: string[];
+}
+
 // ═══════════════════════════════════════ MISSIONS ══════════════════════════════
 
 export interface Mission {

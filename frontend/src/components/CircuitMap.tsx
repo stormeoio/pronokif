@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CornerDownRight, Flag, Gauge, Layers, MapPin, Route } from "lucide-react";
+import { CornerDownRight, Flag, Gauge, Layers, MapPin, Route, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { haptic } from "@/lib/haptics";
 import {
@@ -142,6 +142,14 @@ export const CircuitMap = memo(function CircuitMap({
     () => featureItems.find((feature) => feature.id === activeFeatureId),
     [activeFeatureId, featureItems],
   );
+  // Anchor of the active hotspot in viewBox coords — drives the on-map popover.
+  const activeAnchor = useMemo(() => {
+    if (!activeFeature) return null;
+    if (activeFeature.source === "zone") {
+      return zoneAnchors.get(activeFeature.id) ?? { x: 210, y: 140 };
+    }
+    return { x: activeFeature.x, y: activeFeature.y };
+  }, [activeFeature, zoneAnchors]);
   const filteredFeatureItems = useMemo(
     () => featureItems.filter((feature) => matchesHotspotFilter(feature, hotspotFilter)),
     [featureItems, hotspotFilter],
@@ -222,6 +230,32 @@ export const CircuitMap = memo(function CircuitMap({
                 </defs>
               )}
 
+              {/* Extruded base — offset dark copies give the track a bit of
+                  volume / depth (a faux-3D wall under the asphalt). */}
+              {!isPreviewMode && (
+                <g pointerEvents="none" aria-hidden="true">
+                  <path
+                    d={mapData.trackPath}
+                    fill="none"
+                    stroke="#000"
+                    strokeWidth="24"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    opacity="0.5"
+                    transform="translate(0.9 6)"
+                  />
+                  <path
+                    d={mapData.trackPath}
+                    fill="none"
+                    stroke="#000"
+                    strokeWidth="23"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    opacity="0.5"
+                    transform="translate(0.45 3)"
+                  />
+                </g>
+              )}
               <path
                 d={mapData.trackPath}
                 fill="none"
@@ -384,6 +418,75 @@ export const CircuitMap = memo(function CircuitMap({
                   </g>
                 );
               })}
+
+              {/* On-map hotspot popover — info shows AT the clicked hotspot,
+                  anchored in viewBox space so it tracks the marker. */}
+              {!isPreviewMode &&
+                activeFeature &&
+                activeAnchor &&
+                (() => {
+                  const POP_W = 196;
+                  const POP_H = 92;
+                  const placeLeft = activeAnchor.x > 220;
+                  const placeBelow = activeAnchor.y < 96;
+                  const rawX = placeLeft ? activeAnchor.x - POP_W - 12 : activeAnchor.x + 12;
+                  const rawY = placeBelow ? activeAnchor.y + 12 : activeAnchor.y - POP_H - 12;
+                  const px = Math.max(4, Math.min(rawX, 420 - POP_W - 4));
+                  const py = Math.max(4, Math.min(rawY, 280 - POP_H - 4));
+                  const color = FEATURE_COLORS[activeFeature.kind];
+                  const Icon = getFeatureIcon(activeFeature.kind);
+                  return (
+                    <foreignObject
+                      x={px}
+                      y={py}
+                      width={POP_W}
+                      height={POP_H}
+                      className="overflow-visible"
+                      data-testid="circuit-hotspot-popover"
+                    >
+                      <div className="rounded-md border border-white/[0.14] bg-pk-carbon/90 p-2 shadow-[0_8px_24px_rgba(0,0,0,0.5)] backdrop-blur-md">
+                        <div className="flex items-start gap-1.5">
+                          <span
+                            className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-sm border"
+                            style={{ borderColor: color, background: `${color}22` }}
+                          >
+                            <Icon className="h-3 w-3 text-pk-piste" strokeWidth={1.8} />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-data text-[0.625rem] uppercase tracking-wider text-pk-piste">
+                              {circuitText(activeFeature.label)}
+                            </p>
+                            <p className="font-data text-[0.5rem] uppercase tracking-wider text-pk-titane">
+                              {hotspotTypeLabel(activeFeature, t)}
+                              {activeIsFirstCorner && (
+                                <span
+                                  className="ml-1 text-pk-amber"
+                                  data-testid="circuit-first-corner-badge"
+                                >
+                                  · {t("circuit_map.first_corner")}
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setActiveFeatureId(null);
+                            }}
+                            className="-mr-0.5 -mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-sm text-pk-titane hover:text-pk-piste"
+                            aria-label={t("circuit_map.close_hotspot", "Fermer")}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                        <p className="mt-1 line-clamp-3 text-[0.5625rem] leading-snug text-pk-titane">
+                          {circuitText(activeFeature.note)}
+                        </p>
+                      </div>
+                    </foreignObject>
+                  );
+                })()}
             </svg>
           </div>
         ) : (
@@ -460,43 +563,29 @@ export const CircuitMap = memo(function CircuitMap({
           </div>
         )}
 
-        {activeFeature && (
+        {/* Preview mode keeps a compact below-map info card (no SVG foreignObject);
+            the full app shows the info as an on-map popover at the hotspot. */}
+        {isPreviewMode && activeFeature && (
           <div
             className="mt-3 rounded-md border border-white/[0.08] bg-white/[0.04] p-3"
-            data-testid="circuit-active-feature"
+            data-testid="circuit-hotspot-popover"
           >
-            <div className="flex items-start gap-2">
-              <div
-                className="mt-0.5 h-6 w-6 rounded-sm flex items-center justify-center border"
-                style={{
-                  borderColor: FEATURE_COLORS[activeFeature.kind],
-                  background: `${FEATURE_COLORS[activeFeature.kind]}18`,
-                }}
-              >
-                {(() => {
-                  const Icon = getFeatureIcon(activeFeature.kind);
-                  return <Icon className="h-3.5 w-3.5 text-pk-piste" strokeWidth={1.8} />;
-                })()}
-              </div>
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <p className="font-data text-[0.625rem] uppercase tracking-wider text-pk-piste">
-                    {circuitText(activeFeature.label)}
-                  </p>
-                  {activeIsFirstCorner && (
-                    <span
-                      className="rounded-sm border border-pk-amber/30 bg-pk-amber/10 px-1.5 py-0.5 font-data text-[0.5rem] uppercase tracking-wider text-pk-amber"
-                      data-testid="circuit-first-corner-badge"
-                    >
-                      {t("circuit_map.first_corner")}
-                    </span>
-                  )}
-                </div>
-                <p className="mt-1 text-[0.75rem] leading-relaxed text-pk-titane">
-                  {circuitText(activeFeature.note)}
-                </p>
-              </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <p className="font-data text-[0.625rem] uppercase tracking-wider text-pk-piste">
+                {circuitText(activeFeature.label)}
+              </p>
+              {activeIsFirstCorner && (
+                <span
+                  className="rounded-sm border border-pk-amber/30 bg-pk-amber/10 px-1.5 py-0.5 font-data text-[0.5rem] uppercase tracking-wider text-pk-amber"
+                  data-testid="circuit-first-corner-badge"
+                >
+                  {t("circuit_map.first_corner")}
+                </span>
+              )}
             </div>
+            <p className="mt-1 text-[0.75rem] leading-relaxed text-pk-titane">
+              {circuitText(activeFeature.note)}
+            </p>
           </div>
         )}
 

@@ -26,6 +26,16 @@ async def get_global_leaderboard(limit: int = 100, user: dict = Depends(get_curr
     return data
 
 
+@router.get("/leaderboard/leagues")
+async def get_leagues_leaderboard(
+    limit: int = 100, user: dict = Depends(get_current_user)
+) -> dict:
+    """Top ``limit`` leagues ranked by total points accumulated by their members."""
+    return await leaderboards_service.build_leagues_global(
+        current_user_id=user["id"], limit=limit
+    )
+
+
 @router.get("/leaderboard/race/{race_id}")
 async def get_race_weekend_leaderboard(
     race_id: str,

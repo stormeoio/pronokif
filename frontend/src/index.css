@@ -109,7 +109,7 @@
    Scoped to .admin-light — only affects the admin BO,
    never the public-facing app (stays Broadcast Premium dark).
    ============================================ */
-.admin-light {
+:is(.admin-light, [data-theme="light"]) {
   /* ── Brand tokens (light) ── */
   --pk-carbon: #f8f9fb;
   --pk-surface: #ffffff;
@@ -153,577 +153,578 @@
 }
 
 /* Invert the common patterns used in admin components */
-.admin-light .bg-pk-carbon {
+:is(.admin-light, [data-theme="light"]) .bg-pk-carbon {
   background-color: var(--pk-carbon);
 }
-.admin-light .bg-pk-surface {
+:is(.admin-light, [data-theme="light"]) .bg-pk-surface {
   background-color: var(--pk-surface);
 }
-.admin-light .bg-pk-anthracite {
+:is(.admin-light, [data-theme="light"]) .bg-pk-anthracite {
   background-color: var(--pk-anthracite);
 }
-.admin-light .text-pk-piste {
+:is(.admin-light, [data-theme="light"]) .text-pk-piste {
   color: var(--pk-piste);
 }
-.admin-light .text-pk-titane {
+:is(.admin-light, [data-theme="light"]) .text-pk-titane {
   color: var(--pk-titane);
 }
-.admin-light .text-white {
+:is(.admin-light, [data-theme="light"]) .text-white {
   color: var(--pk-piste);
 }
-.admin-light .text-gray-500 {
+:is(.admin-light, [data-theme="light"]) .text-gray-500 {
   color: #6b7280;
 }
-.admin-light .text-gray-400 {
+:is(.admin-light, [data-theme="light"]) .text-gray-400 {
   color: #9ca3af;
 }
-.admin-light .border-white\/\[0\.08\] {
+:is(.admin-light, [data-theme="light"]) .border-white\/\[0\.08\] {
   border-color: var(--pk-border);
 }
-.admin-light .border-white\/10 {
+:is(.admin-light, [data-theme="light"]) .border-white\/10 {
   border-color: rgba(0, 0, 0, 0.1);
 }
-.admin-light .border-white\/\[0\.06\] {
+:is(.admin-light, [data-theme="light"]) .border-white\/\[0\.06\] {
   border-color: rgba(0, 0, 0, 0.06);
 }
-.admin-light .border-white\/\[0\.05\] {
+:is(.admin-light, [data-theme="light"]) .border-white\/\[0\.05\] {
   border-color: rgba(0, 0, 0, 0.05);
 }
-.admin-light .border-white\/\[0\.15\] {
+:is(.admin-light, [data-theme="light"]) .border-white\/\[0\.15\] {
   border-color: rgba(0, 0, 0, 0.12);
 }
-.admin-light .bg-white\/\[0\.04\] {
+:is(.admin-light, [data-theme="light"]) .bg-white\/\[0\.04\] {
   background-color: rgba(0, 0, 0, 0.03);
 }
-.admin-light .bg-white\/\[0\.03\] {
+:is(.admin-light, [data-theme="light"]) .bg-white\/\[0\.03\] {
   background-color: rgba(0, 0, 0, 0.02);
 }
-.admin-light .bg-white\/\[0\.06\] {
+:is(.admin-light, [data-theme="light"]) .bg-white\/\[0\.06\] {
   background-color: rgba(0, 0, 0, 0.04);
 }
-.admin-light .bg-white\/5 {
+:is(.admin-light, [data-theme="light"]) .bg-white\/5 {
   background-color: rgba(0, 0, 0, 0.04);
 }
-.admin-light .bg-black\/30 {
+:is(.admin-light, [data-theme="light"]) .bg-black\/30 {
   background-color: rgba(0, 0, 0, 0.03);
 }
-.admin-light .hover\:bg-white\/\[0\.04\]:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:bg-white\/\[0\.04\]:hover {
   background-color: rgba(0, 0, 0, 0.04);
 }
-.admin-light .hover\:bg-white\/\[0\.03\]:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:bg-white\/\[0\.03\]:hover {
   background-color: rgba(0, 0, 0, 0.03);
 }
-.admin-light .hover\:text-white:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:text-white:hover {
   color: var(--pk-piste);
 }
-.admin-light .bg-pk-carbon\/95 {
+:is(.admin-light, [data-theme="light"]) .bg-pk-carbon\/95 {
   background-color: rgba(248, 249, 251, 0.95);
 }
-.admin-light .bg-pk-carbon\/85 {
+:is(.admin-light, [data-theme="light"]) .bg-pk-carbon\/85 {
   background-color: rgba(248, 249, 251, 0.85);
 }
 
 /* --- Structural grays (dark cards/surfaces → light equivalents) --- */
-.admin-light .bg-gray-900 {
+:is(.admin-light, [data-theme="light"]) .bg-gray-900 {
   background-color: #ffffff;
 }
-.admin-light .bg-gray-900\/70 {
+:is(.admin-light, [data-theme="light"]) .bg-gray-900\/70 {
   background-color: rgba(255, 255, 255, 0.85);
 }
-.admin-light .bg-gray-950 {
+:is(.admin-light, [data-theme="light"]) .bg-gray-950 {
   background-color: #f8f9fb;
 }
-.admin-light .bg-gray-950\/40 {
+:is(.admin-light, [data-theme="light"]) .bg-gray-950\/40 {
   background-color: rgba(248, 249, 251, 0.6);
 }
-.admin-light .bg-gray-950\/60 {
+:is(.admin-light, [data-theme="light"]) .bg-gray-950\/60 {
   background-color: rgba(248, 249, 251, 0.75);
 }
-.admin-light .bg-gray-800 {
+:is(.admin-light, [data-theme="light"]) .bg-gray-800 {
   background-color: #eef0f4;
 }
-.admin-light .bg-gray-800\/50 {
+:is(.admin-light, [data-theme="light"]) .bg-gray-800\/50 {
   background-color: rgba(238, 240, 244, 0.6);
 }
-.admin-light .bg-gray-700 {
+:is(.admin-light, [data-theme="light"]) .bg-gray-700 {
   background-color: #e5e7eb;
 }
-.admin-light .bg-gray-500 {
+:is(.admin-light, [data-theme="light"]) .bg-gray-500 {
   background-color: #9ca3af;
 }
-.admin-light .bg-black {
+:is(.admin-light, [data-theme="light"]) .bg-black {
   background-color: #f3f4f6;
 }
-.admin-light .bg-black\/15 {
+:is(.admin-light, [data-theme="light"]) .bg-black\/15 {
   background-color: rgba(0, 0, 0, 0.02);
 }
-.admin-light .bg-black\/20 {
+:is(.admin-light, [data-theme="light"]) .bg-black\/20 {
   background-color: rgba(0, 0, 0, 0.03);
 }
-.admin-light .bg-black\/25 {
+:is(.admin-light, [data-theme="light"]) .bg-black\/25 {
   background-color: rgba(0, 0, 0, 0.03);
 }
-.admin-light .bg-black\/50 {
+:is(.admin-light, [data-theme="light"]) .bg-black\/50 {
   background-color: rgba(0, 0, 0, 0.06);
 }
-.admin-light .bg-black\/60 {
+:is(.admin-light, [data-theme="light"]) .bg-black\/60 {
   background-color: rgba(0, 0, 0, 0.08);
 }
-.admin-light .bg-black\/70 {
+:is(.admin-light, [data-theme="light"]) .bg-black\/70 {
   background-color: rgba(0, 0, 0, 0.1);
 }
-.admin-light .bg-white\/10 {
+:is(.admin-light, [data-theme="light"]) .bg-white\/10 {
   background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* --- Borders --- */
-.admin-light .border-gray-700 {
+:is(.admin-light, [data-theme="light"]) .border-gray-700 {
   border-color: #e5e7eb;
 }
-.admin-light .border-gray-800 {
+:is(.admin-light, [data-theme="light"]) .border-gray-800 {
   border-color: #e5e7eb;
 }
-.admin-light .border-gray-800\/30 {
+:is(.admin-light, [data-theme="light"]) .border-gray-800\/30 {
   border-color: rgba(229, 231, 235, 0.5);
 }
-.admin-light .border-gray-800\/50 {
+:is(.admin-light, [data-theme="light"]) .border-gray-800\/50 {
   border-color: rgba(229, 231, 235, 0.6);
 }
-.admin-light .border-gray-600 {
+:is(.admin-light, [data-theme="light"]) .border-gray-600 {
   border-color: #d1d5db;
 }
-.admin-light .border-white {
+:is(.admin-light, [data-theme="light"]) .border-white {
   border-color: rgba(0, 0, 0, 0.1);
 }
-.admin-light .border-white\/5 {
+:is(.admin-light, [data-theme="light"]) .border-white\/5 {
   border-color: rgba(0, 0, 0, 0.04);
 }
-.admin-light .border-white\/15 {
+:is(.admin-light, [data-theme="light"]) .border-white\/15 {
   border-color: rgba(0, 0, 0, 0.1);
 }
-.admin-light .border-white\/20 {
+:is(.admin-light, [data-theme="light"]) .border-white\/20 {
   border-color: rgba(0, 0, 0, 0.12);
 }
-.admin-light .border-white\/25 {
+:is(.admin-light, [data-theme="light"]) .border-white\/25 {
   border-color: rgba(0, 0, 0, 0.15);
 }
 
 /* --- Text grays (light text on dark → dark text on light) --- */
-.admin-light .text-gray-200 {
+:is(.admin-light, [data-theme="light"]) .text-gray-200 {
   color: #374151;
 }
-.admin-light .text-gray-300 {
+:is(.admin-light, [data-theme="light"]) .text-gray-300 {
   color: #4b5563;
 }
-.admin-light .text-gray-600 {
+:is(.admin-light, [data-theme="light"]) .text-gray-600 {
   color: #6b7280;
 }
-.admin-light .text-gray-700 {
+:is(.admin-light, [data-theme="light"]) .text-gray-700 {
   color: #4b5563;
 }
-.admin-light .text-white\/70 {
+:is(.admin-light, [data-theme="light"]) .text-white\/70 {
   color: rgba(17, 24, 39, 0.7);
 }
 
 /* --- Status: red --- */
-.admin-light .text-red-100 {
+:is(.admin-light, [data-theme="light"]) .text-red-100 {
   color: #991b1b;
 }
-.admin-light .text-red-100\/90 {
+:is(.admin-light, [data-theme="light"]) .text-red-100\/90 {
   color: rgba(153, 27, 27, 0.9);
 }
-.admin-light .text-red-200 {
+:is(.admin-light, [data-theme="light"]) .text-red-200 {
   color: #b91c1c;
 }
-.admin-light .text-red-300 {
+:is(.admin-light, [data-theme="light"]) .text-red-300 {
   color: #dc2626;
 }
-.admin-light .text-red-400 {
+:is(.admin-light, [data-theme="light"]) .text-red-400 {
   color: #dc2626;
 }
-.admin-light .text-red-500 {
+:is(.admin-light, [data-theme="light"]) .text-red-500 {
   color: #ef4444;
 }
 
 /* --- Status: emerald/green --- */
-.admin-light .text-emerald-200 {
+:is(.admin-light, [data-theme="light"]) .text-emerald-200 {
   color: #047857;
 }
-.admin-light .text-emerald-300 {
+:is(.admin-light, [data-theme="light"]) .text-emerald-300 {
   color: #059669;
 }
-.admin-light .text-emerald-400 {
+:is(.admin-light, [data-theme="light"]) .text-emerald-400 {
   color: #10b981;
 }
-.admin-light .text-green-200 {
+:is(.admin-light, [data-theme="light"]) .text-green-200 {
   color: #047857;
 }
-.admin-light .text-green-300 {
+:is(.admin-light, [data-theme="light"]) .text-green-300 {
   color: #059669;
 }
-.admin-light .text-green-400 {
+:is(.admin-light, [data-theme="light"]) .text-green-400 {
   color: #16a34a;
 }
-.admin-light .text-green-400\/80 {
+:is(.admin-light, [data-theme="light"]) .text-green-400\/80 {
   color: rgba(22, 163, 74, 0.8);
 }
-.admin-light .text-green-500 {
+:is(.admin-light, [data-theme="light"]) .text-green-500 {
   color: #16a34a;
 }
 
 /* --- Status: amber/yellow --- */
-.admin-light .text-amber-100 {
+:is(.admin-light, [data-theme="light"]) .text-amber-100 {
   color: #92400e;
 }
-.admin-light .text-amber-200 {
+:is(.admin-light, [data-theme="light"]) .text-amber-200 {
   color: #b45309;
 }
-.admin-light .text-amber-300 {
+:is(.admin-light, [data-theme="light"]) .text-amber-300 {
   color: #d97706;
 }
-.admin-light .text-amber-400 {
+:is(.admin-light, [data-theme="light"]) .text-amber-400 {
   color: #d97706;
 }
-.admin-light .text-yellow-300 {
+:is(.admin-light, [data-theme="light"]) .text-yellow-300 {
   color: #ca8a04;
 }
-.admin-light .text-yellow-400 {
+:is(.admin-light, [data-theme="light"]) .text-yellow-400 {
   color: #ca8a04;
 }
 
 /* --- Status: orange --- */
-.admin-light .text-orange-200 {
+:is(.admin-light, [data-theme="light"]) .text-orange-200 {
   color: #c2410c;
 }
-.admin-light .text-orange-300 {
+:is(.admin-light, [data-theme="light"]) .text-orange-300 {
   color: #ea580c;
 }
-.admin-light .text-orange-300\/80 {
+:is(.admin-light, [data-theme="light"]) .text-orange-300\/80 {
   color: rgba(234, 88, 12, 0.8);
 }
-.admin-light .text-orange-400 {
+:is(.admin-light, [data-theme="light"]) .text-orange-400 {
   color: #ea580c;
 }
-.admin-light .text-orange-500 {
+:is(.admin-light, [data-theme="light"]) .text-orange-500 {
   color: #f97316;
 }
 
 /* --- Status: blue --- */
-.admin-light .text-blue-300 {
+:is(.admin-light, [data-theme="light"]) .text-blue-300 {
   color: #2563eb;
 }
-.admin-light .text-blue-400 {
+:is(.admin-light, [data-theme="light"]) .text-blue-400 {
   color: #3b82f6;
 }
 
 /* --- Badge/pill backgrounds (keep vivid, just soften) --- */
-.admin-light .bg-red-500 {
+:is(.admin-light, [data-theme="light"]) .bg-red-500 {
   background-color: #ef4444;
 }
-.admin-light .bg-red-500\/10 {
+:is(.admin-light, [data-theme="light"]) .bg-red-500\/10 {
   background-color: rgba(239, 68, 68, 0.08);
 }
-.admin-light .bg-red-500\/15 {
+:is(.admin-light, [data-theme="light"]) .bg-red-500\/15 {
   background-color: rgba(239, 68, 68, 0.1);
 }
-.admin-light .bg-red-500\/20 {
+:is(.admin-light, [data-theme="light"]) .bg-red-500\/20 {
   background-color: rgba(239, 68, 68, 0.12);
 }
-.admin-light .bg-red-500\/80 {
+:is(.admin-light, [data-theme="light"]) .bg-red-500\/80 {
   background-color: rgba(239, 68, 68, 0.85);
 }
-.admin-light .bg-red-600 {
+:is(.admin-light, [data-theme="light"]) .bg-red-600 {
   background-color: #dc2626;
 }
-.admin-light .bg-red-700 {
+:is(.admin-light, [data-theme="light"]) .bg-red-700 {
   background-color: #b91c1c;
 }
-.admin-light .bg-emerald-500 {
+:is(.admin-light, [data-theme="light"]) .bg-emerald-500 {
   background-color: #10b981;
 }
-.admin-light .bg-emerald-500\/5 {
+:is(.admin-light, [data-theme="light"]) .bg-emerald-500\/5 {
   background-color: rgba(16, 185, 129, 0.06);
 }
-.admin-light .bg-emerald-500\/10 {
+:is(.admin-light, [data-theme="light"]) .bg-emerald-500\/10 {
   background-color: rgba(16, 185, 129, 0.08);
 }
-.admin-light .bg-emerald-500\/15 {
+:is(.admin-light, [data-theme="light"]) .bg-emerald-500\/15 {
   background-color: rgba(16, 185, 129, 0.1);
 }
-.admin-light .bg-green-500 {
+:is(.admin-light, [data-theme="light"]) .bg-green-500 {
   background-color: #22c55e;
 }
-.admin-light .bg-green-500\/10 {
+:is(.admin-light, [data-theme="light"]) .bg-green-500\/10 {
   background-color: rgba(34, 197, 94, 0.08);
 }
-.admin-light .bg-green-500\/15 {
+:is(.admin-light, [data-theme="light"]) .bg-green-500\/15 {
   background-color: rgba(34, 197, 94, 0.1);
 }
-.admin-light .bg-green-500\/20 {
+:is(.admin-light, [data-theme="light"]) .bg-green-500\/20 {
   background-color: rgba(34, 197, 94, 0.12);
 }
-.admin-light .bg-amber-400 {
+:is(.admin-light, [data-theme="light"]) .bg-amber-400 {
   background-color: #f59e0b;
 }
-.admin-light .bg-amber-400\/10 {
+:is(.admin-light, [data-theme="light"]) .bg-amber-400\/10 {
   background-color: rgba(245, 158, 11, 0.08);
 }
-.admin-light .bg-amber-500 {
+:is(.admin-light, [data-theme="light"]) .bg-amber-500 {
   background-color: #f59e0b;
 }
-.admin-light .bg-amber-500\/5 {
+:is(.admin-light, [data-theme="light"]) .bg-amber-500\/5 {
   background-color: rgba(245, 158, 11, 0.06);
 }
-.admin-light .bg-amber-500\/10 {
+:is(.admin-light, [data-theme="light"]) .bg-amber-500\/10 {
   background-color: rgba(245, 158, 11, 0.08);
 }
-.admin-light .bg-amber-500\/15 {
+:is(.admin-light, [data-theme="light"]) .bg-amber-500\/15 {
   background-color: rgba(245, 158, 11, 0.1);
 }
-.admin-light .bg-orange-500 {
+:is(.admin-light, [data-theme="light"]) .bg-orange-500 {
   background-color: #f97316;
 }
-.admin-light .bg-orange-500\/5 {
+:is(.admin-light, [data-theme="light"]) .bg-orange-500\/5 {
   background-color: rgba(249, 115, 22, 0.06);
 }
-.admin-light .bg-orange-500\/10 {
+:is(.admin-light, [data-theme="light"]) .bg-orange-500\/10 {
   background-color: rgba(249, 115, 22, 0.08);
 }
-.admin-light .bg-orange-500\/50 {
+:is(.admin-light, [data-theme="light"]) .bg-orange-500\/50 {
   background-color: rgba(249, 115, 22, 0.15);
 }
-.admin-light .bg-blue-500 {
+:is(.admin-light, [data-theme="light"]) .bg-blue-500 {
   background-color: #3b82f6;
 }
-.admin-light .bg-blue-500\/10 {
+:is(.admin-light, [data-theme="light"]) .bg-blue-500\/10 {
   background-color: rgba(59, 130, 246, 0.08);
 }
-.admin-light .bg-yellow-500 {
+:is(.admin-light, [data-theme="light"]) .bg-yellow-500 {
   background-color: #eab308;
 }
-.admin-light .bg-yellow-500\/15 {
+:is(.admin-light, [data-theme="light"]) .bg-yellow-500\/15 {
   background-color: rgba(234, 179, 8, 0.1);
 }
-.admin-light .border-green-500 {
+:is(.admin-light, [data-theme="light"]) .border-green-500 {
   border-color: #22c55e;
 }
-.admin-light .border-green-500\/20 {
+:is(.admin-light, [data-theme="light"]) .border-green-500\/20 {
   border-color: rgba(34, 197, 94, 0.15);
 }
-.admin-light .border-red-400\/20 {
+:is(.admin-light, [data-theme="light"]) .border-red-400\/20 {
   border-color: rgba(239, 68, 68, 0.15);
 }
-.admin-light .border-red-400\/25 {
+:is(.admin-light, [data-theme="light"]) .border-red-400\/25 {
   border-color: rgba(239, 68, 68, 0.18);
 }
-.admin-light .border-red-500 {
+:is(.admin-light, [data-theme="light"]) .border-red-500 {
   border-color: #ef4444;
 }
-.admin-light .border-red-500\/25 {
+:is(.admin-light, [data-theme="light"]) .border-red-500\/25 {
   border-color: rgba(239, 68, 68, 0.18);
 }
 
 /* --- Hover states --- */
-.admin-light .hover\:bg-white:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:bg-white:hover {
   background-color: rgba(0, 0, 0, 0.02);
 }
-.admin-light .hover\:bg-red-500:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:bg-red-500:hover {
   background-color: #dc2626;
 }
-.admin-light .hover\:bg-red-700:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:bg-red-700:hover {
   background-color: #b91c1c;
 }
-.admin-light .hover\:text-gray-300:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:text-gray-300:hover {
   color: #374151;
 }
-.admin-light .hover\:text-gray-400:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:text-gray-400:hover {
   color: #6b7280;
 }
-.admin-light .hover\:text-red-100:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:text-red-100:hover {
   color: #991b1b;
 }
-.admin-light .hover\:text-red-200:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:text-red-200:hover {
   color: #b91c1c;
 }
-.admin-light .hover\:text-red-300:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:text-red-300:hover {
   color: #dc2626;
 }
-.admin-light .hover\:text-red-400:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:text-red-400:hover {
   color: #dc2626;
 }
-.admin-light .hover\:text-emerald-200:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:text-emerald-200:hover {
   color: #047857;
 }
-.admin-light .hover\:text-amber-200:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:text-amber-200:hover {
   color: #b45309;
 }
-.admin-light .hover\:text-amber-300:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:text-amber-300:hover {
   color: #d97706;
 }
-.admin-light .hover\:text-green-200:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:text-green-200:hover {
   color: #047857;
 }
-.admin-light .hover\:text-green-300:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:text-green-300:hover {
   color: #059669;
 }
-.admin-light .hover\:text-orange-200:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:text-orange-200:hover {
   color: #c2410c;
 }
-.admin-light .hover\:text-orange-300:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:text-orange-300:hover {
   color: #ea580c;
 }
-.admin-light .hover\:text-orange-400:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:text-orange-400:hover {
   color: #ea580c;
 }
-.admin-light .hover\:border-orange-400:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:border-orange-400:hover {
   border-color: #ea580c;
 }
-.admin-light .hover\:border-white:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:border-white:hover {
   border-color: rgba(0, 0, 0, 0.15);
 }
 
 /* --- Ring & divide --- */
-.admin-light .ring-white {
+:is(.admin-light, [data-theme="light"]) .ring-white {
   --tw-ring-color: rgba(0, 0, 0, 0.1);
 }
-.admin-light .divide-white > :not(:first-child) {
+:is(.admin-light, [data-theme="light"]) .divide-white > :not(:first-child) {
   border-color: rgba(0, 0, 0, 0.08);
 }
-.admin-light .divide-white\/\[0\.06\] > :not(:first-child) {
+:is(.admin-light, [data-theme="light"]) .divide-white\/\[0\.06\] > :not(:first-child) {
   border-color: rgba(0, 0, 0, 0.06);
 }
-.admin-light .focus-visible\:ring-white\/20:focus-visible {
+:is(.admin-light, [data-theme="light"]) .focus-visible\:ring-white\/20:focus-visible {
   --tw-ring-color: rgba(0, 0, 0, 0.12);
 }
 
 /* --- Hover backgrounds (table rows, list items) --- */
-.admin-light .hover\:bg-white\/5:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:bg-white\/5:hover {
   background-color: rgba(0, 0, 0, 0.04);
 }
-.admin-light .hover\:bg-white\/\[0\.05\]:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:bg-white\/\[0\.05\]:hover {
   background-color: rgba(0, 0, 0, 0.04);
 }
 
 /* --- Hover borders --- */
-.admin-light .hover\:border-white\/20:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:border-white\/20:hover {
   border-color: rgba(0, 0, 0, 0.12);
 }
-.admin-light .hover\:border-white\/25:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:border-white\/25:hover {
   border-color: rgba(0, 0, 0, 0.15);
 }
 
 /* --- Semi-transparent white backgrounds --- */
-.admin-light .bg-white\/\[0\.02\] {
+:is(.admin-light, [data-theme="light"]) .bg-white\/\[0\.02\] {
   background-color: rgba(0, 0, 0, 0.015);
 }
 
 /* --- Placeholder text --- */
-.admin-light .placeholder\:text-gray-500::placeholder {
+:is(.admin-light, [data-theme="light"]) .placeholder\:text-gray-500::placeholder {
   color: #9ca3af;
 }
 
 /* --- Cyan text (secondary accent color — links, actions) --- */
-.admin-light .text-cyan-100 {
+:is(.admin-light, [data-theme="light"]) .text-cyan-100 {
   color: #155e75;
 }
-.admin-light .text-cyan-200 {
+:is(.admin-light, [data-theme="light"]) .text-cyan-200 {
   color: #0e7490;
 }
-.admin-light .text-cyan-300 {
+:is(.admin-light, [data-theme="light"]) .text-cyan-300 {
   color: #0891b2;
 }
-.admin-light .text-cyan-400 {
+:is(.admin-light, [data-theme="light"]) .text-cyan-400 {
   color: #06b6d4;
 }
 
 /* --- Cyan hover text --- */
-.admin-light .hover\:text-cyan-200:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:text-cyan-200:hover {
   color: #0e7490;
 }
-.admin-light .hover\:text-cyan-300:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:text-cyan-300:hover {
   color: #0891b2;
 }
-.admin-light .hover\:text-cyan-400:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:text-cyan-400:hover {
   color: #06b6d4;
 }
 
 /* --- Cyan borders (status badges, DevOps, Circuits) --- */
-.admin-light .border-cyan-400\/25 {
+:is(.admin-light, [data-theme="light"]) .border-cyan-400\/25 {
   border-color: rgba(6, 182, 212, 0.2);
 }
-.admin-light .border-cyan-400\/30 {
+:is(.admin-light, [data-theme="light"]) .border-cyan-400\/30 {
   border-color: rgba(6, 182, 212, 0.25);
 }
-.admin-light .border-cyan-500\/20 {
+:is(.admin-light, [data-theme="light"]) .border-cyan-500\/20 {
   border-color: rgba(6, 182, 212, 0.15);
 }
-.admin-light .border-cyan-500\/30 {
+:is(.admin-light, [data-theme="light"]) .border-cyan-500\/30 {
   border-color: rgba(6, 182, 212, 0.25);
 }
-.admin-light .border-cyan-500\/50 {
+:is(.admin-light, [data-theme="light"]) .border-cyan-500\/50 {
   border-color: rgba(6, 182, 212, 0.4);
 }
-.admin-light .hover\:border-cyan-300\/70:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:border-cyan-300\/70:hover {
   border-color: rgba(8, 145, 178, 0.6);
 }
 
 /* --- Cyan backgrounds (DevOps, Circuits, Races badges) --- */
-.admin-light .bg-cyan-500\/10 {
+:is(.admin-light, [data-theme="light"]) .bg-cyan-500\/10 {
   background-color: rgba(6, 182, 212, 0.08);
 }
-.admin-light .bg-cyan-500\/15 {
+:is(.admin-light, [data-theme="light"]) .bg-cyan-500\/15 {
   background-color: rgba(6, 182, 212, 0.1);
 }
-.admin-light .bg-cyan-500\/20 {
+:is(.admin-light, [data-theme="light"]) .bg-cyan-500\/20 {
   background-color: rgba(6, 182, 212, 0.12);
 }
-.admin-light .bg-cyan-500\/\[0\.06\] {
+:is(.admin-light, [data-theme="light"]) .bg-cyan-500\/\[0\.06\] {
   background-color: rgba(6, 182, 212, 0.05);
 }
 
 /* --- Amber bracket notation (DevOps) --- */
-.admin-light .bg-amber-500\/\[0\.07\] {
+:is(.admin-light, [data-theme="light"]) .bg-amber-500\/\[0\.07\] {
   background-color: rgba(245, 158, 11, 0.06);
 }
-.admin-light .border-amber-400\/25 {
+:is(.admin-light, [data-theme="light"]) .border-amber-400\/25 {
   border-color: rgba(245, 158, 11, 0.18);
 }
 
 /* --- Additional hover text --- */
-.admin-light .hover\:text-yellow-300:hover {
+:is(.admin-light, [data-theme="light"]) .hover\:text-yellow-300:hover {
   color: #ca8a04;
 }
 
 /* --- Shadow dark color --- */
-.admin-light .shadow-black\/50 {
+:is(.admin-light, [data-theme="light"]) .shadow-black\/50 {
   --tw-shadow-color: rgba(0, 0, 0, 0.08);
 }
 
 /* --- AdminLayout main area gradient override --- */
-.admin-light main {
+:is(.admin-light, [data-theme="light"]) main {
   background: linear-gradient(180deg, #f8f9fb 0%, #f3f4f6 100%) !important;
 }
 
 /* --- Native form elements in light mode --- */
-.admin-light select,
-.admin-light textarea,
-.admin-light input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) {
+:is(.admin-light, [data-theme="light"]) select,
+:is(.admin-light, [data-theme="light"]) textarea,
+:is(.admin-light, [data-theme="light"])
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) {
   color-scheme: light;
 }
 
 /* --- Scrollbar (Webkit) --- */
-.admin-light ::-webkit-scrollbar-track {
+:is(.admin-light, [data-theme="light"]) ::-webkit-scrollbar-track {
   background: #f1f5f9;
 }
-.admin-light ::-webkit-scrollbar-thumb {
+:is(.admin-light, [data-theme="light"]) ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
 }
-.admin-light ::-webkit-scrollbar-thumb:hover {
+:is(.admin-light, [data-theme="light"]) ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
 /* --- SVG icons: ensure lucide icons inherit text color --- */
-.admin-light .text-white svg {
+:is(.admin-light, [data-theme="light"]) .text-white svg {
   color: inherit;
 }
 

@@ -38,6 +38,8 @@ type Feedback = {
   custom_avatar_url?: string | null;
   category?: string;
   message?: string;
+  screenshots?: string[];
+  screenshot_count?: number;
   read?: boolean;
   status?: string;
   priority?: string;
@@ -651,6 +653,31 @@ export default function FeedbacksTab({ currentAdminEmail = "" }: FeedbacksTabPro
           <p className="mb-4 whitespace-pre-wrap rounded-sm border border-white/10 bg-gray-950/60 p-3 font-body text-sm text-gray-200">
             {selectedFeedback.message}
           </p>
+          {!!selectedFeedback.screenshots?.length && (
+            <div className="mb-4">
+              <p className="mb-1.5 text-[0.6875rem] uppercase tracking-wide text-gray-400">
+                Captures d'écran ({selectedFeedback.screenshots.length})
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {selectedFeedback.screenshots.map((shot, i) => (
+                  <a
+                    key={i}
+                    href={shot}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block h-24 w-24 overflow-hidden rounded-md border border-white/10 transition-opacity hover:opacity-80"
+                    title="Ouvrir la capture"
+                  >
+                    <img
+                      src={shot}
+                      alt={`capture ${i + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="grid gap-3 md:grid-cols-4">
             <select
               value={draft.category}

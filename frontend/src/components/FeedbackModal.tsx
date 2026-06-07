@@ -15,6 +15,8 @@ import {
   Send,
   Loader2,
   CheckCircle,
+  ImagePlus,
+  Trash2,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { haptic } from "@/lib/haptics";
@@ -55,8 +57,41 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const { t } = useTranslation();
   const [category, setCategory] = useState("feedback");
   const [message, setMessage] = useState("");
+  const [screenshots, setScreenshots] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+
+  const MAX_SHOTS = 3;
+  const MAX_SHOT_BYTES = 2 * 1024 * 1024;
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files) return;
+    const room = MAX_SHOTS - screenshots.length;
+    if (room <= 0) {
+      toast.error(t("feedback.max_screenshots", "Maximum 3 captures"));
+      return;
+    }
+    const picked = Array.from(files).slice(0, room);
+    for (const file of picked) {
+      if (!file.type.startsWith("image/")) continue;
+      if (file.size > MAX_SHOT_BYTES) {
+        toast.error(t("feedback.screenshot_too_large", "Capture trop lourde (max 2 Mo)"));
+        continue;
+      }
+      try {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        setScreenshots((prev) => (prev.length < MAX_SHOTS ? [...prev, dataUrl] : prev));
+        haptic("light");
+      } catch {
+        toast.error(t("feedback.screenshot_error", "Impossible de lire la capture"));
+      }
+    }
+  };
 
   const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -76,6 +111,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       await api.feedback.send({
         type: category,
         message: trimmedMessage,
+        screenshots,
       });
 
       setSent(true);
@@ -97,6 +133,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     setSending(false);
     setMessage("");
     setCategory("feedback");
+    setScreenshots([]);
     onClose();
   };
 
@@ -225,6 +262,57 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
               <p className="font-data text-[0.5625rem] text-pk-titane/60 mt-1 text-right">
                 {t("feedback.char_count", { count: message.length })}
               </p>
+            </div>
+
+            {/* Screenshots */}
+            <div>
+              <p className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-2">
+                {t("feedback.screenshots_label", "Captures d'écran")} ({screenshots.length}/
+                {MAX_SHOTS})
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {screenshots.map((shot, i) => (
+                  <div
+                    key={i}
+                    className="relative h-16 w-16 overflow-hidden rounded-md border border-white/[0.1]"
+                  >
+                    <img
+                      src={shot}
+                      alt={`capture ${i + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setScreenshots((prev) => prev.filter((_, j) => j !== i))}
+                      className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white hover:bg-pk-red"
+                      aria-label={t("feedback.remove_screenshot", "Retirer la capture")}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                {screenshots.length < MAX_SHOTS && (
+                  <label
+                    className="flex h-16 w-16 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed border-white/[0.15] text-pk-titane transition-colors hover:border-pk-info/40 hover:text-pk-info"
+                    data-testid="feedback-add-screenshot"
+                  >
+                    <ImagePlus className="h-4 w-4" />
+                    <span className="font-data text-[0.5rem] uppercase">
+                      {t("feedback.add_screenshot", "Ajouter")}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        handleFiles(e.target.files);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
             </div>
 
             {/* Submit Button */}

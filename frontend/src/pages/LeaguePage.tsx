@@ -11,6 +11,7 @@ import { Trophy, Plus, LogIn, ChevronLeft, CircleCheck, Flag, Users } from "luci
 import { useTranslation } from "react-i18next";
 import LeagueCreatedScreen from "./leagues/LeagueCreatedScreen";
 import LeagueList from "./leagues/LeagueList";
+import GlobalRankings from "./leagues/GlobalRankings";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { haptic } from "@/lib/haptics";
@@ -513,6 +514,11 @@ export default function LeaguePage() {
             </div>
           </motion.div>
         )}
+
+        {/* Global rankings — leagues & players across all of Pronokif */}
+        <motion.div variants={fadeUp}>
+          <GlobalRankings userId={user?.id} />
+        </motion.div>
       </motion.div>
     </div>
   );

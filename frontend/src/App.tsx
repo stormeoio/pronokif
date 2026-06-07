@@ -10,6 +10,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Toaster, toast } from "sonner";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { ThemeProvider } from "@/lib/theme";
 import { apiClient } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useLocaleDetect } from "@/lib/useLocaleDetect";
@@ -22,6 +23,7 @@ import PageTransition from "@/components/PageTransition";
 import EmailVerificationBanner from "@/components/EmailVerificationBanner";
 import SplashScreen from "@/components/SplashScreen";
 import AppDeepSearch from "@/components/search/AppDeepSearch";
+import FeedbackFab from "@/components/FeedbackFab";
 import { useBranding } from "@/lib/branding";
 import "@/App.css";
 
@@ -147,6 +149,8 @@ function AppLayout({ children }: { children: React.ReactNode }) {
           inside overflow:hidden ancestors. */}
       {!hideNav && <AnimatedBottomNav />}
       {!hideNav && <ScrollToTop />}
+      {/* Discreet feedback toggle — every connected front-end page (not auth/admin). */}
+      {user && !isAuthRoute && location.pathname !== "/set-username" && <FeedbackFab />}
       <NetworkStatus />
     </>
   );
@@ -297,25 +301,27 @@ export default function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <AppLayout>
-              <AppRouter />
-            </AppLayout>
-            <div aria-live="polite" aria-atomic="true">
-              <Toaster
-                position="top-center"
-                toastOptions={{
-                  style: {
-                    background: "#121418",
-                    color: "#F4F4F4",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    boxShadow: "0 14px 38px rgba(0,0,0,0.42), 0 0 20px var(--pk-red-subtle)",
-                    backdropFilter: "blur(8px)",
-                  },
-                }}
-              />
-            </div>
-          </AuthProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <AppLayout>
+                <AppRouter />
+              </AppLayout>
+              <div aria-live="polite" aria-atomic="true">
+                <Toaster
+                  position="top-center"
+                  toastOptions={{
+                    style: {
+                      background: "#121418",
+                      color: "#F4F4F4",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      boxShadow: "0 14px 38px rgba(0,0,0,0.42), 0 0 20px var(--pk-red-subtle)",
+                      backdropFilter: "blur(8px)",
+                    },
+                  }}
+                />
+              </div>
+            </AuthProvider>
+          </ThemeProvider>
         </QueryClientProvider>
       </BrowserRouter>
     </ErrorBoundary>

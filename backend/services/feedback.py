@@ -17,6 +17,11 @@ from config import db
 VALID_CATEGORIES = ("bug", "suggestion", "feedback")
 MAX_MESSAGE_LENGTH = 2000
 
+# Screenshots are stored inline as base64 data URLs on the feedback document.
+# Bounds keep us safely under MongoDB's 16 MB BSON document limit.
+MAX_SCREENSHOTS = 3
+MAX_SCREENSHOT_CHARS = 2_800_000  # ~2 MB raw image once base64-decoded
+
 
 class FeedbackValidationError(ValueError):
     """Raised when submitted feedback fails validation. The route layer
@@ -32,9 +37,28 @@ def _validate(message: str, category: str) -> None:
         raise FeedbackValidationError("Invalid category")
 
 
-async def submit(*, user: dict, message: str, category: str) -> dict:
+def _clean_screenshots(screenshots: list[str] | None) -> list[str]:
+    """Validate + normalize uploaded screenshots (base64 image data URLs)."""
+    if not screenshots:
+        return []
+    if len(screenshots) > MAX_SCREENSHOTS:
+        raise FeedbackValidationError(f"Too many screenshots (max {MAX_SCREENSHOTS})")
+    cleaned: list[str] = []
+    for shot in screenshots:
+        if not isinstance(shot, str) or not shot.startswith("data:image/"):
+            raise FeedbackValidationError("Invalid screenshot format")
+        if len(shot) > MAX_SCREENSHOT_CHARS:
+            raise FeedbackValidationError("Screenshot too large (max 2 MB each)")
+        cleaned.append(shot)
+    return cleaned
+
+
+async def submit(
+    *, user: dict, message: str, category: str, screenshots: list[str] | None = None
+) -> dict:
     """Validate and persist a feedback entry. Returns the new row."""
     _validate(message, category)
+    clean_shots = _clean_screenshots(screenshots)
 
     feedback = {
         "id": str(uuid.uuid4()),
@@ -43,6 +67,8 @@ async def submit(*, user: dict, message: str, category: str) -> dict:
         "email": user.get("email"),
         "category": category,
         "message": message.strip(),
+        "screenshots": clean_shots,
+        "screenshot_count": len(clean_shots),
         "created_at": datetime.now(UTC).isoformat(),
         "read": False,
     }

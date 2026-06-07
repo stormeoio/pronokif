@@ -39,34 +39,39 @@ const pageVariants = {
   },
 };
 
-// Slide from right (for drill-down pages).
+// Slide for drill-down pages, direction-aware.
 // Keep the horizontal travel small: a large translateX overflows the viewport
 // during the transition (the global `overflow-x: clip` clips it, but a big
 // offset still produces a visible clipped "wipe"). A short slide reads as a
 // directional drill-down without spilling content off-screen.
-const slideVariants = {
-  initial: {
-    opacity: 0,
-    x: 24,
-    scale: 0.98,
-  },
-  animate: {
-    opacity: 1,
-    x: 0,
-    scale: 1,
-    transition: {
-      duration: 0.35,
-      ease: [0.25, 0.46, 0.45, 0.94] as const,
+//
+// `dir` is read from navigation state (`navigate(path, { state: { dir } })`):
+//   - "prev" → enter from the left (swiping back to the previous item)
+//   - "next" / undefined → enter from the right (default drill-down)
+const makeSlideVariants = (dir?: "next" | "prev") => {
+  const fromRight = dir !== "prev";
+  const enterX = fromRight ? 24 : -24;
+  const exitX = fromRight ? -16 : 16;
+  return {
+    initial: { opacity: 0, x: enterX, scale: 0.98 },
+    animate: {
+      opacity: 1,
+      x: 0,
+      scale: 1,
+      transition: {
+        duration: 0.35,
+        ease: [0.25, 0.46, 0.45, 0.94] as const,
+      },
     },
-  },
-  exit: {
-    opacity: 0,
-    x: -12,
-    scale: 0.99,
-    transition: {
-      duration: 0.2,
+    exit: {
+      opacity: 0,
+      x: exitX,
+      scale: 0.99,
+      transition: {
+        duration: 0.2,
+      },
     },
-  },
+  };
 };
 
 // Pop-in for modals and overlays
@@ -93,7 +98,7 @@ const popVariants = {
 };
 
 // Determine which animation to use based on route
-function getVariants(pathname: string) {
+function getVariants(pathname: string, dir?: "next" | "prev") {
   // Drill-down pages (detail views)
   if (
     pathname.includes("/predictions/") ||
@@ -102,7 +107,7 @@ function getVariants(pathname: string) {
     pathname.includes("/driver/") ||
     (pathname.includes("/league/") && pathname.includes("/"))
   ) {
-    return slideVariants;
+    return makeSlideVariants(dir);
   }
   // Profile and settings (pop)
   if (pathname === "/profile" || pathname.includes("/notifications")) {
@@ -146,7 +151,8 @@ export const staggerItemFromLeft = {
 
 export default function PageTransition({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-  const variants = getVariants(location.pathname);
+  const dir = (location.state as { dir?: "next" | "prev" } | null)?.dir;
+  const variants = getVariants(location.pathname, dir);
 
   return (
     <AnimatePresence mode="wait">

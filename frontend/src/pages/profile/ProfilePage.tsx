@@ -24,6 +24,9 @@ import {
   Download,
   RefreshCw,
   Smartphone,
+  Moon,
+  Sun,
+  Palette,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AvatarSelector } from "../../components/AvatarDisplay";
@@ -31,6 +34,7 @@ import BadgeCollection from "../../components/BadgeCollection";
 import PointsHistory from "./PointsHistory";
 import { MyLeaguesSection } from "./MyLeaguesSection";
 import { useProfileData } from "./useProfileData";
+import { useTheme } from "@/lib/theme";
 import { apiClient, getApiError, api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { haptic } from "@/lib/haptics";
@@ -77,7 +81,8 @@ function ProfileSkeleton() {
 export default function ProfilePage() {
   const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { theme, setTheme } = useTheme();
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
 
@@ -341,6 +346,88 @@ export default function ProfilePage() {
             </div>
             <ChevronRight className="w-4 h-4 text-pk-titane" />
           </button>
+        </motion.div>
+
+        {/* ── App preferences: theme + language ── */}
+        <motion.div
+          variants={fadeUp}
+          className="bg-pk-surface border border-white/[0.08] rounded-lg p-4 space-y-4"
+          data-testid="profile-preferences"
+        >
+          <div className="flex items-center gap-2">
+            <Palette className="w-4 h-4 text-pk-red" />
+            <h3 className="font-display text-sm">{t("profile.preferences", "Préférences")}</h3>
+          </div>
+
+          {/* Theme */}
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="font-display text-[0.8125rem] text-pk-piste">
+                {t("profile.theme", "Thème")}
+              </p>
+              <p className="font-data text-[0.5625rem] text-pk-titane">
+                {t("profile.theme_desc", "Apparence de l'app")}
+              </p>
+            </div>
+            <div className="flex rounded-full border border-white/[0.1] bg-white/[0.04] p-0.5">
+              {[
+                { key: "dark" as const, label: t("profile.theme_dark", "Sombre"), Icon: Moon },
+                { key: "light" as const, label: t("profile.theme_light", "Clair"), Icon: Sun },
+              ].map(({ key, label, Icon }) => (
+                <button
+                  key={key}
+                  onClick={() => {
+                    haptic("selection");
+                    setTheme(key);
+                  }}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 font-data text-[0.625rem] uppercase tracking-[0.06em] transition-colors ${
+                    theme === key ? "bg-pk-red text-white" : "text-pk-titane hover:text-pk-piste"
+                  }`}
+                  data-testid={`theme-${key}`}
+                  aria-pressed={theme === key}
+                >
+                  <Icon className="h-3 w-3" />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Language */}
+          <div className="flex items-center justify-between gap-3 border-t border-white/[0.06] pt-3">
+            <div>
+              <p className="font-display text-[0.8125rem] text-pk-piste">
+                {t("profile.language", "Langue")}
+              </p>
+              <p className="font-data text-[0.5625rem] text-pk-titane">
+                {t("profile.language_desc", "Langue de l'interface")}
+              </p>
+            </div>
+            <div className="flex rounded-full border border-white/[0.1] bg-white/[0.04] p-0.5">
+              {[
+                { code: "fr", label: "FR" },
+                { code: "en", label: "EN" },
+              ].map(({ code, label }) => {
+                const active = (i18n.resolvedLanguage || i18n.language || "fr").startsWith(code);
+                return (
+                  <button
+                    key={code}
+                    onClick={() => {
+                      haptic("selection");
+                      i18n.changeLanguage(code);
+                    }}
+                    className={`rounded-full px-3 py-1.5 font-data text-[0.625rem] uppercase tracking-[0.08em] transition-colors ${
+                      active ? "bg-pk-red text-white" : "text-pk-titane hover:text-pk-piste"
+                    }`}
+                    data-testid={`lang-${code}`}
+                    aria-pressed={active}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </motion.div>
 
         {/* PWA Install / Update */}

@@ -225,9 +225,9 @@ export function ReactionGame({
                 <motion.div
                   className="w-8 h-8 sm:w-10 sm:h-10 rounded-full"
                   animate={{
-                    backgroundColor: lit ? "#ef4444" : "#121418",
+                    backgroundColor: lit ? "#ff8a00" : "#121418",
                     boxShadow: lit
-                      ? "0 0 30px #ef4444, 0 0 60px #ef444480, inset 0 -2px 4px #dc2626"
+                      ? "0 0 30px #ff8a00, 0 0 60px #ff8a0080, inset 0 -2px 4px #e67700"
                       : "inset 0 2px 4px #000",
                   }}
                   transition={{ duration: 0.15 }}
@@ -236,7 +236,7 @@ export function ReactionGame({
               {/* Reflection */}
               {lit && (
                 <motion.div
-                  className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-2 bg-red-500/40 rounded-full blur-sm"
+                  className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-2 bg-[#ff8a00]/40 rounded-full blur-sm"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                 />
@@ -259,6 +259,11 @@ export function ReactionGame({
           onClick={handleClick}
           whileTap={gameState === "go" ? { scale: 0.97 } : {}}
         >
+          {/* Acceleration zone label */}
+          <span className="pointer-events-none absolute left-2 top-2 z-10 font-data text-[0.5rem] uppercase tracking-[0.14em] text-pk-titane/70">
+            {t("mini_games.acceleration_zone", "Zone d'accélération")}
+          </span>
+
           {/* Background pulse for GO */}
           {gameState === "go" && (
             <motion.div
@@ -379,6 +384,16 @@ export function ReactionGame({
                 <p className="font-display text-sm mt-1 text-white/80">
                   {getResultGrade(reactionTime).label}
                 </p>
+                {reactionTime < 150 && (
+                  <motion.p
+                    className="mt-1.5 inline-block rounded-full border border-pk-emerald/30 bg-pk-emerald/10 px-2.5 py-0.5 font-display text-[0.625rem] uppercase tracking-[0.1em] text-pk-emerald"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 400, delay: 0.1 }}
+                  >
+                    {t("mini_games.perfect_start", "Démarrage parfait")}
+                  </motion.p>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

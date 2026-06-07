@@ -91,6 +91,53 @@ async def build_global(*, current_user_id: str, limit: int = 100) -> dict:
     }
 
 
+async def build_leagues_global(*, current_user_id: str, limit: int = 100) -> dict:
+    """Rank every league by the total points accumulated by its members.
+
+    Returns the top ``limit`` leagues with member counts and average points,
+    plus the ids of the leagues the current user belongs to (for highlighting).
+    """
+    # Sum points per league from the leaderboard collection.
+    sums = await db.leaderboard.aggregate(
+        [{"$group": {"_id": "$league_id", "total_points": {"$sum": "$total_points"}}}]
+    ).to_list(10000)
+    points_by_league = {s["_id"]: s.get("total_points", 0) for s in sums}
+
+    leagues = await db.leagues.find(
+        {}, {"_id": 0, "id": 1, "name": 1, "code": 1, "members": 1}
+    ).to_list(10000)
+
+    my_league_ids: list[str] = []
+    rows: list[dict] = []
+    for lg in leagues:
+        members = lg.get("members") or []
+        member_count = len(members)
+        total = points_by_league.get(lg["id"], 0)
+        average = round(total / member_count) if member_count else 0
+        if current_user_id in members:
+            my_league_ids.append(lg["id"])
+        rows.append(
+            {
+                "league_id": lg["id"],
+                "name": lg.get("name", "Ligue"),
+                "code": lg.get("code"),
+                "member_count": member_count,
+                "total_points": total,
+                "average_points": average,
+            }
+        )
+
+    rows.sort(key=lambda r: (-r["total_points"], -r["member_count"]))
+    for i, row in enumerate(rows):
+        row["position"] = i + 1
+
+    return {
+        "leaderboard": rows[:limit],
+        "total_leagues": len(rows),
+        "my_league_ids": my_league_ids,
+    }
+
+
 async def build_race_weekend(*, race_id: str, league_id: str | None = None) -> dict:
     """Rank predictors for a single race. If ``league_id`` is provided, only
     members of that league are included. Returns an empty leaderboard with

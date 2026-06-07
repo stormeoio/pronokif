@@ -7,10 +7,11 @@
  *
  * Design reference: figma maquettes dark/light (June 2026).
  */
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ChevronLeft,
@@ -25,9 +26,13 @@ import {
 } from "lucide-react";
 import { getTeamColors } from "./driverHelpers";
 import { useDriverDetailData } from "./useDriverDetailData";
+import { useDriverRoster } from "./useDriverRoster";
+import { DriverNavRail } from "./DriverNavRail";
 import { getTeamMeta } from "@/lib/teamLogos";
 import { haptic } from "@/lib/haptics";
 import { getReducedMotionProps } from "@/lib/motion";
+import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
+import { api } from "@/lib/api";
 
 const COUNTRY_FLAGS: Record<string, string> = {
   Australia: "🇦🇺",
@@ -219,16 +224,89 @@ function RadarChart({
   );
 }
 
+/* ── Shell (rail + scrollable profile) ─────────────────── */
+
+function DriverPageShell({
+  roster,
+  currentId,
+  onSelect,
+  mainRef,
+  children,
+}: {
+  roster: import("./useDriverRoster").RosterDriver[];
+  currentId: string | undefined;
+  onSelect: (id: string, direction: "next" | "prev") => void;
+  mainRef: React.RefObject<HTMLElement | null>;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex min-h-screen bg-pk-carbon">
+      <DriverNavRail drivers={roster} currentId={currentId} onSelect={onSelect} />
+      <main
+        ref={mainRef}
+        className="relative flex-1 min-w-0 overflow-x-hidden pb-24"
+        data-testid="driver-detail-page"
+      >
+        {children}
+      </main>
+    </div>
+  );
+}
+
 /* ── Component ─────────────────────────────────────────── */
 
 export default function DriverDetailPage() {
   const { t } = useTranslation();
   const { driverId } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
 
   const { loading, driver, error } = useDriverDetailData(driverId);
+
+  // ── Roster navigation (sidebar rail + swipe) ──────────────
+  const { roster } = useDriverRoster();
+  const mainRef = useRef<HTMLElement>(null);
+
+  const currentId = driver?.id ?? driverId;
+  const currentIndex = roster.findIndex((d) => d.id === currentId);
+  const prevDriver = currentIndex > 0 ? roster[currentIndex - 1] : undefined;
+  const nextDriver =
+    currentIndex >= 0 && currentIndex < roster.length - 1 ? roster[currentIndex + 1] : undefined;
+
+  const goTo = useCallback(
+    (id: string, direction: "next" | "prev") => {
+      haptic("selection");
+      navigate(`/driver/${id}`, { state: { dir: direction } });
+    },
+    [navigate],
+  );
+  const goPrev = useCallback(() => {
+    if (prevDriver) goTo(prevDriver.id, "prev");
+  }, [prevDriver, goTo]);
+  const goNext = useCallback(() => {
+    if (nextDriver) goTo(nextDriver.id, "next");
+  }, [nextDriver, goTo]);
+
+  // Swipe left → next driver, swipe right → previous driver.
+  useSwipeNavigation(mainRef, {
+    onSwipeLeft: goNext,
+    onSwipeRight: goPrev,
+    enabled: roster.length > 1,
+  });
+
+  // Prefetch adjacent drivers so a swipe / tap feels instant (no skeleton).
+  useEffect(() => {
+    for (const d of [prevDriver, nextDriver]) {
+      if (!d) continue;
+      queryClient.prefetchQuery({
+        queryKey: ["/drivers", d.id, "details"],
+        queryFn: () => api.drivers.details(d.id),
+        staleTime: 60_000,
+      });
+    }
+  }, [queryClient, prevDriver, nextDriver]);
 
   useEffect(() => {
     if (error) {
@@ -237,16 +315,24 @@ export default function DriverDetailPage() {
     }
   }, [error, navigate]);
 
-  if (loading) return <DriverDetailSkeleton />;
+  if (loading) {
+    return (
+      <DriverPageShell roster={roster} currentId={currentId} onSelect={goTo} mainRef={mainRef}>
+        <DriverDetailSkeleton />
+      </DriverPageShell>
+    );
+  }
 
   if (!driver) {
     return (
-      <div className="min-h-screen bg-pk-carbon flex items-center justify-center">
-        <div className="text-center">
-          <User className="w-10 h-10 text-pk-titane mx-auto mb-3" />
-          <p className="text-sm text-pk-titane">{t("driver_detail.not_found")}</p>
+      <DriverPageShell roster={roster} currentId={currentId} onSelect={goTo} mainRef={mainRef}>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <User className="w-10 h-10 text-pk-titane mx-auto mb-3" />
+            <p className="text-sm text-pk-titane">{t("driver_detail.not_found")}</p>
+          </div>
         </div>
-      </div>
+      </DriverPageShell>
     );
   }
 
@@ -284,7 +370,7 @@ export default function DriverDetailPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-pk-carbon pb-24" data-testid="driver-detail-page">
+    <DriverPageShell roster={roster} currentId={currentId} onSelect={goTo} mainRef={mainRef}>
       {/* ═══════════════ HERO BANNER ═══════════════ */}
       <motion.div
         className="relative overflow-hidden"
@@ -325,6 +411,38 @@ export default function DriverDetailPage() {
           </button>
 
           <div className="flex items-center gap-2">
+            {/* Prev / next driver — sequential slider control */}
+            <div className="flex items-center bg-pk-carbon/40 backdrop-blur-sm rounded-lg">
+              <button
+                onClick={goPrev}
+                disabled={!prevDriver}
+                className="p-2 rounded-l-lg text-pk-titane hover:text-white transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                aria-label={t("driver_detail.prev_driver")}
+                title={
+                  prevDriver
+                    ? `${prevDriver.first_name} ${prevDriver.last_name}`
+                    : t("driver_detail.prev_driver")
+                }
+                data-testid="driver-prev"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={goNext}
+                disabled={!nextDriver}
+                className="p-2 rounded-r-lg text-pk-titane hover:text-white transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                aria-label={t("driver_detail.next_driver")}
+                title={
+                  nextDriver
+                    ? `${nextDriver.first_name} ${nextDriver.last_name}`
+                    : t("driver_detail.next_driver")
+                }
+                data-testid="driver-next"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
             <button
               onClick={() => {
                 haptic("light");
@@ -574,7 +692,10 @@ export default function DriverDetailPage() {
                 {t("driver_detail.see_all")} <ChevronRight className="w-3 h-3" />
               </button>
             </div>
-            <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory scrollbar-hide">
+            <div
+              data-swipe-ignore
+              className="flex gap-2.5 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory scrollbar-hide"
+            >
               {(
                 driver.recent_results as {
                   race_id: string;
@@ -790,6 +911,6 @@ export default function DriverDetailPage() {
           </motion.div>
         )}
       </div>
-    </div>
+    </DriverPageShell>
   );
 }
