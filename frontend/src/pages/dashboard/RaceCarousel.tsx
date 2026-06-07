@@ -300,7 +300,7 @@ export default function RaceCarousel({ races, predictedRaceIds }: RaceCarouselPr
                   <span className="text-xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
                     {raceFlag(race)}
                   </span>
-                  <p className="mt-0.5 text-center font-display text-[1.25rem] uppercase leading-tight text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)]">
+                  <p className="mt-0.5 text-center font-race text-[2.375rem] font-bold italic uppercase leading-[0.9] tracking-[0.01em] text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)]">
                     {shortName(race.name)}
                   </p>
                   <p className="mt-1.5 font-mono text-[0.5625rem] uppercase tracking-[0.08em] text-white/70 drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">

@@ -728,6 +728,7 @@ const fr = {
       finished: "Terminé",
       cancelled: "Annulé",
       closed: "Fermé",
+      live: "Live",
     },
     cta: {
       results: "Résultats",
@@ -735,7 +736,9 @@ const fr = {
       locked: "Verrouillé",
       edit: "Modifier",
       predict: "Pronostiquer",
+      follow_live: "Suivre en Live",
     },
+    closing_aria: "Clôture des pronostics dans {{time}}",
     empty_title: "Aucune course",
     empty_season_over: "Saison terminée",
     empty_none: "Aucune course ici",
@@ -749,6 +752,19 @@ const fr = {
       schedule: "Programme",
       grid: "Grille",
       picks: "Pronos",
+    },
+    live_results: {
+      title_live: "Résultats en direct",
+      title_final: "Résultats du Grand Prix",
+      awaiting: "En attente des résultats…",
+      podium: "Podium",
+      your_score: "Ton score sur ce GP",
+      pending_score: "En attente",
+      points: "{{count}} pts",
+      leagues: "Tes ligues",
+      no_leagues: "Rejoins une ligue pour te comparer",
+      position: "{{pos}}e",
+      see_details: "Voir le détail des résultats",
     },
     sessions: {
       fp1: "Essais Libres 1",
@@ -784,6 +800,13 @@ const fr = {
       unavailable_desc: "La liste des pilotes et écuries n'est pas encore disponible.",
       driver_count_one: "pilote",
       driver_count_other: "pilotes",
+      starting_grid_title: "Grille de départ",
+      pole_position: "Pole Position",
+      quali_not_started_title: "Qualifications non terminées",
+      quali_not_started_desc: "La grille de départ sera révélée dès la fin des qualifications.",
+      quali_awaiting_title: "En attente des résultats",
+      quali_awaiting_desc:
+        "Les qualifications viennent de se terminer. La grille de départ sera affichée dès la saisie des résultats.",
     },
     circuit_stats: {
       turns: "virages",
@@ -1414,6 +1437,12 @@ const fr = {
   // ── Race detail hero ─────────────────────────────
   race_hero: {
     sprint_badge: "Week-end Sprint",
+    countdown: {
+      d: "j",
+      h: "h",
+      m: "m",
+      s: "s",
+    },
     status: {
       finished: "Terminé",
       live: "En direct",
@@ -1424,6 +1453,7 @@ const fr = {
       locked: "Pronostics verrouillés",
       edit: "Modifier mes pronostics",
       predict: "Pronostiquer",
+      follow_live: "Suivre les résultats en direct",
     },
   },
 
@@ -1464,6 +1494,9 @@ const fr = {
     drivers_label: "Pilotes",
     compare_label: "Comparer",
     compare_tooltip: "Comparer avec un autre pilote",
+    nav_drivers_aria: "Navigation pilotes",
+    prev_driver: "Pilote précédent",
+    next_driver: "Pilote suivant",
     follow: "Suivi",
     followed: "Pilote suivi !",
     season: "Saison {{year}}",

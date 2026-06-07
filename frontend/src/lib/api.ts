@@ -243,6 +243,10 @@ export const api = {
     results: (raceId: string) => get<ResultsResponse>(`/results/${raceId}`),
     predictionCount: (raceId: string) =>
       get<{ count: number }>(`/races/${raceId}/prediction-count`),
+    qualifyingGrid: (raceId: string) =>
+      get<{ race_id: string; driver_order: string[]; entered_at: string }>(
+        `/races/${raceId}/qualifying-grid`,
+      ),
   },
 
   // ── Drivers ──────────────────────────────────────────────────

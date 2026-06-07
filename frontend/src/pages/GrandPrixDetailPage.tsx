@@ -28,8 +28,9 @@ import { haptic } from "@/lib/haptics";
 import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
 import { CircuitMap } from "@/components/CircuitMap";
 import { EmptyFullPage } from "@/components/EmptyState";
-import RaceGrid from "@/components/RaceGrid";
+import StartingGrid from "@/components/StartingGrid";
 import RaceDetailHero from "@/components/RaceDetailHero";
+import RaceLiveResults from "@/components/RaceLiveResults";
 
 /* ── Country flags ────────────────────────────────────────── */
 
@@ -167,19 +168,6 @@ function useCountdown(targetDate: string | null) {
   };
 }
 
-/* ── Countdown Display ───────────────────────────────────── */
-
-function CountdownUnit({ value, label }: { value: number; label: string }) {
-  return (
-    <div className="text-center">
-      <div className="w-14 h-14 rounded-lg bg-pk-anthracite border border-white/[0.08] flex items-center justify-center font-data text-xl font-bold text-pk-piste">
-        {String(value).padStart(2, "0")}
-      </div>
-      <p className="font-data text-[0.5rem] text-pk-titane mt-1 uppercase">{label}</p>
-    </div>
-  );
-}
-
 /* ── Shimmer Skeleton ─────────────────────────────────────── */
 
 function GrandPrixSkeleton() {
@@ -238,6 +226,12 @@ export default function GrandPrixDetailPage() {
     queryKey: ["/races", raceId, "details"],
     queryFn: () => api.races.details(raceId!) as unknown as Promise<Record<string, unknown>>,
     enabled: !!raceId,
+    // While the race is running, poll so status flips to "finished" and the live
+    // results section refreshes without a manual pull.
+    refetchInterval: (query) => {
+      const data = query.state.data as Record<string, unknown> | undefined;
+      return data?.status === "in_progress" ? 30_000 : false;
+    },
   });
 
   usePullToRefresh({
@@ -314,6 +308,7 @@ export default function GrandPrixDetailPage() {
   const countryFlag = raceDetails ? COUNTRY_FLAGS[raceDetails.country as string] || "🏁" : "🏁";
 
   const isFinished = raceDetails?.status === "finished";
+  const isLive = raceDetails?.status === "in_progress";
   const isUpcoming = raceDetails?.status === "upcoming";
   // Predictions stay open until the race starts (status flips to in_progress).
   // The /details payload may omit can_predict, so derive it from the status.
@@ -372,57 +367,33 @@ export default function GrandPrixDetailPage() {
 
       {/* ── Glass Header ── */}
       <header className="sticky top-0 z-50 bg-pk-carbon/85 backdrop-blur-xl saturate-[1.3] border-b border-white/[0.08]">
-        <div className="px-4 pt-3 pb-0">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate(-1)}
-                className="p-1.5 -ml-1.5 rounded-lg text-pk-titane hover:text-pk-piste transition-colors"
-                data-testid="back-btn"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-lg flex-shrink-0">{countryFlag}</span>
-                <h1 className="font-display text-lg truncate">
-                  {(raceDetails.name as string).replace(" Grand Prix", "")}
-                </h1>
-              </div>
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-1.5 -ml-1.5 rounded-lg text-pk-titane hover:text-pk-piste transition-colors"
+              data-testid="back-btn"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-lg flex-shrink-0">{countryFlag}</span>
+              <h1 className="font-race text-xl font-bold italic uppercase tracking-[0.01em] truncate">
+                {(raceDetails.name as string).replace(" Grand Prix", "")}
+              </h1>
             </div>
-            {Boolean(raceDetails.is_sprint_weekend) && (
-              <span className="font-data text-[0.4375rem] px-1.5 py-0.5 rounded bg-pk-amber/20 text-pk-amber uppercase flex-shrink-0">
-                Sprint
-              </span>
-            )}
           </div>
-
-          {/* Tabs */}
-          <div className="flex gap-1.5">
-            {TAB_KEYS.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => {
-                  haptic("selection");
-                  setActiveTab(tab.key);
-                }}
-                className={`flex-1 py-1.5 rounded-full text-center font-data text-[0.5625rem] border transition-colors ${
-                  activeTab === tab.key
-                    ? "bg-pk-red-subtle border-pk-red/30 text-pk-red"
-                    : "bg-white/[0.04] border-white/[0.08] text-pk-titane"
-                }`}
-                data-testid={`gp-tab-${tab.key}`}
-              >
-                {t(tab.labelKey)}
-              </button>
-            ))}
-          </div>
+          {Boolean(raceDetails.is_sprint_weekend) && (
+            <span className="font-data text-[0.4375rem] px-1.5 py-0.5 rounded bg-pk-amber/20 text-pk-amber uppercase flex-shrink-0">
+              Sprint
+            </span>
+          )}
         </div>
       </header>
 
       {/* ── Immersive hero + prediction CTA ── */}
       <RaceDetailHero
         name={raceDetails.name as string}
-        circuit={circuitName}
         country={raceDetails.country as string}
         flag={countryFlag}
         date={(raceDetails.race_start_at as string) || (raceDetails.date as string)}
@@ -437,12 +408,56 @@ export default function GrandPrixDetailPage() {
         canPredict={canPredict}
         hasPrediction={hasPrediction}
         isSprintWeekend={Boolean(raceDetails.is_sprint_weekend)}
+        countdown={countdown}
+        countdownLabel={nextSession ? t(nextSession.name) : undefined}
         onPredict={() => {
           haptic("medium");
           navigate(`/predictions/${raceId}`);
         }}
         onResults={() => navigate(`/results/${raceId}`)}
+        onFollowLive={() => {
+          haptic("light");
+          // Surface the live results section (lives on the Circuit/info tab) and
+          // scroll to it once it has mounted.
+          setActiveTab("info");
+          let tries = 0;
+          const tryScroll = () => {
+            const el = document.querySelector('[data-testid="race-live-results"]');
+            if (el) {
+              el.scrollIntoView({ behavior: "smooth", block: "start" });
+              return;
+            }
+            if (tries++ < 10) setTimeout(tryScroll, 80);
+          };
+          setTimeout(tryScroll, 120);
+        }}
       />
+
+      {/* ── Tabs — placed below the hero, high-contrast for legibility ── */}
+      <nav
+        className="relative z-10 border-b border-white/[0.08] bg-pk-carbon px-4 py-2.5"
+        data-testid="gp-tabs"
+      >
+        <div className="flex gap-2">
+          {TAB_KEYS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => {
+                haptic("selection");
+                setActiveTab(tab.key);
+              }}
+              className={`flex-1 rounded-lg py-2.5 text-center font-data text-[0.6875rem] font-bold uppercase tracking-[0.08em] transition-all ${
+                activeTab === tab.key
+                  ? "bg-pk-red text-white shadow-[0_0_15px_rgba(225,6,0,0.35)]"
+                  : "bg-white/[0.05] text-pk-piste/75 hover:bg-white/[0.09] hover:text-pk-piste"
+              }`}
+              data-testid={`gp-tab-${tab.key}`}
+            >
+              {t(tab.labelKey)}
+            </button>
+          ))}
+        </div>
+      </nav>
 
       {/* ── Content ── */}
       <AnimatePresence mode="wait">
@@ -458,40 +473,10 @@ export default function GrandPrixDetailPage() {
           {/* ════════════════ INFO TAB ════════════════ */}
           {activeTab === "info" && (
             <>
-              {/* Countdown or status banner */}
-              {countdown && nextSession ? (
-                <motion.div
-                  variants={fadeUp}
-                  className="bg-pk-surface border border-white/[0.08] rounded-lg p-4 mb-3"
-                >
-                  <div className="flex items-center gap-1.5 mb-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-pk-red animate-live-pulse" />
-                    <span className="font-data text-[0.5625rem] text-pk-red uppercase tracking-wider">
-                      {t("grand_prix.countdown_in", { session: t(nextSession.name) })}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-center gap-2">
-                    <CountdownUnit value={countdown.days} label={t("common.days")} />
-                    <span className="font-data text-lg text-pk-titane self-start mt-3">:</span>
-                    <CountdownUnit value={countdown.hours} label={t("common.hours")} />
-                    <span className="font-data text-lg text-pk-titane self-start mt-3">:</span>
-                    <CountdownUnit value={countdown.minutes} label={t("common.min")} />
-                    <span className="font-data text-lg text-pk-titane self-start mt-3">:</span>
-                    <CountdownUnit value={countdown.seconds} label={t("common.sec")} />
-                  </div>
-                </motion.div>
-              ) : isFinished ? (
-                <motion.div
-                  variants={fadeUp}
-                  className="flex items-center gap-2.5 p-3.5 bg-pk-surface border border-white/[0.08] rounded-lg mb-3"
-                >
-                  <div className="w-8 h-8 rounded-md bg-pk-anthracite flex items-center justify-center">
-                    <Check className="w-4 h-4 text-pk-titane" />
-                  </div>
-                  <p className="text-[0.8125rem] text-pk-titane">
-                    {t("grand_prix.status.finished")}
-                  </p>
-                </motion.div>
+              {/* Live / finished race results — race podium + perso & league scores,
+                  polled in near-real-time. Supersedes the old "finished" banner. */}
+              {(isLive || isFinished) && raceId ? (
+                <RaceLiveResults raceId={raceId} isLive={isLive} isFinished={isFinished} />
               ) : null}
 
               {/* Circuit map */}
@@ -646,7 +631,7 @@ export default function GrandPrixDetailPage() {
           )}
 
           {/* ════════════════ GRILLE TAB ════════════════ */}
-          {activeTab === "grille" && <RaceGrid />}
+          {activeTab === "grille" && <StartingGrid raceId={raceId!} sessions={sessions} />}
 
           {/* ════════════════ PRONOS TAB ════════════════ */}
           {activeTab === "picks" && (
