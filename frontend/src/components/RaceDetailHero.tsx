@@ -1,20 +1,27 @@
 /**
  * RaceDetailHero — Immersive banner for the Grand Prix detail page.
  *
- * Uses the race thumbnail illustration with a layered gradient + subtle
- * parallax-ready zoom, the GP identity, and a state-aware prediction CTA:
+ * Layout: a big centered GP/circuit name, a discreet sub-line (country flag +
+ * country name + local date & time in the visitor's timezone), a discreet
+ * integrated countdown to the next session, and a state-aware prediction CTA:
  *   - upcoming & open, no prediction      → "Pronostiquer"
  *   - upcoming & open, has prediction      → "Modifier mes pronostics"
  *   - race started / finished              → locked (read-only)
  *   - cancelled                            → cancelled
  */
 import { useTranslation } from "react-i18next";
-import { ArrowRight, Pencil, Lock, Ban, Trophy, MapPin, CalendarDays } from "lucide-react";
+import { ArrowRight, Pencil, Lock, Ban, Trophy, Timer } from "lucide-react";
 import { getRaceThumbnail } from "@/lib/raceThumbnails";
+
+interface Countdown {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+}
 
 interface RaceDetailHeroProps {
   name: string;
-  circuit: string;
   country: string;
   flag: string;
   date?: string | null;
@@ -24,8 +31,14 @@ interface RaceDetailHeroProps {
   canPredict?: boolean;
   hasPrediction?: boolean;
   isSprintWeekend?: boolean;
+  /** Live countdown to the next upcoming session (null when none / finished). */
+  countdown?: Countdown | null;
+  /** Translated label of the session being counted down to (e.g. "Course"). */
+  countdownLabel?: string;
   onPredict: () => void;
   onResults: () => void;
+  /** Jump to the live results section (race in progress). */
+  onFollowLive?: () => void;
 }
 
 function shortName(name: string): string {
@@ -39,7 +52,7 @@ function shortName(name: string): string {
 
 export default function RaceDetailHero({
   name,
-  circuit,
+  country,
   flag,
   date,
   thumbnailRace,
@@ -48,19 +61,32 @@ export default function RaceDetailHero({
   canPredict,
   hasPrediction,
   isSprintWeekend,
+  countdown,
+  countdownLabel,
   onPredict,
   onResults,
+  onFollowLive,
 }: RaceDetailHeroProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const thumb = getRaceThumbnail(thumbnailRace);
   const started = status === "in_progress";
   const finished = status === "finished";
   const locked = !isCancelled && (started || finished || canPredict === false);
 
-  const dateLabel = date
-    ? new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric" }).format(
-        new Date(date),
-      )
+  // Date + time rendered in the *visitor's* local timezone (no timeZone option
+  // → runtime locale TZ), with the zone abbreviation so it's unambiguous.
+  const parsed = date ? new Date(date) : null;
+  const validDate = parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
+  const dateTimeLabel = validDate
+    ? new Intl.DateTimeFormat(i18n.language || "fr", {
+        weekday: "short",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZoneName: "short",
+      }).format(validDate)
     : null;
 
   return (
@@ -106,21 +132,48 @@ export default function RaceDetailHero({
           )}
         </div>
 
-        <h1 className="mt-1.5 text-center font-display text-[2rem] uppercase leading-[1.05] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-          <span className="text-[1.5rem] mr-2">{flag}</span>
+        {/* Big centered GP / circuit name */}
+        <h1 className="mt-1.5 text-center font-race text-[3.5rem] font-bold italic uppercase leading-[0.88] tracking-[0.01em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
           {shortName(name)}
         </h1>
 
-        <div className="mt-1.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-          <span className="flex items-center gap-1 font-mono text-[0.6875rem] text-pk-piste/90">
-            <MapPin className="h-3 w-3 text-pk-red" /> {circuit}
-          </span>
-          {dateLabel && (
-            <span className="flex items-center gap-1 font-mono text-[0.6875rem] text-pk-piste/90">
-              <CalendarDays className="h-3 w-3 text-pk-info" /> {dateLabel}
-            </span>
+        {/* Discreet meta — flag + country + local date & time */}
+        <p className="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-center font-data text-[0.6875rem] text-pk-piste/80">
+          <span className="text-sm leading-none">{flag}</span>
+          <span className="uppercase tracking-[0.06em] text-pk-piste/90">{country}</span>
+          {dateTimeLabel && (
+            <>
+              <span className="text-pk-titane">·</span>
+              <span className="tabular-nums">{dateTimeLabel}</span>
+            </>
           )}
-        </div>
+        </p>
+
+        {/* Discreet integrated countdown to the next session */}
+        {countdown && (
+          <div className="mt-2.5 flex justify-center" data-testid="race-hero-countdown">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/[0.1] bg-pk-carbon/50 px-3 py-1 backdrop-blur-sm">
+              <Timer className="h-3 w-3 text-pk-red" strokeWidth={2} />
+              {countdownLabel && (
+                <span className="font-data text-[0.5625rem] uppercase tracking-[0.1em] text-pk-titane">
+                  {t("grand_prix.countdown_in", { session: countdownLabel })}
+                </span>
+              )}
+              <span className="font-data text-[0.8125rem] font-bold tabular-nums text-pk-piste">
+                {countdown.days > 0 && (
+                  <>
+                    {countdown.days}
+                    {t("race_hero.countdown.d")}{" "}
+                  </>
+                )}
+                {String(countdown.hours).padStart(2, "0")}
+                {t("race_hero.countdown.h")} {String(countdown.minutes).padStart(2, "0")}
+                {t("race_hero.countdown.m")} {String(countdown.seconds).padStart(2, "0")}
+                {t("race_hero.countdown.s")}
+              </span>
+            </span>
+          </div>
+        )}
 
         {/* CTA */}
         <div className="mt-4">
@@ -135,6 +188,15 @@ export default function RaceDetailHero({
               data-testid="race-hero-results-btn"
             >
               <Trophy className="h-4 w-4 text-pk-gold" /> {t("race_hero.cta.results")}
+            </button>
+          ) : started ? (
+            <button
+              onClick={onFollowLive}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-pk-red font-display text-sm text-white shadow-glow-red transition-transform active:scale-[0.98]"
+              data-testid="race-hero-live-btn"
+            >
+              <span className="h-2 w-2 animate-[pulse-dot_1.5s_ease-in-out_infinite] rounded-full bg-white" />
+              {t("race_hero.cta.follow_live")}
             </button>
           ) : locked ? (
             <div

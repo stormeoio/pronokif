@@ -722,6 +722,7 @@ const en = {
       finished: "Finished",
       cancelled: "Cancelled",
       closed: "Closed",
+      live: "Live",
     },
     cta: {
       results: "Results",
@@ -729,7 +730,9 @@ const en = {
       locked: "Locked",
       edit: "Edit",
       predict: "Predict",
+      follow_live: "Follow Live",
     },
+    closing_aria: "Predictions close in {{time}}",
     empty_title: "No races",
     empty_season_over: "Season finished",
     empty_none: "No races here",
@@ -738,6 +741,19 @@ const en = {
 
   // ── Grand Prix detail ────────────────────────────
   grand_prix: {
+    live_results: {
+      title_live: "Live results",
+      title_final: "Grand Prix results",
+      awaiting: "Waiting for results…",
+      podium: "Podium",
+      your_score: "Your score this GP",
+      pending_score: "Pending",
+      points: "{{count}} pts",
+      leagues: "Your leagues",
+      no_leagues: "Join a league to compare",
+      position: "P{{pos}}",
+      see_details: "See full results",
+    },
     tabs: {
       circuit: "Circuit",
       schedule: "Schedule",
@@ -778,6 +794,13 @@ const en = {
       unavailable_desc: "The driver and team list is not yet available.",
       driver_count_one: "driver",
       driver_count_other: "drivers",
+      starting_grid_title: "Starting Grid",
+      pole_position: "Pole Position",
+      quali_not_started_title: "Qualifying not finished",
+      quali_not_started_desc: "The starting grid will be revealed once qualifying ends.",
+      quali_awaiting_title: "Awaiting results",
+      quali_awaiting_desc:
+        "Qualifying has just ended. The starting grid will appear as soon as results are entered.",
     },
     circuit_stats: {
       turns: "turns",
@@ -1408,6 +1431,12 @@ const en = {
   // ── Race detail hero ─────────────────────────────
   race_hero: {
     sprint_badge: "Sprint Weekend",
+    countdown: {
+      d: "d",
+      h: "h",
+      m: "m",
+      s: "s",
+    },
     status: {
       finished: "Finished",
       live: "Live",
@@ -1418,6 +1447,7 @@ const en = {
       locked: "Predictions locked",
       edit: "Edit my predictions",
       predict: "Predict",
+      follow_live: "Follow live results",
     },
   },
 
@@ -1458,6 +1488,9 @@ const en = {
     drivers_label: "Drivers",
     compare_label: "Compare",
     compare_tooltip: "Compare with another driver",
+    nav_drivers_aria: "Driver navigation",
+    prev_driver: "Previous driver",
+    next_driver: "Next driver",
     follow: "Follow",
     followed: "Driver followed!",
     season: "Season {{year}}",

@@ -302,3 +302,15 @@ async def get_race_prediction_count(race_id: str, _user: dict = Depends(get_curr
     """Return how many users have submitted predictions for a race (social proof)."""
     count = await db.predictions.count_documents({"race_id": race_id})
     return {"count": count}
+
+
+@router.get("/races/{race_id}/qualifying-grid")
+async def get_qualifying_grid(race_id: str) -> dict:
+    """Return the qualifying grid for a race (P1→P20 driver IDs), 404 if not entered yet."""
+    race = await _find_calendar_race(race_id)
+    if not race:
+        raise HTTPException(status_code=404, detail="Course introuvable")
+    grid = await db.qualifying_grids.find_one({"race_id": race_id}, {"_id": 0})
+    if not grid:
+        raise HTTPException(status_code=404, detail="Grille de départ non disponible")
+    return grid

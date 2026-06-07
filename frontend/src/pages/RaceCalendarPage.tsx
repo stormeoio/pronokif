@@ -6,7 +6,7 @@
  * user pronosticate / modify directly, or see results for finished races.
  * Broadcast Premium theme.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -20,7 +20,10 @@ import {
   Trophy,
   Ban,
   AlertCircle,
+  Timer,
+  Radio,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { api } from "@/lib/api";
@@ -28,6 +31,9 @@ import { queryKeys } from "@/lib/queryKeys";
 import { haptic } from "@/lib/haptics";
 import { fadeUp, staggerContainer, getReducedMotionProps } from "@/lib/motion";
 import { getRaceThumbnail } from "@/lib/raceThumbnails";
+// Race card lifecycle (needs-prediction → closing-soon → live → finished) lives
+// in a dedicated, unit-tested module.
+import { HOUR_MS, deriveState, formatCountdown } from "@/lib/raceCardState";
 import { EmptyFullPage } from "@/components/EmptyState";
 import type { Race } from "@/types/api";
 
@@ -85,18 +91,6 @@ function shortName(name: string) {
     .replace("Grand Prix ", "");
 }
 
-type CardState = "needs-prediction" | "predicted" | "finished" | "cancelled" | "locked";
-
-function deriveState(race: Race, predicted: boolean): CardState {
-  const canPredict =
-    (race as Race & { can_predict?: boolean }).can_predict ?? race.status === "upcoming";
-  if (race.status === "cancelled" || race.is_cancelled) return "cancelled";
-  if (race.status === "finished") return "finished";
-  if (predicted) return "predicted";
-  if (!canPredict) return "locked";
-  return "needs-prediction";
-}
-
 /* ── Loading skeleton ──────────────────────────────────── */
 
 function CalendarSkeleton() {
@@ -125,53 +119,72 @@ function CalendarSkeleton() {
 
 /* ── Race card ─────────────────────────────────────────── */
 
-function RaceGridCard({ race, predicted }: { race: Race; predicted: boolean }) {
+function RaceGridCard({ race, predicted, now }: { race: Race; predicted: boolean; now: number }) {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const state = deriveState(race, predicted);
+  const { state, msToClose } = deriveState(race, predicted, now);
   const flag = COUNTRY_FLAGS[race.country] || "🏁";
   const thumb = getRaceThumbnail(race);
   const isPast = state === "finished" || state === "cancelled";
+  const countdown = formatCountdown(msToClose);
+  const highlight = state === "needs-prediction" || state === "closing-soon" || state === "live";
 
-  const statusPill =
-    state === "needs-prediction"
-      ? {
+  const statusPill: { label: string; cls: string; Icon: LucideIcon; pulse?: boolean } = (() => {
+    switch (state) {
+      case "closing-soon":
+        return {
+          label: countdown,
+          cls: "border-pk-red/55 bg-pk-red/20 text-pk-red tabular-nums",
+          Icon: Timer,
+          pulse: true,
+        };
+      case "live":
+        return {
+          label: t("race_calendar.status.live"),
+          cls: "border-pk-red/55 bg-pk-red/20 text-pk-red",
+          Icon: Radio,
+          pulse: true,
+        };
+      case "needs-prediction":
+        return {
           label: t("race_calendar.status.to_predict"),
           cls: "border-pk-red/40 bg-pk-red/15 text-pk-red",
           Icon: AlertCircle,
-        }
-      : state === "predicted"
-        ? {
-            label: t("race_calendar.status.predicted"),
-            cls: "border-pk-emerald/30 bg-pk-emerald/12 text-pk-emerald",
-            Icon: Check,
-          }
-        : state === "finished"
-          ? {
-              label: t("race_calendar.status.finished"),
-              cls: "border-white/[0.12] bg-white/[0.06] text-pk-titane",
-              Icon: Trophy,
-            }
-          : state === "cancelled"
-            ? {
-                label: t("race_calendar.status.cancelled"),
-                cls: "border-pk-amber/25 bg-pk-amber/10 text-pk-amber",
-                Icon: Ban,
-              }
-            : {
-                label: t("race_calendar.status.closed"),
-                cls: "border-white/[0.12] bg-white/[0.06] text-pk-titane",
-                Icon: Lock,
-              };
+          pulse: true,
+        };
+      case "predicted":
+        return {
+          label: t("race_calendar.status.predicted"),
+          cls: "border-pk-emerald/30 bg-pk-emerald/12 text-pk-emerald",
+          Icon: Check,
+        };
+      case "finished":
+        return {
+          label: t("race_calendar.status.finished"),
+          cls: "border-white/[0.12] bg-white/[0.06] text-pk-titane",
+          Icon: Trophy,
+        };
+      case "cancelled":
+        return {
+          label: t("race_calendar.status.cancelled"),
+          cls: "border-pk-amber/25 bg-pk-amber/10 text-pk-amber",
+          Icon: Ban,
+        };
+      default:
+        return {
+          label: t("race_calendar.status.closed"),
+          cls: "border-white/[0.12] bg-white/[0.06] text-pk-titane",
+          Icon: Lock,
+        };
+    }
+  })();
   const { Icon: PillIcon } = statusPill;
 
   return (
     <motion.div
       variants={fadeUp}
       className={`flex flex-col overflow-hidden rounded-lg border bg-pk-surface ${
-        state === "needs-prediction"
-          ? "border-pk-red/45 shadow-[0_0_0_1px_rgba(225,6,0,0.18)]"
-          : "border-white/[0.08]"
+        highlight ? "border-pk-red/45 shadow-[0_0_0_1px_rgba(225,6,0,0.18)]" : "border-white/[0.08]"
       }`}
       data-testid={`course-card-${race.id}`}
       data-state={state}
@@ -205,7 +218,7 @@ function RaceGridCard({ race, predicted }: { race: Race; predicted: boolean }) {
           <span
             className={`absolute right-1.5 top-1.5 inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 font-mono text-[0.5rem] font-bold uppercase tracking-[0.05em] backdrop-blur-sm ${statusPill.cls}`}
           >
-            {state === "needs-prediction" && (
+            {statusPill.pulse && (
               <span className="h-1 w-1 animate-[pulse-dot_2s_ease-in-out_infinite] rounded-full bg-pk-red" />
             )}
             <PillIcon className="h-2.5 w-2.5" strokeWidth={2.5} />
@@ -242,11 +255,22 @@ function RaceGridCard({ race, predicted }: { race: Race; predicted: boolean }) {
           <div className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md bg-pk-amber/10 font-mono text-[0.625rem] uppercase tracking-[0.08em] text-pk-amber">
             <Ban className="h-3 w-3" /> {t("race_calendar.cta.cancelled")}
           </div>
+        ) : state === "live" ? (
+          <button
+            onClick={() => {
+              haptic("medium");
+              navigate(`/race/${race.id}`);
+            }}
+            className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md bg-pk-red font-mono text-[0.625rem] font-bold uppercase tracking-[0.08em] text-white transition-transform active:scale-[0.98]"
+          >
+            <span className="h-1.5 w-1.5 animate-[pulse-dot_2s_ease-in-out_infinite] rounded-full bg-white" />
+            {t("race_calendar.cta.follow_live")}
+          </button>
         ) : state === "locked" ? (
           <div className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md bg-white/[0.04] font-mono text-[0.625rem] uppercase tracking-[0.08em] text-pk-titane">
             <Lock className="h-3 w-3" /> {t("race_calendar.cta.locked")}
           </div>
-        ) : state === "predicted" ? (
+        ) : predicted ? (
           <button
             onClick={() => {
               haptic("light");
@@ -285,6 +309,19 @@ export default function RaceCalendarPage() {
   const { data: races = [], isLoading: racesLoading } = useQuery({
     queryKey: queryKeys.races.list(),
     queryFn: async () => (await api.races.list()) || [],
+    // Real-time: while a race is live (or predictions close within the hour),
+    // poll so status flips and posted results land without a manual refresh.
+    refetchInterval: (query) => {
+      const data = query.state.data as Race[] | undefined;
+      if (!Array.isArray(data)) return false;
+      const liveWindow = data.some((r) => {
+        if (r.status === "in_progress") return true;
+        if (r.status !== "upcoming") return false;
+        const closeAt = new Date(r.predictions_close_at).getTime();
+        return !Number.isNaN(closeAt) && closeAt - Date.now() <= HOUR_MS;
+      });
+      return liveWindow ? 60_000 : false;
+    },
   });
 
   // Return a plain string[] — TanStack Query serialises cache values to JSON,
@@ -313,6 +350,28 @@ export default function RaceCalendarPage() {
     const byDate = (a: Race, b: Race) => new Date(a.date).getTime() - new Date(b.date).getTime();
     return [...races].sort(byDate);
   }, [races]);
+
+  // Live clock driving the per-card countdowns. Ticks every second only while a
+  // race is in its final hour before close (when MM:SS is shown); otherwise a
+  // cheap 30s heartbeat keeps the "closing-soon" threshold accurate.
+  const [now, setNow] = useState(() => Date.now());
+  const closingSoon = useMemo(
+    () =>
+      sorted.some((r) => {
+        if (r.status !== "upcoming" || r.can_predict === false) return false;
+        const closeAt = new Date(r.predictions_close_at).getTime();
+        if (Number.isNaN(closeAt)) return false;
+        const d = closeAt - now;
+        return d > 0 && d <= HOUR_MS;
+      }),
+    [sorted, now],
+  );
+  useEffect(() => {
+    const anyUpcoming = sorted.some((r) => r.status === "upcoming" || r.status === "in_progress");
+    if (!anyUpcoming) return;
+    const id = setInterval(() => setNow(Date.now()), closingSoon ? 1000 : 30000);
+    return () => clearInterval(id);
+  }, [closingSoon, sorted]);
 
   const counts = useMemo(() => {
     const upcoming = sorted.filter(
@@ -410,6 +469,7 @@ export default function RaceCalendarPage() {
                 key={race.id}
                 race={race}
                 predicted={predictedSet.has(String(race.id))}
+                now={now}
               />
             ))
           )}

@@ -12,6 +12,9 @@ module.exports = {
       fontFamily: {
         display: ['"Racing Sans One"', 'sans-serif'],
         heading: ['"Racing Sans One"', 'sans-serif'],
+        // F1-broadcast face (Titillium-based) — reserved for race/GP titles,
+        // used bold + italic for the official "retransmission" look.
+        race: ['"Titillium Web"', '"Racing Sans One"', 'sans-serif'],
         body: ['Chivo', 'sans-serif'],
         data: ['"JetBrains Mono"', 'monospace'],
         mono: ['"JetBrains Mono"', 'monospace'],

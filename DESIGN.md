@@ -16,7 +16,8 @@
 - **Dark mode:** ONLY. Pas de mode clair. Le noir est une decision de design, pas une option.
 
 ## Typography
-- **Display/Hero:** Racing Sans One — la font signature de PronoKif. Uppercase only, letter-spacing 1px. Utilisee pour tous les titres h1-h3, noms de GP, classements.
+- **Display/Hero:** Racing Sans One — la font signature de PronoKif. Uppercase only, letter-spacing 1px. Utilisee pour tous les titres h1-h3, classements, CTAs.
+- **Titres de course (GP) :** Titillium Web (base de la font Formula1 officielle) — uppercase, **700 italic** (look retransmission F1). Reservee aux noms de Grand Prix mis en avant : titres centres des cartes du carousel calendrier, header hero des fiches Course, header sticky compact de la fiche Course. Classe Tailwind `font-race`. Plus gros que le reste de la hierarchie pour l'impact broadcast.
 - **Body:** Chivo (variable, 100-900) — lisible, polyvalente, italique disponible pour l'emphase. Utilisee pour le texte courant, descriptions, paragraphes.
 - **UI/Labels:** Chivo 500 ou JetBrains Mono 10-11px uppercase tracking 0.15em — pour les labels de section, captions, metadata.
 - **Data/Tables:** JetBrains Mono (tabular-nums obligatoire) — pour tous les chiffres : scores, rangs, pourcentages, timers, ecarts. Font-feature-settings: "tnum" pour l'alignement des colonnes.
@@ -249,3 +250,4 @@
 | 2026-05-22 | Effets lumineux bordure boutons                                           | Conic-gradient rotatif CSS Houdini sur .btn-pk (primary) et .btn-pk-outline (hover), sweep lumineux interne                      |
 | 2026-05-23 | Theme v2 CTA Border Glow ajoute                                           | Adapte ReactBits Border Glow aux CTA critiques avec palette PronoKif, halo directionnel pointer-aware et fallback motion reduite |
 | 2026-05-27 | Branding officiel v1 integre                                              | Les assets `LOGO V2` deviennent les references pour favicon, PWA, wordmark horizontal et symboles UI                             |
+| 2026-06-07 | Titillium Web (bold italic) pour les titres de course                     | Look "retransmission F1 officielle" demande par le fondateur — titres GP plus sportifs et plus gros (cartes carousel + headers fiche Course), classe `font-race` |

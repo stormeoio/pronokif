@@ -140,6 +140,10 @@ class DemoSeedRequest(BaseModel):
     confirm: str
 
 
+class QualifyingGridInput(BaseModel):
+    driver_order: list[str]  # ordered driver IDs P1 → P20 (or however many classified)
+
+
 async def _race_prediction_overview(race_id: str) -> dict:
     race = await get_admin_race(race_id)
     result_doc = await db.race_results.find_one({"race_id": race_id}, {"_id": 0, "results": 1})
@@ -584,6 +588,71 @@ async def send_race_prediction_reminders(
         "emails_sent": emails_sent,
         "emails_failed": emails_failed,
     }
+
+
+@router.post("/races/{race_id}/qualifying-grid")
+async def save_qualifying_grid(
+    race_id: str,
+    data: QualifyingGridInput,
+    admin: dict = Depends(get_current_admin),
+) -> dict:
+    """
+    Enter qualifying grid (P1→P20 driver IDs) right after qualifying ends.
+    Stored in the `qualifying_grids` collection — does NOT trigger prediction scoring.
+    Idempotent: re-posting overwrites the previous grid for the same race.
+    """
+    now = datetime.now(UTC).isoformat()
+    await db.qualifying_grids.update_one(
+        {"race_id": race_id},
+        {
+            "$set": {
+                "race_id": race_id,
+                "driver_order": data.driver_order,
+                "entered_at": now,
+                "entered_by": admin.get("email"),
+            }
+        },
+        upsert=True,
+    )
+    await log_backoffice_activity(
+        admin,
+        db_handle=db,
+        action="race.qualifying_grid",
+        entity_type="race",
+        entity_id=race_id,
+        metadata={"driver_count": len(data.driver_order)},
+    )
+    return {"message": "Qualifying grid saved", "race_id": race_id}
+
+
+@router.get("/races/{race_id}/qualifying-grid")
+async def get_admin_qualifying_grid(
+    race_id: str, admin: dict = Depends(get_current_admin)
+) -> dict:
+    """Retrieve the qualifying grid entered for a race (admin view)."""
+    grid = await db.qualifying_grids.find_one({"race_id": race_id}, {"_id": 0})
+    if not grid:
+        raise HTTPException(status_code=404, detail="Grille non saisie")
+    return grid
+
+
+@router.delete("/races/{race_id}/qualifying-grid")
+async def delete_qualifying_grid(
+    race_id: str, admin: dict = Depends(get_current_admin)
+) -> dict:
+    """Delete a qualifying grid (e.g. to re-enter after a disqualification)."""
+    result = await db.qualifying_grids.delete_one({"race_id": race_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Grille non trouvée")
+    await log_backoffice_activity(
+        admin,
+        db_handle=db,
+        action="race.qualifying_grid_delete",
+        entity_type="race",
+        entity_id=race_id,
+        metadata={},
+    )
+    return {"message": "Qualifying grid deleted"}
 
 
 @router.delete("/races/{race_id}")
