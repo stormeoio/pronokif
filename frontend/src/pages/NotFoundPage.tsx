@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { RotateCcw, Flag } from "lucide-react";
 import { haptic } from "@/lib/haptics";
 import { fadeUp, staggerContainer, easing, duration, getReducedMotionProps } from "@/lib/motion";
@@ -10,6 +11,7 @@ import { fadeUp, staggerContainer, easing, duration, getReducedMotionProps } fro
  */
 export default function NotFoundPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
 
@@ -24,7 +26,7 @@ export default function NotFoundPage() {
         {...rmProps}
       >
         <Flag className="w-3.5 h-3.5" fill="currentColor" />
-        Drapeau rouge — session interrompue
+        {t("not_found_page.banner")}
       </motion.div>
 
       {/* Content */}
@@ -60,14 +62,14 @@ export default function NotFoundPage() {
         </motion.div>
 
         <motion.h1 variants={fadeUp} className="font-display text-[1.75rem] text-pk-red mb-2">
-          Drapeau rouge
+          {t("not_found_page.title")}
         </motion.h1>
 
         <motion.p
           variants={fadeUp}
           className="text-sm text-pk-titane leading-relaxed mb-8 max-w-[280px]"
         >
-          Page introuvable. La session a été interrompue — retourne en piste !
+          {t("not_found_page.description")}
         </motion.p>
 
         {/* Radio Message */}
@@ -77,12 +79,16 @@ export default function NotFoundPage() {
         >
           <div className="flex items-center gap-1.5 mb-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-pk-red animate-live-pulse" />
-            <span className="font-data text-[0.5rem] text-pk-red uppercase">Radio équipe</span>
+            <span className="font-data text-[0.5rem] text-pk-red uppercase">
+              {t("not_found_page.radio_label")}
+            </span>
           </div>
           <p className="text-[0.8125rem] italic text-pk-piste leading-snug">
-            "Fred, on a perdu ta position. Rentre aux stands et on te remet en piste."
+            {t("not_found_page.radio_message")}
           </p>
-          <p className="font-data text-[0.5rem] text-pk-titane mt-1">— Ingénieur de course</p>
+          <p className="font-data text-[0.5rem] text-pk-titane mt-1">
+            {t("not_found_page.radio_engineer")}
+          </p>
         </motion.div>
 
         {/* Actions */}
@@ -95,13 +101,13 @@ export default function NotFoundPage() {
             className="w-full h-12 rounded-lg bg-pk-red text-white font-display text-[0.9375rem] flex items-center justify-center gap-2 shadow-glow-red active:scale-[0.97] transition-transform"
           >
             <RotateCcw className="w-4 h-4" />
-            Retour au paddock
+            {t("not_found_page.back_paddock")}
           </button>
           <button
             onClick={() => navigate(-1)}
             className="text-xs text-pk-titane hover:text-pk-piste transition-colors"
           >
-            Signaler un problème
+            {t("not_found_page.report_issue")}
           </button>
         </motion.div>
       </motion.div>

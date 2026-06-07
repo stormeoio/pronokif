@@ -259,7 +259,7 @@ export default function DashboardTab({ onNavigate }: DashboardTabProps) {
       target: "users",
     },
     {
-      label: "Pickstics",
+      label: "Pronostics",
       value: stats?.total_predictions ?? "—",
       icon: TrendingUp,
       tone: "primary",

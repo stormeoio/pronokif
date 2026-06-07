@@ -210,7 +210,7 @@ export default function MembersTab() {
                 <div className="text-right">
                   <p className="font-data text-sm text-cyan-400">Niv. {member.level || 1}</p>
                   <p className="font-body text-xs text-gray-500">
-                    {member.predictions_count || 0} picks
+                    {member.predictions_count || 0} pronos
                   </p>
                 </div>
               </motion.button>

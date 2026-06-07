@@ -2,6 +2,7 @@
  * PointsHistory — Expandable race-by-race points breakdown.
  * Broadcast Premium: pk-surface cards, pk-emerald for positive points.
  */
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, History } from "lucide-react";
 import { RaceEntityToken } from "@/components/entities/RaceEntityToken";
@@ -47,6 +48,7 @@ export default function PointsHistory({
   showHistory,
   setShowHistory,
 }: PointsHistoryProps) {
+  const { t } = useTranslation();
   return (
     <div className="bg-pk-surface border border-white/[0.08] rounded-lg overflow-hidden">
       <button
@@ -62,9 +64,11 @@ export default function PointsHistory({
             <History className="w-4 h-4 text-pk-emerald" />
           </div>
           <div className="text-left">
-            <span className="font-display text-sm block">Historique des points</span>
+            <span className="font-display text-sm block">{t("points_history.title")}</span>
             <span className="font-data text-[0.5625rem] text-pk-titane">
-              {pointsHistory.summary?.races_with_results || 0} courses avec résultats
+              {t("points_history.races_with_results", {
+                count: pointsHistory.summary?.races_with_results || 0,
+              })}
             </span>
           </div>
         </div>
@@ -85,9 +89,9 @@ export default function PointsHistory({
             {pointsHistory.history?.length === 0 ? (
               <div className="p-6 text-center">
                 <History className="w-8 h-8 text-pk-titane mx-auto mb-2 opacity-40" />
-                <p className="text-xs text-pk-titane">Aucun historique disponible</p>
+                <p className="text-xs text-pk-titane">{t("points_history.no_history")}</p>
                 <p className="font-data text-[0.5625rem] text-pk-titane/60 mt-0.5">
-                  Fais des pronostics pour voir ton historique
+                  {t("points_history.no_history_desc")}
                 </p>
               </div>
             ) : (
@@ -112,6 +116,7 @@ export default function PointsHistory({
 /* ── Race Item ─────────────────────────────────────────── */
 
 function RaceHistoryItem({ race }: { race: RaceHistoryEntry }) {
+  const { t } = useTranslation();
   return (
     <motion.div
       className="p-4"
@@ -139,7 +144,7 @@ function RaceHistoryItem({ race }: { race: RaceHistoryEntry }) {
             </span>
           ) : (
             <span className="font-data text-[0.5625rem] text-pk-titane bg-pk-anthracite px-2 py-1 rounded">
-              En attente
+              {t("points_history.pending")}
             </span>
           )}
         </div>
@@ -149,16 +154,28 @@ function RaceHistoryItem({ race }: { race: RaceHistoryEntry }) {
       {race.has_results && race.points_breakdown && (
         <div className="space-y-1.5">
           <div className="grid grid-cols-2 gap-1.5">
-            <BreakdownItem label="Pole" points={race.points_breakdown.quali_pole.points} />
-            <BreakdownItem label="Top 10 Quali" points={race.points_breakdown.quali_top10.points} />
-            <BreakdownItem label="Vainqueur" points={race.points_breakdown.race_winner.points} />
-            <BreakdownItem label="Top 10 Course" points={race.points_breakdown.race_top10.points} />
+            <BreakdownItem
+              label={t("points_history.pole")}
+              points={race.points_breakdown.quali_pole.points}
+            />
+            <BreakdownItem
+              label={t("points_history.top10_quali")}
+              points={race.points_breakdown.quali_top10.points}
+            />
+            <BreakdownItem
+              label={t("points_history.winner")}
+              points={race.points_breakdown.race_winner.points}
+            />
+            <BreakdownItem
+              label={t("points_history.top10_race")}
+              points={race.points_breakdown.race_top10.points}
+            />
           </div>
 
           {race.is_sprint_weekend && race.sprint_breakdown && (
             <div className="grid grid-cols-2 gap-1.5 mt-1.5">
               <div className="flex justify-between bg-pk-amber/[0.08] border border-pk-amber/15 p-2 rounded text-xs">
-                <span className="text-pk-amber/70">Sprint Quali</span>
+                <span className="text-pk-amber/70">{t("points_history.sprint_quali")}</span>
                 <span
                   className={
                     race.sprint_breakdown.sprint_quali_top10.points > 0
@@ -170,7 +187,7 @@ function RaceHistoryItem({ race }: { race: RaceHistoryEntry }) {
                 </span>
               </div>
               <div className="flex justify-between bg-pk-amber/[0.08] border border-pk-amber/15 p-2 rounded text-xs">
-                <span className="text-pk-amber/70">Sprint Course</span>
+                <span className="text-pk-amber/70">{t("points_history.sprint_race")}</span>
                 <span
                   className={
                     race.sprint_breakdown.sprint_race_top10.points > 0
@@ -185,7 +202,7 @@ function RaceHistoryItem({ race }: { race: RaceHistoryEntry }) {
           )}
 
           <div className="flex justify-between bg-purple-500/[0.08] border border-purple-500/15 p-2 rounded text-xs">
-            <span className="text-purple-400/70">Bonus (SC, DNF, Tour, T1)</span>
+            <span className="text-purple-400/70">{t("points_history.bonus")}</span>
             <span
               className={
                 race.points_breakdown.bonus.points > 0 ? "text-purple-400" : "text-pk-titane/40"

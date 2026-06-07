@@ -4,6 +4,7 @@
  */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, Zap, Target, Trophy, Dumbbell } from "lucide-react";
 import { ReactionGame, BatakGame } from "../components/mini-games/MiniGames";
@@ -36,6 +37,7 @@ function MiniGamesSkeleton() {
 
 export default function MiniGamesPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user } = useAuth();
 
   const [activeTab, setActiveTab] = useState<"reaction" | "batak">("reaction");
@@ -87,11 +89,11 @@ export default function MiniGamesPage() {
             <div className="flex-1">
               <h1 className="font-display text-lg flex items-center gap-2">
                 <Zap className="w-5 h-5 text-pk-amber" />
-                Mini-Jeux
+                {t("mini_games.title")}
               </h1>
               {nextRace && (
                 <p className="font-data text-[0.5625rem] text-pk-titane">
-                  Weekend: {nextRace.name.replace(" Grand Prix", "")}
+                  {t("mini_games.weekend", { name: nextRace.name.replace(" Grand Prix", "") })}
                 </p>
               )}
             </div>
@@ -111,16 +113,15 @@ export default function MiniGamesPage() {
           className="bg-pk-amber/[0.06] border border-pk-amber/20 rounded-lg p-4"
         >
           <h3 className="font-display text-xs flex items-center gap-2 mb-2">
-            <Trophy className="w-4 h-4 text-pk-amber" /> Recompenses
+            <Trophy className="w-4 h-4 text-pk-amber" /> {t("mini_games.rewards")}
           </h3>
           <ul className="font-data text-[0.5625rem] text-pk-titane space-y-1">
-            <li>Mode competition : 3 essais par jeu par weekend</li>
+            <li>{t("mini_games.reward_competition")}</li>
             <li>
-              Le gagnant de chaque jeu de ligue remporte{" "}
-              <span className="text-pk-amber">+2 points</span>
+              {t("mini_games.reward_winner")} <span className="text-pk-amber">+2 points</span>
             </li>
-            <li>XP gagnes a chaque partie jouee</li>
-            <li>Mode entrainement illimite pour progresser !</li>
+            <li>{t("mini_games.reward_xp")}</li>
+            <li>{t("mini_games.reward_training")}</li>
           </ul>
         </motion.div>
 
@@ -136,7 +137,7 @@ export default function MiniGamesPage() {
             data-testid="mode-training"
           >
             <Dumbbell className="w-4 h-4" />
-            Entrainement
+            {t("mini_games.modes.training")}
           </button>
           <button
             onClick={() => handleModeChange("competition")}
@@ -148,7 +149,7 @@ export default function MiniGamesPage() {
             data-testid="mode-competition"
           >
             <Trophy className="w-4 h-4" />
-            Competition
+            {t("mini_games.modes.competition")}
           </button>
         </motion.div>
 
@@ -169,7 +170,7 @@ export default function MiniGamesPage() {
             <p
               className={`font-display text-xs ${activeTab === "reaction" ? "text-white" : "text-pk-titane"}`}
             >
-              Reaction
+              {t("mini_games.games.reaction")}
             </p>
           </button>
           <button
@@ -187,7 +188,7 @@ export default function MiniGamesPage() {
             <p
               className={`font-display text-xs ${activeTab === "batak" ? "text-white" : "text-pk-titane"}`}
             >
-              Batak
+              {t("mini_games.games.batak")}
             </p>
           </button>
         </motion.div>

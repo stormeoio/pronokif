@@ -3,6 +3,7 @@
  * Broadcast Premium: pk-surface cards, chip tabs, shimmer loading.
  */
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, ChevronRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -44,6 +45,7 @@ interface SeasonProgressProps {
 }
 
 export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
+  const { t } = useTranslation();
   const [selectedRace, setSelectedRace] = useState<Race | null>(null);
   const [raceResults, setRaceResults] = useState<RaceResults | null>(null);
   const [loadingResults, setLoadingResults] = useState(false);
@@ -194,7 +196,7 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
       });
     } catch (e: unknown) {
       console.error("Error fetching race results:", e);
-      toast.error("Erreur lors du chargement des résultats");
+      toast.error(t("championship.season_progress.load_error"));
     } finally {
       setLoadingResults(false);
     }
@@ -212,7 +214,7 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
       <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-4">
         <h3 className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-3 flex items-center gap-1.5">
           <Calendar className="w-3.5 h-3.5" />
-          Sélectionner un Grand Prix
+          {t("championship.season_progress.select_gp")}
         </h3>
         <motion.div
           className="space-y-1.5 max-h-64 overflow-y-auto scrollbar-none"
@@ -280,7 +282,9 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
                     className={`w-4 h-4 ${isSelected ? "text-pk-red" : "text-pk-titane"}`}
                   />
                 ) : (
-                  <span className="font-data text-[0.5rem] text-pk-titane">À venir</span>
+                  <span className="font-data text-[0.5rem] text-pk-titane">
+                    {t("championship.season_progress.upcoming")}
+                  </span>
                 )}
               </motion.button>
             );
@@ -306,19 +310,23 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
             {loadingResults ? (
               <div className="py-8 text-center">
                 <Loader2 className="w-8 h-8 text-pk-red animate-spin mx-auto mb-2" />
-                <p className="text-xs text-pk-titane">Chargement des résultats...</p>
+                <p className="text-xs text-pk-titane">
+                  {t("championship.season_progress.loading")}
+                </p>
               </div>
             ) : raceResults ? (
               <>
                 {/* Results Sub-tabs */}
                 <div className="flex flex-wrap gap-1.5 mb-4">
                   {[
-                    { key: "race", label: "Course" },
-                    { key: "qualifying", label: "Qualifs" },
-                    ...(raceResults.hasSprint ? [{ key: "sprint", label: "Sprint" }] : []),
-                    { key: "practice", label: "Essais" },
-                    { key: "extras", label: "Bonus" },
-                  ].map(({ key, label }) => (
+                    { key: "race", labelKey: "championship.season_progress.tabs.race" },
+                    { key: "qualifying", labelKey: "championship.season_progress.tabs.qualifying" },
+                    ...(raceResults.hasSprint
+                      ? [{ key: "sprint", labelKey: "championship.season_progress.tabs.sprint" }]
+                      : []),
+                    { key: "practice", labelKey: "championship.season_progress.tabs.practice" },
+                    { key: "extras", labelKey: "championship.season_progress.tabs.bonus" },
+                  ].map(({ key, labelKey }) => (
                     <button
                       key={key}
                       onClick={() => {
@@ -332,7 +340,7 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
                       }`}
                       data-testid={`results-subtab-${key}`}
                     >
-                      {label}
+                      {t(labelKey)}
                     </button>
                   ))}
                 </div>
@@ -361,7 +369,7 @@ export default function SeasonProgress({ raceSchedule }: SeasonProgressProps) {
               </>
             ) : (
               <p className="text-xs text-pk-titane text-center py-4">
-                Sélectionne un Grand Prix terminé pour voir les résultats
+                {t("championship.season_progress.empty")}
               </p>
             )}
           </motion.div>

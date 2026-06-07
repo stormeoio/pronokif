@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
@@ -33,13 +34,16 @@ interface Notification {
 
 type FilterKey = "all" | "races" | "leagues" | "chat" | "badges";
 
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "all", label: "Toutes" },
-  { key: "races", label: "Courses" },
-  { key: "leagues", label: "Ligues" },
-  { key: "chat", label: "Chat" },
-  { key: "badges", label: "Badges" },
-];
+function useNotifFilters() {
+  const { t } = useTranslation();
+  return [
+    { key: "all" as FilterKey, label: t("notifications.filters.all") },
+    { key: "races" as FilterKey, label: t("notifications.filters.races") },
+    { key: "leagues" as FilterKey, label: t("notifications.filters.leagues") },
+    { key: "chat" as FilterKey, label: t("notifications.filters.chat") },
+    { key: "badges" as FilterKey, label: t("notifications.filters.badges") },
+  ];
+}
 
 /* ── Category system ───────────────────────────────────── */
 
@@ -53,38 +57,41 @@ interface CategoryConfig {
   filterKey: FilterKey;
 }
 
-const CATEGORY_CONFIG: Record<NotifCategory, CategoryConfig> = {
+const CATEGORY_CONFIG_KEYS: Record<
+  NotifCategory,
+  { icon: LucideIcon; labelKey: string; iconBg: string; iconColor: string; filterKey: FilterKey }
+> = {
   chat: {
     icon: MessageSquare,
-    label: "Messages",
+    labelKey: "notifications.categories.messages",
     iconBg: "bg-purple-500/[0.12]",
     iconColor: "text-purple-400",
     filterKey: "chat",
   },
   result: {
     icon: Trophy,
-    label: "Résultats",
+    labelKey: "notifications.categories.results",
     iconBg: "bg-pk-emerald/[0.12]",
     iconColor: "text-pk-emerald",
     filterKey: "races",
   },
   league: {
     icon: Users,
-    label: "Ligues",
+    labelKey: "notifications.categories.leagues",
     iconBg: "bg-pk-info/[0.12]",
     iconColor: "text-pk-info",
     filterKey: "leagues",
   },
   badge: {
     icon: Star,
-    label: "Badges",
+    labelKey: "notifications.categories.badges",
     iconBg: "bg-pk-amber/[0.12]",
     iconColor: "text-pk-amber",
     filterKey: "badges",
   },
   info: {
     icon: Bell,
-    label: "Général",
+    labelKey: "notifications.categories.general",
     iconBg: "bg-white/[0.06]",
     iconColor: "text-pk-titane",
     filterKey: "all",
@@ -121,7 +128,7 @@ function timeAgo(isoString: string): string {
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours}h`;
   const days = Math.floor(hours / 24);
-  if (days === 1) return "hier";
+  if (days === 1) return "yesterday";
   if (days < 7) return `${days}j`;
   return `${Math.floor(days / 7)}sem`;
 }
@@ -184,7 +191,9 @@ function NotificationsSkeleton() {
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const FILTERS = useNotifFilters();
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
 
@@ -260,7 +269,7 @@ export default function NotificationsPage() {
 
     return cats.filter(([cat, items]) => {
       if (items.length === 0) return false;
-      return CATEGORY_CONFIG[cat].filterKey === activeFilter;
+      return CATEGORY_CONFIG_KEYS[cat].filterKey === activeFilter;
     });
   }, [grouped, activeFilter]);
 
@@ -283,7 +292,9 @@ export default function NotificationsPage() {
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <h1 className="font-display text-lg">Notifications</h1>
+              <h1 className="font-display text-lg">
+                {t("notifications.filters.all") === "All" ? "Notifications" : "Notifications"}
+              </h1>
             </div>
 
             <div className="flex items-center gap-2">
@@ -294,15 +305,15 @@ export default function NotificationsPage() {
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 400, damping: 15 }}
                 >
-                  {unreadCount} nouvelle{unreadCount > 1 ? "s" : ""}
+                  {unreadCount}
                 </motion.span>
               )}
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
                   className="p-1.5 rounded-lg text-pk-titane hover:text-pk-piste transition-colors"
-                  aria-label="Tout marquer comme lu"
-                  title="Tout marquer comme lu"
+                  aria-label={t("notifications.mark_all_read")}
+                  title={t("notifications.mark_all_read")}
                   data-testid="mark-all-read"
                 >
                   <CheckCheck className="w-4 h-4" />
@@ -351,7 +362,7 @@ export default function NotificationsPage() {
             <div className="flex items-center gap-1.5 mb-2.5">
               <span className="w-1.5 h-1.5 rounded-full bg-pk-red animate-live-pulse" />
               <span className="font-data text-[0.5625rem] text-pk-red uppercase tracking-wider">
-                Action requise
+                {t("notifications.action_required")}
               </span>
             </div>
             <p className="font-bold text-[0.9375rem] text-pk-piste mb-1">{urgentNotif.title}</p>
@@ -365,31 +376,27 @@ export default function NotificationsPage() {
               className="w-full h-10 rounded-md bg-pk-red text-white font-display text-[0.8125rem] flex items-center justify-center gap-1.5 shadow-glow-red active:scale-[0.97] transition-transform"
             >
               <Clock className="w-3.5 h-3.5" />
-              Faire mes pronos
+              {t("notifications.predict_cta")}
             </button>
           </motion.div>
         )}
 
         {/* Empty state */}
         {(notifications as Notification[]).length === 0 && (
-          <EmptyFullPage
-            Icon={Bell}
-            title="Aucune notification"
-            description="Les résultats, messages et badges apparaîtront ici."
-          />
+          <EmptyFullPage Icon={Bell} title={t("notifications.empty")} description="" />
         )}
 
         {/* No results for this filter */}
         {(notifications as Notification[]).length > 0 && visibleCategories.length === 0 && (
           <motion.div variants={fadeUp} className="text-center py-12 px-6">
-            <p className="text-sm text-pk-titane">Aucune notification dans cette catégorie.</p>
+            <p className="text-sm text-pk-titane">{t("notifications.empty_category")}</p>
           </motion.div>
         )}
 
         {/* Grouped Cards */}
         <AnimatePresence mode="popLayout">
           {visibleCategories.map(([cat, items]) => {
-            const config = CATEGORY_CONFIG[cat];
+            const config = CATEGORY_CONFIG_KEYS[cat];
             const Icon = config.icon;
             const unreadInGroup = items.filter((n) => !n.is_read).length;
 
@@ -408,7 +415,7 @@ export default function NotificationsPage() {
                   >
                     <Icon className={`w-3.5 h-3.5 ${config.iconColor}`} />
                   </div>
-                  <span className="flex-1 text-[0.8125rem] font-bold">{config.label}</span>
+                  <span className="flex-1 text-[0.8125rem] font-bold">{t(config.labelKey)}</span>
                   <span className="font-data text-[0.5625rem] text-pk-titane">
                     {unreadInGroup > 0
                       ? `${unreadInGroup} nouveau${unreadInGroup > 1 ? "x" : ""}`

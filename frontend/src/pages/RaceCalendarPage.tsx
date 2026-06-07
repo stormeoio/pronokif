@@ -8,8 +8,19 @@
  */
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { RotateCw , Calendar, Check, Lock, Target, Pencil, Trophy, Ban, AlertCircle } from "lucide-react";
+import {
+  RotateCw,
+  Calendar,
+  Check,
+  Lock,
+  Target,
+  Pencil,
+  Trophy,
+  Ban,
+  AlertCircle,
+} from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { api } from "@/lib/api";
@@ -52,11 +63,14 @@ const COUNTRY_FLAGS: Record<string, string> = {
 
 type FilterKey = "upcoming" | "completed" | "all";
 
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "upcoming", label: "À venir" },
-  { key: "completed", label: "Terminées" },
-  { key: "all", label: "Toutes" },
-];
+function useFilters() {
+  const { t } = useTranslation();
+  return [
+    { key: "upcoming" as FilterKey, label: t("race_calendar.filters.upcoming") },
+    { key: "completed" as FilterKey, label: t("race_calendar.filters.finished") },
+    { key: "all" as FilterKey, label: t("race_calendar.filters.all") },
+  ];
+}
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
@@ -113,6 +127,7 @@ function CalendarSkeleton() {
 
 function RaceGridCard({ race, predicted }: { race: Race; predicted: boolean }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const state = deriveState(race, predicted);
   const flag = COUNTRY_FLAGS[race.country] || "🏁";
   const thumb = getRaceThumbnail(race);
@@ -121,26 +136,30 @@ function RaceGridCard({ race, predicted }: { race: Race; predicted: boolean }) {
   const statusPill =
     state === "needs-prediction"
       ? {
-          label: "À pronostiquer",
+          label: t("race_calendar.status.to_predict"),
           cls: "border-pk-red/40 bg-pk-red/15 text-pk-red",
           Icon: AlertCircle,
         }
       : state === "predicted"
         ? {
-            label: "Prono fait",
+            label: t("race_calendar.status.predicted"),
             cls: "border-pk-emerald/30 bg-pk-emerald/12 text-pk-emerald",
             Icon: Check,
           }
         : state === "finished"
           ? {
-              label: "Terminé",
+              label: t("race_calendar.status.finished"),
               cls: "border-white/[0.12] bg-white/[0.06] text-pk-titane",
               Icon: Trophy,
             }
           : state === "cancelled"
-            ? { label: "Annulé", cls: "border-pk-amber/25 bg-pk-amber/10 text-pk-amber", Icon: Ban }
+            ? {
+                label: t("race_calendar.status.cancelled"),
+                cls: "border-pk-amber/25 bg-pk-amber/10 text-pk-amber",
+                Icon: Ban,
+              }
             : {
-                label: "Fermé",
+                label: t("race_calendar.status.closed"),
                 cls: "border-white/[0.12] bg-white/[0.06] text-pk-titane",
                 Icon: Lock,
               };
@@ -165,7 +184,7 @@ function RaceGridCard({ race, predicted }: { race: Race; predicted: boolean }) {
           navigate(`/race/${race.id}`);
         }}
         className="group relative block text-left"
-        aria-label={`Fiche course ${race.name}`}
+        aria-label={t("race_calendar.aria_race", { name: race.name })}
       >
         <div className="relative aspect-[16/10] w-full overflow-hidden">
           {thumb ? (
@@ -181,7 +200,8 @@ function RaceGridCard({ race, predicted }: { race: Race; predicted: boolean }) {
           ) : (
             <div className="h-full w-full bg-pk-anthracite" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-pk-surface via-pk-surface/15 to-transparent" />
+          {/* Layered gradient for centered title readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/10" />
           <span
             className={`absolute right-1.5 top-1.5 inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 font-mono text-[0.5rem] font-bold uppercase tracking-[0.05em] backdrop-blur-sm ${statusPill.cls}`}
           >
@@ -196,15 +216,16 @@ function RaceGridCard({ race, predicted }: { race: Race; predicted: boolean }) {
               Sprint
             </span>
           )}
-        </div>
-        <div className="px-2.5 pb-2 pt-1.5">
-          <p className="flex items-center gap-1 font-display text-[0.875rem] uppercase leading-tight text-pk-piste">
-            <span>{flag}</span>
-            <span className="truncate">{shortName(race.name)}</span>
-          </p>
-          <p className="mt-0.5 font-mono text-[0.5625rem] uppercase tracking-[0.08em] text-pk-titane">
-            {formatDate(race.date)} · {race.circuit}
-          </p>
+          {/* Centered title */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center px-2">
+            <span className="text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{flag}</span>
+            <p className="mt-0.5 text-center font-display text-[0.9375rem] uppercase leading-tight text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)]">
+              {shortName(race.name)}
+            </p>
+            <p className="mt-1 font-mono text-[0.5rem] uppercase tracking-[0.06em] text-white/70 drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
+              {formatDate(race.date)} · {race.circuit}
+            </p>
+          </div>
         </div>
       </button>
 
@@ -215,15 +236,15 @@ function RaceGridCard({ race, predicted }: { race: Race; predicted: boolean }) {
             onClick={() => navigate(`/results/${race.id}`)}
             className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md bg-white/[0.05] font-mono text-[0.625rem] uppercase tracking-[0.08em] text-pk-piste transition-colors hover:bg-white/[0.1]"
           >
-            <Trophy className="h-3 w-3 text-pk-gold" /> Résultats
+            <Trophy className="h-3 w-3 text-pk-gold" /> {t("race_calendar.cta.results")}
           </button>
         ) : state === "cancelled" ? (
           <div className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md bg-pk-amber/10 font-mono text-[0.625rem] uppercase tracking-[0.08em] text-pk-amber">
-            <Ban className="h-3 w-3" /> Annulé
+            <Ban className="h-3 w-3" /> {t("race_calendar.cta.cancelled")}
           </div>
         ) : state === "locked" ? (
           <div className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md bg-white/[0.04] font-mono text-[0.625rem] uppercase tracking-[0.08em] text-pk-titane">
-            <Lock className="h-3 w-3" /> Verrouillé
+            <Lock className="h-3 w-3" /> {t("race_calendar.cta.locked")}
           </div>
         ) : state === "predicted" ? (
           <button
@@ -233,7 +254,7 @@ function RaceGridCard({ race, predicted }: { race: Race; predicted: boolean }) {
             }}
             className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-pk-amber/40 bg-pk-amber/10 font-mono text-[0.625rem] uppercase tracking-[0.08em] text-pk-amber transition-colors hover:bg-pk-amber/15"
           >
-            <Pencil className="h-3 w-3" /> Modifier
+            <Pencil className="h-3 w-3" /> {t("race_calendar.cta.edit")}
           </button>
         ) : (
           <button
@@ -243,7 +264,7 @@ function RaceGridCard({ race, predicted }: { race: Race; predicted: boolean }) {
             }}
             className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md bg-pk-red font-mono text-[0.625rem] font-bold uppercase tracking-[0.08em] text-white transition-transform active:scale-[0.98]"
           >
-            <Target className="h-3 w-3" /> Pronostiquer
+            <Target className="h-3 w-3" /> {t("race_calendar.cta.predict")}
           </button>
         )}
       </div>
@@ -254,10 +275,12 @@ function RaceGridCard({ race, predicted }: { race: Race; predicted: boolean }) {
 /* ── Page ──────────────────────────────────────────────── */
 
 export default function RaceCalendarPage() {
+  const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
   const [filter, setFilter] = useState<FilterKey>("upcoming");
   const queryClient = useQueryClient();
+  const FILTERS = useFilters();
 
   const { data: races = [], isLoading: racesLoading } = useQuery({
     queryKey: queryKeys.races.list(),
@@ -324,11 +347,9 @@ export default function RaceCalendarPage() {
         <div className="px-4 pt-3 pb-3">
           <h1 className="mb-0.5 flex items-center gap-2 font-display text-lg">
             <Calendar className="h-4 w-4 text-pk-red" />
-            Courses 2026
+            {t("race_calendar.title")}
           </h1>
-          <p className="mb-2.5 text-[0.625rem] text-pk-titane">
-            Pronostique jusqu'au départ de chaque course
-          </p>
+          <p className="mb-2.5 text-[0.625rem] text-pk-titane">{t("race_calendar.subtitle")}</p>
 
           <div className="flex gap-1.5">
             {FILTERS.map((f) => {
@@ -375,8 +396,12 @@ export default function RaceCalendarPage() {
             <div className="col-span-2">
               <EmptyFullPage
                 Icon={Calendar}
-                title="Aucune course"
-                description={filter === "upcoming" ? "Saison terminée" : "Aucune course ici"}
+                title={t("race_calendar.empty_title")}
+                description={
+                  filter === "upcoming"
+                    ? t("race_calendar.empty_season_over")
+                    : t("race_calendar.empty_none")
+                }
               />
             </div>
           ) : (

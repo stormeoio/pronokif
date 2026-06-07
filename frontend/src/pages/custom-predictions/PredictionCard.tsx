@@ -3,6 +3,7 @@
  * Broadcast Premium: pk-surface card, pk-red/emerald states, native inputs.
  */
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { Clock, Send } from "lucide-react";
 import { haptic } from "@/lib/haptics";
@@ -30,6 +31,7 @@ interface PredictionCardProps {
 }
 
 export default function PredictionCard({ prediction, onAnswer }: PredictionCardProps) {
+  const { t } = useTranslation();
   const [answer, setAnswer] = useState<string>(
     typeof prediction.user_answer === "string" ? prediction.user_answer : "",
   );
@@ -84,7 +86,9 @@ export default function PredictionCard({ prediction, onAnswer }: PredictionCardP
 
         {isResolved ? (
           <div className="space-y-2">
-            <p className="font-data text-[0.5625rem] text-pk-titane">Bonne reponse :</p>
+            <p className="font-data text-[0.5625rem] text-pk-titane">
+              {t("custom_predictions.correct_answer")}
+            </p>
             <p className="font-display text-sm text-pk-emerald">{prediction.correct_answer}</p>
             {hasAnswered && (
               <p
@@ -94,7 +98,7 @@ export default function PredictionCard({ prediction, onAnswer }: PredictionCardP
                     : "text-pk-red"
                 }`}
               >
-                Ta reponse : {prediction.user_answer}
+                {t("custom_predictions.your_answer", { answer: prediction.user_answer })}
                 {prediction.user_answer === prediction.correct_answer ? " +2 pts" : ""}
               </p>
             )}
@@ -104,26 +108,26 @@ export default function PredictionCard({ prediction, onAnswer }: PredictionCardP
             {prediction.answer_type === "yes_no" && (
               <div className="flex gap-2">
                 <button
-                  onClick={() => setAnswer("Oui")}
+                  onClick={() => setAnswer("yes")}
                   disabled={hasAnswered}
                   className={`flex-1 py-2 rounded-lg font-display text-sm transition-all ${
-                    answer === "Oui"
+                    answer === "yes"
                       ? "bg-pk-emerald/20 border border-pk-emerald/30 text-pk-emerald"
                       : "bg-white/[0.04] border border-white/[0.08] text-pk-titane hover:text-pk-piste"
                   } disabled:opacity-40`}
                 >
-                  Oui
+                  {t("predictions.form.bonus.yes")}
                 </button>
                 <button
-                  onClick={() => setAnswer("Non")}
+                  onClick={() => setAnswer("no")}
                   disabled={hasAnswered}
                   className={`flex-1 py-2 rounded-lg font-display text-sm transition-all ${
-                    answer === "Non"
+                    answer === "no"
                       ? "bg-pk-red-subtle border border-pk-red/20 text-pk-red"
                       : "bg-white/[0.04] border border-white/[0.08] text-pk-titane hover:text-pk-piste"
                   } disabled:opacity-40`}
                 >
-                  Non
+                  {t("predictions.form.bonus.no")}
                 </button>
               </div>
             )}
@@ -132,7 +136,7 @@ export default function PredictionCard({ prediction, onAnswer }: PredictionCardP
               <input
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
-                placeholder="Ta reponse..."
+                placeholder={t("custom_predictions.your_answer_placeholder")}
                 className="w-full bg-pk-anthracite border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-pk-piste placeholder:text-pk-titane/50 focus:border-pk-info/50 focus:outline-none transition-colors disabled:opacity-40"
                 disabled={hasAnswered}
               />
@@ -175,12 +179,12 @@ export default function PredictionCard({ prediction, onAnswer }: PredictionCardP
                 data-testid={`submit-answer-${prediction.id}`}
               >
                 <Send className="w-4 h-4" />
-                Envoyer ma reponse
+                {t("custom_predictions.submit_answer")}
               </button>
             ) : (
               <p className="font-data text-[0.5625rem] text-pk-info flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                Reponse enregistree - En attente du resultat
+                {t("custom_predictions.answer_pending")}
               </p>
             )}
           </div>

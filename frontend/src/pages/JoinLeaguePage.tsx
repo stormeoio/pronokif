@@ -4,6 +4,7 @@
  */
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "framer-motion";
 import { AxiosError } from "axios";
@@ -34,11 +35,12 @@ interface LeagueBasic {
 /* ── Spinner ───────────────────────────────────────────── */
 
 function JoinSpinner() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-pk-carbon flex items-center justify-center">
       <div className="text-center">
         <div className="w-10 h-10 border-[3px] border-white/[0.08] border-t-pk-red rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-xs text-pk-titane">Chargement de l'invitation...</p>
+        <p className="text-xs text-pk-titane">{t("join_league.loading")}</p>
       </div>
     </div>
   );
@@ -94,6 +96,7 @@ function StatusScreen({
 export default function JoinLeaguePage() {
   const { code } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user, updateUser } = useAuth();
   const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion() ?? false;
@@ -118,7 +121,7 @@ export default function JoinLeaguePage() {
   });
 
   const loading = leagueLoading || (!!user && !!league && myLeaguesLoading);
-  const error = leagueError ? "Cette ligue n'existe pas ou le lien est invalide" : null;
+  const error = leagueError ? t("join_league.invalid_link") : null;
   const alreadyMember = myLeagues.some((l) => l.code === code?.toUpperCase());
 
   const handleJoin = async () => {
@@ -135,12 +138,12 @@ export default function JoinLeaguePage() {
       updateUser({ current_league_id: res.id });
       clearPendingJoinCode();
       haptic("success");
-      toast.success(`Tu as rejoint "${res.name}" !`);
+      toast.success(t("join_league.joined", { name: res.name }));
       navigate("/");
     } catch (e: unknown) {
       haptic("error");
       const axiosError = e as AxiosError<{ detail: string }>;
-      const message = axiosError.response?.data?.detail || "Erreur lors de l'inscription";
+      const message = axiosError.response?.data?.detail || t("join_league.join_error");
       if (message.includes("already")) {
         queryClient.invalidateQueries({ queryKey: ["/leagues/my"] });
       } else {
@@ -161,9 +164,9 @@ export default function JoinLeaguePage() {
         icon={<AlertCircle className="w-7 h-7 text-pk-red" />}
         iconBg="bg-pk-red/[0.12]"
         iconColor="text-pk-red"
-        title="Lien invalide"
+        title={t("join_league.invalid_link")}
         description={error}
-        actionLabel="Retour"
+        actionLabel={t("common.back")}
         onAction={() => navigate("/")}
       />
     );
@@ -176,9 +179,9 @@ export default function JoinLeaguePage() {
         icon={<CheckCircle className="w-7 h-7 text-pk-emerald" />}
         iconBg="bg-pk-emerald/[0.12]"
         iconColor="text-pk-emerald"
-        title="Déjà membre !"
-        description={`Tu fais déjà partie de ${league?.name}.`}
-        actionLabel="Aller au tableau de bord"
+        title={t("join_league.already_member")}
+        description={t("join_league.already_member")}
+        actionLabel={t("join_league.go_dashboard")}
         onAction={() => {
           clearPendingJoinCode();
           navigate("/");
@@ -204,8 +207,8 @@ export default function JoinLeaguePage() {
           <Trophy className="w-7 h-7 text-pk-amber" />
         </div>
 
-        <h1 className="font-display text-xl mb-1">Invitation</h1>
-        <p className="text-xs text-pk-titane mb-6">Tu as été invité à rejoindre une ligue</p>
+        <h1 className="font-display text-xl mb-1">{t("join_league.invitation")}</h1>
+        <p className="text-xs text-pk-titane mb-6">{t("join_league.invited_text")}</p>
 
         {/* OTP-style code display */}
         <div className="flex justify-center gap-1.5 mb-6">
@@ -240,7 +243,7 @@ export default function JoinLeaguePage() {
               <p className="font-bold text-sm truncate">{league?.name}</p>
               <p className="font-data text-[0.5rem] text-pk-titane flex items-center gap-1">
                 <Users className="w-3 h-3" />
-                {league?.members_count} membre{(league?.members_count ?? 0) > 1 ? "s" : ""}
+                {league?.members_count} {t("common.members")}
               </p>
             </div>
           </div>
@@ -259,20 +262,18 @@ export default function JoinLeaguePage() {
           {joining ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Inscription...
+              {t("join_league.joining")}
             </>
           ) : (
             <>
               <LogIn className="w-4 h-4" />
-              Rejoindre la ligue
+              {t("join_league.join_cta")}
             </>
           )}
         </button>
 
         {!user && (
-          <p className="text-[0.625rem] text-pk-titane mt-3">
-            Tu devras te connecter pour rejoindre
-          </p>
+          <p className="text-[0.625rem] text-pk-titane mt-3">{t("join_league.login_required")}</p>
         )}
       </motion.div>
     </div>

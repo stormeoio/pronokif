@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CornerDownRight, Flag, Gauge, Layers, MapPin, Route } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { haptic } from "@/lib/haptics";
@@ -36,11 +37,11 @@ const FEATURE_COLORS: Record<CircuitFeatureKind, string> = {
   drs: "#10b981",
 };
 
-const HOTSPOT_FILTERS: Array<{ value: HotspotFilter; label: string }> = [
-  { value: "all", label: "Tous" },
-  { value: "corners", label: "Virages" },
-  { value: "drs", label: "DRS" },
-  { value: "sectors", label: "Secteurs" },
+const HOTSPOT_FILTER_KEYS: Array<{ value: HotspotFilter; labelKey: string }> = [
+  { value: "all", labelKey: "circuit_map.filters.all" },
+  { value: "corners", labelKey: "circuit_map.filters.turns" },
+  { value: "drs", labelKey: "circuit_map.filters.drs" },
+  { value: "sectors", labelKey: "circuit_map.filters.sectors" },
 ];
 
 function getFeatureIcon(kind: CircuitFeatureKind) {
@@ -65,11 +66,15 @@ function matchesHotspotFilter(feature: CircuitFeatureItem, filter: HotspotFilter
   return feature.kind === "sector";
 }
 
-function hotspotTypeLabel(feature: CircuitFeatureItem) {
-  if (feature.kind === "start") return "Départ";
-  if (feature.kind === "corner") return feature.turn ? `T${feature.turn}` : "Virage";
-  if (feature.kind === "drs") return feature.source === "zone" ? "Zone DRS" : "DRS";
-  return feature.source === "zone" ? "Zone" : "Secteur";
+function hotspotTypeLabel(feature: CircuitFeatureItem, t: (key: string) => string) {
+  if (feature.kind === "start") return t("circuit_map.features.start");
+  if (feature.kind === "corner")
+    return feature.turn ? `T${feature.turn}` : t("circuit_map.features.turn");
+  if (feature.kind === "drs")
+    return feature.source === "zone" ? t("circuit_map.features.drs_zone") : "DRS";
+  return feature.source === "zone"
+    ? t("circuit_map.features.zone")
+    : t("circuit_map.features.sector");
 }
 
 function zoneAnchorFromPath(path: string) {
@@ -100,6 +105,7 @@ export const CircuitMap = memo(function CircuitMap({
   onHotspotSelect,
   renderMode = "full",
 }: CircuitMapProps) {
+  const { t } = useTranslation();
   const localMapData = useMemo(() => getCircuitMapData(circuitName), [circuitName]);
   const mapData = mapDataProp ?? localMapData;
   const imageUrl = mapData?.fallbackImageUrl ?? fallbackImageUrl ?? getCircuitImageUrl(circuitName);
@@ -142,7 +148,7 @@ export const CircuitMap = memo(function CircuitMap({
   );
   const hotspotFilterCounts = useMemo(
     () =>
-      HOTSPOT_FILTERS.reduce(
+      HOTSPOT_FILTER_KEYS.reduce(
         (counts, filter) => ({
           ...counts,
           [filter.value]: featureItems.filter((feature) =>
@@ -195,7 +201,7 @@ export const CircuitMap = memo(function CircuitMap({
             <svg
               viewBox={mapData.viewBox}
               role="group"
-              aria-label={`Carte interactive ${displayName}`}
+              aria-label={t("circuit_map.interactive_label", { name: displayName })}
               className="h-[17rem] w-full overflow-visible"
             >
               {!isPreviewMode && (
@@ -385,7 +391,7 @@ export const CircuitMap = memo(function CircuitMap({
             {imageUrl && !imageFailed ? (
               <img
                 src={imageUrl}
-                alt={`Circuit ${displayName}`}
+                alt={t("circuit_map.circuit_label", { name: displayName })}
                 className="w-full h-full object-contain p-6 filter invert opacity-80"
                 data-testid="circuit-image"
                 onError={() => setImageFailed(true)}
@@ -421,7 +427,9 @@ export const CircuitMap = memo(function CircuitMap({
                 : "text-pk-titane border-white/[0.08] bg-white/[0.04]",
             )}
           >
-            {hasInteractiveMap ? "Interactive" : "Statique"}
+            {hasInteractiveMap
+              ? t("circuit_map.badges.interactive")
+              : t("circuit_map.badges.static")}
           </span>
         </div>
 
@@ -430,7 +438,7 @@ export const CircuitMap = memo(function CircuitMap({
             <div className="rounded-sm border border-white/[0.08] bg-white/[0.03] px-2 py-2">
               <p className="font-data text-[0.8125rem] text-pk-piste">{featureItems.length}</p>
               <p className="font-data text-[0.5rem] uppercase tracking-wider text-pk-titane">
-                Hotspots
+                {t("circuit_map.stats.hotspots")}
               </p>
             </div>
             <div className="rounded-sm border border-white/[0.08] bg-white/[0.03] px-2 py-2">
@@ -438,7 +446,7 @@ export const CircuitMap = memo(function CircuitMap({
                 {mapData?.features.length ?? 0}
               </p>
               <p className="font-data text-[0.5rem] uppercase tracking-wider text-pk-titane">
-                Points
+                {t("circuit_map.stats.points")}
               </p>
             </div>
             <div className="rounded-sm border border-white/[0.08] bg-white/[0.03] px-2 py-2">
@@ -446,7 +454,7 @@ export const CircuitMap = memo(function CircuitMap({
                 {mapData?.zones.length ?? 0}
               </p>
               <p className="font-data text-[0.5rem] uppercase tracking-wider text-pk-titane">
-                Zones
+                {t("circuit_map.stats.zones")}
               </p>
             </div>
           </div>
@@ -480,7 +488,7 @@ export const CircuitMap = memo(function CircuitMap({
                       className="rounded-sm border border-pk-amber/30 bg-pk-amber/10 px-1.5 py-0.5 font-data text-[0.5rem] uppercase tracking-wider text-pk-amber"
                       data-testid="circuit-first-corner-badge"
                     >
-                      Premier virage
+                      {t("circuit_map.first_corner")}
                     </span>
                   )}
                 </div>
@@ -495,7 +503,7 @@ export const CircuitMap = memo(function CircuitMap({
         {featureItems.length > 0 && (
           <div className="mt-3">
             <div className="mb-2 grid grid-cols-4 gap-1" data-testid="circuit-hotspot-filters">
-              {HOTSPOT_FILTERS.map((filter) => {
+              {HOTSPOT_FILTER_KEYS.map((filter) => {
                 const count = hotspotFilterCounts[filter.value];
                 const active = hotspotFilter === filter.value;
 
@@ -512,7 +520,7 @@ export const CircuitMap = memo(function CircuitMap({
                     )}
                     data-testid={`circuit-hotspot-filter-${filter.value}`}
                   >
-                    {filter.label}
+                    {t(filter.labelKey)}
                     <span className="ml-1 text-pk-titane">{count}</span>
                   </button>
                 );
@@ -549,13 +557,13 @@ export const CircuitMap = memo(function CircuitMap({
                           {circuitText(feature.label)}
                         </span>
                         <span className="mt-1 flex flex-wrap items-center gap-1 font-data text-[0.5rem] uppercase tracking-wider text-pk-titane">
-                          <span>{hotspotTypeLabel(feature)}</span>
+                          <span>{hotspotTypeLabel(feature, t)}</span>
                           {isFirstCorner && (
                             <span
                               className="text-pk-amber"
                               data-testid={`circuit-feature-first-corner-${feature.id}`}
                             >
-                              Premier virage
+                              {t("circuit_map.first_corner")}
                             </span>
                           )}
                         </span>

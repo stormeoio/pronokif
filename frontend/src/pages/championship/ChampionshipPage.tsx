@@ -4,6 +4,7 @@
  */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import { Flag, Trophy, RefreshCw, Loader2, Car, Calendar, GitCompare } from "lucide-react";
@@ -57,6 +58,7 @@ function ChampionshipSkeleton() {
 
 export default function ChampionshipPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
   const [activeTab, setActiveTab] = useState("drivers");
@@ -75,7 +77,7 @@ export default function ChampionshipPage() {
   const handleRefresh = async () => {
     haptic("selection");
     await refetchAll();
-    toast.success("Classements mis à jour !");
+    toast.success(t("championship.refresh_success"));
   };
 
   const handleTabChange = (key: string) => {
@@ -86,9 +88,9 @@ export default function ChampionshipPage() {
   if (loading) return <ChampionshipSkeleton />;
 
   const tabs = [
-    { key: "drivers", label: "Pilotes", Icon: Trophy },
-    { key: "constructors", label: "Écuries", Icon: Car },
-    { key: "results", label: "Résultats", Icon: Calendar },
+    { key: "drivers", label: t("championship.tabs.drivers"), Icon: Trophy },
+    { key: "constructors", label: t("championship.tabs.teams"), Icon: Car },
+    { key: "results", label: t("championship.tabs.results"), Icon: Calendar },
   ];
 
   return (
@@ -102,8 +104,10 @@ export default function ChampionshipPage() {
                 <Flag className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="font-display text-lg">Championnat F1</h1>
-                <p className="font-data text-[0.5625rem] text-pk-titane">Saison {season}</p>
+                <h1 className="font-display text-lg">{t("championship.title")}</h1>
+                <p className="font-data text-[0.5625rem] text-pk-titane">
+                  {t("championship.season", { year: season })}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -121,7 +125,7 @@ export default function ChampionshipPage() {
                   navigate("/compare");
                 }}
                 className="p-2 rounded-lg text-pk-info hover:bg-pk-info/[0.1] transition-colors"
-                title="Comparer les pilotes"
+                title={t("championship.compare_title")}
                 data-testid="championship-compare"
               >
                 <GitCompare className="w-5 h-5" />
@@ -131,7 +135,7 @@ export default function ChampionshipPage() {
 
           {lastUpdated && (
             <p className="font-data text-[0.5rem] text-pk-titane mt-1.5">
-              Mise à jour : {lastUpdated.toLocaleString("fr-FR")}
+              {t("championship.updated", { date: lastUpdated.toLocaleString() })}
             </p>
           )}
         </div>
@@ -186,7 +190,7 @@ export default function ChampionshipPage() {
           variants={fadeUp}
           className="font-data text-[0.5rem] text-pk-titane text-center pt-4"
         >
-          Données fournies par Jolpica F1 API & OpenF1
+          {t("championship.attribution")}
         </motion.p>
       </motion.div>
     </div>

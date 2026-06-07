@@ -18,6 +18,7 @@
  * Broadcast Premium: pk-surface cards, pk-red accents, dark-only.
  */
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import {
   Camera,
@@ -181,13 +182,13 @@ function buildVisor(
 
 type SceneId = "tarmac" | "grid" | "pit" | "podium" | "cockpit" | "checkered";
 
-const SCENES: { id: SceneId; label: string }[] = [
-  { id: "tarmac", label: "Tarmac" },
-  { id: "grid", label: "Grille" },
-  { id: "pit", label: "Stand" },
-  { id: "podium", label: "Podium" },
-  { id: "cockpit", label: "Cockpit" },
-  { id: "checkered", label: "Damier" },
+const SCENE_KEYS: { id: SceneId; labelKey: string }[] = [
+  { id: "tarmac", labelKey: "avatar.scenes.tarmac" },
+  { id: "grid", labelKey: "avatar.scenes.grid" },
+  { id: "pit", labelKey: "avatar.scenes.pit" },
+  { id: "podium", labelKey: "avatar.scenes.podium" },
+  { id: "cockpit", labelKey: "avatar.scenes.cockpit" },
+  { id: "checkered", labelKey: "avatar.scenes.checkered" },
 ];
 
 type Ctx = CanvasRenderingContext2D;
@@ -416,6 +417,7 @@ interface SkinEntry {
 // ---------------------------------------------------------- AvatarGenerator ---
 
 export function AvatarGenerator({ onGenerated, onCancel }: Props) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<Step>("photo");
   const [skinIndex, setSkinIndex] = useState(0);
   const [photoSrc, setPhotoSrc] = useState<string | null>(null);
@@ -583,7 +585,7 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      alert("Image trop lourde (max 5 Mo)");
+      alert(t("avatar.file_too_large"));
       return;
     }
     const reader = new FileReader();
@@ -596,11 +598,11 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
   const startCamera = async () => {
     setCameraError(null);
     if (!window.isSecureContext) {
-      setCameraError("La caméra nécessite une connexion sécurisée (HTTPS ou localhost).");
+      setCameraError(t("avatar.camera_errors.https_required"));
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraError("La caméra n'est pas supportée par ce navigateur.");
+      setCameraError(t("avatar.camera_errors.not_supported"));
       return;
     }
     try {
@@ -614,12 +616,12 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
       const e = err as DOMException;
       const msg =
         e.name === "NotAllowedError" || e.name === "SecurityError"
-          ? "Accès caméra refusé. Autorise la caméra dans les réglages du navigateur."
+          ? t("avatar.camera_errors.permission_denied")
           : e.name === "NotFoundError" || e.name === "OverconstrainedError"
-            ? "Aucune caméra détectée sur cet appareil."
+            ? t("avatar.camera_errors.not_found")
             : e.name === "NotReadableError"
-              ? "La caméra est déjà utilisée par une autre application."
-              : "Impossible d'accéder à la caméra.";
+              ? t("avatar.camera_errors.in_use")
+              : t("avatar.camera_errors.generic");
       setCameraError(msg);
     }
   };
@@ -659,7 +661,7 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
     const w = v.videoWidth;
     const h = v.videoHeight;
     if (!w || !h) {
-      setCameraError("La caméra n'est pas encore prête — réessaie dans un instant.");
+      setCameraError(t("avatar.camera_errors.not_ready"));
       return;
     }
     const c = document.createElement("canvas");
@@ -852,7 +854,7 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
       haptic("success");
     } catch {
       haptic("error");
-      alert("Erreur lors de la sauvegarde");
+      alert(t("avatar.save_error"));
     } finally {
       setSaving(false);
     }
@@ -873,7 +875,7 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
       haptic("success");
     } catch {
       haptic("error");
-      alert("Erreur lors du téléchargement");
+      alert(t("avatar.download_error"));
     } finally {
       setDownloading(false);
     }
@@ -894,7 +896,7 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
       const activeId = bg.kind === "scene" ? bg.id : null;
       return (
         <div className="grid grid-cols-3 gap-2">
-          {SCENES.map((s) => (
+          {SCENE_KEYS.map((s) => (
             <button
               key={s.id}
               type="button"
@@ -913,7 +915,7 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
                 <SceneSwatch id={s.id} />
               </div>
               <span className="block px-1.5 py-1 font-data text-[0.5rem] uppercase tracking-wider text-pk-titane">
-                {s.label}
+                {t(s.labelKey)}
               </span>
             </button>
           ))}
@@ -985,18 +987,16 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
           <ChevronLeft className="w-5 h-5" />
         </button>
         <h3 className="font-display text-sm text-pk-piste">
-          {step === "photo" && "Ajoute ta photo"}
-          {step === "compose" && "Casque & visage"}
-          {step === "background" && "Arrière-plan"}
+          {step === "photo" && t("avatar.steps.photo")}
+          {step === "compose" && t("avatar.steps.compose")}
+          {step === "background" && t("avatar.steps.background")}
         </h3>
       </div>
 
       {/* ── Step 1: Photo ──────────────────────────────────── */}
       {step === "photo" && (
         <div className="space-y-3">
-          <p className="text-center text-sm text-pk-titane">
-            Commence par une photo de face — le casque viendra se poser dessus.
-          </p>
+          <p className="text-center text-sm text-pk-titane">{t("avatar.photo_intro")}</p>
 
           {showCamera ? (
             <div className="space-y-3">
@@ -1016,13 +1016,13 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
                   className="px-6 py-2.5 bg-pk-red text-white rounded-lg font-display text-sm hover:bg-pk-red/90 transition-colors"
                 >
                   <Camera className="w-4 h-4 inline mr-2" />
-                  Capturer
+                  {t("avatar.capture")}
                 </button>
                 <button
                   onClick={stopCamera}
                   className="px-4 py-2.5 bg-white/[0.06] text-pk-titane rounded-lg font-display text-sm hover:bg-white/[0.1] transition-colors"
                 >
-                  Annuler
+                  {t("avatar.cancel")}
                 </button>
               </div>
             </div>
@@ -1033,14 +1033,14 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
                 className="w-full py-3 bg-pk-red text-white rounded-lg font-display text-sm hover:bg-pk-red/90 transition-colors flex items-center justify-center gap-2"
               >
                 <Upload className="w-4 h-4" />
-                Uploader une photo
+                {t("avatar.upload_photo")}
               </button>
               <button
                 onClick={startCamera}
                 className="w-full py-3 bg-white/[0.06] text-pk-piste rounded-lg font-display text-sm hover:bg-white/[0.1] transition-colors flex items-center justify-center gap-2"
               >
                 <Camera className="w-4 h-4" />
-                Prendre un selfie
+                {t("avatar.take_selfie")}
               </button>
               {cameraError && (
                 <p className="flex items-start gap-1.5 rounded-md border border-pk-red/30 bg-pk-red/10 px-3 py-2 text-[0.75rem] leading-snug text-pk-red">
@@ -1115,7 +1115,7 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
                         <div className="absolute inset-0 grid place-items-center bg-pk-carbon/50 backdrop-blur-[1px]">
                           <div className="flex items-center gap-2 rounded-md bg-pk-carbon/80 px-3 py-2 font-data text-[0.625rem] uppercase tracking-wider text-pk-piste">
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            Analyse du visage…
+                            {t("avatar.face_analysis")}
                           </div>
                         </div>
                       )}
@@ -1125,7 +1125,7 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
                       type="button"
                       onClick={() => selectCard(i)}
                       className="h-full w-full"
-                      aria-label={`Choisir le casque ${skin.team}`}
+                      aria-label={t("avatar.choose_helmet", { team: skin.team })}
                     >
                       <img
                         src={skinThumbUrl(skin.file)}
@@ -1140,7 +1140,11 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
             ))}
           </div>
           <p className="text-center font-data text-[0.625rem] uppercase tracking-wider text-pk-titane">
-            {selectedSkin.team} · {skinIndex + 1}/{ALL_SKINS.length} · glisse pour changer de casque
+            {t("avatar.helmet_counter", {
+              team: selectedSkin.team,
+              current: skinIndex + 1,
+              total: ALL_SKINS.length,
+            })}
           </p>
         </div>
       )}
@@ -1171,7 +1175,7 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
         <div className="space-y-3">
           <p className="flex items-center justify-center gap-1 text-center font-data text-[0.625rem] uppercase tracking-wider text-pk-titane/60">
             <Move className="h-3 w-3" />
-            Glisse / zoome pour ajuster le visage dans la visière
+            {t("avatar.drag_hint")}
           </p>
 
           {/* Zoom + library */}
@@ -1202,7 +1206,7 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
                   ? "border-pk-red/40 bg-pk-red-subtle text-pk-piste"
                   : "border-white/[0.08] bg-white/[0.06] text-pk-titane hover:bg-white/[0.1]"
               }`}
-              aria-label="Librairie de casques"
+              aria-label={t("avatar.helmet_library")}
             >
               <LayoutGrid className="h-4 w-4" />
             </button>
@@ -1218,7 +1222,7 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
                     !libraryTeam ? "bg-pk-red text-white" : "bg-white/[0.04] text-pk-titane"
                   }`}
                 >
-                  Toutes
+                  {t("avatar.all_teams")}
                 </button>
                 {AVATAR_TEAMS.map((team) => (
                   <button
@@ -1271,7 +1275,7 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
             }}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-pk-red py-3 font-display text-sm text-white transition-colors hover:bg-pk-red/90"
           >
-            Suivant
+            {t("avatar.next")}
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -1282,27 +1286,27 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
         <div className="space-y-3">
           <div className="space-y-2 rounded-lg border border-white/[0.08] bg-white/[0.02] p-3">
             <p className="font-data text-[0.5625rem] uppercase tracking-[0.12em] text-pk-titane">
-              Arrière-plan
+              {t("avatar.bg_label")}
             </p>
             <div className="grid grid-cols-3 gap-1">
               {(
                 [
-                  { k: "scene", label: "Décor" },
-                  { k: "gradient", label: "Dégradé" },
-                  { k: "color", label: "Couleur" },
+                  { k: "scene", labelKey: "avatar.bg_scene" },
+                  { k: "gradient", labelKey: "avatar.bg_gradient" },
+                  { k: "color", labelKey: "avatar.bg_color" },
                 ] as const
-              ).map((t) => (
+              ).map((bgTab) => (
                 <button
-                  key={t.k}
+                  key={bgTab.k}
                   type="button"
-                  onClick={() => setBgType(t.k)}
+                  onClick={() => setBgType(bgTab.k)}
                   className={`min-h-[32px] rounded-md border px-2 py-1 font-data text-[0.5625rem] uppercase tracking-wider transition-colors ${
-                    bgType === t.k
+                    bgType === bgTab.k
                       ? "border-pk-red/40 bg-pk-red-subtle text-pk-piste"
                       : "border-white/[0.08] bg-white/[0.03] text-pk-titane active:scale-[0.98]"
                   }`}
                 >
-                  {t.label}
+                  {t(bgTab.labelKey)}
                 </button>
               ))}
             </div>
@@ -1319,12 +1323,12 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
               {saving ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Application…
+                  {t("avatar.applying")}
                 </>
               ) : (
                 <>
                   <Check className="h-4 w-4" />
-                  Appliquer à mon profil
+                  {t("avatar.apply")}
                 </>
               )}
             </button>
@@ -1336,12 +1340,12 @@ export function AvatarGenerator({ onGenerated, onCancel }: Props) {
               {downloading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Téléchargement…
+                  {t("avatar.downloading")}
                 </>
               ) : (
                 <>
                   <Download className="h-4 w-4" />
-                  Télécharger (PNG)
+                  {t("avatar.download")}
                 </>
               )}
             </button>

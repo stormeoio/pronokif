@@ -445,7 +445,7 @@ export default function PredictionsTab() {
         <div>
           <h2 className="font-heading text-2xl uppercase tracking-tight text-white">Pronostics</h2>
           <p className="font-body text-xs text-gray-500">
-            Supervision, correction et verrouillage des picks joueurs.
+            Supervision, correction et verrouillage des pronos joueurs.
           </p>
         </div>
         <div className="flex items-center gap-3">

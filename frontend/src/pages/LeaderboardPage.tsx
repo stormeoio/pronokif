@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
@@ -47,6 +48,7 @@ interface LeaderboardEntry {
 export default function LeaderboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -77,9 +79,9 @@ export default function LeaderboardPage() {
       setSelectedLeagueId(leagueId);
       setShowLeagueMenu(false);
       const league = leagues.find((l: League) => l.id === leagueId);
-      toast.success(`Ligue "${league?.name}" sélectionnée`);
+      toast.success(t("leaderboard.league_selected", { name: league?.name }));
     } catch {
-      toast.error("Erreur lors du changement de ligue");
+      toast.error(t("leaderboard.league_error"));
     }
   };
 
@@ -88,10 +90,10 @@ export default function LeaderboardPage() {
     try {
       await navigator.clipboard.writeText(currentLeague.code);
       setCopied(true);
-      toast.success("Code copié !");
+      toast.success(t("leaderboard.code_copied"));
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("Impossible de copier");
+      toast.error(t("leaderboard.copy_error"));
     }
   };
 
@@ -156,10 +158,10 @@ export default function LeaderboardPage() {
         </button>
         <div className="flex-1">
           <h1 id="leaderboard-title" className="font-display text-[1rem] uppercase">
-            {currentLeague?.name || "Classement"}
+            {currentLeague?.name || t("leaderboard.title")}
           </h1>
           <p className="font-mono text-[0.5625rem] text-pk-titane uppercase tracking-[0.1em]">
-            Classement de la ligue
+            {t("leaderboard.league_title")}
           </p>
         </div>
         <button
@@ -167,7 +169,7 @@ export default function LeaderboardPage() {
           className="w-8 h-8 rounded-full flex items-center justify-center
             text-pk-titane hover:text-pk-piste
             transition-colors duration-pk-short"
-          aria-label="Partager la ligue"
+          aria-label={t("leaderboard.aria_share")}
         >
           <Share2 size={18} strokeWidth={1.5} />
         </button>
@@ -196,26 +198,26 @@ export default function LeaderboardPage() {
             <button
               onClick={() => navigate(`/league/${currentLeague.id}/chat`)}
               className="btn-pk-outline text-[0.6875rem] px-3"
-              aria-label="Chat de la ligue"
+              aria-label={t("leaderboard.aria_chat")}
             >
               <MessageCircle size={13} strokeWidth={1.5} />
-              Chat
+              {t("leaderboard.chat")}
             </button>
             <button
               onClick={copyCode}
               className="btn-pk-outline text-[0.6875rem] px-3"
-              aria-label={copied ? "Code copié" : "Copier le code"}
+              aria-label={copied ? t("leaderboard.code_copied") : t("leaderboard.aria_copy")}
             >
               {copied ? <Check size={13} strokeWidth={2} /> : <Copy size={13} strokeWidth={1.5} />}
-              {copied ? "Copié" : "Code"}
+              {copied ? t("leaderboard.copy") : t("leaderboard.code")}
             </button>
             <button
               onClick={() => navigate("/league")}
               className="btn-pk-outline text-[0.6875rem] px-3"
-              aria-label="Rejoindre une ligue"
+              aria-label={t("leaderboard.aria_join")}
             >
               <Plus size={13} strokeWidth={2} />
-              Ligue
+              {t("leaderboard.league")}
             </button>
             {leagues.length > 1 && (
               <div className="relative ml-auto">
@@ -224,7 +226,7 @@ export default function LeaderboardPage() {
                   className="btn-pk-outline text-[0.6875rem] px-3"
                   data-testid="league-selector"
                 >
-                  Changer
+                  {t("leaderboard.change")}
                   <ChevronDown size={12} strokeWidth={2} />
                 </button>
                 {showLeagueMenu && (
@@ -295,7 +297,7 @@ export default function LeaderboardPage() {
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") navigate(`/profile/${entry.user_id}`);
               }}
-              aria-label={`${entry.position}e - ${entry.username}${isMe ? " (toi)" : ""}`}
+              aria-label={`${entry.position}${t("common.rank_suffix")} - ${entry.username}${isMe ? ` ${t("common.you")}` : ""}`}
               data-testid={`leaderboard-row-${i + 3}`}
             >
               {/* Position */}
@@ -305,7 +307,7 @@ export default function LeaderboardPage() {
               <UserIdentity
                 user={{
                   ...entry,
-                  username: isMe ? `${entry.username} (toi)` : entry.username,
+                  username: isMe ? `${entry.username} ${t("common.you")}` : entry.username,
                 }}
                 size="sm"
                 linked={false}
@@ -315,7 +317,7 @@ export default function LeaderboardPage() {
               >
                 {entry.last_race_points > 0 && (
                   <span className="mt-0.5 block font-mono text-[0.5625rem] text-pk-emerald">
-                    +{entry.last_race_points} dernier GP
+                    +{entry.last_race_points} {t("leaderboard.last_gp")}
                   </span>
                 )}
               </UserIdentity>
@@ -334,15 +336,15 @@ export default function LeaderboardPage() {
           <div className="p-8 text-center">
             <Users size={32} strokeWidth={1.5} className="text-pk-titane mx-auto mb-3" />
             <h3 className="font-display text-[1rem] uppercase mb-1 text-pk-titane">
-              Pas encore de classement
+              {t("leaderboard.no_ranking")}
             </h3>
             <p className="text-[0.8125rem] text-pk-titane mb-4">
-              Invite tes potes pour commencer !
+              {t("leaderboard.invite_friends")}
             </p>
             {currentLeague && (
               <button onClick={shareLeague} className="btn-pk text-[0.8125rem]">
                 <Share2 size={14} strokeWidth={2} />
-                Inviter des potes
+                {t("leaderboard.invite_cta")}
               </button>
             )}
           </div>
@@ -353,11 +355,13 @@ export default function LeaderboardPage() {
       {leagues.length === 0 && (
         <div className="mx-4 mt-6 bg-pk-surface border border-white/[0.08] rounded-md p-6 text-center">
           <Trophy size={32} strokeWidth={1.5} className="text-pk-titane mx-auto mb-3" />
-          <h3 className="font-display text-[1.125rem] uppercase mb-1">Pas encore de ligue</h3>
-          <p className="text-[0.8125rem] text-pk-titane mb-4">Crée ou rejoins une ligue</p>
+          <h3 className="font-display text-[1.125rem] uppercase mb-1">
+            {t("leaderboard.no_league")}
+          </h3>
+          <p className="text-[0.8125rem] text-pk-titane mb-4">{t("leaderboard.join_cta")}</p>
           <button onClick={() => navigate("/league")} className="btn-pk">
             <Plus size={14} strokeWidth={2} />
-            Créer / Rejoindre
+            {t("leaderboard.create_join")}
           </button>
         </div>
       )}

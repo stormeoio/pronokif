@@ -16,6 +16,7 @@ from data.drivers_data import (
     get_all_drivers_detailed,
     get_driver_details,
 )
+from services.race_calendar import active_2026_races
 
 # Official F1 headshots (race suits). Fallback to Norris if unknown.
 DRIVER_PHOTOS: dict[str, str] = {
@@ -287,7 +288,74 @@ async def get_details(driver_id: str) -> dict | None:
     )
 
     driver["useful_facts"] = _generate_driver_facts(driver, next_race)
+
+    # Attach recent race results for the carousel
+    driver["recent_results"] = await get_driver_recent_results(driver_id, driver.get("code"))
     return driver
+
+
+async def get_driver_recent_results(
+    driver_id: str,
+    driver_code: str | None = None,
+    limit: int = 8,
+) -> list[dict]:
+    """Return the driver's finishing positions in recent races (most recent
+    first). Scans all race_results docs and checks whether the driver
+    appears in race_winner or race_top10. Returns up to ``limit`` entries
+    with race metadata for the frontend carousel.
+
+    Each entry: {race_id, race_name, country, flag, date, position, is_winner}
+    """
+    races = active_2026_races()
+    race_by_id = {r["id"]: r for r in races}
+
+    # Fetch all race_results docs
+    results_cursor = db.race_results.find({}, {"_id": 0, "race_id": 1, "results": 1})
+    all_results = await results_cursor.to_list(100)
+
+    # Normalise the slug / code to match against results
+    slugs = {driver_id.lower()}
+    if driver_code:
+        slugs.add(driver_code.lower())
+
+    entries: list[dict] = []
+    for doc in all_results:
+        rid = doc.get("race_id", "")
+        res = doc.get("results") or {}
+        race_meta = race_by_id.get(rid)
+        if not race_meta:
+            continue
+
+        # Determine position
+        position: int | None = None
+        winner = (res.get("race_winner") or "").lower()
+        top10 = [d.lower() for d in (res.get("race_top10") or [])]
+
+        if winner in slugs:
+            position = 1
+        else:
+            for idx, d in enumerate(top10):
+                if d in slugs:
+                    position = idx + 1
+                    break
+
+        if position is None:
+            continue
+
+        entries.append({
+            "race_id": rid,
+            "race_name": race_meta.get("name", rid).replace(" Grand Prix", ""),
+            "country": race_meta.get("country", ""),
+            "country_code": race_meta.get("country_code", ""),
+            "date": race_meta.get("date", ""),
+            "position": position,
+            "is_winner": position == 1,
+            "circuit": race_meta.get("circuit", ""),
+        })
+
+    # Sort by date descending (most recent first), limit
+    entries.sort(key=lambda e: e["date"], reverse=True)
+    return entries[:limit]
 
 
 async def get_all() -> list[dict]:

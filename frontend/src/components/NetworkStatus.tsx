@@ -3,11 +3,13 @@
  * Broadcast Premium: pk-red offline, pk-emerald reconnected.
  */
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { WifiOff, Wifi } from "lucide-react";
 import { haptic } from "@/lib/haptics";
 
 export default function NetworkStatus() {
+  const { t } = useTranslation();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showReconnected, setShowReconnected] = useState(false);
 
@@ -42,7 +44,7 @@ export default function NetworkStatus() {
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
         >
           <WifiOff className="w-4 h-4" />
-          <span>Hors ligne — les données se synchroniseront à la reconnexion</span>
+          <span>{t("network.offline")}</span>
         </motion.div>
       )}
       {showReconnected && isOnline && (
@@ -54,7 +56,7 @@ export default function NetworkStatus() {
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
         >
           <Wifi className="w-4 h-4" />
-          <span>Connexion rétablie</span>
+          <span>{t("network.online")}</span>
         </motion.div>
       )}
     </AnimatePresence>

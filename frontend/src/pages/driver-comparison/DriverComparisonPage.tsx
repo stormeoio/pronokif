@@ -3,6 +3,7 @@
  * Broadcast Premium: glass header, pk-surface cards, team-color bars.
  */
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
@@ -27,7 +28,7 @@ import {
   DriverCard,
   ComparisonBar,
   EfficiencyCard,
-  getVerdict,
+  getVerdictData,
 } from "./ComparisonComponents";
 import { useAllDrivers, useDriverComparison } from "./useDriverComparisonData";
 import { haptic } from "@/lib/haptics";
@@ -65,6 +66,7 @@ function DriverSelector({
   setIsOpen,
   testId,
 }: DriverSelectorProps) {
+  const { t } = useTranslation();
   const selected = drivers.find((d) => d.id === selectedId);
 
   return (
@@ -98,7 +100,9 @@ function DriverSelector({
               </span>
             </>
           ) : (
-            <span className="text-pk-titane text-xs">Pilote</span>
+            <span className="text-pk-titane text-xs">
+              {t("driver_comparison.driver_placeholder")}
+            </span>
           )}
         </div>
         <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
@@ -158,6 +162,7 @@ function DriverSelector({
 /* ── Component ─────────────────────────────────────────── */
 
 export default function DriverComparisonPage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion() ?? false;
@@ -211,10 +216,10 @@ export default function DriverComparisonPage() {
             </button>
             <div className="flex-1">
               <h1 className="font-display text-lg flex items-center gap-2">
-                <GitCompare className="w-5 h-5 text-pk-info" /> Comparateur
+                <GitCompare className="w-5 h-5 text-pk-info" /> {t("driver_comparison.title")}
               </h1>
               <p className="font-data text-[0.5625rem] text-pk-titane">
-                Compare les stats de 2 pilotes
+                {t("driver_comparison.subtitle")}
               </p>
             </div>
           </div>
@@ -269,7 +274,7 @@ export default function DriverComparisonPage() {
             className="px-4 py-2 bg-white/[0.04] border border-white/[0.08] rounded-full font-data text-[0.5625rem] text-pk-titane hover:text-pk-piste hover:border-pk-info/30 transition-colors flex items-center gap-1.5"
             data-testid="comparison-swap"
           >
-            <GitCompare className="w-3.5 h-3.5" /> Inverser
+            <GitCompare className="w-3.5 h-3.5" /> {t("driver_comparison.swap")}
           </button>
         </motion.div>
 
@@ -298,7 +303,7 @@ export default function DriverComparisonPage() {
               className="bg-pk-surface border border-white/[0.08] rounded-lg p-4"
             >
               <h3 className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                <Trophy className="w-3.5 h-3.5 text-pk-gold" /> Stats F1
+                <Trophy className="w-3.5 h-3.5 text-pk-gold" /> {t("driver_comparison.f1_stats")}
               </h3>
               <motion.div
                 className="space-y-3"
@@ -307,7 +312,7 @@ export default function DriverComparisonPage() {
                 variants={staggerContainer}
               >
                 <ComparisonBar
-                  label="Titres mondiaux"
+                  label={t("driver_comparison.world_titles")}
                   icon={Crown}
                   value1={stats?.world_championships?.driver1 || 0}
                   value2={stats?.world_championships?.driver2 || 0}
@@ -315,7 +320,7 @@ export default function DriverComparisonPage() {
                   color2={getTeamColor(d2.team_id)}
                 />
                 <ComparisonBar
-                  label="Victoires"
+                  label={t("driver_comparison.victories")}
                   icon={Flag}
                   value1={stats?.wins?.driver1 || 0}
                   value2={stats?.wins?.driver2 || 0}
@@ -323,7 +328,7 @@ export default function DriverComparisonPage() {
                   color2={getTeamColor(d2.team_id)}
                 />
                 <ComparisonBar
-                  label="Podiums"
+                  label={t("driver_comparison.podiums")}
                   icon={Medal}
                   value1={stats?.podiums?.driver1 || 0}
                   value2={stats?.podiums?.driver2 || 0}
@@ -331,7 +336,7 @@ export default function DriverComparisonPage() {
                   color2={getTeamColor(d2.team_id)}
                 />
                 <ComparisonBar
-                  label="Poles"
+                  label={t("driver_comparison.poles")}
                   icon={Zap}
                   value1={stats?.poles?.driver1 || 0}
                   value2={stats?.poles?.driver2 || 0}
@@ -339,7 +344,7 @@ export default function DriverComparisonPage() {
                   color2={getTeamColor(d2.team_id)}
                 />
                 <ComparisonBar
-                  label="Meilleurs tours"
+                  label={t("driver_comparison.fastest_laps")}
                   icon={Timer}
                   value1={stats?.fastest_laps?.driver1 || 0}
                   value2={stats?.fastest_laps?.driver2 || 0}
@@ -347,7 +352,7 @@ export default function DriverComparisonPage() {
                   color2={getTeamColor(d2.team_id)}
                 />
                 <ComparisonBar
-                  label="Points en carrière"
+                  label={t("driver_comparison.career_points")}
                   icon={Hash}
                   value1={stats?.points?.driver1 || 0}
                   value2={stats?.points?.driver2 || 0}
@@ -355,7 +360,7 @@ export default function DriverComparisonPage() {
                   color2={getTeamColor(d2.team_id)}
                 />
                 <ComparisonBar
-                  label="Grands Prix"
+                  label={t("driver_comparison.grand_prix")}
                   icon={Target}
                   value1={stats?.entries?.driver1 || 0}
                   value2={stats?.entries?.driver2 || 0}
@@ -371,11 +376,12 @@ export default function DriverComparisonPage() {
               className="bg-pk-surface border border-white/[0.08] rounded-lg p-4"
             >
               <h3 className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                <TrendingUp className="w-3.5 h-3.5 text-pk-emerald" /> Efficacité
+                <TrendingUp className="w-3.5 h-3.5 text-pk-emerald" />{" "}
+                {t("driver_comparison.efficiency")}
               </h3>
               <div className="grid grid-cols-2 gap-2">
                 <EfficiencyCard
-                  label="Taux de victoire"
+                  label={t("driver_comparison.win_rate")}
                   value1={comparison.win_rate?.driver1 || 0}
                   value2={comparison.win_rate?.driver2 || 0}
                   driver1={d1}
@@ -383,7 +389,7 @@ export default function DriverComparisonPage() {
                   suffix="%"
                 />
                 <EfficiencyCard
-                  label="Taux de podium"
+                  label={t("driver_comparison.podium_rate")}
                   value1={comparison.podium_rate?.driver1 || 0}
                   value2={comparison.podium_rate?.driver2 || 0}
                   driver1={d1}
@@ -391,7 +397,7 @@ export default function DriverComparisonPage() {
                   suffix="%"
                 />
                 <EfficiencyCard
-                  label="Taux de pole"
+                  label={t("driver_comparison.pole_rate")}
                   value1={comparison.pole_rate?.driver1 || 0}
                   value2={comparison.pole_rate?.driver2 || 0}
                   driver1={d1}
@@ -399,7 +405,7 @@ export default function DriverComparisonPage() {
                   suffix="%"
                 />
                 <EfficiencyCard
-                  label="Points/race"
+                  label={t("driver_comparison.points_per_race")}
                   value1={comparison.points_per_race?.driver1 || 0}
                   value2={comparison.points_per_race?.driver2 || 0}
                   driver1={d1}
@@ -415,10 +421,20 @@ export default function DriverComparisonPage() {
               className="bg-pk-info/[0.06] border border-pk-info/20 rounded-lg p-4"
             >
               <h3 className="font-display text-sm mb-2 flex items-center gap-2">
-                <Award className="w-4 h-4 text-pk-info" /> Verdict rapide
+                <Award className="w-4 h-4 text-pk-info" /> {t("driver_comparison.quick_verdict")}
               </h3>
               <p className="text-xs text-pk-piste/80 leading-relaxed">
-                {getVerdict(comparison, d1, d2)}
+                {(() => {
+                  const v = getVerdictData(comparison, d1, d2);
+                  if (v.type === "dominant")
+                    return t("driver_comparison.verdict.dominant", {
+                      name: v.name,
+                      count: v.count,
+                    });
+                  if (v.type === "slight")
+                    return t("driver_comparison.verdict.slight", { name: v.name, count: v.count });
+                  return t("driver_comparison.verdict.tied");
+                })()}
               </p>
             </motion.div>
           </motion.div>
@@ -428,9 +444,7 @@ export default function DriverComparisonPage() {
             className="bg-pk-surface border border-white/[0.08] rounded-lg p-8 text-center"
           >
             <GitCompare className="w-10 h-10 text-pk-titane mx-auto mb-3" />
-            <p className="text-sm text-pk-titane">
-              Sélectionne deux pilotes différents pour les comparer
-            </p>
+            <p className="text-sm text-pk-titane">{t("driver_comparison.select_two")}</p>
           </motion.div>
         )}
       </motion.div>

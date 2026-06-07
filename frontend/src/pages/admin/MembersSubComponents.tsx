@@ -283,7 +283,7 @@ export function MemberInfoContent({ memberDetails }: MemberInfoContentProps) {
           <p className="font-data text-xl text-green-400">
             {memberDetails.stats?.predictions_count || 0}
           </p>
-          <p className="font-body text-xs text-gray-500">Pickstics</p>
+          <p className="font-body text-xs text-gray-500">Pronostics</p>
         </div>
         <div className="bg-white/5 rounded-lg p-3 text-center">
           <p className="font-data text-xl text-purple-400">{memberDetails.leagues?.length || 0}</p>

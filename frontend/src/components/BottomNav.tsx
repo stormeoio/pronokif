@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth";
 import { navIcons, iconProps } from "@/lib/icons";
@@ -9,22 +10,23 @@ import { quickEnter } from "@/lib/motion";
 interface NavItemDef {
   path: string;
   icon: keyof typeof navIcons;
-  label: string;
+  labelKey: string;
 }
 
 // ----------------------------------------------------------- config ---
 
-const NAV_ITEMS: NavItemDef[] = [
-  { path: "/", icon: "accueil", label: "Accueil" },
-  { path: "/predictions", icon: "pronostics", label: "Pronos" },
-  { path: "/live", icon: "direct", label: "Direct" },
-  { path: "/leaderboard", icon: "classements", label: "Classements" },
-  { path: "/profile", icon: "profil", label: "Profil" },
+const NAV_ITEMS_KEYS: NavItemDef[] = [
+  { path: "/", icon: "accueil", labelKey: "nav.home" },
+  { path: "/predictions", icon: "pronostics", labelKey: "nav.preds_short" },
+  { path: "/live", icon: "direct", labelKey: "nav.live" },
+  { path: "/leaderboard", icon: "classements", labelKey: "nav.standings" },
+  { path: "/profile", icon: "profil", labelKey: "nav.profile" },
 ];
 
 // ----------------------------------------------------------- component ---
 
 export default function BottomNav() {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -34,7 +36,7 @@ export default function BottomNav() {
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 max-w-[430px] mx-auto"
-      aria-label="Main navigation"
+      aria-label={t("nav.aria_label")}
       data-testid="bottom-nav"
     >
       <div
@@ -43,17 +45,18 @@ export default function BottomNav() {
           bg-pk-carbon/[0.94] backdrop-blur-[24px] saturate-[1.4]
           border-t border-white/[0.08]"
       >
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS_KEYS.map((item) => {
           const isActive =
             location.pathname === item.path ||
             (item.path !== "/" && location.pathname.startsWith(item.path));
           const Icon = navIcons[item.icon];
+          const label = t(item.labelKey);
 
           return (
             <motion.button
               key={item.path}
               onClick={() => navigate(item.path)}
-              aria-label={item.label}
+              aria-label={label}
               aria-current={isActive ? "page" : undefined}
               className={`
                 relative flex flex-col items-center justify-center gap-0.5
@@ -82,7 +85,7 @@ export default function BottomNav() {
               />
 
               <span className="font-mono text-[9px] uppercase tracking-[0.06em] leading-none">
-                {item.label}
+                {label}
               </span>
             </motion.button>
           );

@@ -8,6 +8,7 @@
  * Design reference: figma maquettes dark/light (June 2026).
  */
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
@@ -27,6 +28,30 @@ import { useDriverDetailData } from "./useDriverDetailData";
 import { getTeamMeta } from "@/lib/teamLogos";
 import { haptic } from "@/lib/haptics";
 import { getReducedMotionProps } from "@/lib/motion";
+
+const COUNTRY_FLAGS: Record<string, string> = {
+  Australia: "🇦🇺",
+  China: "🇨🇳",
+  Japan: "🇯🇵",
+  Bahrain: "🇧🇭",
+  "Saudi Arabia": "🇸🇦",
+  USA: "🇺🇸",
+  Italy: "🇮🇹",
+  Monaco: "🇲🇨",
+  Spain: "🇪🇸",
+  Canada: "🇨🇦",
+  Austria: "🇦🇹",
+  UK: "🇬🇧",
+  Belgium: "🇧🇪",
+  Hungary: "🇭🇺",
+  Netherlands: "🇳🇱",
+  Azerbaijan: "🇦🇿",
+  Singapore: "🇸🇬",
+  Mexico: "🇲🇽",
+  Brazil: "🇧🇷",
+  Qatar: "🇶🇦",
+  UAE: "🇦🇪",
+};
 
 /* ── Skeleton ─────────────────────────────────────────── */
 
@@ -197,6 +222,7 @@ function RadarChart({
 /* ── Component ─────────────────────────────────────────── */
 
 export default function DriverDetailPage() {
+  const { t } = useTranslation();
   const { driverId } = useParams();
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion() ?? false;
@@ -206,7 +232,7 @@ export default function DriverDetailPage() {
 
   useEffect(() => {
     if (error) {
-      toast.error("Impossible de charger les infos du pilote");
+      toast.error(t("driver_detail.load_error"));
       navigate("/championship");
     }
   }, [error, navigate]);
@@ -218,7 +244,7 @@ export default function DriverDetailPage() {
       <div className="min-h-screen bg-pk-carbon flex items-center justify-center">
         <div className="text-center">
           <User className="w-10 h-10 text-pk-titane mx-auto mb-3" />
-          <p className="text-sm text-pk-titane">Pilote introuvable</p>
+          <p className="text-sm text-pk-titane">{t("driver_detail.not_found")}</p>
         </div>
       </div>
     );
@@ -240,18 +266,21 @@ export default function DriverDetailPage() {
 
   // Radar stats (synthetic — derived from palmares)
   const radarStats = [
-    { label: "Vitesse", value: Math.min(100, 60 + (f1Stats.poles || 0) * 2) },
-    { label: "Depassements", value: Math.min(100, 50 + (f1Stats.wins || 0) * 3) },
-    { label: "Regularite", value: Math.min(100, 40 + (f1Stats.podiums || 0)) },
-    { label: "Gestion pneus", value: Math.min(100, 55 + (f1Stats.fastest_laps || 0) * 3) },
-    { label: "Qualifications", value: Math.min(100, 60 + (f1Stats.poles || 0) * 3) },
+    { label: t("driver_detail.speed"), value: Math.min(100, 60 + (f1Stats.poles || 0) * 2) },
+    { label: t("driver_detail.overtaking"), value: Math.min(100, 50 + (f1Stats.wins || 0) * 3) },
+    { label: t("driver_detail.consistency"), value: Math.min(100, 40 + (f1Stats.podiums || 0)) },
+    {
+      label: t("driver_detail.tyre_mgmt"),
+      value: Math.min(100, 55 + (f1Stats.fastest_laps || 0) * 3),
+    },
+    { label: t("driver_detail.qualifying"), value: Math.min(100, 60 + (f1Stats.poles || 0) * 3) },
   ];
 
   // Points forts (synthetic scores)
   const pointsForts = [
-    { label: "Qualifications", value: radarStats[4].value, color: colors.primary },
-    { label: "Gestion pneus", value: radarStats[3].value, color: colors.primary },
-    { label: "Depassements", value: radarStats[1].value, color: colors.primary },
+    { label: t("driver_detail.qualifying"), value: radarStats[4].value, color: colors.primary },
+    { label: t("driver_detail.tyre_mgmt"), value: radarStats[3].value, color: colors.primary },
+    { label: t("driver_detail.overtaking"), value: radarStats[1].value, color: colors.primary },
   ];
 
   return (
@@ -286,11 +315,13 @@ export default function DriverDetailPage() {
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-1 text-pk-piste hover:text-white transition-colors"
-            aria-label="Retour"
+            aria-label={t("driver_detail.back_label")}
             data-testid="driver-back"
           >
             <ChevronLeft className="w-5 h-5" />
-            <span className="font-heading text-sm uppercase">Pilotes</span>
+            <span className="font-heading text-sm uppercase">
+              {t("driver_detail.drivers_label")}
+            </span>
           </button>
 
           <div className="flex items-center gap-2">
@@ -300,8 +331,8 @@ export default function DriverDetailPage() {
                 navigate(`/compare?d1=${driver.id}`);
               }}
               className="p-2 bg-pk-carbon/40 backdrop-blur-sm rounded-lg text-pk-titane hover:text-white transition-colors"
-              aria-label="Comparer"
-              title="Comparer avec un autre pilote"
+              aria-label={t("driver_detail.compare_label")}
+              title={t("driver_detail.compare_tooltip")}
               data-testid="driver-compare"
             >
               <GitCompare className="w-4 h-4" />
@@ -380,15 +411,17 @@ export default function DriverDetailPage() {
               {age && (
                 <div>
                   <p className="font-data text-[0.5rem] uppercase tracking-wider text-pk-titane">
-                    Age
+                    {t("driver_detail.age")}
                   </p>
-                  <p className="font-data text-base font-bold text-pk-piste">{age} ANS</p>
+                  <p className="font-data text-base font-bold text-pk-piste">
+                    {age} {t("driver_detail.years_suffix")}
+                  </p>
                 </div>
               )}
               {height && (
                 <div className="border-l border-white/[0.08] pl-4">
                   <p className="font-data text-[0.5rem] uppercase tracking-wider text-pk-titane">
-                    Taille
+                    {t("driver_detail.height")}
                   </p>
                   <p className="font-data text-base font-bold text-pk-piste">{height}</p>
                 </div>
@@ -396,7 +429,7 @@ export default function DriverDetailPage() {
               {debutYear && (
                 <div className="border-l border-white/[0.08] pl-4">
                   <p className="font-data text-[0.5rem] uppercase tracking-wider text-pk-titane">
-                    Depuis
+                    {t("driver_detail.since")}
                   </p>
                   <p className="font-data text-base font-bold text-pk-piste">{debutYear}</p>
                 </div>
@@ -407,7 +440,7 @@ export default function DriverDetailPage() {
             <button
               onClick={() => {
                 haptic("medium");
-                toast.success("Pilote suivi !");
+                toast.success(t("driver_detail.followed"));
               }}
               className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-xs uppercase tracking-wider hover:bg-white/5 transition-colors font-data"
               style={{
@@ -416,7 +449,7 @@ export default function DriverDetailPage() {
               }}
             >
               <Star className="w-3.5 h-3.5" />
-              Suivi
+              {t("driver_detail.follow")}
             </button>
           </div>
         </div>
@@ -449,12 +482,14 @@ export default function DriverDetailPage() {
           transition={{ delay: 0.25 }}
         >
           <h2 className="font-heading text-sm uppercase tracking-wide mb-4">
-            Saison {new Date().getFullYear()}
+            {t("driver_detail.season", { year: new Date().getFullYear() })}
           </h2>
           <div className="grid grid-cols-4 gap-3 text-center">
             <div>
               <Trophy className="w-4 h-4 mx-auto text-pk-titane mb-1" />
-              <p className="font-data text-[0.5rem] uppercase text-pk-titane">Classement</p>
+              <p className="font-data text-[0.5rem] uppercase text-pk-titane">
+                {t("driver_detail.ranking")}
+              </p>
               <p className="font-data text-2xl font-bold text-pk-piste">
                 {f1Stats.world_championships > 0 ? "1" : "-"}
                 <sup className="text-xs font-normal text-pk-titane">e</sup>
@@ -463,23 +498,29 @@ export default function DriverDetailPage() {
             </div>
             <div>
               <Flag className="w-4 h-4 mx-auto text-pk-titane mb-1" />
-              <p className="font-data text-[0.5rem] uppercase text-pk-titane">Podiums</p>
+              <p className="font-data text-[0.5rem] uppercase text-pk-titane">
+                {t("driver_detail.podiums")}
+              </p>
               <p className="font-data text-2xl font-bold text-pk-piste">{f1Stats.podiums || 0}</p>
               <p className="font-data text-[0.5rem] text-pk-titane">/ {f1Stats.entries || 0} GP</p>
             </div>
             <div>
               <MapPin className="w-4 h-4 mx-auto text-pk-titane mb-1" />
-              <p className="font-data text-[0.5rem] uppercase text-pk-titane">Meilleur resultat</p>
+              <p className="font-data text-[0.5rem] uppercase text-pk-titane">
+                {t("driver_detail.best_result")}
+              </p>
               <p className="font-data text-2xl font-bold text-pk-piste">
                 1<sup className="text-xs font-normal text-pk-titane">er</sup>
               </p>
               <p className="font-data text-[0.5rem]" style={{ color: colors.primary }}>
-                {f1Stats.wins || 0} victoires
+                {f1Stats.wins || 0} {t("driver_detail.victories")}
               </p>
             </div>
             <div>
               <Clock className="w-4 h-4 mx-auto text-pk-titane mb-1" />
-              <p className="font-data text-[0.5rem] uppercase text-pk-titane">Points moyen</p>
+              <p className="font-data text-[0.5rem] uppercase text-pk-titane">
+                {t("driver_detail.avg_points")}
+              </p>
               <p className="font-data text-2xl font-bold text-pk-piste">
                 {f1Stats.entries
                   ? (f1Stats.points / f1Stats.entries).toFixed(1).replace(".", ",")
@@ -498,7 +539,9 @@ export default function DriverDetailPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
         >
-          <h2 className="font-heading text-sm uppercase tracking-wide mb-4">Points forts</h2>
+          <h2 className="font-heading text-sm uppercase tracking-wide mb-4">
+            {t("driver_detail.strengths")}
+          </h2>
           {/* Circular scores */}
           <div className="flex justify-center gap-5 mb-5">
             {pointsForts.map((pf) => (
@@ -511,6 +554,87 @@ export default function DriverDetailPage() {
           </div>
         </motion.div>
 
+        {/* ── Derniers Résultats (Carousel) ── */}
+        {driver.recent_results?.length > 0 && (
+          <motion.div
+            className="bg-pk-surface border border-white/[0.08] rounded-lg p-4"
+            {...rmProps}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-heading text-sm uppercase tracking-wide">
+                {t("driver_detail.recent_results")}
+              </h2>
+              <button
+                onClick={() => navigate("/championship")}
+                className="flex items-center gap-1 font-data text-[0.6rem] text-pk-titane hover:text-pk-piste transition-colors uppercase tracking-wider"
+              >
+                {t("driver_detail.see_all")} <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
+            <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory scrollbar-hide">
+              {(
+                driver.recent_results as {
+                  race_id: string;
+                  race_name: string;
+                  country: string;
+                  date: string;
+                  position: number;
+                  is_winner: boolean;
+                  circuit: string;
+                }[]
+              ).map((result) => {
+                const flag = COUNTRY_FLAGS[result.country] || "🏁";
+                const pos = result.position;
+                const posLabel =
+                  pos === 1
+                    ? t("driver_detail.position_1")
+                    : pos === 2
+                      ? t("driver_detail.position_2")
+                      : pos === 3
+                        ? t("driver_detail.position_3")
+                        : t("driver_detail.position_suffix", { pos });
+                const dateStr = new Date(result.date)
+                  .toLocaleDateString(undefined, { day: "numeric", month: "short" })
+                  .toUpperCase();
+                const podiumBg =
+                  pos === 1
+                    ? "from-pk-amber/20 to-pk-amber/5 border-pk-amber/30"
+                    : pos <= 3
+                      ? "from-pk-red/15 to-pk-red/5 border-pk-red/20"
+                      : "from-white/[0.04] to-white/[0.02] border-white/[0.08]";
+
+                return (
+                  <div
+                    key={result.race_id}
+                    className={`flex-shrink-0 w-[120px] snap-start rounded-lg bg-gradient-to-b border p-3 ${podiumBg}`}
+                  >
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <span className="text-sm">{flag}</span>
+                      <span className="font-heading text-[0.6rem] uppercase truncate">
+                        {result.race_name}
+                      </span>
+                    </div>
+                    <p className="font-data text-[0.5rem] text-pk-titane mb-1">{dateStr}</p>
+                    <p
+                      className={`font-display text-2xl font-bold ${pos === 1 ? "text-pk-amber" : pos <= 3 ? "text-pk-red" : "text-pk-piste"}`}
+                    >
+                      {posLabel}
+                    </p>
+                    {result.is_winner && (
+                      <div className="mt-1.5">
+                        <Trophy className="w-3.5 h-3.5 text-pk-amber" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
         {/* ── Carriere F1 ── */}
         <motion.div
           className="bg-pk-surface border border-white/[0.08] rounded-lg p-4"
@@ -519,19 +643,41 @@ export default function DriverDetailPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45 }}
         >
-          <h2 className="font-heading text-sm uppercase tracking-wide mb-4">Carriere F1</h2>
+          <h2 className="font-heading text-sm uppercase tracking-wide mb-4">
+            {t("driver_detail.f1_career")}
+          </h2>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { value: f1Stats.world_championships || 0, label: "Titres", color: "text-pk-gold" },
-              { value: f1Stats.wins || 0, label: "Victoires", color: "text-pk-emerald" },
-              { value: f1Stats.podiums || 0, label: "Podiums", color: "text-pk-info" },
-              { value: f1Stats.poles || 0, label: "Poles", color: "text-purple-400" },
+              {
+                value: f1Stats.world_championships || 0,
+                label: t("driver_detail.titles"),
+                color: "text-pk-gold",
+              },
+              {
+                value: f1Stats.wins || 0,
+                label: t("driver_detail.wins"),
+                color: "text-pk-emerald",
+              },
+              {
+                value: f1Stats.podiums || 0,
+                label: t("driver_detail.podiums"),
+                color: "text-pk-info",
+              },
+              {
+                value: f1Stats.poles || 0,
+                label: t("driver_detail.poles"),
+                color: "text-purple-400",
+              },
               {
                 value: f1Stats.fastest_laps || 0,
-                label: "Meilleurs tours",
+                label: t("driver_detail.fastest_laps"),
                 color: "text-pink-400",
               },
-              { value: f1Stats.entries || 0, label: "GP disputes", color: "text-pk-piste" },
+              {
+                value: f1Stats.entries || 0,
+                label: t("driver_detail.gp_entered"),
+                color: "text-pk-piste",
+              },
             ].map((stat) => (
               <div
                 key={stat.label}
@@ -559,15 +705,13 @@ export default function DriverDetailPage() {
             </div>
             <div className="text-left">
               <p className="font-heading text-sm uppercase text-white">
-                Pronostiquez ses performances
+                {t("driver_detail.predict_performance")}
               </p>
-              <p className="font-body text-xs text-white/70">
-                Gagnez des points en anticipant ses resultats
-              </p>
+              <p className="font-body text-xs text-white/70">{t("driver_detail.predict_desc")}</p>
             </div>
           </div>
           <div className="flex items-center gap-1 text-white font-heading text-xs uppercase">
-            Pronostiquer <ChevronRight className="w-4 h-4" />
+            {t("driver_detail.predict_cta")} <ChevronRight className="w-4 h-4" />
           </div>
         </motion.button>
 
@@ -582,7 +726,7 @@ export default function DriverDetailPage() {
           {/* Team card */}
           <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-4">
             <p className="font-data text-[0.5rem] uppercase tracking-wider text-pk-titane mb-2">
-              Equipe & Contract
+              {t("driver_detail.team_contract")}
             </p>
             <div className="flex items-center gap-2">
               {teamLogoSrc && (
@@ -591,7 +735,7 @@ export default function DriverDetailPage() {
               <div className="min-w-0">
                 <p className="font-heading text-xs uppercase truncate">{driver.team}</p>
                 <p className="font-body text-[0.6rem] text-pk-titane">
-                  Contrat jusqu'en {contract.end_year || "?"}
+                  {t("driver_detail.contract_until", { year: contract.end_year || "?" })}
                 </p>
               </div>
               <ChevronRight className="w-4 h-4 text-pk-titane ml-auto shrink-0" />
@@ -601,7 +745,7 @@ export default function DriverDetailPage() {
           {/* Info card */}
           <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-4">
             <p className="font-data text-[0.5rem] uppercase tracking-wider text-pk-titane mb-2">
-              Infos utiles
+              {t("driver_detail.useful_info")}
             </p>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-pk-anthracite flex items-center justify-center shrink-0">
@@ -610,7 +754,7 @@ export default function DriverDetailPage() {
               <div className="min-w-0">
                 <p className="font-heading text-xs uppercase truncate">{driver.country_name}</p>
                 <p className="font-body text-[0.6rem] text-pk-titane">
-                  {f1Stats.entries || 0} GP disputes
+                  {f1Stats.entries || 0} {t("driver_detail.gp_entered")}
                 </p>
               </div>
             </div>
@@ -626,7 +770,9 @@ export default function DriverDetailPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
           >
-            <h2 className="font-heading text-sm uppercase tracking-wide mb-3">Le saviez-vous ?</h2>
+            <h2 className="font-heading text-sm uppercase tracking-wide mb-3">
+              {t("driver_detail.did_you_know")}
+            </h2>
             <div className="space-y-2">
               {driver.useful_facts
                 .slice(0, 5)

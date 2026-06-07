@@ -3,6 +3,7 @@
  * Broadcast Premium: pk-surface card, pk-red CTA, pk-info targets, pk-emerald/amber grades.
  */
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Timer, RotateCcw, Play, Target, Share2, X, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -59,6 +60,7 @@ function HitEffect({ x, y }: { x: number; y: number }) {
 }
 
 export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: BatakGameProps) {
+  const { t } = useTranslation();
   const [gameState, setGameState] = useState("idle");
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(30);
@@ -146,41 +148,41 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
   const getResultGrade = (s: number) => {
     if (s >= 40)
       return {
-        label: "INCROYABLE!",
+        label: t("mini_games.grade_incredible"),
         color: "text-pk-emerald",
         bg: "from-pk-emerald/20 to-pk-emerald/5",
         grade: "S+",
       };
     if (s >= 35)
       return {
-        label: "Excellent!",
+        label: t("mini_games.grade_excellent"),
         color: "text-pk-emerald",
         bg: "from-pk-emerald/20 to-pk-emerald/5",
         grade: "S",
       };
     if (s >= 30)
       return {
-        label: "Tres bien !",
+        label: t("mini_games.grade_very_good"),
         color: "text-pk-info",
         bg: "from-pk-info/20 to-pk-info/5",
         grade: "A",
       };
     if (s >= 25)
       return {
-        label: "Bien!",
+        label: t("mini_games.grade_good"),
         color: "text-pk-info",
         bg: "from-pk-info/20 to-pk-info/5",
         grade: "B",
       };
     if (s >= 20)
       return {
-        label: "Correct",
+        label: t("mini_games.grade_ok"),
         color: "text-pk-amber",
         bg: "from-pk-amber/20 to-pk-amber/5",
         grade: "C",
       };
     return {
-      label: "A travailler",
+      label: t("mini_games.grade_needs_work"),
       color: "text-pk-red",
       bg: "from-pk-red/20 to-pk-red/5",
       grade: "D",
@@ -214,12 +216,15 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
   const handleShareToLeague = async (leagueId: number, leagueName: string) => {
     setSharing(true);
     try {
-      const message = `🎯 J'ai fait ${score} cibles au Batak Pro ! ${getResultGrade(score).label} Qui peut faire mieux ?`;
+      const message = t("mini_games.batak_share_message", {
+        score,
+        grade: getResultGrade(score).label,
+      });
       await api.chat.send(String(leagueId), { content: message });
-      toast.success(`Score partage dans ${leagueName} !`);
+      toast.success(t("mini_games.score_shared", { name: leagueName }));
       setShowShareModal(false);
     } catch (error: unknown) {
-      toast.error("Erreur lors du partage");
+      toast.error(t("mini_games.share_error"));
     } finally {
       setSharing(false);
     }
@@ -245,10 +250,10 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
               <Target className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-display text-sm">Batak Pro</h3>
+              <h3 className="font-display text-sm">{t("mini_games.batak_title")}</h3>
               {isTraining && (
                 <span className="font-data text-[0.5625rem] text-pk-info uppercase tracking-wider">
-                  Entrainement
+                  {t("mini_games.training_label")}
                 </span>
               )}
             </div>
@@ -371,16 +376,14 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
             >
-              <p className="text-pk-titane text-sm">
-                Clique sur les cibles le plus vite possible !
-              </p>
+              <p className="text-pk-titane text-sm">{t("mini_games.batak_instruction")}</p>
               <button
                 onClick={startGame}
                 className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 disabled={!isTraining && attemptsRemaining === 0}
                 data-testid="batak-start-btn"
               >
-                <Play className="w-5 h-5" /> COMMENCER (30s)
+                <Play className="w-5 h-5" /> {t("mini_games.start_30s")}
               </button>
             </motion.div>
           )}
@@ -416,7 +419,7 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
                   transition={{ type: "spring", stiffness: 400 }}
                 >
                   {score}
-                  <span className="text-lg ml-1 opacity-70">cibles</span>
+                  <span className="text-lg ml-1 opacity-70">{t("mini_games.targets_unit")}</span>
                 </motion.p>
                 <p className="font-display text-sm mt-1 text-white/80">
                   {getResultGrade(score).label}
@@ -429,14 +432,14 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
                   onClick={resetGame}
                   className="flex-1 h-11 rounded-lg border border-white/[0.08] text-pk-titane font-display text-xs hover:text-pk-piste hover:border-white/[0.15] transition-colors flex items-center justify-center gap-2"
                 >
-                  <RotateCcw className="w-4 h-4" /> Reessayer
+                  <RotateCcw className="w-4 h-4" /> {t("mini_games.retry")}
                 </button>
                 <button
                   onClick={handleSubmit}
                   className="flex-1 h-11 rounded-lg bg-pk-red text-white font-display text-xs shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   disabled={!isTraining && attemptsRemaining === 0}
                 >
-                  <Trophy className="w-4 h-4" /> Sauvegarder
+                  <Trophy className="w-4 h-4" /> {t("mini_games.save")}
                 </button>
               </div>
               <button
@@ -444,7 +447,7 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
                 className="w-full h-11 rounded-lg border border-pk-emerald/30 text-pk-emerald font-display text-xs hover:bg-pk-emerald/5 transition-colors flex items-center justify-center gap-2"
                 data-testid="batak-share-btn"
               >
-                <Share2 className="w-4 h-4" /> Partager dans une ligue
+                <Share2 className="w-4 h-4" /> {t("mini_games.batak_share_league")}
               </button>
             </motion.div>
           )}
@@ -480,10 +483,14 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
                   <Share2 className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-display text-sm text-pk-piste">Partager mon score</h3>
+                  <h3 className="font-display text-sm text-pk-piste">
+                    {t("mini_games.batak_share_title")}
+                  </h3>
                   <p className="text-xs text-pk-titane">
-                    <span className="text-pk-info font-data">{score} cibles</span> —{" "}
-                    {getResultGrade(score).label}
+                    <span className="text-pk-info font-data">
+                      {score} {t("mini_games.targets_unit")}
+                    </span>{" "}
+                    — {getResultGrade(score).label}
                   </p>
                 </div>
               </div>
@@ -495,12 +502,12 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                   />
-                  <p className="text-pk-titane text-sm mt-3">Chargement...</p>
+                  <p className="text-pk-titane text-sm mt-3">{t("mini_games.loading")}</p>
                 </div>
               ) : userLeagues.length === 0 ? (
                 <div className="text-center py-8">
                   <MessageCircle className="w-10 h-10 text-pk-titane/40 mx-auto mb-2" />
-                  <p className="text-pk-titane text-sm">Aucune ligue rejointe</p>
+                  <p className="text-pk-titane text-sm">{t("mini_games.batak_no_leagues")}</p>
                 </div>
               ) : (
                 <motion.div

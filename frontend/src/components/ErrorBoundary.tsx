@@ -3,6 +3,7 @@
  * Broadcast Premium fallback UI with retry / home buttons.
  */
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { AlertTriangle, RotateCcw, Home, Flag } from "lucide-react";
 import { captureError } from "@/lib/sentry";
 
@@ -65,12 +66,13 @@ interface ErrorFallbackProps {
 }
 
 function ErrorFallback({ error, onRetry, onHome }: ErrorFallbackProps) {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-pk-carbon flex flex-col">
       {/* Red Flag Banner */}
       <div className="w-full py-2 bg-pk-red text-white font-display text-xs uppercase tracking-wider flex items-center justify-center gap-2">
         <Flag className="w-3 h-3" fill="currentColor" />
-        Drapeau rouge — erreur système
+        {t("error_boundary.title")}
       </div>
 
       <div className="flex-1 flex items-center justify-center p-6">
@@ -81,19 +83,21 @@ function ErrorFallback({ error, onRetry, onHome }: ErrorFallbackProps) {
           </div>
 
           {/* Title */}
-          <h1 className="font-display text-xl mb-2">Incident en piste</h1>
+          <h1 className="font-display text-xl mb-2">{t("error_boundary.subtitle")}</h1>
           <p className="text-sm text-pk-titane leading-relaxed mb-6 max-w-[280px] mx-auto">
-            Une erreur inattendue s'est produite. Tes pronos sont en sécurité.
+            {t("error_boundary.description")}
           </p>
 
           {/* Radio message */}
           <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-3.5 mb-6 text-left">
             <div className="flex items-center gap-1.5 mb-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-pk-red animate-live-pulse" />
-              <span className="font-data text-[0.5rem] text-pk-red uppercase">Radio équipe</span>
+              <span className="font-data text-[0.5rem] text-pk-red uppercase">
+                {t("error_boundary.radio_label")}
+              </span>
             </div>
             <p className="text-[0.8125rem] italic text-pk-piste leading-snug">
-              "On a un souci technique. Rentre aux stands et réessaye."
+              "{t("error_boundary.radio_message")}"
             </p>
           </div>
 
@@ -111,14 +115,14 @@ function ErrorFallback({ error, onRetry, onHome }: ErrorFallbackProps) {
               className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm flex items-center justify-center gap-2 shadow-glow-red active:scale-[0.97] transition-transform"
             >
               <RotateCcw className="w-4 h-4" />
-              Relancer
+              {t("error_boundary.retry")}
             </button>
             <button
               onClick={onHome}
               className="w-full h-11 rounded-lg bg-white/[0.04] border border-white/[0.08] text-pk-piste text-sm flex items-center justify-center gap-2 active:scale-[0.97] transition-transform"
             >
               <Home className="w-4 h-4" />
-              Retour au paddock
+              {t("error_boundary.back_home")}
             </button>
           </div>
         </div>

@@ -5,6 +5,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -76,6 +77,7 @@ function ProfileSkeleton() {
 export default function ProfilePage() {
   const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
 
@@ -103,11 +105,11 @@ export default function ProfilePage() {
       await api.avatars.select(avatarId);
       if (updateUser) updateUser({ avatar_id: avatarId, custom_avatar_url: null });
       haptic("success");
-      toast.success("Avatar mis à jour !");
+      toast.success(t("profile.avatar_updated"));
       setShowAvatarModal(false);
     } catch {
       haptic("error");
-      toast.error("Erreur lors de la mise a jour");
+      toast.error(t("profile.avatar_error"));
     }
   };
 
@@ -123,10 +125,10 @@ export default function ProfilePage() {
           avatar_id: undefined,
           custom_avatar_url: (res.data as { avatar_url: string }).avatar_url,
         });
-      toast.success("Photo uploadée !");
+      toast.success(t("profile.photo_uploaded"));
       setShowAvatarModal(false);
     } catch (e: unknown) {
-      toast.error(getApiError(e, "Erreur lors de l'upload"));
+      toast.error(getApiError(e, t("profile.photo_error")));
     }
   };
 
@@ -152,7 +154,7 @@ export default function ProfilePage() {
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <h1 className="font-display text-lg">Mon profil</h1>
+            <h1 className="font-display text-lg">{t("profile.title")}</h1>
           </div>
           <button
             onClick={handleLogout}
@@ -220,7 +222,8 @@ export default function ProfilePage() {
               <div className="flex items-center gap-1 mt-1">
                 <Globe className="w-3 h-3 text-pk-titane" />
                 <span className="font-data text-[0.5625rem] text-pk-titane">
-                  Rang mondial : <span className="text-pk-red font-bold">#{globalPosition}</span>
+                  {t("profile.global_rank")}{" "}
+                  <span className="text-pk-red font-bold">#{globalPosition}</span>
                 </span>
               </div>
             )}
@@ -234,14 +237,18 @@ export default function ProfilePage() {
               <Trophy className="w-4.5 h-4.5 text-pk-amber" />
             </div>
             <p className="font-data text-2xl font-bold">{stats.totalPoints}</p>
-            <p className="font-data text-[0.5625rem] text-pk-titane uppercase">Points totaux</p>
+            <p className="font-data text-[0.5625rem] text-pk-titane uppercase">
+              {t("profile.total_points")}
+            </p>
           </div>
           <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-4 text-center">
             <div className="w-9 h-9 rounded-lg bg-pk-red/[0.12] flex items-center justify-center mx-auto mb-2">
               <Target className="w-4.5 h-4.5 text-pk-red" />
             </div>
             <p className="font-data text-2xl font-bold">{stats.totalPredictions}</p>
-            <p className="font-data text-[0.5625rem] text-pk-titane uppercase">Pickstics</p>
+            <p className="font-data text-[0.5625rem] text-pk-titane uppercase">
+              {t("profile.predictions")}
+            </p>
           </div>
         </motion.div>
 
@@ -271,8 +278,8 @@ export default function ProfilePage() {
         >
           <QuickLink
             icon={Medal}
-            label="Missions"
-            sub="Gagne de l'XP"
+            label={t("profile.missions")}
+            sub={t("profile.missions_sub")}
             color="bg-pk-amber/[0.12]"
             iconColor="text-pk-amber"
             onClick={() => navigate("/missions")}
@@ -280,8 +287,8 @@ export default function ProfilePage() {
           />
           <QuickLink
             icon={MessageSquare}
-            label="Picks Perso"
-            sub="Cree tes picks perso"
+            label={t("profile.custom_picks")}
+            sub={t("profile.custom_picks_sub")}
             color="bg-purple-500/[0.12]"
             iconColor="text-purple-400"
             onClick={() => navigate("/custom-predictions")}
@@ -289,8 +296,8 @@ export default function ProfilePage() {
           />
           <QuickLink
             icon={Crown}
-            label="Classement global"
-            sub="Tous les joueurs"
+            label={t("profile.global_leaderboard")}
+            sub={t("profile.global_leaderboard_sub")}
             color="bg-pk-info/[0.12]"
             iconColor="text-pk-info"
             onClick={() => navigate("/leaderboard/global")}
@@ -317,7 +324,7 @@ export default function ProfilePage() {
               <div className="w-8 h-8 rounded-md bg-pk-amber/[0.12] flex items-center justify-center">
                 <Trophy className="w-4 h-4 text-pk-amber" />
               </div>
-              <span className="font-display text-sm">Classement de ligue</span>
+              <span className="font-display text-sm">{t("profile.league_leaderboard")}</span>
             </div>
             <ChevronRight className="w-4 h-4 text-pk-titane" />
           </button>
@@ -330,7 +337,7 @@ export default function ProfilePage() {
               <div className="w-8 h-8 rounded-md bg-pk-red/[0.12] flex items-center justify-center">
                 <Shield className="w-4 h-4 text-pk-red" />
               </div>
-              <span className="font-display text-sm">Administration</span>
+              <span className="font-display text-sm">{t("profile.admin")}</span>
             </div>
             <ChevronRight className="w-4 h-4 text-pk-titane" />
           </button>
@@ -343,7 +350,7 @@ export default function ProfilePage() {
         >
           <div className="flex items-center gap-2">
             <Smartphone className="w-4 h-4 text-pk-info" />
-            <h3 className="font-display text-sm">Application</h3>
+            <h3 className="font-display text-sm">{t("profile.app_section")}</h3>
           </div>
 
           {/* Install CTA */}
@@ -352,7 +359,7 @@ export default function ProfilePage() {
               onClick={async () => {
                 haptic("medium");
                 const ok = await installPwa();
-                if (ok) toast.success("Installation lancee !");
+                if (ok) toast.success(t("profile.install_launched"));
               }}
               className="w-full flex items-center gap-3 p-3 rounded-lg bg-pk-info/[0.08] border border-pk-info/20 hover:bg-pk-info/[0.15] transition-colors"
               data-testid="pwa-install-btn"
@@ -361,9 +368,9 @@ export default function ProfilePage() {
                 <Download className="w-4.5 h-4.5 text-pk-info" />
               </div>
               <div className="text-left flex-1">
-                <p className="font-display text-sm text-pk-info">Installer l'app</p>
+                <p className="font-display text-sm text-pk-info">{t("profile.install_app")}</p>
                 <p className="font-data text-[0.5625rem] text-pk-titane">
-                  Ajoute PronoKif a ton ecran d'accueil
+                  {t("profile.install_desc")}
                 </p>
               </div>
               <ChevronRight className="w-4 h-4 text-pk-info shrink-0" />
@@ -384,9 +391,11 @@ export default function ProfilePage() {
                 <RefreshCw className="w-4.5 h-4.5 text-pk-emerald" />
               </div>
               <div className="text-left flex-1">
-                <p className="font-display text-sm text-pk-emerald">Mise a jour disponible</p>
+                <p className="font-display text-sm text-pk-emerald">
+                  {t("profile.update_available")}
+                </p>
                 <p className="font-data text-[0.5625rem] text-pk-titane">
-                  Recharge pour appliquer la derniere version
+                  {t("profile.update_desc")}
                 </p>
               </div>
               <ChevronRight className="w-4 h-4 text-pk-emerald shrink-0" />
@@ -400,9 +409,9 @@ export default function ProfilePage() {
                 <Smartphone className="w-4.5 h-4.5 text-pk-emerald" />
               </div>
               <div className="flex-1">
-                <p className="font-display text-sm text-pk-emerald">App installee</p>
+                <p className="font-display text-sm text-pk-emerald">{t("profile.installed")}</p>
                 <p className="font-data text-[0.5625rem] text-pk-titane">
-                  PronoKif tourne en mode app native
+                  {t("profile.installed_desc")}
                 </p>
               </div>
             </div>
@@ -412,19 +421,17 @@ export default function ProfilePage() {
           {pwaState === "unsupported" && (
             <div className="space-y-2">
               <p className="font-body text-xs text-pk-titane">
-                Pour installer PronoKif sur ton ecran d'accueil :
+                {t("profile.install_instructions")}
               </p>
               <div className="space-y-1.5 pl-3">
                 <p className="font-data text-[0.5625rem] text-pk-titane">
-                  <span className="text-pk-piste">iOS Safari :</span> Partager &rarr; Sur l'ecran
-                  d'accueil
+                  <span className="text-pk-piste">{t("profile.ios_instructions")}</span>
                 </p>
                 <p className="font-data text-[0.5625rem] text-pk-titane">
-                  <span className="text-pk-piste">Android Chrome :</span> Menu &rarr; Installer
-                  l'application
+                  <span className="text-pk-piste">{t("profile.android_instructions")}</span>
                 </p>
                 <p className="font-data text-[0.5625rem] text-pk-titane">
-                  <span className="text-pk-piste">Desktop :</span> Barre d'adresse &rarr; Installer
+                  <span className="text-pk-piste">{t("profile.desktop_instructions")}</span>
                 </p>
               </div>
             </div>
@@ -442,7 +449,7 @@ export default function ProfilePage() {
                   names.forEach((name) => caches.delete(name));
                 });
               }
-              toast.success("Cache vide. Rechargement...");
+              toast.success(t("profile.cache_cleared"));
               setTimeout(() => window.location.reload(), 500);
             }}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.03] transition-colors"
@@ -450,7 +457,7 @@ export default function ProfilePage() {
           >
             <RefreshCw className="w-3.5 h-3.5 text-pk-titane" />
             <span className="font-data text-[0.5625rem] text-pk-titane">
-              Vider le cache et recharger
+              {t("profile.clear_cache")}
             </span>
           </button>
         </motion.div>
@@ -463,7 +470,7 @@ export default function ProfilePage() {
             data-testid="logout-btn-bottom"
           >
             <LogOut className="w-4 h-4" />
-            Déconnexion
+            {t("profile.logout")}
           </button>
         </motion.div>
 
@@ -486,7 +493,7 @@ export default function ProfilePage() {
               transition={{ duration: 0.2 }}
             >
               <div className="sticky top-0 bg-pk-surface/95 backdrop-blur-lg border-b border-white/[0.08] px-4 py-3 flex items-center justify-between">
-                <h2 className="font-display text-base">Choisir un Avatar</h2>
+                <h2 className="font-display text-base">{t("profile.avatar_modal")}</h2>
                 <button
                   onClick={() => setShowAvatarModal(false)}
                   className="w-8 h-8 rounded-md flex items-center justify-center text-pk-titane hover:bg-white/[0.06] transition-colors"

@@ -6,6 +6,7 @@
  * Auto-dismisses after 3s or on tap.
  */
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Particle {
@@ -51,6 +52,7 @@ export default function RewardCelebration({
   message,
   levelUp,
 }: RewardCelebrationProps) {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const animFrameRef = useRef<number>(0);
@@ -205,7 +207,7 @@ export default function RewardCelebration({
                   transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                 >
                   <span className="text-lg">&#x2B50;</span>
-                  Niveau {levelUp.to} !
+                  {t("reward.level", { level: levelUp.to })}
                 </motion.div>
               </motion.div>
             )}
@@ -244,7 +246,7 @@ export default function RewardCelebration({
               animate={{ opacity: [0, 1, 0.5, 1] }}
               transition={{ delay: 1, duration: 2, repeat: Infinity }}
             >
-              Touche pour continuer
+              {t("reward.tap_continue")}
             </motion.p>
           </motion.div>
         </motion.div>

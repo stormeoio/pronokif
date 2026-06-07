@@ -101,7 +101,7 @@ describe("MiniGamesPage", () => {
   it("shows training mode by default", async () => {
     renderPage();
     await waitFor(() => {
-      expect(screen.getAllByText(/entrainement/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/entra[iî]nement/i).length).toBeGreaterThan(0);
     });
   });
 });

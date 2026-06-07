@@ -6,6 +6,7 @@
  * enriches the Ergast standings data with high-res driver portraits.
  */
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -37,6 +38,7 @@ interface DriverStandingsProps {
 }
 
 export default function DriverStandings({ driversStandings }: DriverStandingsProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   // Fetch admin-uploaded driver photos (dark/light) from internal API
@@ -73,7 +75,7 @@ export default function DriverStandings({ driversStandings }: DriverStandingsPro
   }, [internalDrivers]);
 
   if (driversStandings.length === 0) {
-    return <EmptyMinimal icon="🏆" message="Aucune donnee disponible" />;
+    return <EmptyMinimal icon="🏆" message={t("championship.drivers.no_data")} />;
   }
 
   return (

@@ -5,6 +5,7 @@
  */
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
 
 interface StreakData {
@@ -20,6 +21,7 @@ export default function StreakWidget() {
     queryFn: () => api.user.streak() as Promise<StreakData>,
     staleTime: 60_000,
   });
+  const { t } = useTranslation();
 
   if (!streak || streak.current_streak === 0) return null;
 
@@ -35,7 +37,7 @@ export default function StreakWidget() {
             ? "bg-orange-500/20 border-orange-500/40"
             : "bg-yellow-500/10 border-yellow-500/30"
       }`}
-      title={`Serie de ${streak.current_streak} jours | Record : ${streak.longest_streak}`}
+      title={t("streak.title", { count: streak.current_streak, record: streak.longest_streak })}
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: "spring", stiffness: 400, damping: 15 }}
@@ -55,7 +57,8 @@ export default function StreakWidget() {
           isOnFire ? "text-orange-300" : isHot ? "text-orange-400" : "text-yellow-400"
         }`}
       >
-        {streak.current_streak}j
+        {streak.current_streak}
+        {t("streak.days_short")}
       </span>
     </motion.div>
   );

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft, Crown, TrendingUp, TrendingDown, Minus } from "lucide-react";
@@ -24,10 +25,10 @@ interface LeaderboardEntry {
 
 type FilterKey = "season" | "month" | "gp";
 
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "season", label: "Saison" },
-  { key: "month", label: "Ce mois" },
-  { key: "gp", label: "Dernier GP" },
+const FILTER_KEYS: { key: FilterKey; labelKey: string }[] = [
+  { key: "season", labelKey: "global_leaderboard.filters.season" },
+  { key: "month", labelKey: "global_leaderboard.filters.month" },
+  { key: "gp", labelKey: "global_leaderboard.filters.last_gp" },
 ];
 
 /* ── Podium Colors ─────────────────────────────────────── */
@@ -127,6 +128,7 @@ function DeltaBadge({ delta }: { delta?: number }) {
 
 export default function GlobalLeaderboardPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
@@ -161,14 +163,16 @@ export default function GlobalLeaderboardPage() {
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <h1 className="font-display text-lg">Classement général</h1>
+              <h1 className="font-display text-lg">{t("global_leaderboard.title")}</h1>
             </div>
-            <span className="font-data text-[0.5rem] text-pk-titane">{totalPlayers} joueurs</span>
+            <span className="font-data text-[0.5rem] text-pk-titane">
+              {totalPlayers} {t("common.players")}
+            </span>
           </div>
 
           {/* Filter chips */}
           <div className="flex gap-1.5">
-            {FILTERS.map((f) => (
+            {FILTER_KEYS.map((f) => (
               <button
                 key={f.key}
                 onClick={() => {
@@ -182,7 +186,7 @@ export default function GlobalLeaderboardPage() {
                 }`}
                 data-testid={`lb-filter-${f.key}`}
               >
-                {f.label}
+                {t(f.labelKey)}
               </button>
             ))}
           </div>
@@ -280,7 +284,9 @@ export default function GlobalLeaderboardPage() {
           className="bg-pk-surface border border-white/[0.08] rounded-lg overflow-hidden"
         >
           {rest.length === 0 ? (
-            <p className="text-sm text-pk-titane text-center py-8">Pas assez de joueurs.</p>
+            <p className="text-sm text-pk-titane text-center py-8">
+              {t("global_leaderboard.not_enough")}
+            </p>
           ) : (
             rest.map((entry) => {
               const isMe = entry.user_id === user?.id;
@@ -305,7 +311,11 @@ export default function GlobalLeaderboardPage() {
                     textClassName={isMe ? "text-pk-red" : ""}
                     data-testid={`global-leaderboard-user-${entry.user_id}`}
                   />
-                  {isMe && <span className="text-pk-titane font-normal text-xs ml-1">(toi)</span>}
+                  {isMe && (
+                    <span className="text-pk-titane font-normal text-xs ml-1">
+                      {t("common.you")}
+                    </span>
+                  )}
 
                   {/* Delta */}
                   <DeltaBadge delta={entry.delta} />

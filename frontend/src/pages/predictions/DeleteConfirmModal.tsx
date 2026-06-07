@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Trash2, AlertTriangle } from "lucide-react";
 import { haptic } from "@/lib/haptics";
 import {
@@ -24,19 +25,19 @@ export function DeleteConfirmModal({
   onConfirm,
   onCancel,
 }: DeleteConfirmModalProps) {
+  const { t } = useTranslation();
   return (
     <BottomSheet open onOpenChange={(open) => !open && onCancel()}>
       <BottomSheetContent>
         <BottomSheetHeader>
-          <BottomSheetTitle>Supprimer les pronostics</BottomSheetTitle>
+          <BottomSheetTitle>{t("custom_predictions.delete_title")}</BottomSheetTitle>
         </BottomSheetHeader>
 
         <BottomSheetBody>
           <BottomSheetCallout variant="danger">
             <AlertTriangle className="w-4 h-4 text-pk-red flex-shrink-0 mt-0.5" />
             <span className="text-[0.6875rem] text-pk-titane leading-snug">
-              Tes pronostics pour <strong className="text-pk-piste">{raceName}</strong> seront
-              définitivement supprimés. Cette action est irréversible.
+              {t("custom_predictions.delete_warning", { race: raceName })}
             </span>
           </BottomSheetCallout>
 
@@ -50,7 +51,7 @@ export function DeleteConfirmModal({
               disabled={deleting}
             >
               <Trash2 className="w-4 h-4" />
-              {deleting ? "Suppression..." : "Supprimer"}
+              {deleting ? t("custom_predictions.deleting") : t("custom_predictions.delete")}
             </BottomSheetButton>
             <BottomSheetButton
               variant="ghost"
@@ -60,7 +61,7 @@ export function DeleteConfirmModal({
               }}
               disabled={deleting}
             >
-              Annuler
+              {t("common.cancel")}
             </BottomSheetButton>
           </BottomSheetActions>
         </BottomSheetBody>

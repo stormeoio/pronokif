@@ -4,8 +4,10 @@
  */
 import { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { RotateCw ,
+import {
+  RotateCw,
   ChevronLeft,
   Calendar,
   Clock,
@@ -59,11 +61,11 @@ const COUNTRY_FLAGS: Record<string, string> = {
 
 type TabKey = "info" | "programme" | "grille" | "picks";
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "info", label: "Circuit" },
-  { key: "programme", label: "Programme" },
-  { key: "grille", label: "Grille" },
-  { key: "picks", label: "Picks" },
+const TAB_KEYS: { key: TabKey; labelKey: string }[] = [
+  { key: "info", labelKey: "grand_prix.tabs.circuit" },
+  { key: "programme", labelKey: "grand_prix.tabs.schedule" },
+  { key: "grille", labelKey: "grand_prix.tabs.grid" },
+  { key: "picks", labelKey: "grand_prix.tabs.picks" },
 ];
 
 interface ParsedSession {
@@ -115,23 +117,24 @@ function parseSessions(raceDetails: Record<string, unknown>): ParsedSession[] {
   }
 
   if (rawSessions && typeof rawSessions === "object") {
-    const labels: Record<string, { name: string; short_name: string }> = {
-      fp1: { name: "Essais Libres 1", short_name: "FP1" },
-      fp2: { name: "Essais Libres 2", short_name: "FP2" },
-      fp3: { name: "Essais Libres 3", short_name: "FP3" },
-      sprint_qualifying: { name: "Qualifications Sprint", short_name: "SQ" },
-      sprint_race: { name: "Sprint", short_name: "SPRINT" },
-      qualifying: { name: "Qualifications", short_name: "QUALI" },
-      race: { name: "Course", short_name: "COURSE" },
+    const labels: Record<string, { nameKey: string; short_name: string }> = {
+      fp1: { nameKey: "grand_prix.sessions.fp1", short_name: "FP1" },
+      fp2: { nameKey: "grand_prix.sessions.fp2", short_name: "FP2" },
+      fp3: { nameKey: "grand_prix.sessions.fp3", short_name: "FP3" },
+      sprint_qualifying: { nameKey: "grand_prix.sessions.sprint_quali", short_name: "SQ" },
+      sprint_race: { nameKey: "grand_prix.sessions.sprint", short_name: "SPRINT" },
+      qualifying: { nameKey: "grand_prix.sessions.qualifying", short_name: "QUALI" },
+      race: { nameKey: "grand_prix.sessions.race", short_name: "COURSE" },
     };
 
     return Object.entries(rawSessions as Record<string, unknown>)
       .filter(([, v]) => Boolean(v))
       .map(([key, session]) => {
         const s = session as { date?: string; time?: string; datetime?: string };
-        const label = labels[key] ?? { name: key, short_name: key.toUpperCase() };
+        const label = labels[key] ?? { nameKey: key, short_name: key.toUpperCase() };
         return {
-          ...label,
+          name: label.nameKey,
+          short_name: label.short_name,
           datetime: s.datetime || `${s.date}T${s.time}:00+00:00`,
         };
       });
@@ -219,6 +222,7 @@ function GrandPrixSkeleton() {
 export default function GrandPrixDetailPage() {
   const { raceId } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
@@ -351,11 +355,9 @@ export default function GrandPrixDetailPage() {
         </header>
         <EmptyFullPage
           Icon={Flag}
-          title="Grand Prix introuvable"
-          description={
-            queryError ? "Impossible de charger les détails" : "Ce Grand Prix n'existe pas"
-          }
-          actionLabel="Retour"
+          title={t("grand_prix.empty.not_found")}
+          description={queryError ? t("grand_prix.error_loading") : t("grand_prix.not_exist")}
+          actionLabel={t("common.back")}
           onAction={() => navigate(-1)}
         />
       </div>
@@ -396,7 +398,7 @@ export default function GrandPrixDetailPage() {
 
           {/* Tabs */}
           <div className="flex gap-1.5">
-            {TABS.map((tab) => (
+            {TAB_KEYS.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => {
@@ -410,7 +412,7 @@ export default function GrandPrixDetailPage() {
                 }`}
                 data-testid={`gp-tab-${tab.key}`}
               >
-                {tab.label}
+                {t(tab.labelKey)}
               </button>
             ))}
           </div>
@@ -465,21 +467,17 @@ export default function GrandPrixDetailPage() {
                   <div className="flex items-center gap-1.5 mb-3">
                     <span className="w-1.5 h-1.5 rounded-full bg-pk-red animate-live-pulse" />
                     <span className="font-data text-[0.5625rem] text-pk-red uppercase tracking-wider">
-                      {nextSession.name} dans
+                      {t("grand_prix.countdown_in", { session: t(nextSession.name) })}
                     </span>
                   </div>
                   <div className="flex items-center justify-center gap-2">
-                    {countdown.days > 0 && (
-                      <>
-                        <CountdownUnit value={countdown.days} label="jours" />
-                        <span className="font-data text-lg text-pk-titane self-start mt-3">:</span>
-                      </>
-                    )}
-                    <CountdownUnit value={countdown.hours} label="heures" />
+                    <CountdownUnit value={countdown.days} label={t("common.days")} />
                     <span className="font-data text-lg text-pk-titane self-start mt-3">:</span>
-                    <CountdownUnit value={countdown.minutes} label="min" />
+                    <CountdownUnit value={countdown.hours} label={t("common.hours")} />
                     <span className="font-data text-lg text-pk-titane self-start mt-3">:</span>
-                    <CountdownUnit value={countdown.seconds} label="sec" />
+                    <CountdownUnit value={countdown.minutes} label={t("common.min")} />
+                    <span className="font-data text-lg text-pk-titane self-start mt-3">:</span>
+                    <CountdownUnit value={countdown.seconds} label={t("common.sec")} />
                   </div>
                 </motion.div>
               ) : isFinished ? (
@@ -490,7 +488,9 @@ export default function GrandPrixDetailPage() {
                   <div className="w-8 h-8 rounded-md bg-pk-anthracite flex items-center justify-center">
                     <Check className="w-4 h-4 text-pk-titane" />
                   </div>
-                  <p className="text-[0.8125rem] text-pk-titane">Course terminée</p>
+                  <p className="text-[0.8125rem] text-pk-titane">
+                    {t("grand_prix.status.finished")}
+                  </p>
                 </motion.div>
               ) : null}
 
@@ -520,14 +520,18 @@ export default function GrandPrixDetailPage() {
                   <p className="font-data text-base font-bold" data-testid="circuit-turns">
                     {circuitStats.turns || "—"}
                   </p>
-                  <p className="font-data text-[0.5rem] text-pk-titane uppercase">virages</p>
+                  <p className="font-data text-[0.5rem] text-pk-titane uppercase">
+                    {t("grand_prix.circuit_stats.turns")}
+                  </p>
                 </div>
                 <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-3 text-center">
                   <Flag className="w-4 h-4 text-pk-red mx-auto mb-1.5" />
                   <p className="font-data text-base font-bold" data-testid="circuit-laps">
                     {circuitStats.laps || "—"}
                   </p>
-                  <p className="font-data text-[0.5rem] text-pk-titane uppercase">tours</p>
+                  <p className="font-data text-[0.5rem] text-pk-titane uppercase">
+                    {t("grand_prix.circuit_stats.laps")}
+                  </p>
                 </div>
               </motion.div>
 
@@ -547,7 +551,7 @@ export default function GrandPrixDetailPage() {
                     <div className="flex items-center gap-2.5">
                       <Clock className="w-3.5 h-3.5 text-pk-titane flex-shrink-0" />
                       <span className="text-[0.8125rem] text-pk-piste">
-                        Limite des picks :{" "}
+                        {t("grand_prix.status.pick_deadline")} :{" "}
                         <span className="text-pk-red">
                           {formatTime(raceDetails.predictions_close_at as string)}
                         </span>
@@ -565,8 +569,8 @@ export default function GrandPrixDetailPage() {
               {sessions.length === 0 ? (
                 <EmptyFullPage
                   Icon={Calendar}
-                  title="Programme indisponible"
-                  description="Les horaires de ce Grand Prix ne sont pas encore connus."
+                  title={t("grand_prix.empty.no_schedule")}
+                  description={t("grand_prix.picks_open_soon")}
                 />
               ) : (
                 <motion.div
@@ -607,7 +611,7 @@ export default function GrandPrixDetailPage() {
                           <p
                             className={`text-[0.8125rem] font-semibold ${past ? "text-pk-titane" : "text-pk-piste"}`}
                           >
-                            {session.name}
+                            {t(session.name)}
                           </p>
                           <p className="text-[0.625rem] text-pk-titane">
                             {formatDate(session.datetime)}
@@ -624,7 +628,7 @@ export default function GrandPrixDetailPage() {
                             {formatTime(session.datetime)}
                           </p>
                           <p className="font-data text-[0.4375rem] text-pk-titane uppercase">
-                            heure fr
+                            {t("grand_prix.status.paris_time")}
                           </p>
                         </div>
 
@@ -658,7 +662,11 @@ export default function GrandPrixDetailPage() {
                       <Clock className="w-3.5 h-3.5 text-pk-red" />
                     </motion.div>
                     <span className="text-[0.8125rem] text-pk-piste">
-                      Ferme 15 min avant {raceDetails.is_sprint_weekend ? "SQ1" : "Q1"}
+                      {t(
+                        raceDetails.is_sprint_weekend
+                          ? "grand_prix.deadline.sprint"
+                          : "grand_prix.deadline.race",
+                      )}
                     </span>
                   </div>
 
@@ -672,7 +680,7 @@ export default function GrandPrixDetailPage() {
                     data-testid="make-predictions-cta"
                   >
                     <Target className="w-4 h-4" />
-                    Faire mes picks
+                    {t("grand_prix.cta.predict")}
                   </button>
 
                   {Boolean(raceDetails.is_sprint_weekend) &&
@@ -686,7 +694,7 @@ export default function GrandPrixDetailPage() {
                         data-testid="make-sprint-predictions-cta"
                       >
                         <Zap className="w-4 h-4" />
-                        Picks Sprint
+                        {t("grand_prix.cta.sprint_picks")}
                       </button>
                     )}
                 </motion.div>
@@ -695,10 +703,10 @@ export default function GrandPrixDetailPage() {
                   <div className="w-14 h-14 rounded-full bg-pk-anthracite flex items-center justify-center mx-auto mb-3">
                     <Lock className="w-6 h-6 text-pk-titane" />
                   </div>
-                  <p className="font-display text-sm text-pk-titane mb-1">Picks non disponibles</p>
-                  <p className="text-xs text-pk-titane/60">
-                    Les pronostics ouvriront bientôt pour ce Grand Prix.
+                  <p className="font-display text-sm text-pk-titane mb-1">
+                    {t("grand_prix.cta.unavailable")}
                   </p>
+                  <p className="text-xs text-pk-titane/60">{t("grand_prix.picks_open_soon")}</p>
                 </motion.div>
               ) : isFinished ? (
                 <motion.div variants={fadeUp} className="space-y-3">
@@ -706,7 +714,9 @@ export default function GrandPrixDetailPage() {
                     <div className="w-8 h-8 rounded-md bg-pk-emerald/[0.12] border border-pk-emerald/25 flex items-center justify-center">
                       <Check className="w-4 h-4 text-pk-emerald" />
                     </div>
-                    <p className="text-[0.8125rem] text-pk-piste">Course terminée</p>
+                    <p className="text-[0.8125rem] text-pk-piste">
+                      {t("grand_prix.status.finished")}
+                    </p>
                   </div>
 
                   <button
@@ -717,15 +727,15 @@ export default function GrandPrixDetailPage() {
                     className="w-full h-11 rounded-lg bg-pk-surface border border-white/[0.08] text-pk-piste font-display text-sm flex items-center justify-center gap-2 active:scale-[0.97] transition-transform"
                     data-testid="view-results-cta"
                   >
-                    Voir les résultats
+                    {t("grand_prix.cta.results")}
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </motion.div>
               ) : (
                 <EmptyFullPage
                   Icon={Target}
-                  title="Picks indisponibles"
-                  description="Les pronostics ne sont pas encore ouverts pour ce Grand Prix."
+                  title={t("grand_prix.empty.no_picks")}
+                  description={t("grand_prix.picks_open_soon")}
                 />
               )}
             </>

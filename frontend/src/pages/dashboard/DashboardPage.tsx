@@ -1,7 +1,9 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { RotateCw ,
+import { useTranslation } from "react-i18next";
+import {
+  RotateCw,
   ChevronRight,
   Trophy,
   Target,
@@ -61,20 +63,21 @@ function raceFlag(raceId: string) {
   return RACE_FLAGS[key] ?? "\u{1F3C1}";
 }
 
-function tierLabel(rank: number, totalPlayers: number) {
-  if (!rank || !totalPlayers) return "Classement";
+function tierLabel(rank: number, totalPlayers: number, t: (key: string) => string) {
+  if (!rank || !totalPlayers) return t("dashboard.tier.default");
   const ratio = rank / totalPlayers;
-  if (ratio <= 0.05) return "Diamant";
-  if (ratio <= 0.15) return "Platine";
-  if (ratio <= 0.35) return "Or";
-  if (ratio <= 0.65) return "Argent";
-  return "Bronze";
+  if (ratio <= 0.05) return t("dashboard.tier.diamond");
+  if (ratio <= 0.15) return t("dashboard.tier.platinum");
+  if (ratio <= 0.35) return t("dashboard.tier.gold");
+  if (ratio <= 0.65) return t("dashboard.tier.silver");
+  return t("dashboard.tier.bronze");
 }
 
 // ----------------------------------------------------------- component ---
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -119,7 +122,7 @@ export default function DashboardPage() {
       streak: Math.min(7, predictionStats?.races_participated ?? racesWithResults),
       rank,
       totalPlayers,
-      tier: tierLabel(rank, totalPlayers),
+      tier: tierLabel(rank, totalPlayers, t),
     };
   }, [
     globalLeaderboard?.leaderboard.length,
@@ -203,7 +206,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-1.5 mb-1.5">
               <Zap size={12} strokeWidth={1.5} className="text-pk-titane" />
               <span className="font-mono text-[0.5625rem] uppercase tracking-[0.12em] text-pk-titane">
-                Points totaux
+                {t("dashboard.total_points")}
               </span>
             </div>
             <div
@@ -215,7 +218,9 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center gap-1 mt-1 text-pk-emerald">
               <TrendingUp size={12} strokeWidth={2} />
-              <span className="font-mono text-[0.6875rem]">+{stats.lastRacePoints} dernier GP</span>
+              <span className="font-mono text-[0.6875rem]">
+                {t("dashboard.last_gp", { pts: stats.lastRacePoints })}
+              </span>
             </div>
             {/* Sparkline */}
             <svg viewBox="0 0 120 32" preserveAspectRatio="none" className="w-full h-8 mt-2">
@@ -250,15 +255,15 @@ export default function DashboardPage() {
             <div className="flex items-center gap-1.5 mb-1.5">
               <Trophy size={12} strokeWidth={1.5} className="text-pk-titane" />
               <span className="font-mono text-[0.5625rem] uppercase tracking-[0.12em] text-pk-titane">
-                Rang global
+                {t("dashboard.global_rank")}
               </span>
             </div>
             <div className="font-mono text-[2rem] font-bold leading-none text-pk-gold">
               {stats.rank}
-              <span className="text-[1rem] text-pk-titane">e</span>
+              <span className="text-[1rem] text-pk-titane">{t("common.rank_suffix")}</span>
             </div>
             <p className="font-mono text-[0.625rem] text-pk-titane mt-1">
-              / {stats.totalPlayers.toLocaleString("fr-FR")} joueurs
+              / {stats.totalPlayers.toLocaleString()} {t("common.players")}
             </p>
             {/* Progress bar */}
             <div className="w-full h-1 bg-white/[0.04] rounded-sm mt-3 overflow-hidden">
@@ -289,7 +294,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-1.5 mb-1.5">
               <Target size={12} strokeWidth={1.5} className="text-pk-titane" />
               <span className="font-mono text-[0.5625rem] uppercase tracking-[0.12em] text-pk-titane">
-                Précision
+                {t("dashboard.precision")}
               </span>
             </div>
             <div className="flex items-baseline gap-1">
@@ -305,7 +310,7 @@ export default function DashboardPage() {
               />
             </div>
             <p className="font-mono text-[0.5625rem] text-pk-titane mt-1.5">
-              {stats.gpsPlayed} GP joués
+              {t("dashboard.gps_played", { count: stats.gpsPlayed })}
             </p>
           </motion.div>
 
@@ -318,7 +323,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-1.5 mb-1.5">
               <Flame size={12} strokeWidth={1.5} className="text-pk-titane" />
               <span className="font-mono text-[0.5625rem] uppercase tracking-[0.12em] text-pk-titane">
-                Série en cours
+                {t("dashboard.current_streak")}
               </span>
             </div>
             <div className="font-mono text-[1.5rem] font-bold leading-none text-pk-amber">
@@ -354,12 +359,12 @@ export default function DashboardPage() {
         {userLeagues.length > 0 && (
           <motion.div variants={fadeUp}>
             <div className="flex items-center justify-between mb-2">
-              <h2 className="font-display text-[1rem] uppercase">Mes ligues</h2>
+              <h2 className="font-display text-[1rem] uppercase">{t("dashboard.my_leagues")}</h2>
               <button
                 onClick={() => navigate("/league")}
                 className="flex items-center gap-1 font-mono text-[0.6875rem] text-pk-red"
               >
-                Tout voir
+                {t("common.see_all")}
                 <ChevronRight size={12} strokeWidth={2} />
               </button>
             </div>
@@ -397,7 +402,7 @@ export default function DashboardPage() {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-[0.8125rem] truncate">{league.name}</p>
                           <p className="font-mono text-[0.625rem] text-pk-titane">
-                            {memberCount} membres
+                            {memberCount} {t("common.members")}
                           </p>
                         </div>
                       </div>
@@ -429,7 +434,7 @@ export default function DashboardPage() {
                   <Plus size={18} strokeWidth={2} className="text-pk-red" />
                 </div>
                 <span className="font-mono text-[0.625rem] text-pk-titane text-center">
-                  Rejoindre
+                  {t("dashboard.join")}
                 </span>
               </div>
             </div>
@@ -444,13 +449,15 @@ export default function DashboardPage() {
             <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-pk-red-subtle flex items-center justify-center">
               <Users size={24} strokeWidth={1.5} className="text-pk-red" />
             </div>
-            <h3 className="font-display text-[1.125rem] uppercase mb-1">Rejoins une Ligue !</h3>
+            <h3 className="font-display text-[1.125rem] uppercase mb-1">
+              {t("dashboard.join_league_cta")}
+            </h3>
             <p className="text-[0.8125rem] text-pk-titane mb-4">
-              Crée ou rejoins une ligue pour jouer avec tes potes
+              {t("dashboard.join_league_desc")}
             </p>
             <button onClick={() => navigate("/league")} className="btn-pk text-[0.8125rem] px-6">
               <Plus {...iconSmall} size={14} strokeWidth={2} />
-              C'est parti !
+              {t("dashboard.lets_go")}
             </button>
           </motion.div>
         )}
@@ -458,12 +465,12 @@ export default function DashboardPage() {
         {/* ---- RECENT RESULTS ---- */}
         <motion.div variants={fadeUp}>
           <div className="flex items-center justify-between mb-2">
-            <h2 className="font-display text-[1rem] uppercase">Derniers résultats</h2>
+            <h2 className="font-display text-[1rem] uppercase">{t("dashboard.recent_results")}</h2>
             <button
               onClick={() => navigate("/results")}
               className="flex items-center gap-1 font-mono text-[0.6875rem] text-pk-red"
             >
-              Historique
+              {t("dashboard.history")}
               <ChevronRight size={12} strokeWidth={2} />
             </button>
           </div>
@@ -471,7 +478,7 @@ export default function DashboardPage() {
             {recentResults.length === 0 && (
               <div className="bg-pk-surface border border-white/[0.08] rounded-md p-4 text-center">
                 <p className="font-mono text-[0.6875rem] text-pk-titane uppercase">
-                  Aucun résultat importé
+                  {t("dashboard.no_results")}
                 </p>
               </div>
             )}
@@ -537,33 +544,35 @@ export default function DashboardPage() {
 
         {/* ---- QUICK ACTIONS ---- */}
         <motion.div variants={fadeUp}>
-          <h2 className="font-display text-[1rem] uppercase mb-2">Actions rapides</h2>
+          <h2 className="font-display text-[1rem] uppercase mb-2">
+            {t("dashboard.quick_actions")}
+          </h2>
           <div className="grid grid-cols-2 gap-2">
             {[
               {
                 icon: Target,
-                label: "Pickstiquer",
-                sub: currentRace?.name?.replace(" Grand Prix", "") || "GP",
+                label: t("dashboard.predict"),
+                sub: currentRace?.name?.replace(" Grand Prix", "") || t("common.gp"),
                 color: "red" as const,
                 action: () => currentRace && navigate(`/predictions/${currentRace.id}`),
               },
               {
                 icon: Trophy,
-                label: "Classements",
-                sub: "Saison 2026",
+                label: t("dashboard.standings"),
+                sub: t("dashboard.season", { year: 2026 }),
                 color: "emerald" as const,
                 action: () => navigate("/leaderboard"),
               },
               {
                 icon: Users,
-                label: "Inviter",
-                sub: "Partagez l'app",
+                label: t("dashboard.invite"),
+                sub: t("dashboard.share_app"),
                 color: "amber" as const,
                 action: () => {
                   if (navigator.share) {
                     navigator.share({
                       title: "PronoKif",
-                      text: "Fais tes pronos F1 avec moi !",
+                      text: t("dashboard.share_text"),
                       url: window.location.origin,
                     });
                   }
@@ -571,8 +580,8 @@ export default function DashboardPage() {
               },
               {
                 icon: Radio,
-                label: "Direct",
-                sub: "Pas de course",
+                label: t("dashboard.live"),
+                sub: t("dashboard.no_race"),
                 color: "info" as const,
                 action: () => navigate("/live"),
               },

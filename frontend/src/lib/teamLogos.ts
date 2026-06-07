@@ -160,7 +160,10 @@ const FALLBACK: TeamMeta = {
 /** Normalize a team display name / id to a canonical key. */
 export function teamKeyFor(team: string | undefined | null): string | null {
   if (!team) return null;
-  const norm = team.toLowerCase().trim().replace(/\s+/g, " ");
+  const norm = team
+    .toLowerCase()
+    .trim()
+    .replace(/[_\s]+/g, " ");
   if (TEAMS[norm.replace(/\s+/g, "-")]) return norm.replace(/\s+/g, "-");
   return ALIASES[norm] ?? null;
 }

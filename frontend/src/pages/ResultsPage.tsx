@@ -4,6 +4,7 @@
  */
 import { useState, useMemo, lazy, Suspense } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ChevronLeft, Trophy, Flag, Clock } from "lucide-react";
@@ -85,6 +86,7 @@ function ResultsSkeleton() {
 export default function ResultsPage() {
   const { raceId } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
 
@@ -163,7 +165,7 @@ export default function ResultsPage() {
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <h1 className="font-display text-lg">Résultats</h1>
+            <h1 className="font-display text-lg">{t("results.title")}</h1>
           </div>
 
           {/* Race selector chips */}
@@ -200,8 +202,8 @@ export default function ResultsPage() {
         {!selectedRace && (
           <EmptyFullPage
             Icon={Clock}
-            title="Aucun résultat"
-            description="Les résultats seront disponibles après chaque course."
+            title={t("results.no_results")}
+            description={t("results.pending")}
           />
         )}
 
@@ -272,7 +274,7 @@ export default function ResultsPage() {
                     </div>
                     <div>
                       <p className="font-data text-[0.5625rem] text-pk-emerald/80 uppercase tracking-wider">
-                        Score Grand Prix
+                        {t("results.score_title")}
                       </p>
                       <div className="flex items-baseline gap-1">
                         <span className="font-display text-2xl">+</span>
@@ -299,9 +301,9 @@ export default function ResultsPage() {
             {/* Qualifications */}
             <motion.div variants={fadeUp}>
               <ResultComparisonCard
-                title="Qualifications"
+                title={t("results.qualifying")}
                 icon={<Flag className="w-5 h-5 text-pk-red" />}
-                winnerLabel="Pole position"
+                winnerLabel={t("results.pole")}
                 winnerId={result.results.quali_pole}
                 predictionWinnerId={result.prediction?.quali_pole}
                 top3={qualiTop3}
@@ -314,9 +316,9 @@ export default function ResultsPage() {
             {}
             <motion.div variants={fadeUp}>
               <ResultComparisonCard
-                title="Course"
+                title={t("results.race")}
                 icon={<Trophy className="w-5 h-5 text-pk-amber" />}
-                winnerLabel="Vainqueur"
+                winnerLabel={t("results.winner")}
                 winnerId={result.results.race_winner}
                 predictionWinnerId={result.prediction?.race_winner}
                 top3={raceTop3}
@@ -333,7 +335,7 @@ export default function ResultsPage() {
                 className="bg-pk-surface border border-white/[0.08] rounded-lg overflow-hidden"
               >
                 <div className="px-4 py-3 border-b border-white/[0.08]">
-                  <h3 className="font-display text-sm">Détail des points</h3>
+                  <h3 className="font-display text-sm">{t("results.points_detail")}</h3>
                 </div>
                 <div className="px-4 py-3 space-y-2">
                   {result.points.details.map((detail: string, i: number) => (
@@ -357,8 +359,8 @@ export default function ResultsPage() {
         {selectedRace && !result?.results && (
           <EmptyFullPage
             Icon={Clock}
-            title="Résultats en attente"
-            description="Les résultats seront disponibles après la course."
+            title={t("results.pending")}
+            description={t("results.no_results")}
           />
         )}
 
@@ -369,7 +371,7 @@ export default function ResultsPage() {
             className="bg-pk-amber/[0.06] border border-pk-amber/20 rounded-lg p-4 flex items-center gap-3"
           >
             <Clock className="w-4 h-4 text-pk-amber flex-shrink-0" />
-            <p className="text-xs text-pk-amber">Tu n'as pas fait de pronostic pour cette course</p>
+            <p className="text-xs text-pk-amber">{t("results.no_prediction")}</p>
           </motion.div>
         )}
       </motion.div>

@@ -7,6 +7,7 @@
  */
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Users } from "lucide-react";
@@ -25,6 +26,7 @@ interface TeamGroup {
 }
 
 export default function RaceGrid() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data, isLoading, isError } = useQuery({
     queryKey: queryKeys.drivers.list(),
@@ -65,8 +67,8 @@ export default function RaceGrid() {
     return (
       <EmptyFullPage
         Icon={Users}
-        title="Grille indisponible"
-        description="La liste des pilotes et écuries n'est pas encore disponible."
+        title={t("grand_prix.grid.unavailable_title")}
+        description={t("grand_prix.grid.unavailable_desc")}
       />
     );
   }
@@ -114,7 +116,8 @@ export default function RaceGrid() {
               {group.meta.name}
             </h3>
             <span className="font-data text-[0.5625rem] uppercase tracking-[0.1em] text-pk-titane">
-              {group.drivers.length} pilote{group.drivers.length > 1 ? "s" : ""}
+              {group.drivers.length}{" "}
+              {t("grand_prix.grid.driver_count", { count: group.drivers.length })}
             </span>
           </div>
 

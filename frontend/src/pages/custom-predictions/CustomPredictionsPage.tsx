@@ -3,6 +3,7 @@
  * Broadcast Premium: glass header, pk-surface cards, stagger animations.
  */
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -70,6 +71,7 @@ function CustomPredictionsSkeleton() {
 /* -- Component ---------------------------------------------------------- */
 
 export default function CustomPredictionsPage() {
+  const { t } = useTranslation();
   const { leagueId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -93,22 +95,22 @@ export default function CustomPredictionsPage() {
   const handleAnswer = async (predictionId: string, answer: string | string[]) => {
     try {
       await api.customPredictions.answer(predictionId, answer);
-      toast.success("Reponse enregistree !");
+      toast.success(t("custom_predictions.answer_recorded"));
       refetchPredictions();
     } catch {
-      toast.error("Erreur");
+      toast.error(t("custom_predictions.error_generic"));
     }
   };
 
   const handleSetCorrectAnswer = async (predictionId: string, correctAnswer: string | string[]) => {
     try {
       await api.customPredictions.setCorrect(predictionId, { correct_answer: correctAnswer });
-      toast.success("Bonne reponse definie ! Points attribues.");
+      toast.success(t("custom_predictions.answer_success"));
       setSelectedPrediction(null);
       refetchPredictions();
     } catch (e: unknown) {
       const err = e as { response?: { data?: { detail?: string } } };
-      toast.error(err.response?.data?.detail || "Erreur");
+      toast.error(err.response?.data?.detail || t("custom_predictions.error_generic"));
     }
   };
 
@@ -133,7 +135,7 @@ export default function CustomPredictionsPage() {
             <div className="flex-1">
               <h1 className="font-display text-lg flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-pk-info" />
-                Picks Perso
+                {t("custom_predictions.title")}
               </h1>
               {league && <p className="font-data text-[0.5625rem] text-pk-titane">{league.name}</p>}
             </div>
@@ -145,14 +147,14 @@ export default function CustomPredictionsPage() {
               className="px-3 py-1.5 rounded-lg bg-pk-red text-white font-display text-xs shadow-glow-red active:scale-[0.97] transition-transform flex items-center gap-1"
               data-testid="create-prediction-btn"
             >
-              <Plus className="w-4 h-4" /> Creer
+              <Plus className="w-4 h-4" /> {t("custom_predictions.create")}
             </button>
           </div>
 
           {allRaces.length > 0 && (
             <div className="mt-3">
               <p className="font-data text-[0.5rem] text-pk-titane uppercase tracking-wider mb-1">
-                Grand Prix
+                {t("custom_predictions.gp_label")}
               </p>
               <select
                 value={selectedRace?.id || ""}
@@ -188,12 +190,9 @@ export default function CustomPredictionsPage() {
           <div className="flex items-start gap-3">
             <HelpCircle className="w-5 h-5 text-pk-info flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm text-pk-piste/80">
-                Cree des pronos fun pour ta ligue ! Le createur definit la bonne reponse apres la
-                course.
-              </p>
+              <p className="text-sm text-pk-piste/80">{t("custom_predictions.info_text")}</p>
               <p className="font-data text-[0.5625rem] text-pk-titane mt-1">
-                +2 points par bonne reponse
+                {t("custom_predictions.points_info")}
               </p>
             </div>
           </div>
@@ -204,7 +203,7 @@ export default function CustomPredictionsPage() {
           {myPredictions.length > 0 && (
             <motion.div variants={fadeUp}>
               <h2 className="font-display text-xs flex items-center gap-2 mb-3">
-                <Edit3 className="w-4 h-4 text-pk-info" /> Mes pronos crees
+                <Edit3 className="w-4 h-4 text-pk-info" /> {t("custom_predictions.my_predictions")}
               </h2>
               <motion.div
                 className="space-y-2"
@@ -220,16 +219,18 @@ export default function CustomPredictionsPage() {
                           <p className="text-sm text-pk-piste">{pred.question}</p>
                           <p className="font-data text-[0.5625rem] text-pk-titane mt-1">
                             {pred.answer_type === "yes_no"
-                              ? "Oui/Non"
+                              ? t("custom_predictions.types.yes_no")
                               : pred.answer_type === "choice"
-                                ? "Choix multiple"
-                                : "Texte libre"}
+                                ? t("custom_predictions.types.multiple")
+                                : t("custom_predictions.types.free_text")}
                           </p>
                         </div>
                         {pred.correct_answer ? (
                           <div className="flex items-center gap-1 text-pk-emerald">
                             <CheckCircle className="w-4 h-4" />
-                            <span className="font-data text-[0.5625rem]">Terminee</span>
+                            <span className="font-data text-[0.5625rem]">
+                              {t("custom_predictions.finished")}
+                            </span>
                           </div>
                         ) : (
                           <button
@@ -237,7 +238,7 @@ export default function CustomPredictionsPage() {
                             className="px-3 py-1.5 rounded-lg bg-pk-info/[0.1] border border-pk-info/30 text-pk-info font-display text-xs active:scale-[0.97] transition-transform"
                             data-testid={`set-answer-${pred.id}`}
                           >
-                            Definir la reponse
+                            {t("custom_predictions.set_answer")}
                           </button>
                         )}
                       </div>
@@ -252,15 +253,15 @@ export default function CustomPredictionsPage() {
         {/* Predictions to Answer */}
         <motion.div variants={fadeUp}>
           <h2 className="font-display text-xs flex items-center gap-2 mb-3">
-            <Users className="w-4 h-4 text-pk-amber" /> Pronos de la ligue (
-            {otherPredictions.length})
+            <Users className="w-4 h-4 text-pk-amber" />{" "}
+            {t("custom_predictions.league_predictions", { count: otherPredictions.length })}
           </h2>
           {otherPredictions.length === 0 ? (
             <div className="bg-pk-surface border border-white/[0.08] rounded-lg p-8 text-center">
               <MessageSquare className="w-10 h-10 text-pk-titane mx-auto mb-3" />
-              <p className="text-sm text-pk-titane">Aucun prono pour le moment</p>
+              <p className="text-sm text-pk-titane">{t("custom_predictions.no_predictions")}</p>
               <p className="font-data text-[0.5625rem] text-pk-titane mt-1">
-                Sois le premier a creer un prono pour ta ligue !
+                {t("custom_predictions.be_first")}
               </p>
             </div>
           ) : (

@@ -5,7 +5,7 @@
  * Note: PredictionsPage expects a `raceId` route param.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -413,17 +413,18 @@ describe("PredictionsPage", () => {
     mockedApi.delete.mockResolvedValue({ data: { ok: true } });
     renderPredictions();
 
-    expect(await screen.findByText(/saved/i)).toBeInTheDocument();
+    expect((await screen.findAllByText(/sauv[eé]|enregistr[eé]/i)).length).toBeGreaterThan(0);
     expect(screen.getByTestId("stage-qualifying")).toHaveTextContent("2/2");
     expect(screen.getByTestId("driver-d1")).toHaveAttribute("aria-pressed", "true");
 
     await user.click(screen.getByTestId("delete-predictions-btn"));
-    expect(screen.getByRole("dialog", { name: /supprimer les pronostics/i })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /supprimer/i }));
+    const dialog = screen.getByRole("dialog", { name: /supprimer les pronostics/i });
+    expect(dialog).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: /supprimer/i }));
 
     await waitFor(() => {
       expect(mockedApi.delete).toHaveBeenCalledWith("/predictions/race/race-1");
-      expect(screen.queryByText(/saved/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/sauv[eé]|enregistr[eé]/i)).not.toBeInTheDocument();
     });
   });
 });

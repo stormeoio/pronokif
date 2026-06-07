@@ -3,6 +3,7 @@
  * Broadcast Premium: pk-gold/silver/bronze podium, pk-red "toi" highlight.
  */
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Crown, Medal, Award } from "lucide-react";
 import type { ReactNode } from "react";
 import { fadeUp, staggerContainer } from "@/lib/motion";
@@ -41,8 +42,10 @@ export default function LeagueLeaderboard({
   members,
   userId,
 }: LeagueLeaderboardProps) {
+  const { t } = useTranslation();
+
   if (leaderboard.length === 0) {
-    return <EmptyMinimal icon="🏆" message="Les points seront calculés après les courses" />;
+    return <EmptyMinimal icon="🏆" message={t("leaderboard.empty_message")} />;
   }
 
   return (
@@ -80,14 +83,20 @@ export default function LeagueLeaderboard({
                 textClassName={isMe ? "text-pk-red" : ""}
                 data-testid={`league-leaderboard-user-${entry.user_id}`}
               />
-              {isMe && <span className="font-data text-[0.5rem] text-pk-red/70 ml-1.5">(toi)</span>}
+              {isMe && (
+                <span className="font-data text-[0.5rem] text-pk-red/70 ml-1.5">
+                  {t("common.you")}
+                </span>
+              )}
 
               {/* Points */}
               <div className="text-right">
                 <p className={`font-data text-base font-bold ${rank <= 3 ? "text-pk-amber" : ""}`}>
                   {entry.total_points || 0}
                 </p>
-                <p className="font-data text-[0.5rem] text-pk-titane uppercase">pts</p>
+                <p className="font-data text-[0.5rem] text-pk-titane uppercase">
+                  {t("common.pts")}
+                </p>
               </div>
             </div>
           </motion.div>

@@ -8,6 +8,7 @@
  *   - race started / finished              → locked (read-only)
  *   - cancelled                            → cancelled
  */
+import { useTranslation } from "react-i18next";
 import { ArrowRight, Pencil, Lock, Ban, Trophy, MapPin, CalendarDays } from "lucide-react";
 import { getRaceThumbnail } from "@/lib/raceThumbnails";
 
@@ -50,6 +51,7 @@ export default function RaceDetailHero({
   onPredict,
   onResults,
 }: RaceDetailHeroProps) {
+  const { t } = useTranslation();
   const thumb = getRaceThumbnail(thumbnailRace);
   const started = status === "in_progress";
   const finished = status === "finished";
@@ -85,31 +87,31 @@ export default function RaceDetailHero({
 
       {/* Content — tall, immersive header anchored to the bottom */}
       <div className="relative z-[1] flex min-h-[56vh] flex-col justify-end px-4 pb-5 pt-40">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center gap-2">
           {isSprintWeekend && (
             <span className="rounded-sm border border-pk-amber/30 bg-pk-amber/15 px-1.5 py-0.5 font-mono text-[0.5rem] font-bold uppercase tracking-[0.12em] text-pk-amber">
-              Week-end Sprint
+              {t("race_hero.sprint_badge")}
             </span>
           )}
           {finished && (
             <span className="rounded-sm border border-white/[0.12] bg-white/[0.06] px-1.5 py-0.5 font-mono text-[0.5rem] font-bold uppercase tracking-[0.12em] text-pk-titane">
-              Terminé
+              {t("race_hero.status.finished")}
             </span>
           )}
           {started && (
             <span className="inline-flex items-center gap-1 rounded-sm border border-pk-red/35 bg-pk-red/15 px-1.5 py-0.5 font-mono text-[0.5rem] font-bold uppercase tracking-[0.12em] text-pk-red">
               <span className="h-1 w-1 animate-[pulse-dot_2s_ease-in-out_infinite] rounded-full bg-pk-red" />
-              En direct
+              {t("race_hero.status.live")}
             </span>
           )}
         </div>
 
-        <h1 className="mt-1.5 font-display text-[1.75rem] uppercase leading-[1.05] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-          <span className="text-[1.25rem] mr-1.5">{flag}</span>
+        <h1 className="mt-1.5 text-center font-display text-[2rem] uppercase leading-[1.05] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
+          <span className="text-[1.5rem] mr-2">{flag}</span>
           {shortName(name)}
         </h1>
 
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
+        <div className="mt-1.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
           <span className="flex items-center gap-1 font-mono text-[0.6875rem] text-pk-piste/90">
             <MapPin className="h-3 w-3 text-pk-red" /> {circuit}
           </span>
@@ -124,7 +126,7 @@ export default function RaceDetailHero({
         <div className="mt-4">
           {isCancelled ? (
             <div className="flex h-12 items-center justify-center gap-2 rounded-lg border border-pk-amber/25 bg-pk-amber/10 font-display text-sm text-pk-amber">
-              <Ban className="h-4 w-4" /> Course annulée
+              <Ban className="h-4 w-4" /> {t("race_hero.status.cancelled")}
             </div>
           ) : finished ? (
             <button
@@ -132,14 +134,14 @@ export default function RaceDetailHero({
               className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-white/[0.06] font-display text-sm text-pk-piste transition-transform active:scale-[0.98] hover:bg-white/[0.1]"
               data-testid="race-hero-results-btn"
             >
-              <Trophy className="h-4 w-4 text-pk-gold" /> Voir les résultats
+              <Trophy className="h-4 w-4 text-pk-gold" /> {t("race_hero.cta.results")}
             </button>
           ) : locked ? (
             <div
               className="flex h-12 items-center justify-center gap-2 rounded-lg border border-white/[0.1] bg-white/[0.04] font-display text-sm text-pk-titane"
               data-testid="race-hero-locked"
             >
-              <Lock className="h-4 w-4" /> Pronostics verrouillés
+              <Lock className="h-4 w-4" /> {t("race_hero.cta.locked")}
             </div>
           ) : hasPrediction ? (
             <button
@@ -147,7 +149,7 @@ export default function RaceDetailHero({
               className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-pk-amber/40 bg-pk-amber/10 font-display text-sm text-pk-amber transition-transform active:scale-[0.98] hover:bg-pk-amber/15"
               data-testid="race-hero-modify-btn"
             >
-              <Pencil className="h-4 w-4" /> Modifier mes pronostics
+              <Pencil className="h-4 w-4" /> {t("race_hero.cta.edit")}
             </button>
           ) : (
             <button
@@ -155,7 +157,7 @@ export default function RaceDetailHero({
               className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-pk-red font-display text-sm text-white shadow-glow-red transition-transform active:scale-[0.98]"
               data-testid="race-hero-predict-btn"
             >
-              <ArrowRight className="h-4 w-4" /> Pronostiquer
+              <ArrowRight className="h-4 w-4" /> {t("race_hero.cta.predict")}
             </button>
           )}
         </div>

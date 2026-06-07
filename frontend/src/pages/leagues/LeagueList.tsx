@@ -3,6 +3,7 @@
  * Shows user's leagues with active highlight, actions, and unread badges.
  */
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
 import { Users, Copy, Share2, Check, MessageCircle, ChevronRight, Crown } from "lucide-react";
 import { haptic } from "@/lib/haptics";
@@ -76,6 +77,7 @@ export default function LeagueList({
   onSelectLeague,
 }: LeagueListProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
 
@@ -86,8 +88,8 @@ export default function LeagueList({
       <div className="mb-5" data-testid="league-list-empty">
         <EmptyInline
           icon="🏆"
-          title="Aucune ligue"
-          description="Crée ou rejoins une ligue ci-dessous"
+          title={t("league_list.no_leagues")}
+          description={t("league_list.no_leagues_desc")}
         />
       </div>
     );
@@ -139,7 +141,7 @@ export default function LeagueList({
                     <h3 className="font-display text-sm truncate">{league.name}</h3>
                     {isActive && (
                       <span className="font-data text-[0.5rem] bg-pk-red/20 text-pk-red px-1.5 py-0.5 rounded uppercase tracking-wider">
-                        Actif
+                        {t("league_list.active")}
                       </span>
                     )}
                   </div>
@@ -162,7 +164,7 @@ export default function LeagueList({
                     onShareLeague(league);
                   }}
                   className="w-8 h-8 rounded-md flex items-center justify-center text-pk-emerald hover:bg-pk-emerald/[0.08] transition-colors"
-                  title="Partager"
+                  title={t("league_list.share")}
                   data-testid={`league-share-${league.id}`}
                 >
                   <Share2 className="w-3.5 h-3.5" />
@@ -221,7 +223,7 @@ export default function LeagueList({
                     className="h-8 px-3 rounded-md bg-white/[0.06] border border-white/[0.08] text-pk-piste font-data text-[0.5625rem] font-bold active:scale-[0.97] transition-transform"
                     data-testid={`league-activate-${league.id}`}
                   >
-                    Activer
+                    {t("league_list.activate")}
                   </button>
                 )}
               </div>

@@ -4,6 +4,11 @@
  */
 import "@testing-library/jest-dom";
 
+// Initialize i18n for tests — components use useTranslation()
+// Force French locale (app default) since jsdom navigator.language = 'en'
+import i18n from "../i18n";
+i18n.changeLanguage("fr");
+
 // Stub window.matchMedia (jsdom doesn't implement it)
 Object.defineProperty(window, "matchMedia", {
   writable: true,

@@ -3,6 +3,7 @@
  * Broadcast Premium: pk-surface cards, team-color bars, pk-emerald winners.
  */
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import { haptic } from "@/lib/haptics";
@@ -35,6 +36,7 @@ interface DriverCardProps {
 }
 
 export function DriverCard({ driver }: DriverCardProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const teamColor = getTeamColor(driver.team_id);
   const f1Stats = driver.palmares?.f1 || {};
@@ -51,7 +53,7 @@ export function DriverCard({ driver }: DriverCardProps) {
       }}
       role="button"
       tabIndex={0}
-      aria-label={`Voir la fiche de ${driver.full_name}`}
+      aria-label={t("driver_comparison.aria_view_profile", { name: driver.full_name })}
       style={{ borderColor: `${teamColor}30` }}
       whileTap={{ scale: 0.97 }}
     >
@@ -76,11 +78,15 @@ export function DriverCard({ driver }: DriverCardProps) {
         <div className="flex gap-3 mt-2">
           <div className="text-center">
             <p className="font-data text-sm text-pk-gold">{f1Stats.world_championships || 0}</p>
-            <p className="font-data text-[0.4375rem] text-pk-titane uppercase">Titres</p>
+            <p className="font-data text-[0.4375rem] text-pk-titane uppercase">
+              {t("driver_comparison.titles")}
+            </p>
           </div>
           <div className="text-center">
             <p className="font-data text-sm">{f1Stats.wins || 0}</p>
-            <p className="font-data text-[0.4375rem] text-pk-titane uppercase">Vict.</p>
+            <p className="font-data text-[0.4375rem] text-pk-titane uppercase">
+              {t("driver_comparison.wins")}
+            </p>
           </div>
         </div>
       </div>
@@ -159,6 +165,7 @@ export function EfficiencyCard({
   driver2,
   suffix,
 }: EfficiencyCardProps) {
+  const { t } = useTranslation();
   const winner = value1 > value2 ? 1 : value2 > value1 ? 2 : 0;
 
   return (
@@ -174,7 +181,7 @@ export function EfficiencyCard({
           </p>
           <p className="font-data text-[0.4375rem] text-pk-titane">{driver1.code}</p>
         </div>
-        <div className="font-data text-[0.5rem] text-pk-titane">VS</div>
+        <div className="font-data text-[0.5rem] text-pk-titane">{t("driver_comparison.vs")}</div>
         <div className="text-center">
           <p className={`font-data text-base ${winner === 2 ? "text-pk-emerald" : ""}`}>
             {value2}
@@ -189,13 +196,13 @@ export function EfficiencyCard({
 
 /* ── Verdict Generator ────────────────────────────────── */
 
-export function getVerdict(
+export function getVerdictData(
   comparison: {
     stats_comparison: Record<string, { driver1: number; driver2: number; winner: string }>;
   },
   d1: { first_name: string; last_name: string },
   d2: { first_name: string; last_name: string },
-): string {
+): { type: "dominant" | "slight" | "tied"; name?: string; count?: number } {
   const stats = comparison.stats_comparison;
   let d1Wins = 0;
   let d2Wins = 0;
@@ -206,10 +213,10 @@ export function getVerdict(
   });
 
   if (d1Wins > d2Wins) {
-    return `${d1.first_name} ${d1.last_name} domine dans ${d1Wins} catégories sur 7. Son expérience et ses stats en font le favori dans un duel direct.`;
+    return { type: "dominant", name: `${d1.first_name} ${d1.last_name}`, count: d1Wins };
   } else if (d2Wins > d1Wins) {
-    return `${d2.first_name} ${d2.last_name} domine dans ${d2Wins} catégories sur 7. Son profil statistique est plus solide dans cette comparaison.`;
+    return { type: "slight", name: `${d2.first_name} ${d2.last_name}`, count: d2Wins };
   } else {
-    return `Ces deux pilotes sont très proches ! Le résultat d'un duel dépendrait du circuit et des conditions du week-end.`;
+    return { type: "tied" };
   }
 }

@@ -3,6 +3,7 @@
  * Broadcast Premium: pk-surface card, pk-red CTA, pk-emerald/amber states.
  */
 import { useState, useCallback, useRef, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap, Trophy, RotateCcw, Play } from "lucide-react";
 import { haptic } from "@/lib/haptics";
@@ -55,6 +56,7 @@ export function ReactionGame({
   attemptsRemaining,
   isTraining = false,
 }: ReactionGameProps) {
+  const { t } = useTranslation();
   const [gameState, setGameState] = useState<ReactionGameState>("idle");
   const [lights, setLights] = useState([false, false, false, false, false]);
   const [reactionTime, setReactionTime] = useState<number | null>(null);
@@ -125,41 +127,41 @@ export function ReactionGame({
   const getResultGrade = (time: number) => {
     if (time < 150)
       return {
-        label: "INCROYABLE!",
+        label: t("mini_games.grade_incredible"),
         color: "text-pk-emerald",
         bg: "from-pk-emerald/20 to-pk-emerald/5",
         grade: "S+",
       };
     if (time < 200)
       return {
-        label: "Excellent!",
+        label: t("mini_games.grade_excellent"),
         color: "text-pk-emerald",
         bg: "from-pk-emerald/20 to-pk-emerald/5",
         grade: "S",
       };
     if (time < 250)
       return {
-        label: "Tres bien !",
+        label: t("mini_games.grade_very_good"),
         color: "text-pk-info",
         bg: "from-pk-info/20 to-pk-info/5",
         grade: "A",
       };
     if (time < 300)
       return {
-        label: "Bien!",
+        label: t("mini_games.grade_good"),
         color: "text-pk-info",
         bg: "from-pk-info/20 to-pk-info/5",
         grade: "B",
       };
     if (time < 400)
       return {
-        label: "Correct",
+        label: t("mini_games.grade_ok"),
         color: "text-pk-amber",
         bg: "from-pk-amber/20 to-pk-amber/5",
         grade: "C",
       };
     return {
-      label: "A travailler",
+      label: t("mini_games.grade_needs_work"),
       color: "text-pk-red",
       bg: "from-pk-red/20 to-pk-red/5",
       grade: "D",
@@ -186,10 +188,10 @@ export function ReactionGame({
               <Zap className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-display text-sm">Temps de reaction</h3>
+              <h3 className="font-display text-sm">{t("mini_games.reaction_title")}</h3>
               {isTraining && (
                 <span className="font-data text-[0.5625rem] text-pk-info uppercase tracking-wider">
-                  Entrainement
+                  {t("mini_games.training_label")}
                 </span>
               )}
             </div>
@@ -278,7 +280,7 @@ export function ReactionGame({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                Appuie sur COMMENCER pour lancer la sequence
+                {t("mini_games.reaction_idle")}
               </motion.p>
             )}
             {gameState === "waiting" && (
@@ -290,7 +292,7 @@ export function ReactionGame({
                 exit={{ opacity: 0 }}
                 transition={{ opacity: { duration: 1.5, repeat: Infinity } }}
               >
-                Attendez les feux...
+                {t("mini_games.reaction_waiting")}
               </motion.p>
             )}
             {gameState === "ready" && (
@@ -306,9 +308,11 @@ export function ReactionGame({
                   animate={{ scale: [1, 1.05, 1] }}
                   transition={{ duration: 0.8, repeat: Infinity }}
                 >
-                  PRET...
+                  {t("mini_games.reaction_ready")}
                 </motion.p>
-                <p className="text-xs text-pk-titane mt-1">Attendez l'extinction !</p>
+                <p className="text-xs text-pk-titane mt-1">
+                  {t("mini_games.reaction_wait_lights_out")}
+                </p>
               </motion.div>
             )}
             {gameState === "go" && (
@@ -319,8 +323,12 @@ export function ReactionGame({
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: "spring", stiffness: 500, damping: 15 }}
               >
-                <p className="font-display text-4xl text-pk-emerald">GO!</p>
-                <p className="text-xs text-pk-emerald/70 mt-1">CLIQUEZ MAINTENANT</p>
+                <p className="font-display text-4xl text-pk-emerald">
+                  {t("mini_games.reaction_go")}
+                </p>
+                <p className="text-xs text-pk-emerald/70 mt-1">
+                  {t("mini_games.reaction_click_now")}
+                </p>
               </motion.div>
             )}
             {gameState === "false_start" && (
@@ -337,9 +345,9 @@ export function ReactionGame({
                   animate={{ x: [-3, 3, -3, 3, 0] }}
                   transition={{ duration: 0.4 }}
                 >
-                  FAUX DEPART !
+                  {t("mini_games.reaction_false_start")}
                 </motion.p>
-                <p className="text-xs text-pk-titane mt-2">Trop tot !</p>
+                <p className="text-xs text-pk-titane mt-2">{t("mini_games.reaction_too_early")}</p>
               </motion.div>
             )}
             {gameState === "result" && reactionTime !== null && (
@@ -393,7 +401,7 @@ export function ReactionGame({
                 disabled={!isTraining && attemptsRemaining === 0}
                 data-testid="reaction-start-btn"
               >
-                <Play className="w-5 h-5" /> COMMENCER
+                <Play className="w-5 h-5" /> {t("mini_games.start")}
               </button>
             </motion.div>
           )}
@@ -409,7 +417,7 @@ export function ReactionGame({
                 onClick={resetGame}
                 className="flex-1 h-11 rounded-lg border border-white/[0.08] text-pk-titane font-display text-xs hover:text-pk-piste hover:border-white/[0.15] transition-colors flex items-center justify-center gap-2"
               >
-                <RotateCcw className="w-4 h-4" /> Reessayer
+                <RotateCcw className="w-4 h-4" /> {t("mini_games.retry")}
               </button>
               {gameState === "result" && (
                 <button
@@ -417,7 +425,7 @@ export function ReactionGame({
                   className="flex-1 h-11 rounded-lg bg-pk-red text-white font-display text-xs shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   disabled={!isTraining && attemptsRemaining === 0}
                 >
-                  <Trophy className="w-4 h-4" /> Sauvegarder
+                  <Trophy className="w-4 h-4" /> {t("mini_games.save")}
                 </button>
               )}
             </motion.div>

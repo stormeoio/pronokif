@@ -5,6 +5,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   ChevronLeft,
@@ -105,6 +106,7 @@ export default function MemberProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
 
@@ -128,7 +130,7 @@ export default function MemberProfilePage() {
   );
 
   const loading = profileLoading;
-  const error = profileError ? "Impossible de charger le profil" : null;
+  const error = profileError ? t("member_profile.load_error") : null;
 
   const formatDate = (isoString: string | undefined) => {
     if (!isoString) return "N/A";
@@ -155,13 +157,13 @@ export default function MemberProfilePage() {
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <h1 className="font-display text-lg">Profil</h1>
+            <h1 className="font-display text-lg">{t("member_profile.title")}</h1>
           </div>
         </header>
         <EmptyFullPage
           Icon={Users}
-          title="Profil introuvable"
-          description={error || "Ce joueur n'existe pas ou n'est plus actif."}
+          title={t("member_profile.not_found")}
+          description={error || t("member_profile.not_found_desc")}
         />
       </div>
     );
@@ -197,7 +199,7 @@ export default function MemberProfilePage() {
           />
           {isOwnProfile && (
             <span className="font-data text-[0.5rem] px-1.5 py-0.5 rounded bg-pk-red/20 text-pk-red">
-              Toi
+              {t("member_profile.you")}
             </span>
           )}
         </div>
@@ -237,7 +239,7 @@ export default function MemberProfilePage() {
               </span>
               <span className="font-data text-[0.5625rem] text-pk-titane flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
-                Membre depuis {formatDate(profile.created_at)}
+                {t("member_profile.member_since")} {formatDate(profile.created_at)}
               </span>
             </span>
           </UserIdentity>
@@ -247,7 +249,7 @@ export default function MemberProfilePage() {
         <motion.div variants={fadeUp}>
           <div className="flex items-center gap-2 mb-2">
             <BarChart3 className="w-4 h-4 text-pk-titane" />
-            <span className="font-display text-sm">Stats</span>
+            <span className="font-display text-sm">{t("member_profile.tabs.stats")}</span>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <StatCard
@@ -255,28 +257,28 @@ export default function MemberProfilePage() {
               color="text-pk-red"
               bg="bg-pk-red/[0.12]"
               value={profile.stats.total_predictions}
-              label="Pickstics"
+              label={t("member_profile.tabs.predictions")}
             />
             <StatCard
               icon={Flag}
               color="text-pk-emerald"
               bg="bg-pk-emerald/[0.12]"
               value={profile.stats.races_participated}
-              label="Courses"
+              label={t("member_profile.stats.races")}
             />
             <StatCard
               icon={Trophy}
               color="text-pk-amber"
               bg="bg-pk-amber/[0.12]"
               value={profile.stats.correct_winners}
-              label="Vainqueurs exacts"
+              label={t("member_profile.stats.exact_winners")}
             />
             <StatCard
               icon={Medal}
               color="text-purple-400"
               bg="bg-purple-500/[0.12]"
               value={profile.stats.correct_poles}
-              label="Poles exactes"
+              label={t("member_profile.stats.exact_poles")}
             />
           </div>
         </motion.div>
@@ -292,7 +294,9 @@ export default function MemberProfilePage() {
                 <p className="font-data text-xl font-bold">
                   {profile.minigames.reaction_best_ms} ms
                 </p>
-                <p className="font-data text-[0.5625rem] text-pk-titane">Meilleure réaction</p>
+                <p className="font-data text-[0.5625rem] text-pk-titane">
+                  {t("member_profile.stats.best_reaction")}
+                </p>
               </div>
             )}
             {profile.minigames.batak_best_score != null && (
@@ -301,7 +305,9 @@ export default function MemberProfilePage() {
                   <Target className="w-4.5 h-4.5 text-purple-400" />
                 </div>
                 <p className="font-data text-xl font-bold">{profile.minigames.batak_best_score}</p>
-                <p className="font-data text-[0.5625rem] text-pk-titane">Meilleur Batak</p>
+                <p className="font-data text-[0.5625rem] text-pk-titane">
+                  {t("member_profile.stats.best_batak")}
+                </p>
               </div>
             )}
           </motion.div>
@@ -317,7 +323,7 @@ export default function MemberProfilePage() {
               <div className="w-7 h-7 rounded-md bg-pk-amber/[0.12] flex items-center justify-center">
                 <Users className="w-3.5 h-3.5 text-pk-amber" />
               </div>
-              <span className="font-display text-sm">Ligues en commun</span>
+              <span className="font-display text-sm">{t("member_profile.shared_leagues")}</span>
             </div>
 
             <div className="divide-y divide-white/[0.06]">
@@ -343,13 +349,15 @@ export default function MemberProfilePage() {
                     <div>
                       <p className="font-display text-sm">{league.name}</p>
                       <p className="font-data text-[0.5625rem] text-pk-titane">
-                        {league.members_count} membres
+                        {league.members_count} {t("common.members")}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="font-data text-base font-bold">{league.total_points}</p>
-                    <p className="font-data text-[0.5rem] text-pk-titane uppercase">Points</p>
+                    <p className="font-data text-[0.5rem] text-pk-titane uppercase">
+                      {t("member_profile.points")}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -367,7 +375,7 @@ export default function MemberProfilePage() {
               <div className="w-7 h-7 rounded-md bg-pk-red/[0.12] flex items-center justify-center">
                 <Target className="w-3.5 h-3.5 text-pk-red" />
               </div>
-              <span className="font-display text-sm">Derniers Pickstics</span>
+              <span className="font-display text-sm">{t("member_profile.recent_predictions")}</span>
             </div>
 
             <div className="divide-y divide-white/[0.06]">
@@ -381,12 +389,12 @@ export default function MemberProfilePage() {
                       className="max-w-full font-display text-xs tracking-normal"
                     />
                     <p className="font-data text-[0.5625rem] text-pk-titane leading-7">
-                      Vainqueur :{" "}
+                      {t("member_profile.winner_label")}{" "}
                       <DriverEntityToken
                         value={pred.race_winner}
                         driversByReference={driversByReference}
                       />{" "}
-                      · Pole :{" "}
+                      · {t("member_profile.pole_label")}{" "}
                       <DriverEntityToken
                         value={pred.quali_pole}
                         driversByReference={driversByReference}
@@ -395,7 +403,7 @@ export default function MemberProfilePage() {
                   </div>
                   {pred.locked && (
                     <span className="font-data text-[0.5rem] text-pk-emerald bg-pk-emerald/[0.1] px-2 py-0.5 rounded flex-shrink-0 ml-2">
-                      Validé
+                      {t("member_profile.validated")}
                     </span>
                   )}
                 </div>

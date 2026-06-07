@@ -4,6 +4,7 @@
  */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -56,6 +57,7 @@ export default function LeagueSettings({
   onRefresh,
 }: LeagueSettingsProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -72,10 +74,10 @@ export default function LeagueSettings({
     try {
       haptic("heavy");
       await api.leagues.leave(leagueId!);
-      toast.success("Tu as quitté la ligue");
+      toast.success(t("league_settings.leave_modal.success"));
       navigate("/league");
     } catch (e: unknown) {
-      toast.error(getApiError(e, "Erreur en quittant la ligue"));
+      toast.error(getApiError(e, t("league_settings.leave_modal.error")));
     } finally {
       setLeaving(false);
       setShowLeaveConfirm(false);
@@ -87,10 +89,10 @@ export default function LeagueSettings({
     try {
       haptic("heavy");
       await api.leagues.delete(leagueId!);
-      toast.success("La ligue a été supprimée");
+      toast.success(t("league_settings.delete_modal.success"));
       navigate("/league");
     } catch (e: unknown) {
-      toast.error(getApiError(e, "Erreur lors de la suppression"));
+      toast.error(getApiError(e, t("league_settings.delete_modal.error")));
     } finally {
       setDeleting(false);
       setShowDeleteConfirm(false);
@@ -99,19 +101,19 @@ export default function LeagueSettings({
 
   const transferOwnership = async () => {
     if (!selectedNewOwner) {
-      toast.error("Sélectionne un nouveau propriétaire");
+      toast.error(t("league_settings.transfer_modal.select_error"));
       return;
     }
     setTransferring(true);
     try {
       haptic("success");
       await api.leagues.transfer(leagueId!, { new_owner_id: selectedNewOwner });
-      toast.success("Propriété transférée !");
+      toast.success(t("league_settings.transfer_modal.success"));
       setShowTransferModal(false);
       setSelectedNewOwner(null);
       onRefresh();
     } catch (e: unknown) {
-      toast.error(getApiError(e, "Erreur lors du transfert"));
+      toast.error(getApiError(e, t("league_settings.transfer_modal.error")));
     } finally {
       setTransferring(false);
     }
@@ -132,7 +134,7 @@ export default function LeagueSettings({
           <div className="space-y-2 mb-3">
             <p className="font-data text-[0.5625rem] text-pk-amber uppercase tracking-wider flex items-center gap-1.5">
               <Crown className="w-3 h-3" />
-              Actions du créateur
+              {t("league_settings.creator_actions")}
             </p>
             <div className="flex gap-2">
               <button
@@ -141,7 +143,7 @@ export default function LeagueSettings({
                 data-testid="transfer-ownership-btn"
               >
                 <UserCog className="w-3.5 h-3.5" />
-                Transférer
+                {t("league_settings.transfer")}
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
@@ -149,7 +151,7 @@ export default function LeagueSettings({
                 data-testid="delete-league-btn"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                Supprimer
+                {t("league_settings.delete")}
               </button>
             </div>
           </div>
@@ -162,7 +164,7 @@ export default function LeagueSettings({
             data-testid="leave-league-btn"
           >
             <LogOut className="w-3.5 h-3.5" />
-            Quitter la ligue
+            {t("league_settings.leave")}
           </button>
         )}
       </motion.div>
@@ -186,7 +188,7 @@ export default function LeagueSettings({
               <div className="px-4 py-3 border-b border-white/[0.08] flex items-center justify-between">
                 <h3 className="font-display text-sm flex items-center gap-2">
                   <UserCog className="w-4 h-4 text-pk-info" />
-                  Transférer la propriété
+                  {t("league_settings.transfer_modal.title")}
                 </h3>
                 <button
                   onClick={() => {
@@ -200,8 +202,7 @@ export default function LeagueSettings({
               </div>
               <div className="p-4 space-y-3 flex-1 overflow-y-auto">
                 <p className="text-xs text-pk-titane">
-                  Sélectionne le nouveau propriétaire de{" "}
-                  <span className="text-pk-piste font-semibold">{league.name}</span>
+                  {t("league_settings.transfer_modal.description", { name: league.name })}
                 </p>
 
                 <div className="space-y-1.5">
@@ -220,7 +221,8 @@ export default function LeagueSettings({
                         <UserIdentity
                           user={{
                             id: member.id,
-                            username: member.username ?? "Sans pseudo",
+                            username:
+                              member.username ?? t("league_settings.transfer_modal.no_username"),
                             avatar_id: member.avatar_id,
                             custom_avatar_url: member.custom_avatar_url,
                             level: member.level,
@@ -240,7 +242,9 @@ export default function LeagueSettings({
                   {members.filter((m) => String(m.id) !== userId).length === 0 && (
                     <div className="text-center py-6">
                       <Users className="w-8 h-8 text-pk-titane mx-auto mb-2 opacity-40" />
-                      <p className="text-xs text-pk-titane">Aucun autre membre</p>
+                      <p className="text-xs text-pk-titane">
+                        {t("league_settings.transfer_modal.no_members")}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -254,7 +258,7 @@ export default function LeagueSettings({
                     disabled={transferring}
                     className="flex-1 h-10 rounded-lg border border-white/[0.08] text-pk-titane font-display text-sm disabled:opacity-50"
                   >
-                    Annuler
+                    {t("common.cancel")}
                   </button>
                   <button
                     onClick={transferOwnership}
@@ -264,11 +268,12 @@ export default function LeagueSettings({
                   >
                     {transferring ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Transfert...
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />{" "}
+                        {t("league_settings.transfer_modal.loading")}
                       </>
                     ) : (
                       <>
-                        <UserCog className="w-3.5 h-3.5" /> Transférer
+                        <UserCog className="w-3.5 h-3.5" /> {t("league_settings.transfer")}
                       </>
                     )}
                   </button>
@@ -298,23 +303,21 @@ export default function LeagueSettings({
               <div className="px-4 py-3 border-b border-white/[0.08]">
                 <h3 className="font-display text-sm flex items-center gap-2 text-pk-red">
                   <AlertTriangle className="w-4 h-4" />
-                  Supprimer la ligue
+                  {t("league_settings.delete_modal.title")}
                 </h3>
               </div>
               <div className="p-4 space-y-3">
                 <p className="text-xs text-pk-titane">
-                  Es-tu sûr de vouloir supprimer{" "}
-                  <span className="text-pk-piste font-semibold">{league.name}</span> ?
+                  {t("league_settings.delete_modal.confirm", { name: league.name })}
                 </p>
                 <p className="text-xs text-pk-red bg-pk-red/[0.08] border border-pk-red/15 p-3 rounded-lg leading-relaxed">
-                  Cette action est irréversible. Tous les membres seront retirés et les données
-                  supprimées.
+                  {t("league_settings.delete_modal.warning")}
                 </p>
                 {members.length > 1 && (
                   <p className="text-xs text-pk-amber bg-pk-amber/[0.08] border border-pk-amber/15 p-3 rounded-lg">
-                    {members.length - 1} autre{members.length > 2 ? "s" : ""} membre
-                    {members.length > 2 ? "s" : ""} sera{members.length > 2 ? "ont" : ""} retiré
-                    {members.length > 2 ? "s" : ""}.
+                    {t("league_settings.delete_modal.member_warning", {
+                      count: members.length - 1,
+                    })}
                   </p>
                 )}
                 <div className="flex gap-2">
@@ -323,7 +326,7 @@ export default function LeagueSettings({
                     disabled={deleting}
                     className="flex-1 h-10 rounded-lg border border-white/[0.08] text-pk-titane font-display text-sm disabled:opacity-50"
                   >
-                    Annuler
+                    {t("common.cancel")}
                   </button>
                   <button
                     onClick={deleteLeague}
@@ -333,11 +336,12 @@ export default function LeagueSettings({
                   >
                     {deleting ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Suppression...
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />{" "}
+                        {t("league_settings.delete_modal.loading")}
                       </>
                     ) : (
                       <>
-                        <Trash2 className="w-3.5 h-3.5" /> Supprimer
+                        <Trash2 className="w-3.5 h-3.5" /> {t("league_settings.delete")}
                       </>
                     )}
                   </button>
@@ -367,13 +371,12 @@ export default function LeagueSettings({
               <div className="px-4 py-3 border-b border-white/[0.08]">
                 <h3 className="font-display text-sm flex items-center gap-2 text-pk-red">
                   <LogOut className="w-4 h-4" />
-                  Quitter la ligue
+                  {t("league_settings.leave_modal.title")}
                 </h3>
               </div>
               <div className="p-4 space-y-3">
                 <p className="text-xs text-pk-titane">
-                  Es-tu sûr de vouloir quitter{" "}
-                  <span className="text-pk-piste font-semibold">{league.name}</span> ?
+                  {t("league_settings.leave_modal.confirm", { name: league.name })}
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -381,7 +384,7 @@ export default function LeagueSettings({
                     disabled={leaving}
                     className="flex-1 h-10 rounded-lg border border-white/[0.08] text-pk-titane font-display text-sm disabled:opacity-50"
                   >
-                    Annuler
+                    {t("common.cancel")}
                   </button>
                   <button
                     onClick={leaveLeague}
@@ -391,11 +394,12 @@ export default function LeagueSettings({
                   >
                     {leaving ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Départ...
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />{" "}
+                        {t("league_settings.leave_modal.loading")}
                       </>
                     ) : (
                       <>
-                        <LogOut className="w-3.5 h-3.5" /> Quitter
+                        <LogOut className="w-3.5 h-3.5" /> {t("league_settings.leave_modal.button")}
                       </>
                     )}
                   </button>

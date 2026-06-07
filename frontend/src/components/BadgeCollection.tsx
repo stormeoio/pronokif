@@ -2,9 +2,11 @@
  * BadgeCollection — Shows earned badges/achievements on the profile.
  * Broadcast Premium: pk-surface card, pk-* badge colors, stagger animations.
  */
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { Trophy, Target, Flame, Zap, Crown, Star, Flag, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { TFunction } from "i18next";
 
 interface Badge {
   id: string;
@@ -22,81 +24,79 @@ interface BadgeCollectionProps {
   streak: number;
 }
 
-function getBadges({
-  totalPredictions,
-  totalPoints,
-  level,
-  streak,
-}: BadgeCollectionProps): Badge[] {
+function getBadges(
+  { totalPredictions, totalPoints, level, streak }: BadgeCollectionProps,
+  t: TFunction,
+): Badge[] {
   return [
     {
       id: "first_prediction",
-      name: "Debutant",
-      description: "Premier pronostic",
+      name: t("badges.names.beginner"),
+      description: t("badges.descriptions.beginner"),
       icon: Target,
       color: "bg-pk-emerald",
       earned: totalPredictions >= 1,
     },
     {
       id: "five_predictions",
-      name: "Regulier",
-      description: "5 pronostics",
+      name: t("badges.names.regular"),
+      description: t("badges.descriptions.regular"),
       icon: Flag,
       color: "bg-pk-info",
       earned: totalPredictions >= 5,
     },
     {
       id: "twenty_predictions",
-      name: "Veteran",
-      description: "20 pronostics",
+      name: t("badges.names.veteran"),
+      description: t("badges.descriptions.veteran"),
       icon: Star,
       color: "bg-pk-info",
       earned: totalPredictions >= 20,
     },
     {
       id: "hundred_points",
-      name: "Scoreur",
-      description: "100 points au total",
+      name: t("badges.names.scorer"),
+      description: t("badges.descriptions.scorer"),
       icon: Zap,
       color: "bg-pk-amber",
       earned: totalPoints >= 100,
     },
     {
       id: "five_hundred_points",
-      name: "Expert",
-      description: "500 points au total",
+      name: t("badges.names.expert"),
+      description: t("badges.descriptions.expert"),
       icon: Trophy,
       color: "bg-pk-gold",
       earned: totalPoints >= 500,
     },
     {
       id: "streak_3",
-      name: "En serie",
-      description: "3 GP consecutifs",
+      name: t("badges.names.streak"),
+      description: t("badges.descriptions.streak"),
       icon: Flame,
       color: "bg-pk-amber",
       earned: streak >= 3,
     },
     {
       id: "streak_7",
-      name: "Inarretable",
-      description: "7 GP consecutifs",
+      name: t("badges.names.unstoppable"),
+      description: t("badges.descriptions.unstoppable"),
       icon: Flame,
       color: "bg-pk-red",
       earned: streak >= 7,
     },
     {
       id: "level_5",
-      name: "Champion",
-      description: "Niveau 5 atteint",
+      name: t("badges.names.champion"),
+      description: t("badges.descriptions.champion"),
       icon: Crown,
       color: "bg-pk-info",
       earned: level >= 5,
     },
     {
       id: "level_10",
-      name: "Legende",
-      description: "Niveau 10 atteint",
+      name: t("badges.names.legend"),
+      description: t("badges.descriptions.legend"),
       icon: Crown,
       color: "bg-pk-red",
       earned: level >= 10,
@@ -105,7 +105,8 @@ function getBadges({
 }
 
 export default function BadgeCollection(props: BadgeCollectionProps) {
-  const badges = getBadges(props);
+  const { t } = useTranslation();
+  const badges = getBadges(props, t);
   const earnedCount = badges.filter((b) => b.earned).length;
 
   return (
@@ -113,7 +114,7 @@ export default function BadgeCollection(props: BadgeCollectionProps) {
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-display text-xs flex items-center gap-2">
           <Users className="w-4 h-4 text-pk-amber" />
-          Badges
+          {t("badges.title")}
         </h3>
         <span className="font-data text-xs text-pk-titane">
           {earnedCount}/{badges.length}
@@ -136,7 +137,9 @@ export default function BadgeCollection(props: BadgeCollectionProps) {
                   ? "border-white/[0.12] bg-white/[0.04]"
                   : "border-white/[0.06] bg-pk-surface opacity-40"
               }`}
-              title={badge.earned ? badge.description : `${badge.description} (non debloque)`}
+              title={
+                badge.earned ? badge.description : `${badge.description} ${t("badges.locked")}`
+              }
               variants={{ hidden: { opacity: 0, scale: 0.7 }, visible: { opacity: 1, scale: 1 } }}
               whileHover={badge.earned ? { scale: 1.1, y: -2 } : undefined}
             >

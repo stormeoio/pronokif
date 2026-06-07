@@ -7,6 +7,7 @@
  */
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Bell, ChevronRight } from "lucide-react";
 import { AvatarDisplay, type AvatarObject } from "@/components/AvatarDisplay";
@@ -33,12 +34,12 @@ interface WelcomeHeaderProps {
   hasUnreadNotifications?: boolean;
 }
 
-/** Time-aware greeting (FR). */
-function greetingFor(hour: number): string {
-  if (hour < 6) return "Bonne nuit";
-  if (hour < 12) return "Bonjour";
-  if (hour < 18) return "Bon aprèm";
-  return "Bonsoir";
+/** Time-aware greeting — uses i18n keys. */
+function greetingKeyFor(hour: number): string {
+  if (hour < 6) return "dashboard.greeting.night";
+  if (hour < 12) return "dashboard.greeting.morning";
+  if (hour < 18) return "dashboard.greeting.afternoon";
+  return "dashboard.greeting.evening";
 }
 
 /** XP progress within the current level — matches MissionsPage convention. */
@@ -70,11 +71,12 @@ export default function WelcomeHeader({
   hasUnreadNotifications = true,
 }: WelcomeHeaderProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const avatar = useAvatarObject(user?.avatar_id);
 
-  const greeting = useMemo(() => greetingFor(new Date().getHours()), []);
+  const greeting = useMemo(() => t(greetingKeyFor(new Date().getHours())), [t]);
   const progress = levelProgress(user?.level, user?.xp);
-  const name = user?.username || user?.email?.split("@")[0] || "Driver";
+  const name = user?.username || user?.email?.split("@")[0] || t("dashboard.fallback_name");
   const level = user?.level ?? 1;
   const hasRank = !!rank && rank > 0;
 
@@ -93,7 +95,7 @@ export default function WelcomeHeader({
           className="group flex min-w-0 items-center gap-3 rounded-md text-left
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pk-red/40"
           data-testid="dashboard-profile-link"
-          aria-label="Voir mon profil"
+          aria-label={t("dashboard.aria_profile")}
         >
           {/* Avatar + XP level-ring */}
           <span className="relative inline-flex flex-shrink-0">
@@ -114,7 +116,7 @@ export default function WelcomeHeader({
                 px-2 py-[1px] font-mono text-[0.5625rem] font-bold uppercase
                 tracking-[0.08em] text-pk-red shadow-[0_2px_6px_rgba(0,0,0,0.5)]"
             >
-              Niv.{level}
+              {t("common.level_short", { level })}
             </span>
           </span>
 
@@ -158,7 +160,7 @@ export default function WelcomeHeader({
             className="flex h-9 w-9 items-center justify-center rounded-full
               text-pk-titane transition-colors duration-pk-short hover:text-pk-piste"
             onClick={openDeepSearch}
-            aria-label="Rechercher"
+            aria-label={t("dashboard.aria_search")}
             data-testid="dashboard-open-deep-search"
           >
             <Search {...iconSmall} size={18} />

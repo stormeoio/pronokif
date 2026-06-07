@@ -3,6 +3,7 @@
  * Broadcast Premium: pk-surface modal, pk-red CTA, native inputs.
  */
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Plus, X } from "lucide-react";
@@ -27,6 +28,7 @@ export function CreatePredictionModal({
   onClose,
   onCreated,
 }: CreatePredictionModalProps) {
+  const { t } = useTranslation();
   const [question, setQuestion] = useState("");
   const [answerType, setAnswerType] = useState("yes_no");
   const [multipleChoice, setMultipleChoice] = useState(false);
@@ -38,11 +40,11 @@ export function CreatePredictionModal({
 
   const handleCreate = async () => {
     if (!question.trim()) {
-      toast.error("Ajoute une question");
+      toast.error(t("custom_predictions.create_modal.error_question"));
       return;
     }
     if (answerType === "choice" && choices.filter((c) => c.text.trim()).length < 2) {
-      toast.error("Ajoute au moins 2 choix");
+      toast.error(t("custom_predictions.create_modal.error_choices"));
       return;
     }
     setCreating(true);
@@ -56,12 +58,12 @@ export function CreatePredictionModal({
         choices: answerType === "choice" ? choices.filter((c) => c.text.trim()) : null,
       };
       await api.customPredictions.create(payload);
-      toast.success("Prono cree !");
+      toast.success(t("custom_predictions.create_modal.created"));
       onCreated();
       onClose();
     } catch (e: unknown) {
       const err = e as { response?: { data?: { detail?: string } } };
-      toast.error(err.response?.data?.detail || "Erreur");
+      toast.error(err.response?.data?.detail || t("custom_predictions.error_generic"));
     } finally {
       setCreating(false);
     }
@@ -96,7 +98,7 @@ export function CreatePredictionModal({
         {/* Header */}
         <div className="sticky top-0 bg-pk-anthracite p-4 border-b border-white/[0.06]">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-lg">Creer un prono</h2>
+            <h2 className="font-display text-lg">{t("custom_predictions.create_modal.title")}</h2>
             <button
               onClick={onClose}
               className="p-1.5 rounded-lg text-pk-titane hover:text-pk-piste hover:bg-white/[0.04] transition-colors"
@@ -110,12 +112,12 @@ export function CreatePredictionModal({
           {/* Question */}
           <div>
             <p className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-1">
-              Question
+              {t("custom_predictions.create_modal.question")}
             </p>
             <input
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Ex: Qui finira devant, Hamilton ou Leclerc ?"
+              placeholder={t("custom_predictions.create_modal.question_placeholder")}
               className="w-full bg-pk-surface border border-white/[0.08] rounded-lg px-3 py-2.5 text-sm text-pk-piste placeholder:text-pk-titane/50 focus:border-pk-info/50 focus:outline-none transition-colors"
               data-testid="prediction-question-input"
             />
@@ -124,13 +126,13 @@ export function CreatePredictionModal({
           {/* Answer Type */}
           <div>
             <p className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider mb-2">
-              Type de reponse
+              {t("custom_predictions.create_modal.answer_type")}
             </p>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { id: "yes_no", label: "Oui/Non" },
-                { id: "text", label: "Texte" },
-                { id: "choice", label: "Choix" },
+                { id: "yes_no", label: t("custom_predictions.create_modal.types.yes_no") },
+                { id: "text", label: t("custom_predictions.create_modal.types.text") },
+                { id: "choice", label: t("custom_predictions.create_modal.types.choice") },
               ].map((type) => (
                 <button
                   key={type.id}
@@ -160,10 +162,12 @@ export function CreatePredictionModal({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <p className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider">
-                  Options
+                  {t("custom_predictions.create_modal.options")}
                 </p>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="font-data text-[0.5625rem] text-pk-titane">Multi-reponse</span>
+                  <span className="font-data text-[0.5625rem] text-pk-titane">
+                    {t("custom_predictions.create_modal.multi_answer")}
+                  </span>
                   <button
                     onClick={() => setMultipleChoice(!multipleChoice)}
                     className={`w-8 h-4 rounded-full transition-colors ${
@@ -184,7 +188,9 @@ export function CreatePredictionModal({
                     <input
                       value={choice.text}
                       onChange={(e) => updateChoice(i, e.target.value)}
-                      placeholder={`Option ${i + 1}`}
+                      placeholder={t("custom_predictions.create_modal.option_placeholder", {
+                        index: i + 1,
+                      })}
                       className="flex-1 bg-pk-surface border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-pk-piste placeholder:text-pk-titane/50 focus:border-pk-info/50 focus:outline-none transition-colors"
                     />
                     {choices.length > 2 && (
@@ -202,7 +208,8 @@ export function CreatePredictionModal({
                     onClick={addChoice}
                     className="w-full py-2 rounded-lg border border-dashed border-white/[0.12] text-pk-titane font-data text-[0.5625rem] hover:border-white/[0.2] hover:text-pk-piste transition-colors flex items-center justify-center gap-1"
                   >
-                    <Plus className="w-3.5 h-3.5" /> Ajouter une option
+                    <Plus className="w-3.5 h-3.5" />{" "}
+                    {t("custom_predictions.create_modal.add_option")}
                   </button>
                 )}
               </div>
@@ -216,7 +223,9 @@ export function CreatePredictionModal({
             className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm shadow-glow-red active:scale-[0.97] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
             data-testid="submit-prediction-btn"
           >
-            {creating ? "Creation..." : "Creer le prono"}
+            {creating
+              ? t("custom_predictions.create_modal.creating")
+              : t("custom_predictions.create_modal.create")}
           </button>
         </div>
       </motion.div>

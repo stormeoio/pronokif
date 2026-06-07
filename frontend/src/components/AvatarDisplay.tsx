@@ -19,6 +19,7 @@ import {
   User,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { LazyImage } from "./LazyImage";
 import { AvatarGenerator } from "./AvatarGenerator";
 import { resolveDriverPhoto, resolveDriverId } from "@/lib/driverPhotos";
@@ -227,12 +228,13 @@ interface Category {
 
 export function AvatarSelector({ avatars, selectedId, onSelect, onUpload }: AvatarSelectorProps) {
   const [category, setCategory] = useState("generator");
+  const { t } = useTranslation();
 
   const categories: Category[] = [
-    { id: "generator", label: "Générer Avatar" },
-    { id: "drivers", label: "Pilotes" },
-    { id: "teams", label: "Écuries" },
-    { id: "default", label: "Classiques" },
+    { id: "generator", label: t("avatar.tabs.generate") },
+    { id: "drivers", label: t("avatar.tabs.drivers") },
+    { id: "teams", label: t("avatar.tabs.teams") },
+    { id: "default", label: t("avatar.tabs.classics") },
   ];
 
   const filteredAvatars: AvatarObject[] =

@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { ChevronRight, Users, Plus, MessageCircle, Share2, HelpCircle } from "lucide-react";
 import { iconSmall } from "@/lib/icons";
@@ -24,6 +25,7 @@ interface LeaguesListProps {
 
 export function LeaguesList({ userLeagues, user, unreadChatByLeague }: LeaguesListProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   if (userLeagues.length === 0) return null;
 
@@ -40,7 +42,7 @@ export function LeaguesList({ userLeagues, user, unreadChatByLeague }: LeaguesLi
       >
         <h3 className="font-display text-[0.875rem] uppercase flex items-center gap-2">
           <Users size={16} strokeWidth={1.5} className="text-pk-red" />
-          Mes ligues
+          {t("dashboard.my_leagues")}
         </h3>
         <button
           onClick={() => navigate("/league")}
@@ -50,7 +52,7 @@ export function LeaguesList({ userLeagues, user, unreadChatByLeague }: LeaguesLi
           data-testid="add-league-btn"
         >
           <Plus size={12} strokeWidth={2} />
-          Ajouter
+          {t("dashboard.add")}
         </button>
       </div>
 
@@ -70,7 +72,7 @@ export function LeaguesList({ userLeagues, user, unreadChatByLeague }: LeaguesLi
             const url = `${window.location.origin}/join/${league.code}`;
             if (navigator.share) {
               navigator.share({
-                title: `Rejoins ${league.name} sur PronoKif!`,
+                title: t("dashboard.share_title", { name: league.name }),
                 url,
               });
             } else {
@@ -105,7 +107,9 @@ export function LeaguesList({ userLeagues, user, unreadChatByLeague }: LeaguesLi
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-[0.8125rem] truncate">{league.name}</p>
                 <p className="font-mono text-[0.625rem] text-pk-titane">
-                  {league.member_count || (league.members as unknown[])?.length || 0} membres
+                  {t("dashboard.members_count", {
+                    count: league.member_count || (league.members as unknown[])?.length || 0,
+                  })}
                 </p>
               </div>
               <div className="flex items-center gap-0.5">
@@ -153,6 +157,7 @@ export function LeaguesList({ userLeagues, user, unreadChatByLeague }: LeaguesLi
 
 export function NoLeagueCTA() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   return (
     <div
       className="bg-pk-surface border border-white/[0.08] rounded-md
@@ -164,13 +169,13 @@ export function NoLeagueCTA() {
       >
         <Users size={24} strokeWidth={1.5} className="text-pk-red" />
       </div>
-      <h3 className="font-display text-[1.25rem] uppercase mb-1">Rejoins une Ligue !</h3>
-      <p className="text-[0.8125rem] text-pk-titane mb-5">
-        Crée ou rejoins une ligue pour jouer avec tes potes
-      </p>
+      <h3 className="font-display text-[1.25rem] uppercase mb-1">
+        {t("dashboard.join_league_cta")}
+      </h3>
+      <p className="text-[0.8125rem] text-pk-titane mb-5">{t("dashboard.join_league_desc")}</p>
       <button onClick={() => navigate("/league")} className="btn-pk px-8">
         <Plus {...iconSmall} size={14} strokeWidth={2} />
-        C'est parti !
+        {t("dashboard.lets_go")}
       </button>
     </div>
   );
@@ -183,6 +188,7 @@ interface HelpAdminCardProps {
 }
 
 export function HelpAdminCard({ onClick }: HelpAdminCardProps) {
+  const { t } = useTranslation();
   return (
     <div
       onClick={onClick}
@@ -200,10 +206,8 @@ export function HelpAdminCard({ onClick }: HelpAdminCardProps) {
           <HelpCircle size={18} strokeWidth={1.5} className="text-pk-titane" />
         </div>
         <div className="flex-1">
-          <p className="font-medium text-[0.8125rem]">Aider l'administrateur</p>
-          <p className="text-[0.6875rem] text-pk-titane mt-0.5">
-            Signaler un bug ou partager un retour
-          </p>
+          <p className="font-medium text-[0.8125rem]">{t("dashboard.help_admin")}</p>
+          <p className="text-[0.6875rem] text-pk-titane mt-0.5">{t("dashboard.help_admin_desc")}</p>
         </div>
         <ChevronRight size={16} strokeWidth={1.5} className="text-pk-titane" />
       </div>

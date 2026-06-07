@@ -5,6 +5,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import { ChevronLeft, Clock, Crown, MessageCircle, RefreshCw, Send } from "lucide-react";
@@ -43,15 +44,15 @@ function ChatSkeleton() {
 
 /* ── Helpers ───────────────────────────────────────────── */
 
-function formatTime(isoString: string): string {
+function formatTime(isoString: string, t: (key: string) => string): string {
   const date = new Date(isoString);
   const diff = Date.now() - date.getTime();
 
-  if (diff < 60_000) return "A l'instant";
+  if (diff < 60_000) return t("league_chat.just_now");
   if (diff < 3_600_000) return `${Math.floor(diff / 60_000)} min`;
   if (diff < 86_400_000)
-    return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-  return date.toLocaleDateString("fr-FR", {
+    return date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleDateString(undefined, {
     day: "numeric",
     month: "short",
     hour: "2-digit",
@@ -65,6 +66,7 @@ export default function LeagueChatPage() {
   const { leagueId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const prefersReducedMotion = useReducedMotion() ?? false;
 
@@ -122,7 +124,7 @@ export default function LeagueChatPage() {
       setNewMessage("");
       queryClient.invalidateQueries({ queryKey: ["/leagues", leagueId, "messages"] });
     } catch (e: unknown) {
-      toast.error(getApiError(e, "Erreur lors de l'envoi"));
+      toast.error(getApiError(e, t("league_chat.send_error")));
     } finally {
       setSending(false);
     }
@@ -131,7 +133,7 @@ export default function LeagueChatPage() {
   const refreshMessages = () => {
     haptic("light");
     queryClient.invalidateQueries({ queryKey: ["/leagues", leagueId, "messages"] });
-    toast.success("Messages actualisés");
+    toast.success(t("league_chat.updated"));
   };
 
   /* ── Loading ─────────────────────────────────────────── */
@@ -149,13 +151,13 @@ export default function LeagueChatPage() {
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <h1 className="font-display text-lg">Discussion</h1>
+            <h1 className="font-display text-lg">{t("league_chat.title")}</h1>
           </div>
         </header>
         <EmptyFullPage
           Icon={MessageCircle}
-          title="Ligue non trouvée"
-          description="Cette ligue n'existe pas ou tu n'y as plus accès."
+          title={t("league_chat.not_found")}
+          description={t("league_chat.not_found_desc")}
         />
       </div>
     );
@@ -183,7 +185,8 @@ export default function LeagueChatPage() {
                   <h1 className="font-display text-base truncate max-w-[200px]">{league.name}</h1>
                 </div>
                 <p className="font-data text-[0.5625rem] text-pk-titane ml-6">
-                  {members.length} membre{members.length > 1 ? "s" : ""}
+                  {members.length}{" "}
+                  {members.length > 1 ? t("league_chat.member_other") : t("league_chat.member_one")}
                 </p>
               </div>
             </div>
@@ -232,8 +235,8 @@ export default function LeagueChatPage() {
           {messages.length === 0 ? (
             <EmptyFullPage
               Icon={MessageCircle}
-              title="Aucun message"
-              description="Sois le premier à écrire !"
+              title={t("league_chat.no_messages")}
+              description={t("league_chat.be_first")}
             />
           ) : (
             (messages as ChatMessageResponse[]).map((msg, index) => {
@@ -284,7 +287,7 @@ export default function LeagueChatPage() {
                       }`}
                     >
                       <Clock className="w-2.5 h-2.5" />
-                      {formatTime(msg.created_at)}
+                      {formatTime(msg.created_at, t)}
                     </p>
                   </div>
                 </motion.div>
@@ -301,7 +304,7 @@ export default function LeagueChatPage() {
           <input
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Écris un message..."
+            placeholder={t("league_chat.placeholder")}
             maxLength={500}
             className="flex-1 h-11 px-4 bg-pk-surface border border-white/[0.08] rounded-full text-sm text-pk-piste placeholder:text-pk-titane/40 focus:outline-none focus:border-pk-red/40 focus:ring-1 focus:ring-pk-red/15 transition-colors"
             data-testid="message-input"

@@ -2,6 +2,7 @@
  * MiniGamesLeaderboard — Leaderboard sub-component for mini-games.
  * Broadcast Premium: pk-surface card, pk-gold/silver/bronze ranks.
  */
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { Medal, Users, Crown } from "lucide-react";
 import { staggerContainer, fadeUp } from "@/lib/motion";
@@ -33,6 +34,7 @@ export function MiniGamesLeaderboard({
   leagueLeaderboard,
   globalLeaderboard,
 }: MiniGamesLeaderboardProps) {
+  const { t } = useTranslation();
   const scoreColor = activeTab === "reaction" ? "text-pk-amber" : "text-pk-info";
   const formatScore = (score: number) => (activeTab === "reaction" ? `${score}ms` : `${score} pts`);
 
@@ -42,7 +44,12 @@ export function MiniGamesLeaderboard({
       <div className="px-4 py-3 border-b border-white/[0.08] flex items-center gap-2">
         <Medal className="w-4 h-4 text-pk-amber" />
         <h3 className="font-display text-sm">
-          Classement {activeTab === "reaction" ? "Reaction" : "Batak"}
+          {t("mini_games.leaderboard_title", {
+            game:
+              activeTab === "reaction"
+                ? t("mini_games.games.reaction")
+                : t("mini_games.games.batak"),
+          })}
         </h3>
         {mode === "competition" && leagueName && (
           <span className="font-data text-[0.5rem] text-pk-titane ml-1">({leagueName})</span>
@@ -54,11 +61,11 @@ export function MiniGamesLeaderboard({
         {mode === "competition" && (
           <div>
             <p className="font-data text-[0.5rem] text-pk-titane uppercase tracking-wider px-1 mb-2 flex items-center gap-1">
-              <Users className="w-3 h-3" /> Ligue - Ce weekend
+              <Users className="w-3 h-3" /> {t("mini_games.leaderboard_league_weekend")}
             </p>
             {leagueLeaderboard.length === 0 ? (
               <p className="text-xs text-pk-titane text-center py-4">
-                Aucun score enregistre ce weekend
+                {t("mini_games.leaderboard_no_scores_weekend")}
               </p>
             ) : (
               <LeaderboardList
@@ -74,10 +81,12 @@ export function MiniGamesLeaderboard({
         {/* Global Leaderboard */}
         <div>
           <p className="font-data text-[0.5rem] text-pk-titane uppercase tracking-wider px-1 mb-2 flex items-center gap-1">
-            <Crown className="w-3 h-3" /> Classement global (tous les temps)
+            <Crown className="w-3 h-3" /> {t("mini_games.leaderboard_global")}
           </p>
           {globalLeaderboard.length === 0 ? (
-            <p className="text-xs text-pk-titane text-center py-4">Aucun score enregistre</p>
+            <p className="text-xs text-pk-titane text-center py-4">
+              {t("mini_games.leaderboard_no_scores")}
+            </p>
           ) : (
             <LeaderboardList
               entries={globalLeaderboard.slice(0, 10)}

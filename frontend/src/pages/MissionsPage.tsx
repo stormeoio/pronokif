@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, lazy, Suspense, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
@@ -44,10 +45,10 @@ interface MissionItem {
 
 type TabKey = "active" | "complete" | "season";
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "active", label: "Actives" },
-  { key: "complete", label: "Completees" },
-  { key: "season", label: "Saison" },
+const TAB_KEYS: { key: TabKey; labelKey: string }[] = [
+  { key: "active", labelKey: "missions.tabs.active" },
+  { key: "complete", labelKey: "missions.tabs.completed" },
+  { key: "season", labelKey: "missions.tabs.season" },
 ];
 
 /* ── Rarity colors ─────────────────────────────────────── */
@@ -148,6 +149,7 @@ function MissionsSkeleton() {
 
 export default function MissionsPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { user, updateUser } = useAuth();
   const prefersReducedMotion = useReducedMotion() ?? false;
@@ -244,7 +246,8 @@ export default function MissionsPage() {
     } catch (e: unknown) {
       haptic("error");
       toast.error(
-        (e as { response?: { data?: { detail?: string } } }).response?.data?.detail || "Erreur",
+        (e as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
+          t("common.error"),
       );
     } finally {
       setClaiming(null);
@@ -274,7 +277,7 @@ export default function MissionsPage() {
         show={celebration.show}
         onDone={dismissCelebration}
         xpEarned={celebration.xp}
-        message="Mission completee !"
+        message={t("missions.completed_toast")}
         levelUp={celebration.levelUp}
       />
 
@@ -296,14 +299,14 @@ export default function MissionsPage() {
               "streak_days" in stats &&
               (stats as unknown as { streak_days: number }).streak_days > 0 && (
                 <span className="font-data text-[0.5625rem] text-pk-amber flex items-center gap-1">
-                  🔥 {(stats as unknown as { streak_days: number }).streak_days} jours
+                  🔥 {(stats as unknown as { streak_days: number }).streak_days} {t("common.days")}
                 </span>
               )}
           </div>
 
           {/* Filter chips */}
           <div className="flex gap-1.5">
-            {TABS.map((tab) => (
+            {TAB_KEYS.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => {
@@ -317,7 +320,7 @@ export default function MissionsPage() {
                 }`}
                 data-testid={`missions-tab-${tab.key}`}
               >
-                {tab.label}
+                {t(tab.labelKey)}
                 {tab.key === "active" && claimableCount > 0 && (
                   <span className="inline-flex items-center justify-center min-w-[14px] h-3.5 rounded-full bg-pk-red text-white text-[0.4375rem] px-1 ml-1">
                     {claimableCount}
@@ -347,7 +350,9 @@ export default function MissionsPage() {
               {user.level}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-[0.8125rem]">Niveau {user.level}</p>
+              <p className="font-bold text-[0.8125rem]">
+                {t("missions.level", { level: user.level })}
+              </p>
               <div className="flex items-center gap-1.5 mt-1">
                 <div className="flex-1 h-1 rounded-full bg-white/[0.06] overflow-hidden">
                   <div
@@ -433,7 +438,7 @@ export default function MissionsPage() {
                         className="px-4 py-1.5 rounded-md bg-pk-emerald text-white font-data text-[0.625rem] font-bold active:scale-[0.95] transition-transform disabled:opacity-50"
                         data-testid={`claim-mission-${mission.mission_id}`}
                       >
-                        {isClaiming ? "..." : "Recuperer"}
+                        {isClaiming ? "..." : t("missions.claim")}
                       </button>
                     </motion.div>
                   )}
@@ -454,11 +459,7 @@ export default function MissionsPage() {
         {displayedMissions.length === 0 && (
           <EmptyMinimal
             icon={activeTab === "complete" ? "🏅" : "🎯"}
-            message={
-              activeTab === "complete"
-                ? "Aucune mission terminee."
-                : "Toutes les missions sont terminees !"
-            }
+            message={activeTab === "complete" ? t("missions.no_completed") : t("missions.all_done")}
           />
         )}
       </motion.div>
