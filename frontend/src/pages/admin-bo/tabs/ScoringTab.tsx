@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { adminApi } from "../adminApi";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -276,6 +277,25 @@ export default function ScoringTab() {
     },
   });
 
+  const resyncAllMutation = useMutation({
+    mutationFn: () => api.admin.resyncAllPast(),
+    onSuccess: (result) => {
+      const data = result as unknown as {
+        message: string;
+        results: { race: string; status: string; points?: number }[];
+      };
+      const summary = data.results
+        .map((r) => `${r.race}: ${r.status} (${r.points ?? 0} pronos)`)
+        .join(", ");
+      toast.success(`${data.message} — ${summary}`);
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "scoring"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "races"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "predictions"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bo", "leagues"] });
+    },
+    onError: () => toast.error("Impossible de resynchroniser les courses"),
+  });
+
   const ledgerExportMutation = useMutation({
     mutationFn: () =>
       adminApi.scoring.ledgerExportCsv({
@@ -475,6 +495,41 @@ export default function ScoringTab() {
                 <RotateCcw className="mr-1 h-4 w-4" />
               )}
               Relancer
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="card-arcade border-l-4 border-amber-500 p-4">
+        <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+          <div>
+            <p className="font-data text-[10px] uppercase tracking-[0.16em] text-gray-500">
+              Resync toutes les courses passées
+            </p>
+            <p className="mt-1 font-body text-xs text-gray-400">
+              Re-fetch les résultats API + recalcule les scores de TOUTES les courses passées (après
+              correction pilotes/scoring).
+            </p>
+          </div>
+          <div className="flex items-end">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-10 text-amber-300 hover:text-amber-200"
+              onClick={() => {
+                if (!confirm("Resynchroniser et rescorer TOUTES les courses passées ?")) return;
+                resyncAllMutation.mutate();
+              }}
+              disabled={resyncAllMutation.isPending}
+              data-testid="scoring-resync-all"
+            >
+              {resyncAllMutation.isPending ? (
+                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+              ) : (
+                <RotateCcw className="mr-1 h-4 w-4" />
+              )}
+              Resync tout
             </Button>
           </div>
         </div>
