@@ -25,15 +25,16 @@ describe("RaceEntityToken", () => {
     expect(link).toHaveAttribute("href", "/race/monaco-2026");
   });
 
-  it("renders a circuit token with a knowledge link", () => {
+  it("renders a circuit token without an admin link", () => {
     render(
       <MemoryRouter>
         <CircuitEntityToken circuit="Zandvoort" country="Netherlands" />
       </MemoryRouter>,
     );
 
-    const link = screen.getByRole("link", { name: "Circuit: Zandvoort" });
-    expect(link).toHaveAttribute("href", "/admin?tab=knowledge&entity_type=circuit&q=Zandvoort");
+    const token = screen.getByLabelText("Circuit: Zandvoort");
+    expect(token).toHaveTextContent("Zandvoort");
+    expect(token.tagName).not.toBe("A");
   });
 
   it("renders a date token", () => {

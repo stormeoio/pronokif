@@ -13,15 +13,6 @@ type RaceEntity = {
   round_number?: number | null;
 };
 
-function adminKnowledgeHref(entityType: "race" | "circuit" | "location", query: string) {
-  const params = new URLSearchParams({
-    tab: "knowledge",
-    entity_type: entityType,
-    q: query,
-  });
-  return `/admin?${params.toString()}`;
-}
-
 function raceIdFor(race?: RaceEntity | null, raceId?: string | null) {
   return raceId || race?.id || race?.race_id || null;
 }
@@ -83,18 +74,8 @@ export function RaceEntityToken({
       className={className}
       focusable={focusable}
       meta={[
-        {
-          label: "Circuit",
-          value: race?.circuit,
-          href: race?.circuit ? adminKnowledgeHref("circuit", race.circuit) : undefined,
-          ariaLabel: race?.circuit ? `Ouvrir l'entité circuit ${race.circuit}` : undefined,
-        },
-        {
-          label: "Pays",
-          value: race?.country,
-          href: race?.country ? adminKnowledgeHref("location", race.country) : undefined,
-          ariaLabel: race?.country ? `Ouvrir l'entité lieu ${race.country}` : undefined,
-        },
+        { label: "Circuit", value: race?.circuit },
+        { label: "Pays", value: race?.country },
         { label: "Date", value: formatDate(race?.date, "long") },
         { label: "Saison", value: race?.season },
         { label: "Statut", value: race?.status },
@@ -121,18 +102,11 @@ export function CircuitEntityToken({
       compactLabel={circuit}
       label={circuit}
       kindLabel="Circuit"
-      href={href ?? adminKnowledgeHref("circuit", circuit)}
-      description="Ouvrir le contexte circuit."
+      href={href}
+      description={href ? "Voir le circuit." : undefined}
       tone="circuit"
       className={className}
-      meta={[
-        {
-          label: "Pays",
-          value: country,
-          href: country ? adminKnowledgeHref("location", country) : undefined,
-          ariaLabel: country ? `Ouvrir l'entité lieu ${country}` : undefined,
-        },
-      ]}
+      meta={[{ label: "Pays", value: country }]}
     />
   );
 }

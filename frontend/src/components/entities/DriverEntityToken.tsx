@@ -6,13 +6,9 @@ import {
   type DriverLookup,
 } from "@/components/entities/driverEntityUtils";
 
-function adminKnowledgeHref(entityType: "driver" | "team", query: string) {
-  const params = new URLSearchParams({
-    tab: "knowledge",
-    entity_type: entityType,
-    q: query,
-  });
-  return `/admin?${params.toString()}`;
+function teamDetailHref(driver: { team_id?: string } | null) {
+  if (!driver?.team_id) return undefined;
+  return `/team/${driver.team_id}`;
 }
 
 export function DriverEntityToken({
@@ -45,8 +41,8 @@ export function DriverEntityToken({
         {
           label: "Écurie",
           value: driver?.team,
-          href: driver?.team ? adminKnowledgeHref("team", driver.team) : undefined,
-          ariaLabel: driver?.team ? `Ouvrir l'entité écurie ${driver.team}` : undefined,
+          href: teamDetailHref(driver),
+          ariaLabel: driver?.team ? `Voir la fiche écurie ${driver.team}` : undefined,
         },
         { label: "N°", value: driver?.number ? `#${driver.number}` : null },
         { label: "Pays", value: driver?.country },

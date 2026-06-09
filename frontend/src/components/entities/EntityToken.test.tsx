@@ -47,8 +47,8 @@ describe("EntityToken", () => {
             {
               label: "Écurie",
               value: "Mercedes",
-              href: "/admin?tab=knowledge&entity_type=team&q=Mercedes",
-              ariaLabel: "Ouvrir l'entité écurie Mercedes",
+              href: "/team/mercedes",
+              ariaLabel: "Voir la fiche écurie Mercedes",
             },
           ]}
         />
@@ -56,10 +56,10 @@ describe("EntityToken", () => {
     );
 
     const teamLink = await screen.findByRole("link", {
-      name: "Ouvrir l'entité écurie Mercedes",
+      name: "Voir la fiche écurie Mercedes",
     });
 
     expect(teamLink).toHaveTextContent("Mercedes");
-    expect(teamLink).toHaveAttribute("href", "/admin?tab=knowledge&entity_type=team&q=Mercedes");
+    expect(teamLink).toHaveAttribute("href", "/team/mercedes");
   });
 });
