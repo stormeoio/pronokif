@@ -64,7 +64,7 @@ beforeEach(() => {
   mockApi.avatars.list.mockResolvedValue({ all: [] });
   mockApi.minigames.globalLeaderboard.mockResolvedValue({ leaderboard: [] });
   mockApi.minigames.leaderboard.mockResolvedValue({ leaderboard: [] });
-  mockApi.minigames.attempts.mockResolvedValue({ attempts_used: 1, attempts_remaining: 2 });
+  mockApi.minigames.attempts.mockResolvedValue({ attempts_used: 0, attempts_remaining: 1 });
 });
 
 describe("MiniGamesPage", () => {

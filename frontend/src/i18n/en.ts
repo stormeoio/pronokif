@@ -846,6 +846,12 @@ const en = {
     photo_uploaded: "Photo uploaded!",
     photo_error: "Error uploading photo",
     install_launched: "Installation started!",
+    cagnotte_title: "Kitty",
+    cagnotte_desc: "Points earned from mini-games",
+    cagnotte_pts: "pts",
+    cagnotte_reaction: "Reaction",
+    cagnotte_batak: "Batak",
+    cagnotte_games_played: "{{count}} competition games",
   },
 
   // ── Avatar ───────────────────────────────────────

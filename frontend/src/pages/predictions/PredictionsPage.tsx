@@ -34,7 +34,6 @@ export default function PredictionsPage() {
     race,
     drivers,
     existingPrediction: fetchedPrediction,
-    minigamesCompletee,
   } = usePredictionData(raceId);
 
   // ---- Form state ----
@@ -318,7 +317,6 @@ export default function PredictionsPage() {
           firstCornerLeader={form.firstCornerLeader}
           isSprintBonusCompletee={form.isSprintBonusCompletee}
           isMainBonusCompletee={form.isMainBonusCompletee}
-          minigamesCompletee={minigamesCompletee}
           handleDriverSelect={handleDriverSelect}
           isDriverSelected={isDriverSelected}
         />

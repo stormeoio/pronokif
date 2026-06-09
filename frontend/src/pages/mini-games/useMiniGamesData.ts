@@ -37,7 +37,7 @@ export function useMiniGamesData() {
   });
 
   // ── Dependent queries ─────────────────────────────────────────
-  const { data: reactionAttempts = { used: 0, remaining: 3 } } = useQuery({
+  const { data: reactionAttempts = { used: 0, remaining: 1 } } = useQuery({
     queryKey: ["/minigames/attempts/reaction", nextRace?.id],
     queryFn: async () => {
       const res = await api.minigames.attempts("reaction", "global", nextRace!.id);
@@ -46,7 +46,7 @@ export function useMiniGamesData() {
     enabled: !!nextRace?.id,
   });
 
-  const { data: batakAttempts = { used: 0, remaining: 3 } } = useQuery({
+  const { data: batakAttempts = { used: 0, remaining: 1 } } = useQuery({
     queryKey: ["/minigames/attempts/batak", nextRace?.id],
     queryFn: async () => {
       const res = await api.minigames.attempts("batak", "global", nextRace!.id);

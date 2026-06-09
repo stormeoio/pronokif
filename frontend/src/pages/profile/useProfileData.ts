@@ -60,6 +60,12 @@ export function useProfileData(userId: string, currentLeagueId: string | null) {
     queryFn: () => api.predictions.pointsHistory() as Promise<any>,
   });
 
+  const cagnotteQuery = useQuery({
+    queryKey: ["/user/cagnotte"],
+    queryFn: () => api.user.cagnotte(),
+    staleTime: 2 * 60_000,
+  });
+
   const leagueLeaderboardQuery = useQuery({
     queryKey: ["/leagues/leaderboard", currentLeagueId],
     queryFn: async () => {
@@ -87,6 +93,7 @@ export function useProfileData(userId: string, currentLeagueId: string | null) {
     avatars: avatarsQuery.data ?? null,
     globalPosition: asFiniteNumber(globalLbQuery.data, null),
     pointsHistory: history,
+    cagnotte: cagnotteQuery.data ?? null,
     stats: {
       totalPredictions: statsQuery.data?.total_predictions ?? 0,
       racesParticipated: statsQuery.data?.races_participated ?? 0,

@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from services import profile as profile_service
 from services.auth import get_current_user
+from services.cagnotte import get_cagnotte
 
 router = APIRouter(tags=["profile"])
 
@@ -48,6 +49,12 @@ async def claim_mission_reward(mission_id: str, user: dict = Depends(get_current
         return await profile_service.claim_mission(user["id"], mission_id)
     except profile_service.MissionError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+
+@router.get("/user/cagnotte")
+async def get_user_cagnotte(user: dict = Depends(get_current_user)) -> dict:
+    """Return the caller's cagnotte balance and history."""
+    return await get_cagnotte(user["id"])
 
 
 @router.get("/user/streak")

@@ -265,7 +265,7 @@ export function BatakGame({ onSubmit, attemptsRemaining, isTraining = false }: B
               animate={{ scale: 1 }}
               transition={{ type: "spring", delay: 0.2 }}
             >
-              <span className="font-data text-sm text-pk-red">{attemptsRemaining}/3</span>
+              <span className="font-data text-sm text-pk-red">{attemptsRemaining}/1</span>
             </motion.div>
           )}
         </div>

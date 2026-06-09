@@ -4,7 +4,7 @@
  */
 import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Flag, Zap, Gamepad2, Trophy, Medal, CircleDot, ChevronRight } from "lucide-react";
+import { Check, Flag, Zap, Trophy, Medal, CircleDot, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import DriverPicker from "./DriverPicker";
 import type { Driver } from "./DriverPicker";
@@ -51,7 +51,6 @@ interface PredictionFormProps {
   firstCornerLeader: string | null;
   isSprintBonusCompletee: boolean;
   isMainBonusCompletee: boolean;
-  minigamesCompletee: boolean;
   handleDriverSelect: (driverId: string) => void;
   isDriverSelected: (driverId: string) => boolean;
 }
@@ -152,7 +151,6 @@ export default function PredictionForm({
   firstCornerLeader,
   isSprintBonusCompletee,
   isMainBonusCompletee,
-  minigamesCompletee,
   handleDriverSelect,
   isDriverSelected,
 }: PredictionFormProps) {
@@ -209,16 +207,6 @@ export default function PredictionForm({
       max: 0,
       isBonus: true,
     },
-    {
-      key: "minigames",
-      label: t("predictions.form.steps.games"),
-      sublabel: t("predictions.form.steps.mini"),
-      icon: Gamepad2,
-      done: minigamesCompletee,
-      count: 0,
-      max: 0,
-      isMinigames: true,
-    },
   ];
 
   const getMainSteps = (): StepDescriptor[] => [
@@ -267,16 +255,6 @@ export default function PredictionForm({
       count: 0,
       max: 0,
       isBonus: true,
-    },
-    {
-      key: "minigames",
-      label: t("predictions.form.steps.games"),
-      sublabel: t("predictions.form.steps.mini"),
-      icon: Gamepad2,
-      done: minigamesCompletee,
-      count: 0,
-      max: 0,
-      isMinigames: true,
     },
   ];
 
@@ -344,6 +322,8 @@ export default function PredictionForm({
       steps: steps.filter((step) => step.isBonus),
     },
   ];
+
+  const activeStage = stageSections.find((s) => s.active) ?? stageSections[0];
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -506,206 +486,182 @@ export default function PredictionForm({
         </div>
 
         <div className="p-3">
+          {/* ── Horizontal stage rail ─────────────────────────────── */}
           <div
-            className="space-y-1.5"
-            role="list"
+            className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"
+            role="tablist"
             aria-label={t("predictions.form.quick_steps_label")}
-            data-testid="prediction-step-accordion"
+            data-testid="prediction-step-rail"
           >
             {stageSections.map((stage, index) => {
-              const expanded = stage.active;
-              const isLast = index === stageSections.length - 1;
-
+              const isActive = stage.active;
               return (
-                <div key={stage.key} className="relative" role="listitem">
-                  {!isLast && (
-                    <span
-                      className={`absolute bottom-[-0.375rem] left-[1.0625rem] top-9 w-px ${
-                        stage.done ? "bg-pk-emerald/35" : "bg-white/[0.08]"
-                      }`}
-                      aria-hidden="true"
-                    />
-                  )}
-                  <div
-                    className={`relative overflow-hidden rounded-md border transition-colors ${
-                      expanded
-                        ? "border-pk-red/30 bg-white/[0.035] shadow-[inset_2px_0_0_rgba(225,6,0,0.55)]"
-                        : stage.done
-                          ? "border-pk-emerald/25 bg-pk-emerald/[0.04]"
-                          : "border-white/[0.08] bg-black/20"
+                <button
+                  key={stage.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => {
+                    haptic("selection");
+                    if (stage.modeKey) setSelectionMode(stage.modeKey);
+                  }}
+                  className={`relative flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 transition-all active:scale-[0.97] ${
+                    isActive
+                      ? "border-pk-red/45 bg-pk-red-subtle shadow-[0_0_12px_rgba(225,6,0,0.25)]"
+                      : stage.done
+                        ? "border-pk-emerald/30 bg-pk-emerald/[0.06]"
+                        : "border-white/[0.08] bg-black/20 hover:border-white/[0.16]"
+                  }`}
+                  data-testid={`stage-${stage.key}`}
+                >
+                  <span
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border font-data text-[0.5rem] ${
+                      stage.done
+                        ? "border-pk-emerald/40 bg-pk-emerald/10 text-pk-emerald"
+                        : isActive
+                          ? "border-pk-red/45 bg-pk-red/15 text-pk-red"
+                          : "border-white/[0.1] bg-pk-surface text-pk-titane"
                     }`}
                   >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        haptic("selection");
-                        if (stage.modeKey) setSelectionMode(stage.modeKey);
-                      }}
-                      aria-current={expanded ? "step" : undefined}
-                      aria-expanded={expanded}
-                      className="flex min-h-[44px] w-full items-center gap-2.5 px-2.5 py-2 text-left"
-                      data-testid={`stage-${stage.key}`}
-                    >
-                      <span
-                        className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border font-data text-[0.625rem] ${
-                          stage.done
-                            ? "border-pk-emerald/40 bg-pk-emerald/10 text-pk-emerald"
-                            : expanded
-                              ? "border-pk-red/45 bg-pk-red-subtle text-pk-red"
-                              : "border-white/[0.1] bg-pk-surface text-pk-titane"
-                        }`}
-                      >
-                        {stage.done ? <Check className="h-3.5 w-3.5" /> : index + 1}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-display text-[0.72rem] uppercase leading-none text-white">
-                          {stage.label}
-                        </p>
-                        <p
-                          className={`mt-1 font-data text-[0.52rem] uppercase leading-none ${
-                            stage.done ? "text-pk-emerald" : "text-pk-titane"
-                          }`}
-                        >
-                          {stage.count}/{stage.max}
-                        </p>
-                      </div>
-                      <ChevronRight
-                        size={14}
-                        strokeWidth={1.8}
-                        className={`shrink-0 text-pk-titane transition-transform duration-pk-short ${
-                          expanded ? "rotate-90 text-pk-red" : ""
-                        }`}
-                      />
-                    </button>
-
-                    <AnimatePresence initial={false}>
-                      {expanded && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                          className="overflow-hidden"
-                        >
-                          <div
-                            className="space-y-1.5 border-t border-white/[0.08] px-2.5 py-2"
-                            role="tablist"
-                            aria-label={stage.label}
-                          >
-                            {stage.steps.map((step) => {
-                              const Icon = step.icon;
-                              const isActive =
-                                selectionMode === step.key || !!(step.isBonus && showBonus);
-                              const tone = stepTone(step, isActive, activeTab);
-
-                              return (
-                                <motion.button
-                                  key={step.key}
-                                  role="tab"
-                                  aria-selected={isActive}
-                                  aria-label={`${step.label} ${step.sublabel}`}
-                                  onClick={() => {
-                                    haptic("selection");
-                                    setSelectionMode(step.isBonus ? bonusModeKey : step.key);
-                                  }}
-                                  className={`flex min-h-[36px] w-full items-center gap-2 rounded-sm border px-2 py-1.5 text-left transition-all hover:border-white/[0.16] ${tone.bg} ${tone.border}`}
-                                  data-testid={`step-${step.key}`}
-                                  whileTap={{ scale: 0.98 }}
-                                >
-                                  <Icon className={`h-3.5 w-3.5 shrink-0 ${tone.icon}`} />
-                                  <div className="min-w-0 flex-1">
-                                    <p
-                                      className={`truncate font-display text-[0.6rem] uppercase ${tone.label}`}
-                                    >
-                                      {step.label}
-                                    </p>
-                                    <p className="truncate font-data text-[0.48rem] uppercase text-pk-titane">
-                                      {step.sublabel}
-                                    </p>
-                                  </div>
-                                  <span className="shrink-0 rounded-sm bg-black/20 px-1.5 py-0.5 font-data text-[0.54rem] text-pk-titane">
-                                    {step.isBonus
-                                      ? step.done
-                                        ? "3/3"
-                                        : t("predictions.form.todo")
-                                      : `${step.count}/${step.max}`}
-                                  </span>
-                                </motion.button>
-                              );
-                            })}
-
-                            <div className="rounded-sm border border-white/[0.08] bg-black/20 px-2.5 py-2">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                  <p className="flex items-center gap-1.5 font-data text-[0.48rem] uppercase tracking-[0.14em] text-pk-titane">
-                                    <CircleDot
-                                      size={11}
-                                      strokeWidth={1.8}
-                                      className="text-pk-red"
-                                    />
-                                    {t("predictions.form.active_step")}
-                                  </p>
-                                  <p className="mt-1 truncate font-body text-[0.72rem] leading-4 text-pk-titane">
-                                    {stepHelp(selectionMode, activeTab, t)}
-                                  </p>
-                                </div>
-                                <span
-                                  className={`shrink-0 rounded-sm border px-2 py-1 font-data text-[0.54rem] uppercase ${
-                                    activeStep.done
-                                      ? "border-pk-emerald/30 bg-pk-emerald/10 text-pk-emerald"
-                                      : "border-pk-red/30 bg-pk-red-subtle text-pk-red"
-                                  }`}
-                                >
-                                  {activeStep.done
-                                    ? t("predictions.form.validated")
-                                    : activeStep.isBonus
-                                      ? t("predictions.form.todo")
-                                      : `${activeStep.count}/${activeStep.max || 1}`}
-                                </span>
-                              </div>
-
-                              {showSlots && (
-                                <div className={`mt-2 grid ${slotGridClass} gap-1.5`}>
-                                  {Array.from({ length: slotCount }).map((_, slotIndex) => {
-                                    const driverId =
-                                      orderedSelection[slotIndex] ??
-                                      (slotCount === 1 ? singleSelection : null);
-                                    return (
-                                      <div
-                                        key={`${selectionMode}-${slotIndex}`}
-                                        className={`min-h-[34px] rounded-sm border px-2 py-1.5 transition-colors ${
-                                          driverId
-                                            ? "border-pk-red/25 bg-pk-red-subtle"
-                                            : "border-white/[0.08] bg-black/20"
-                                        }`}
-                                      >
-                                        <p className="font-data text-[0.5rem] leading-none text-pk-titane">
-                                          {selectionMode.includes("dnf")
-                                            ? `DNF ${slotIndex + 1}`
-                                            : `P${slotIndex + 1}`}
-                                        </p>
-                                        <p className="mt-1 truncate font-data text-[0.625rem] uppercase leading-none text-white">
-                                          {driverId
-                                            ? slotCount === 1
-                                              ? driverName(driverId)
-                                              : compactDriverName(driverId)
-                                            : t("predictions.form.free_slot")}
-                                        </p>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
+                    {stage.done ? <Check className="h-2.5 w-2.5" /> : index + 1}
+                  </span>
+                  <span
+                    className={`whitespace-nowrap font-display text-[0.6rem] uppercase leading-none ${
+                      isActive ? "text-white" : stage.done ? "text-pk-emerald" : "text-pk-titane"
+                    }`}
+                  >
+                    {stage.label}
+                  </span>
+                  <span className="font-data text-[0.48rem] text-pk-titane">
+                    {stage.count}/{stage.max}
+                  </span>
+                </button>
               );
             })}
           </div>
+
+          {/* ── Active stage expanded panel ─────────────────────── */}
+          <AnimatePresence initial={false}>
+            {activeStage.steps.length > 0 && (
+              <motion.div
+                key={activeStage.key}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                className="mt-2 overflow-hidden rounded-md border border-pk-red/20 bg-white/[0.025]"
+              >
+                <div
+                  className="space-y-1.5 px-2.5 py-2"
+                  role="tablist"
+                  aria-label={activeStage.label}
+                >
+                  {activeStage.steps.map((step) => {
+                    const Icon = step.icon;
+                    const isStepActive =
+                      selectionMode === step.key || !!(step.isBonus && showBonus);
+                    const tone = stepTone(step, isStepActive, activeTab);
+
+                    return (
+                      <motion.button
+                        key={step.key}
+                        role="tab"
+                        aria-selected={isStepActive}
+                        aria-label={`${step.label} ${step.sublabel}`}
+                        onClick={() => {
+                          haptic("selection");
+                          setSelectionMode(step.isBonus ? bonusModeKey : step.key);
+                        }}
+                        className={`flex min-h-[36px] w-full items-center gap-2 rounded-sm border px-2 py-1.5 text-left transition-all hover:border-white/[0.16] ${tone.bg} ${tone.border}`}
+                        data-testid={`step-${step.key}`}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <Icon className={`h-3.5 w-3.5 shrink-0 ${tone.icon}`} />
+                        <div className="min-w-0 flex-1">
+                          <p
+                            className={`truncate font-display text-[0.6rem] uppercase ${tone.label}`}
+                          >
+                            {step.label}
+                          </p>
+                          <p className="truncate font-data text-[0.48rem] uppercase text-pk-titane">
+                            {step.sublabel}
+                          </p>
+                        </div>
+                        <span className="shrink-0 rounded-sm bg-black/20 px-1.5 py-0.5 font-data text-[0.54rem] text-pk-titane">
+                          {step.isBonus
+                            ? step.done
+                              ? "3/3"
+                              : t("predictions.form.todo")
+                            : `${step.count}/${step.max}`}
+                        </span>
+                      </motion.button>
+                    );
+                  })}
+
+                  {/* Active step context */}
+                  <div className="rounded-sm border border-white/[0.08] bg-black/20 px-2.5 py-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-1.5 font-data text-[0.48rem] uppercase tracking-[0.14em] text-pk-titane">
+                          <CircleDot size={11} strokeWidth={1.8} className="text-pk-red" />
+                          {t("predictions.form.active_step")}
+                        </p>
+                        <p className="mt-1 truncate font-body text-[0.72rem] leading-4 text-pk-titane">
+                          {stepHelp(selectionMode, activeTab, t)}
+                        </p>
+                      </div>
+                      <span
+                        className={`shrink-0 rounded-sm border px-2 py-1 font-data text-[0.54rem] uppercase ${
+                          activeStep.done
+                            ? "border-pk-emerald/30 bg-pk-emerald/10 text-pk-emerald"
+                            : "border-pk-red/30 bg-pk-red-subtle text-pk-red"
+                        }`}
+                      >
+                        {activeStep.done
+                          ? t("predictions.form.validated")
+                          : activeStep.isBonus
+                            ? t("predictions.form.todo")
+                            : `${activeStep.count}/${activeStep.max || 1}`}
+                      </span>
+                    </div>
+
+                    {showSlots && (
+                      <div className={`mt-2 grid ${slotGridClass} gap-1.5`}>
+                        {Array.from({ length: slotCount }).map((_, slotIndex) => {
+                          const driverId =
+                            orderedSelection[slotIndex] ??
+                            (slotCount === 1 ? singleSelection : null);
+                          return (
+                            <div
+                              key={`${selectionMode}-${slotIndex}`}
+                              className={`min-h-[34px] rounded-sm border px-2 py-1.5 transition-colors ${
+                                driverId
+                                  ? "border-pk-red/25 bg-pk-red-subtle"
+                                  : "border-white/[0.08] bg-black/20"
+                              }`}
+                            >
+                              <p className="font-data text-[0.5rem] leading-none text-pk-titane">
+                                {selectionMode.includes("dnf")
+                                  ? `DNF ${slotIndex + 1}`
+                                  : `P${slotIndex + 1}`}
+                              </p>
+                              <p className="mt-1 truncate font-data text-[0.625rem] uppercase leading-none text-white">
+                                {driverId
+                                  ? slotCount === 1
+                                    ? driverName(driverId)
+                                    : compactDriverName(driverId)
+                                  : t("predictions.form.free_slot")}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div className="mt-2 rounded-md border border-white/[0.08] bg-black/20 px-3 py-2">
             <div className="flex items-center justify-between gap-2">

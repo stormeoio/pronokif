@@ -852,6 +852,12 @@ const fr = {
     photo_uploaded: "Photo uploadée !",
     photo_error: "Erreur lors de l'upload",
     install_launched: "Installation lancée !",
+    cagnotte_title: "Cagnotte",
+    cagnotte_desc: "Points gagnés aux mini-jeux",
+    cagnotte_pts: "pts",
+    cagnotte_reaction: "Réaction",
+    cagnotte_batak: "Batak",
+    cagnotte_games_played: "{{count}} parties en compétition",
   },
 
   // ── Avatar ───────────────────────────────────────

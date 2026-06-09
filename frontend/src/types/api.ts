@@ -373,6 +373,27 @@ export interface MinigameLeaderboardEntry {
   attempts: number;
 }
 
+// ═══════════════════════════════════════ CAGNOTTE ═════════════════════════════
+
+export interface CagnotteEntry {
+  id: string;
+  game_type: "reaction" | "batak";
+  score: number;
+  points_earned: number;
+  race_id: string;
+  created_at: string;
+}
+
+export interface CagnotteResponse {
+  balance: number;
+  breakdown: {
+    reaction: number;
+    batak: number;
+  };
+  total_games: number;
+  history: CagnotteEntry[];
+}
+
 // ═══════════════════════════════════════ AVATARS ═══════════════════════════════
 
 export interface Avatar {

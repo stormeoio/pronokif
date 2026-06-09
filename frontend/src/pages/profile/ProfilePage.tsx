@@ -27,6 +27,8 @@ import {
   Moon,
   Sun,
   Palette,
+  Coins,
+  Gamepad2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AvatarSelector } from "../../components/AvatarDisplay";
@@ -89,10 +91,8 @@ export default function ProfilePage() {
   const { state: pwaState, canInstall, install: installPwa } = usePwaInstall();
   const { hasUpdate, applyUpdate } = useSwUpdate();
 
-  const { loading, leagues, avatars, globalPosition, pointsHistory, stats } = useProfileData(
-    user!.id,
-    user!.current_league_id ?? null,
-  );
+  const { loading, leagues, avatars, globalPosition, pointsHistory, cagnotte, stats } =
+    useProfileData(user!.id, user!.current_league_id ?? null);
 
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -256,6 +256,71 @@ export default function ProfilePage() {
             </p>
           </div>
         </motion.div>
+
+        {/* Cagnotte Card */}
+        {cagnotte && (
+          <motion.div
+            variants={fadeUp}
+            className="bg-pk-surface border border-white/[0.08] rounded-lg p-4"
+            data-testid="cagnotte-card"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-pk-amber/[0.12] flex items-center justify-center">
+                <Coins className="w-5 h-5 text-pk-amber" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-display text-sm">{t("profile.cagnotte_title", "Cagnotte")}</h3>
+                <p className="font-data text-[0.5625rem] text-pk-titane">
+                  {t("profile.cagnotte_desc", "Points gagnés aux mini-jeux")}
+                </p>
+              </div>
+              <div className="text-right">
+                <p
+                  className="font-data text-2xl font-bold text-pk-amber"
+                  data-testid="cagnotte-balance"
+                >
+                  {cagnotte.balance}
+                </p>
+                <p className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider">
+                  {t("profile.cagnotte_pts", "pts")}
+                </p>
+              </div>
+            </div>
+
+            {/* Breakdown pills */}
+            <div className="flex gap-2">
+              <div className="flex-1 rounded-md bg-white/[0.04] border border-white/[0.06] px-3 py-2 text-center">
+                <div className="flex items-center justify-center gap-1.5 mb-0.5">
+                  <Zap className="w-3 h-3 text-pk-info" />
+                  <span className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider">
+                    {t("profile.cagnotte_reaction", "Réaction")}
+                  </span>
+                </div>
+                <p className="font-data text-sm font-bold" data-testid="cagnotte-reaction">
+                  {cagnotte.breakdown.reaction}
+                </p>
+              </div>
+              <div className="flex-1 rounded-md bg-white/[0.04] border border-white/[0.06] px-3 py-2 text-center">
+                <div className="flex items-center justify-center gap-1.5 mb-0.5">
+                  <Gamepad2 className="w-3 h-3 text-emerald-400" />
+                  <span className="font-data text-[0.5625rem] text-pk-titane uppercase tracking-wider">
+                    {t("profile.cagnotte_batak", "Batak")}
+                  </span>
+                </div>
+                <p className="font-data text-sm font-bold" data-testid="cagnotte-batak">
+                  {cagnotte.breakdown.batak}
+                </p>
+              </div>
+            </div>
+
+            {/* Mini-games count */}
+            <p className="font-data text-[0.5625rem] text-pk-titane mt-2.5 text-center">
+              {t("profile.cagnotte_games_played", "{{count}} parties en compétition", {
+                count: cagnotte.total_games,
+              })}
+            </p>
+          </motion.div>
+        )}
 
         {/* Badge Collection */}
         <motion.div variants={fadeUp}>

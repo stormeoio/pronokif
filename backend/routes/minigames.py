@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from config import db
+
+MAX_COMPETITION_ATTEMPTS_PER_MONTH = 1
 from services.auth import get_current_user
 from services.championships import championship_context_for_race_id
 
@@ -65,19 +67,23 @@ async def save_minigame_result(data: MinigameResultCreate, user: dict = Depends(
     if not league or user["id"] not in league["members"]:
         raise HTTPException(status_code=403, detail="Tu ne fais pas partie de cette ligue")
 
-    # Check attempt limit (3 per competition mode)
+    # Check attempt limit (1 per game_type per user per calendar month)
     if not data.is_training:
+        now = datetime.now(UTC)
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
         existing_attempts = await db.minigame_results.count_documents(
             {
                 "user_id": user["id"],
-                "league_id": data.league_id,
-                "race_id": data.race_id,
                 "game_type": data.game_type,
                 "is_training": False,
+                "created_at": {"$gte": month_start},
             }
         )
-        if existing_attempts >= 3:
-            raise HTTPException(status_code=400, detail="Maximum 3 tentatives atteint pour ce week-end de course")
+        if existing_attempts >= MAX_COMPETITION_ATTEMPTS_PER_MONTH:
+            raise HTTPException(
+                status_code=400,
+                detail="Tu as déjà utilisé ta tentative ce mois-ci pour ce jeu",
+            )
 
     result_id = str(uuid.uuid4())
     result = {
@@ -236,19 +242,32 @@ async def get_minigame_leaderboard(
 async def get_my_minigame_attempts(
     game_type: str, league_id: str, race_id: str, user: dict = Depends(get_current_user)
 ) -> dict:
-    """Get user's attempts for a specific mini-game"""
+    """Get user's monthly attempts for a specific mini-game.
+
+    Limit is 1 competition attempt per game_type per calendar month.
+    league_id and race_id are kept in the URL for backward-compat but
+    the check is now month-scoped.
+    """
+    now = datetime.now(UTC)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
+
     results = await db.minigame_results.find(
         {
             "user_id": user["id"],
-            "league_id": league_id,
-            "race_id": race_id,
             "game_type": game_type,
             "is_training": False,
+            "created_at": {"$gte": month_start},
         },
         {"_id": 0},
     ).to_list(10)
 
-    return {"attempts": results, "attempts_used": len(results), "attempts_remaining": max(0, 3 - len(results))}
+    used = len(results)
+    limit = MAX_COMPETITION_ATTEMPTS_PER_MONTH
+    return {
+        "attempts": results,
+        "attempts_used": used,
+        "attempts_remaining": max(0, limit - used),
+    }
 
 
 @router.get("/global-leaderboard/{game_type}")
