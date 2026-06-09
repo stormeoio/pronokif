@@ -15,8 +15,11 @@ other modular routers.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from data.f1_data import active_2026_races
 from services import sync as sync_service
 from services.admin import require_admin
 
@@ -59,26 +62,16 @@ async def resync_all_past_races(admin: dict = Depends(require_admin)) -> dict:
 
     Use after fixing driver mappings or scoring logic to recompute everything.
     """
-    from data.f1_data import active_2026_races
-    from datetime import datetime, UTC
-
     now = datetime.now(UTC)
     results = []
     for race in active_2026_races():
         if race.get("is_cancelled"):
             continue
-        race_start = race.get("race_start_at") or race.get("date")
-        if not race_start:
+        raw = race.get("race_start_at") or race.get("date")
+        if not raw:
             continue
-        if isinstance(race_start, str):
-            from datetime import datetime as dt
-            try:
-                race_dt = dt.fromisoformat(race_start.replace("Z", "+00:00"))
-            except ValueError:
-                continue
-        else:
-            race_dt = race_start
-        if race_dt.tzinfo is None:
+        race_dt = datetime.fromisoformat(str(raw).replace("Z", "+00:00")) if isinstance(raw, str) else raw
+        if getattr(race_dt, "tzinfo", None) is None:
             race_dt = race_dt.replace(tzinfo=UTC)
         if race_dt > now:
             continue
