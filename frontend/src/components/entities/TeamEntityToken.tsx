@@ -1,16 +1,12 @@
 import { EntityToken } from "@/components/entities/EntityToken";
 
-function adminKnowledgeHref(query: string) {
-  const params = new URLSearchParams({
-    tab: "knowledge",
-    entity_type: "team",
-    q: query,
-  });
-  return `/admin?${params.toString()}`;
-}
-
 function compactTeamName(name: string) {
   return name.replace(/\s+Formula 1 Team$/i, "").replace(/\s+F1 Team$/i, "");
+}
+
+function teamDetailHref(teamId: string | null | undefined): string | undefined {
+  if (!teamId) return undefined;
+  return `/team/${teamId}`;
 }
 
 export function TeamEntityToken({
@@ -37,8 +33,8 @@ export function TeamEntityToken({
       compactLabel={compactTeamName(name)}
       label={name}
       kindLabel="Écurie"
-      href={linked ? (href ?? adminKnowledgeHref(name)) : undefined}
-      description="Ouvrir le contexte écurie."
+      href={linked ? (href ?? teamDetailHref(teamId)) : undefined}
+      description="Voir la fiche écurie."
       tone="team"
       className={className}
       focusable={focusable}

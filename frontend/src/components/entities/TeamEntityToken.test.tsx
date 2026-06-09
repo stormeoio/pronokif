@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { TeamEntityToken } from "./TeamEntityToken";
 
 describe("TeamEntityToken", () => {
-  it("links a team token to the knowledge admin search", () => {
+  it("links a team token to the frontend team detail page", () => {
     render(
       <MemoryRouter>
         <TeamEntityToken teamId="mercedes" name="Mercedes F1 Team" nationality="German" />
@@ -13,10 +13,7 @@ describe("TeamEntityToken", () => {
 
     const link = screen.getByRole("link", { name: "Écurie: Mercedes F1 Team" });
     expect(link).toHaveTextContent("Mercedes");
-    expect(link).toHaveAttribute(
-      "href",
-      "/admin?tab=knowledge&entity_type=team&q=Mercedes+F1+Team",
-    );
+    expect(link).toHaveAttribute("href", "/team/mercedes");
   });
 
   it("can render as a non-focusable token inside another clickable surface", () => {

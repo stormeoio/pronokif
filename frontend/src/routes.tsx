@@ -31,6 +31,7 @@ const LeagueDetailPage = lazy(() => import("@/pages/leagues/LeagueDetailPage"));
 const JoinLeaguePage = lazy(() => import("@/pages/JoinLeaguePage"));
 const ChampionshipPage = lazy(() => import("@/pages/championship/ChampionshipPage"));
 const DriverDetailPage = lazy(() => import("@/pages/driver-detail/DriverDetailPage"));
+const TeamDetailPage = lazy(() => import("@/pages/team-detail/TeamDetailPage"));
 const DriverComparisonPage = lazy(() => import("@/pages/driver-comparison/DriverComparisonPage"));
 const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
@@ -62,6 +63,7 @@ const PROTECTED_ROUTES: Array<{ path: string; element: React.ReactNode }> = [
   { path: "/league/:leagueId/details", element: <LeagueDetailPage /> },
   { path: "/profile/:userId", element: <MemberProfilePage /> },
   { path: "/driver/:driverId", element: <DriverDetailPage /> },
+  { path: "/team/:teamId", element: <TeamDetailPage /> },
   { path: "/compare", element: <DriverComparisonPage /> },
 ];
 
