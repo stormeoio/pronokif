@@ -32,7 +32,7 @@ _TEAM_LOGOS: dict[str, str] = {
 # F1 Drivers 2026 Season — includes official photo_url and team_logo_url
 F1_DRIVERS_2026 = [
     {
-        "id": "norris", "name": "Lando Norris", "team": "McLaren", "number": 4,
+        "id": "norris", "name": "Lando Norris", "team": "McLaren", "number": 1,
         "country": "GBR", "code": "NOR",
         "photo_url": f"{_D}/L/LANNOR01_Lando_Norris/lannor01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["McLaren"],
@@ -70,7 +70,7 @@ F1_DRIVERS_2026 = [
         "team_logo_url": _TEAM_LOGOS["Ferrari"],
     },
     {
-        "id": "verstappen", "name": "Max Verstappen", "team": "Red Bull Racing", "number": 1,
+        "id": "verstappen", "name": "Max Verstappen", "team": "Red Bull Racing", "number": 3,
         "country": "NED", "code": "VER",
         "photo_url": f"{_D}/M/MAXVER01_Max_Verstappen/maxver01.png.transform/2col-retina/image.png",
         "team_logo_url": _TEAM_LOGOS["Red Bull Racing"],
@@ -103,6 +103,13 @@ F1_DRIVERS_2026 = [
         "id": "tsunoda", "name": "Yuki Tsunoda", "team": "Racing Bulls", "number": 22,
         "country": "JPN", "code": "TSU",
         "photo_url": f"{_D}/Y/YUKTSU01_Yuki_Tsunoda/yuktsu01.png.transform/2col-retina/image.png",
+        "team_logo_url": _TEAM_LOGOS["Racing Bulls"],
+        "replaced_by": "lindblad",
+    },
+    {
+        "id": "lindblad", "name": "Arvid Lindblad", "team": "Racing Bulls", "number": 41,
+        "country": "GBR", "code": "LIN",
+        "photo_url": None,
         "team_logo_url": _TEAM_LOGOS["Racing Bulls"],
     },
     {
@@ -139,6 +146,13 @@ F1_DRIVERS_2026 = [
         "id": "doohan", "name": "Jack Doohan", "team": "Alpine", "number": 7,
         "country": "AUS", "code": "DOO",
         "photo_url": f"{_D}/J/JACDOO01_Jack_Doohan/jacdoo01.png.transform/2col-retina/image.png",
+        "team_logo_url": _TEAM_LOGOS["Alpine"],
+        "replaced_by": "colapinto",
+    },
+    {
+        "id": "colapinto", "name": "Franco Colapinto", "team": "Alpine", "number": 43,
+        "country": "ARG", "code": "COL",
+        "photo_url": None,
         "team_logo_url": _TEAM_LOGOS["Alpine"],
     },
     {
