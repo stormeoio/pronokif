@@ -13,6 +13,7 @@ export interface Driver {
   name: string;
   team: string;
   number: number | string;
+  photo_url?: string;
 }
 
 interface DriverPickerProps {
@@ -109,7 +110,9 @@ export default function DriverPicker({
           const selected = isDriverSelected(driver.id);
           const teamColor = TEAM_COLORS[driver.team] || "#6B7280";
           const position = getPosition ? getPosition(driver.id) : null;
-          const photoUrl = resolveDriverPhoto(driver.id);
+          const photoUrl = resolveDriverPhoto(
+            driver.photo_url ? { id: driver.id, photo_url: driver.photo_url } : driver.id,
+          );
           const showPhoto = photoUrl && !brokenPhotos.has(driver.id);
 
           return (
@@ -190,12 +193,11 @@ export default function DriverPicker({
               </div>
 
               {/* Name + number */}
-              <p className="w-full truncate text-center font-display text-[0.6rem] uppercase leading-tight text-pk-piste">
+              <p className="w-full truncate text-center font-display text-[0.75rem] uppercase leading-tight text-pk-piste">
                 {driverLastName(driver.name)}
               </p>
-              <p className="mt-0.5 font-data text-[0.48rem] uppercase text-pk-titane">
-                #{driver.number} ·{" "}
-                {driver.team.length > 10 ? driver.team.slice(0, 8) + "…" : driver.team}
+              <p className="mt-0.5 font-data text-[0.5rem] uppercase text-pk-titane">
+                #{driver.number}
               </p>
 
               {/* Selection underline */}
