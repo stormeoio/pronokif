@@ -74,6 +74,7 @@ export default function DriverPicker({
 
   const handlePhotoError = (driverId: string) => {
     setBrokenPhotos((prev) => {
+      if (prev.has(driverId)) return prev;
       const next = new Set(prev);
       next.add(driverId);
       return next;

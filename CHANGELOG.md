@@ -2,6 +2,15 @@
 
 Toutes les dates sont en heure Europe/Paris. Le changelog applicatif visible dans le back-office est maintenu dans `frontend/src/pages/admin-bo/tabs/ChangelogTab.tsx`.
 
+## v0.1.0.1 — 9 juin 2026
+
+### Changed
+- Grille de sélection pilotes (pronostics) : passage en 3 colonnes avec avatars photos, accent couleur équipe en barre supérieure, badges position et check redesignés.
+- Hauteur du hero pilote réduite (440px vers 365px) pour un meilleur ratio contenu/visuel.
+
+### Fixed
+- Correction d'une cascade de re-renders lorsque les photos pilotes retournent une 404 (guard `Set.has` avant mise à jour du state).
+
 ## v0.6.0 — 7 juin 2026
 
 ### Accueil & calendrier
