@@ -179,18 +179,18 @@ describe("PredictionsPage", () => {
     });
   });
 
-  it("uses a vertical accordion pipeline for main race steps", async () => {
+  it("uses a horizontal rail for main race stage navigation", async () => {
     const user = userEvent.setup();
     renderPredictions();
 
-    expect(await screen.findByTestId("prediction-step-accordion")).toBeInTheDocument();
-    expect(screen.getByTestId("stage-qualifying")).toHaveAttribute("aria-expanded", "true");
+    expect(await screen.findByTestId("prediction-step-rail")).toBeInTheDocument();
+    expect(screen.getByTestId("stage-qualifying")).toHaveAttribute("aria-selected", "true");
     expect(screen.getByTestId("step-quali_pole")).toBeInTheDocument();
 
-    expect(screen.getByTestId("stage-race")).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByTestId("stage-race")).toHaveAttribute("aria-selected", "false");
     await user.click(screen.getByTestId("stage-race"));
 
-    expect(screen.getByTestId("stage-race")).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByTestId("stage-race")).toHaveAttribute("aria-selected", "true");
     expect(screen.getByTestId("step-race_winner")).toBeInTheDocument();
     expect(screen.getByTestId("step-race_top10")).toBeInTheDocument();
     await waitFor(() => {
@@ -198,12 +198,12 @@ describe("PredictionsPage", () => {
     });
   });
 
-  it("starts sprint weekends on the sprint accordion pipeline", async () => {
+  it("starts sprint weekends on the sprint rail pipeline", async () => {
     raceResponse = { ...mockRace, is_sprint_weekend: true };
     renderPredictions();
 
     expect(await screen.findByTestId("tab-sprint")).toBeEnabled();
-    expect(screen.getByTestId("stage-qualifying")).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByTestId("stage-qualifying")).toHaveAttribute("aria-selected", "true");
     expect(screen.getByTestId("step-sprint_quali_pole")).toBeInTheDocument();
     expect(screen.getByTestId("step-sprint_quali_top10")).toBeInTheDocument();
   });
@@ -227,7 +227,7 @@ describe("PredictionsPage", () => {
     }
 
     await waitFor(() => {
-      expect(screen.getByTestId("stage-race")).toHaveAttribute("aria-expanded", "true");
+      expect(screen.getByTestId("stage-race")).toHaveAttribute("aria-selected", "true");
     });
     expect(screen.getByTestId("prediction-bottom-progress")).toHaveAttribute("aria-valuenow", "2");
     expect(screen.getByTestId("prediction-bottom-progress-count")).toHaveTextContent("2/4");
@@ -243,7 +243,7 @@ describe("PredictionsPage", () => {
     }
 
     await waitFor(() => {
-      expect(screen.getByTestId("stage-bonus")).toHaveAttribute("aria-expanded", "true");
+      expect(screen.getByTestId("stage-bonus")).toHaveAttribute("aria-selected", "true");
     });
     expect(screen.getByTestId("prediction-bottom-progress")).toHaveAttribute("aria-valuenow", "4");
     expect(screen.getByTestId("prediction-bottom-progress-count")).toHaveTextContent("4/4");
@@ -310,7 +310,7 @@ describe("PredictionsPage", () => {
       }
 
       await waitFor(() => {
-        expect(screen.getByTestId("stage-race")).toHaveAttribute("aria-expanded", "true");
+        expect(screen.getByTestId("stage-race")).toHaveAttribute("aria-selected", "true");
       });
       await waitFor(() => {
         expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
@@ -342,7 +342,7 @@ describe("PredictionsPage", () => {
     }
 
     await waitFor(() => {
-      expect(screen.getByTestId("stage-race")).toHaveAttribute("aria-expanded", "true");
+      expect(screen.getByTestId("stage-race")).toHaveAttribute("aria-selected", "true");
     });
     expect(screen.getByTestId("step-sprint_race_winner")).toHaveAttribute("aria-selected", "true");
 
@@ -354,7 +354,7 @@ describe("PredictionsPage", () => {
     }
 
     await waitFor(() => {
-      expect(screen.getByTestId("stage-bonus")).toHaveAttribute("aria-expanded", "true");
+      expect(screen.getByTestId("stage-bonus")).toHaveAttribute("aria-selected", "true");
     });
     await user.click(screen.getByTestId("bonus-safety-car-no"));
     await user.click(screen.getByTestId("bonus-fastest-lap"));
