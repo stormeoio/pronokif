@@ -1,9 +1,22 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, Flag, Trophy, Calendar, Save, Loader2, Zap, RefreshCw, Medal } from "lucide-react";
+import {
+  Check,
+  Flag,
+  Trophy,
+  Calendar,
+  Save,
+  Loader2,
+  Zap,
+  RefreshCw,
+  Medal,
+  RotateCcw,
+} from "lucide-react";
 import { BonusPanel, DnfPanel, DriverGrid } from "./ResultsSubComponents";
 import { useResultsState, type SelectionMode } from "./hooks/useResultsState";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 
 interface Race {
   id: number | string;
@@ -29,6 +42,30 @@ interface ResultsTabProps {
 }
 
 export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps) {
+  const [resyncingAll, setResyncingAll] = useState(false);
+  const [resyncResult, setResyncResult] = useState<string | null>(null);
+
+  const handleResyncAll = async () => {
+    setResyncingAll(true);
+    setResyncResult(null);
+    try {
+      const res = await api.admin.resyncAllPast();
+      const data = res as unknown as {
+        message: string;
+        results: { race: string; status: string; points: number }[];
+      };
+      const summary = data.results
+        .map((r) => `${r.race}: ${r.status} (${r.points ?? 0} pronos)`)
+        .join("\n");
+      setResyncResult(`${data.message}\n\n${summary}`);
+      setRaces();
+    } catch (e: unknown) {
+      setResyncResult(`Erreur: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setResyncingAll(false);
+    }
+  };
+
   const {
     selectedRace,
     selectRace,
@@ -146,6 +183,27 @@ export default function ResultsTab({ races, setRaces, drivers }: ResultsTabProps
 
   return (
     <>
+      {/* Resync All Past */}
+      <div className="mb-4 flex items-center gap-3">
+        <Button
+          onClick={handleResyncAll}
+          disabled={resyncingAll}
+          variant="outline"
+          size="sm"
+          className="border-amber-500/50 text-amber-400 hover:bg-amber-500/20"
+        >
+          {resyncingAll ? (
+            <Loader2 className="w-4 h-4 animate-spin mr-1" />
+          ) : (
+            <RotateCcw className="w-4 h-4 mr-1" />
+          )}
+          Resync toutes les courses
+        </Button>
+        {resyncResult && (
+          <pre className="text-xs text-gray-300 whitespace-pre-wrap max-w-lg">{resyncResult}</pre>
+        )}
+      </div>
+
       {/* Race Selector */}
       <div className="card-arcade mb-6 overflow-hidden">
         <div className="bg-gradient-to-r from-cyan-600/20 to-transparent px-4 py-3 border-b border-gray-700/50">

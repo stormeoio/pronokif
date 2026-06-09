@@ -32,6 +32,7 @@ import type {
   LeaderboardEntry,
   LeagueMember,
   LeaguePreview,
+  CagnotteResponse,
   MinigameAttempts,
   MinigameLeaderboardEntry,
   MissionClaimResponse,
@@ -372,6 +373,7 @@ export const api = {
   user: {
     stats: () => get<PredictionStats>("/user/stats"),
     streak: () => get<unknown>("/user/streak"),
+    cagnotte: () => get<CagnotteResponse>("/user/cagnotte"),
   },
 
   // ── Admin ────────────────────────────────────────────────────
@@ -388,6 +390,7 @@ export const api = {
     deleteQualifyingGrid: (raceId: string) =>
       del<{ message: string }>(`/admin-bo/races/${raceId}/qualifying-grid`),
     syncResults: (raceId: string) => post<void>(`/admin/sync-results/${raceId}`),
+    resyncAllPast: () => post<{ message: string; results: unknown[] }>("/admin/resync-all-past"),
     sendNotification: (body: { title: string; message: string; type: string }) =>
       post<void>("/admin/notifications", body),
     feedback: () => get<FeedbackItem[]>("/admin/feedback"),
