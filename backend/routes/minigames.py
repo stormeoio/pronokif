@@ -10,10 +10,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from config import db
-
-MAX_COMPETITION_ATTEMPTS_PER_MONTH = 1
 from services.auth import get_current_user
 from services.championships import championship_context_for_race_id
+
+MAX_COMPETITION_ATTEMPTS_PER_MONTH = 1
 
 router = APIRouter(prefix="/minigames", tags=["Mini-Games"])
 
