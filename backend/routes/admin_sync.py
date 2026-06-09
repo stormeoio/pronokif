@@ -19,9 +19,9 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from data.f1_data import active_2026_races
 from services import sync as sync_service
 from services.admin import require_admin
+from services.race_calendar import active_2026_races
 
 router = APIRouter(tags=["admin-sync"])
 
