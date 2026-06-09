@@ -53,6 +53,43 @@ async def sync_all_pending_races(_admin: dict = Depends(require_admin)) -> dict:
     return await sync_service.sync_all_pending()
 
 
+@router.post("/admin/resync-all-past")
+async def resync_all_past_races(admin: dict = Depends(require_admin)) -> dict:
+    """Force re-sync + re-score ALL past races (even if results already exist).
+
+    Use after fixing driver mappings or scoring logic to recompute everything.
+    """
+    from data.f1_data import active_2026_races
+    from datetime import datetime, UTC
+
+    now = datetime.now(UTC)
+    results = []
+    for race in active_2026_races():
+        if race.get("is_cancelled"):
+            continue
+        race_start = race.get("race_start_at") or race.get("date")
+        if not race_start:
+            continue
+        if isinstance(race_start, str):
+            from datetime import datetime as dt
+            try:
+                race_dt = dt.fromisoformat(race_start.replace("Z", "+00:00"))
+            except ValueError:
+                continue
+        else:
+            race_dt = race_start
+        if race_dt.tzinfo is None:
+            race_dt = race_dt.replace(tzinfo=UTC)
+        if race_dt > now:
+            continue
+        try:
+            r = await sync_service.auto_sync_and_save(race["id"], admin["id"])
+            results.append({"race": race["name"], "status": r.get("status"), "points": r.get("points_calculated")})
+        except Exception as e:
+            results.append({"race": race["name"], "status": "error", "error": str(e)})
+    return {"message": f"Re-synced {len(results)} past races", "results": results}
+
+
 @router.get("/admin/sync-status")
 async def get_sync_status(_admin: dict = Depends(require_admin)) -> dict:
     """Return the auto-sync state for every race in the calendar."""
