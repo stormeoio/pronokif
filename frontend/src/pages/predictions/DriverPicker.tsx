@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { TEAM_COLORS } from "@/lib/constants";
+import { resolveDriverPhoto } from "@/lib/driverPhotos";
 import { haptic } from "@/lib/haptics";
 
 // ----------------------------------------------------------- types ---
@@ -42,12 +44,16 @@ function driverInitials(name: string) {
     .toUpperCase();
 }
 
+function driverLastName(name: string) {
+  const parts = name.split(" ").filter(Boolean);
+  return parts.length > 1 ? parts[parts.length - 1] : name;
+}
+
 // ----------------------------------------------------------- component ---
 
 /**
- * Reusable driver picker grid with team-colored left bar,
- * haptic feedback on selection, and scale micro-animations.
- * Broadcast Premium theme.
+ * 3-column driver picker grid with avatar photos, team-color accent,
+ * haptic feedback and Broadcast Premium styling.
  */
 export default function DriverPicker({
   drivers,
@@ -57,9 +63,20 @@ export default function DriverPicker({
 }: DriverPickerProps) {
   const { t } = useTranslation();
 
+  // Track drivers whose photo failed to load → show initials fallback
+  const [brokenPhotos, setBrokenPhotos] = useState<Set<string>>(() => new Set());
+
   const handleSelect = (driverId: string) => {
     haptic("selection");
     onDriverSelect(driverId);
+  };
+
+  const handlePhotoError = (driverId: string) => {
+    setBrokenPhotos((prev) => {
+      const next = new Set(prev);
+      next.add(driverId);
+      return next;
+    });
   };
 
   return (
@@ -77,19 +94,22 @@ export default function DriverPicker({
           {drivers.length} {t("predictions.form.drivers_short")}
         </span>
       </div>
+
       <motion.div
-        className="grid grid-cols-2 gap-2.5"
+        className="grid grid-cols-3 gap-2"
         initial="hidden"
         animate="visible"
         variants={{
           hidden: {},
-          visible: { transition: { staggerChildren: 0.03 } },
+          visible: { transition: { staggerChildren: 0.025 } },
         }}
       >
         {drivers.map((driver) => {
           const selected = isDriverSelected(driver.id);
           const teamColor = TEAM_COLORS[driver.team] || "#6B7280";
           const position = getPosition ? getPosition(driver.id) : null;
+          const photoUrl = resolveDriverPhoto(driver.id);
+          const showPhoto = photoUrl && !brokenPhotos.has(driver.id);
 
           return (
             <motion.button
@@ -100,72 +120,89 @@ export default function DriverPicker({
               variants={cardVariants}
               whileTap={{ scale: 0.94 }}
               className={`
-                relative flex min-h-[82px] items-center gap-2.5
-                overflow-hidden p-3 rounded-md
-                border transition-all duration-pk-short ease-pk-enter
+                relative flex flex-col items-center overflow-hidden
+                rounded-md border pt-2.5 pb-2 px-1
+                transition-all duration-pk-short ease-pk-enter
                 ${
                   selected
                     ? "border-pk-red/70 bg-pk-red-subtle shadow-[0_0_18px_rgba(225,6,0,0.18)]"
-                    : "border-white/[0.08] bg-pk-surface hover:-translate-y-0.5 hover:border-white/[0.15]"
+                    : "border-white/[0.08] bg-pk-surface hover:border-white/[0.15]"
                 }
               `}
               data-testid={`driver-${driver.id}`}
             >
+              {/* Team color accent — top bar */}
               <div
-                className="absolute inset-y-0 left-0 w-[3px]"
+                className="absolute inset-x-0 top-0 h-[2px]"
                 style={{ background: teamColor }}
                 aria-hidden="true"
               />
 
-              <span
-                className={`ml-1 flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-md border font-data
-                  ${
-                    selected
-                      ? "border-pk-red/35 bg-pk-red-subtle text-pk-red"
-                      : "border-white/[0.08] bg-black/20 text-pk-piste"
-                  }
-                  transition-colors duration-pk-short`}
-                style={{ boxShadow: selected ? `inset 0 -2px 0 ${teamColor}` : undefined }}
-              >
-                <span className="text-[0.85rem] leading-none">{driverInitials(driver.name)}</span>
-                <span className="mt-1 text-[0.5rem] leading-none text-pk-titane">
-                  #{driver.number}
-                </span>
-              </span>
-
-              <div className="min-w-0 flex-1 text-left">
-                <p className="truncate text-[0.8125rem] font-semibold leading-tight text-pk-piste">
-                  {driver.name}
-                </p>
-                <p className="mt-1 truncate font-data text-[0.5rem] uppercase tracking-[0.08em] text-pk-titane">
-                  {driver.team}
-                </p>
-              </div>
-
+              {/* Position badge (top-right) */}
               {position && (
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 500, damping: 15 }}
-                  className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-pk-red font-data text-[0.625rem] font-bold text-white shadow-[0_0_8px_rgba(225,6,0,0.5)]"
+                  className="absolute top-1 right-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-pk-red font-data text-[0.6rem] font-bold text-white shadow-[0_0_8px_rgba(225,6,0,0.5)]"
                 >
                   {position}
                 </motion.span>
               )}
 
-              <span
-                className={`flex min-w-7 items-center justify-center font-display text-[1rem]
-                  ${selected ? "text-pk-red" : "text-pk-titane/50"}
-                  transition-colors duration-pk-short`}
-              >
-                {position ? `P${position}` : selected ? <Check className="h-4 w-4" /> : null}
-              </span>
+              {/* Selected check (top-left) */}
+              {selected && !position && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute top-1 left-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-pk-red"
+                >
+                  <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
+                </motion.span>
+              )}
 
+              {/* Avatar circle */}
+              <div
+                className={`relative mb-1.5 flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 transition-colors ${
+                  selected ? "border-pk-red/60" : "border-white/[0.1]"
+                }`}
+                style={{
+                  boxShadow: selected ? `0 0 12px ${teamColor}40` : undefined,
+                }}
+              >
+                {showPhoto ? (
+                  <img
+                    src={photoUrl}
+                    alt={driver.name}
+                    className="h-full w-full object-cover object-top"
+                    loading="lazy"
+                    onError={() => handlePhotoError(driver.id)}
+                  />
+                ) : (
+                  <span
+                    className="flex h-full w-full items-center justify-center text-[0.8rem] font-bold"
+                    style={{ background: `${teamColor}25`, color: teamColor }}
+                  >
+                    {driverInitials(driver.name)}
+                  </span>
+                )}
+              </div>
+
+              {/* Name + number */}
+              <p className="w-full truncate text-center font-display text-[0.6rem] uppercase leading-tight text-pk-piste">
+                {driverLastName(driver.name)}
+              </p>
+              <p className="mt-0.5 font-data text-[0.48rem] uppercase text-pk-titane">
+                #{driver.number} ·{" "}
+                {driver.team.length > 10 ? driver.team.slice(0, 8) + "…" : driver.team}
+              </p>
+
+              {/* Selection underline */}
               {selected && (
                 <motion.span
                   initial={{ width: 0 }}
-                  animate={{ width: 18 }}
-                  className="absolute bottom-1.5 left-1/2 h-[2px] -translate-x-1/2 rounded-sm bg-pk-red"
+                  animate={{ width: 16 }}
+                  className="mt-1 h-[2px] rounded-sm bg-pk-red"
                 />
               )}
             </motion.button>

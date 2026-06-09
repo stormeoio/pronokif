@@ -459,7 +459,7 @@ export default function DriverDetailPage() {
         </div>
 
         {/* Hero content: info left, photo positioned absolutely right */}
-        <div className="relative z-10 min-h-[440px]">
+        <div className="relative z-10 min-h-[365px]">
           {/* Driver photo — absolute, fills full hero height, bleeds right */}
           <motion.div
             className="absolute right-0 top-0 bottom-0 w-[70%] z-0 flex items-end justify-end"
