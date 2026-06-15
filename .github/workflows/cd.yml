@@ -43,6 +43,14 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 10
 
+      - name: Wait for E2E gate
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.sha }}
+          check-name: "E2E tests (Playwright)"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+
       - name: Wait for Docker build gate
         uses: lewagon/wait-on-check-action@v1.3.4
         with:
