@@ -494,4 +494,8 @@ export interface ResultsResponse {
   results: RaceResults;
   points?: number;
   breakdown?: Record<string, number>;
+  // Set when the stored result changed after first classification (post-race
+  // correction, e.g. an FIA decision). Drives the "results updated" banner.
+  corrected_at?: string | null;
+  updated_at?: string | null;
 }

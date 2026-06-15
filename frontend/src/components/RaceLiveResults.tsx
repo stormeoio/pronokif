@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Trophy, ChevronRight } from "lucide-react";
+import { Trophy, ChevronRight, Check, X, Info } from "lucide-react";
 import { api } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
 import { useAuth } from "@/lib/auth";
@@ -23,16 +23,31 @@ import { buildDriverLookup, resolveDriverReference } from "@/components/entities
 import type { LeaderboardEntry, League } from "@/types/api";
 
 const POLL_MS = 30_000;
+// Once a race is finished we still poll gently so a post-race correction (FIA
+// decision repicked by the backend re-validation loop) surfaces without a manual
+// reload. Cheap: the fiche is only mounted while a user is viewing this GP.
+const FINISHED_POLL_MS = 5 * 60_000;
 const PODIUM = ["🥇", "🥈", "🥉"];
 
 // The /results/:id payload returns `points` as an object (total/details/xp) —
 // the generated ResultsResponse type lags the API, so describe the live shape here.
 interface LiveResultsResponse {
   results?: {
+    quali_pole?: string | null;
+    race_winner?: string | null;
+    race_top10?: string[];
+  } | null;
+  // The user's stored prediction, echoed back by /results/:id for comparison.
+  prediction?: {
+    quali_pole?: string | null;
     race_winner?: string | null;
     race_top10?: string[];
   } | null;
   points?: { total: number; details?: string[]; xp_earned?: number } | null;
+  // Set when the stored result was changed after it was first classified
+  // (post-race correction). Drives the "results updated" banner.
+  corrected_at?: string | null;
+  updated_at?: string | null;
 }
 
 interface RaceLiveResultsProps {
@@ -43,7 +58,7 @@ interface RaceLiveResultsProps {
 
 export default function RaceLiveResults({ raceId, isLive, isFinished }: RaceLiveResultsProps) {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const enabled = isLive || isFinished;
 
@@ -52,8 +67,10 @@ export default function RaceLiveResults({ raceId, isLive, isFinished }: RaceLive
     queryFn: () => api.results.get(raceId) as unknown as Promise<LiveResultsResponse>,
     enabled,
     retry: false,
-    // Poll while live so posted results / scores appear without a refresh.
-    refetchInterval: isLive ? POLL_MS : false,
+    // Poll while live (fast) so posted results / scores appear without a
+    // refresh; keep a gentle poll once finished so a later correction lands too.
+    refetchInterval: isLive ? POLL_MS : isFinished ? FINISHED_POLL_MS : false,
+    refetchOnWindowFocus: true,
   });
 
   const { data: drivers = [] } = useQuery({
@@ -100,6 +117,58 @@ export default function RaceLiveResults({ raceId, isLive, isFinished }: RaceLive
   const podium = podiumRefs.map(driverLabel);
   const myScore = resultData?.points?.total;
 
+  const correctedAt = resultData?.corrected_at ?? null;
+  const correctedDate = correctedAt
+    ? new Date(correctedAt).toLocaleDateString(i18n.language, { day: "2-digit", month: "2-digit" })
+    : null;
+
+  // User's headline picks vs the actual result (only meaningful once results land).
+  const prediction = resultData?.prediction;
+  const driverKey = (ref?: string | null): string | null => {
+    if (!ref) return null;
+    const d = resolveDriverReference(ref, lookup);
+    return d ? d.id : String(ref).trim().toLowerCase();
+  };
+  const matches = (a?: string | null, b?: string | null): boolean | null => {
+    if (!a || !b) return null;
+    return driverKey(a) === driverKey(b);
+  };
+  const poleHit = matches(prediction?.quali_pole, results?.quali_pole);
+  const winnerHit = matches(prediction?.race_winner, results?.race_winner);
+  const hasPicks = Boolean(prediction?.quali_pole || prediction?.race_winner);
+
+  const renderPickRow = (
+    label: string,
+    pickRef?: string | null,
+    hit?: boolean | null,
+    actualRef?: string | null,
+  ) => (
+    <div className="flex items-center justify-between gap-2">
+      <span className="font-data text-[0.5625rem] uppercase tracking-[0.1em] text-pk-titane">
+        {label}
+      </span>
+      <span className="flex min-w-0 items-center gap-1.5">
+        {hit === true ? (
+          <Check className="h-3 w-3 shrink-0 text-pk-emerald" />
+        ) : hit === false ? (
+          <X className="h-3 w-3 shrink-0 text-pk-titane" />
+        ) : null}
+        <span
+          className={`truncate font-data text-[0.75rem] ${
+            hit === true ? "text-pk-emerald" : "text-pk-piste"
+          }`}
+        >
+          {driverLabel(pickRef) ?? "—"}
+        </span>
+        {hit === false && driverLabel(actualRef) && (
+          <span className="shrink-0 font-data text-[0.625rem] text-pk-titane">
+            → {driverLabel(actualRef)}
+          </span>
+        )}
+      </span>
+    </div>
+  );
+
   const leagueRows = (leagues as League[]).map((lg, i) => {
     const entries = (leaderboards[i]?.data as LeaderboardEntry[] | undefined) ?? [];
     const me = entries.find((e) => String(e.user_id) === String(user?.id));
@@ -130,6 +199,20 @@ export default function RaceLiveResults({ raceId, isLive, isFinished }: RaceLive
             : t("grand_prix.live_results.title_live")}
         </span>
       </div>
+
+      {/* Post-race correction notice (result changed after first classification,
+          e.g. an FIA decision repicked by the backend re-validation loop). */}
+      {correctedAt && (
+        <div
+          className="flex items-start gap-2 border-b border-pk-gold/20 bg-pk-gold/[0.06] px-3.5 py-2"
+          data-testid="results-corrected-banner"
+        >
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-pk-gold" />
+          <span className="font-data text-[0.6875rem] leading-snug text-pk-gold">
+            {t("grand_prix.live_results.corrected", { date: correctedDate })}
+          </span>
+        </div>
+      )}
 
       <div className="space-y-3 p-3.5">
         {/* Race podium */}
@@ -175,6 +258,30 @@ export default function RaceLiveResults({ raceId, isLive, isFinished }: RaceLive
             </span>
           )}
         </div>
+
+        {/* User's headline picks vs actual result */}
+        {hasResults && hasPicks && (
+          <div
+            className="space-y-1.5 rounded-md bg-pk-anthracite/40 px-3 py-2.5"
+            data-testid="live-my-picks"
+          >
+            <p className="font-data text-[0.5625rem] uppercase tracking-[0.12em] text-pk-titane">
+              {t("grand_prix.live_results.your_picks")}
+            </p>
+            {renderPickRow(
+              t("grand_prix.live_results.pole"),
+              prediction?.quali_pole,
+              poleHit,
+              results?.quali_pole,
+            )}
+            {renderPickRow(
+              t("grand_prix.live_results.winner"),
+              prediction?.race_winner,
+              winnerHit,
+              results?.race_winner,
+            )}
+          </div>
+        )}
 
         {/* Leagues */}
         {leagueRows.length > 0 ? (

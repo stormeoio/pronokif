@@ -19,6 +19,7 @@ import {
   Lock,
   Route,
   CornerDownRight,
+  Pencil,
 } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
@@ -31,6 +32,7 @@ import { EmptyFullPage } from "@/components/EmptyState";
 import StartingGrid from "@/components/StartingGrid";
 import RaceDetailHero from "@/components/RaceDetailHero";
 import RaceLiveResults from "@/components/RaceLiveResults";
+import PredictionSummaryCard from "@/components/PredictionSummaryCard";
 
 /* ── Country flags ────────────────────────────────────────── */
 
@@ -635,27 +637,48 @@ export default function GrandPrixDetailPage() {
 
           {/* ════════════════ PRONOS TAB ════════════════ */}
           {activeTab === "picks" && (
-            <>
-              {isUpcoming && canPredict ? (
-                <motion.div variants={fadeUp} className="space-y-3">
-                  {/* Prediction timer */}
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-pk-red-subtle border border-pk-red/[0.12]">
-                    <motion.div
-                      animate={prefersReducedMotion ? {} : { scale: [1, 1.15, 1] }}
-                      transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                    >
-                      <Clock className="w-3.5 h-3.5 text-pk-red" />
-                    </motion.div>
-                    <span className="text-[0.8125rem] text-pk-piste">
-                      {t(
-                        raceDetails.is_sprint_weekend
-                          ? "grand_prix.deadline.sprint"
-                          : "grand_prix.deadline.race",
-                      )}
-                    </span>
-                  </div>
+            <motion.div variants={fadeUp} className="space-y-3" data-testid="picks-tab">
+              {/* Deadline banner — predictions still open */}
+              {isUpcoming && canPredict && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-pk-red-subtle border border-pk-red/[0.12]">
+                  <motion.div
+                    animate={prefersReducedMotion ? {} : { scale: [1, 1.15, 1] }}
+                    transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                  >
+                    <Clock className="w-3.5 h-3.5 text-pk-red" />
+                  </motion.div>
+                  <span className="text-[0.8125rem] text-pk-piste">
+                    {t(
+                      raceDetails.is_sprint_weekend
+                        ? "grand_prix.deadline.sprint"
+                        : "grand_prix.deadline.race",
+                    )}
+                  </span>
+                </div>
+              )}
 
-                  {/* CTA button */}
+              {/* Live banner — race running */}
+              {isLive && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-pk-surface border border-white/[0.08]">
+                  <span className="h-2 w-2 animate-[pulse-dot_1.5s_ease-in-out_infinite] rounded-full bg-pk-red" />
+                  <span className="text-[0.8125rem] text-pk-piste">
+                    {t("grand_prix.picks.live_hint")}
+                  </span>
+                </div>
+              )}
+
+              {/* Submitted picks recap — shown whenever the user has played */}
+              {hasPrediction && myPrediction && (
+                <PredictionSummaryCard
+                  prediction={myPrediction}
+                  isSprintWeekend={Boolean(raceDetails.is_sprint_weekend)}
+                  locked={!canPredict}
+                />
+              )}
+
+              {/* Action / empty region */}
+              {isUpcoming && canPredict ? (
+                <>
                   <button
                     onClick={() => {
                       haptic("medium");
@@ -664,8 +687,12 @@ export default function GrandPrixDetailPage() {
                     className="w-full h-11 rounded-lg bg-pk-red text-white font-display text-sm flex items-center justify-center gap-2 shadow-glow-red active:scale-[0.97] transition-transform"
                     data-testid="make-predictions-cta"
                   >
-                    <Target className="w-4 h-4" />
-                    {t("grand_prix.cta.predict")}
+                    {hasPrediction ? (
+                      <Pencil className="w-4 h-4" />
+                    ) : (
+                      <Target className="w-4 h-4" />
+                    )}
+                    {hasPrediction ? t("grand_prix.picks.modify") : t("grand_prix.cta.predict")}
                   </button>
 
                   {Boolean(raceDetails.is_sprint_weekend) &&
@@ -679,31 +706,24 @@ export default function GrandPrixDetailPage() {
                         data-testid="make-sprint-predictions-cta"
                       >
                         <Zap className="w-4 h-4" />
-                        {t("grand_prix.cta.sprint_picks")}
+                        {hasPrediction
+                          ? t("grand_prix.picks.modify_sprint")
+                          : t("grand_prix.cta.sprint_picks")}
                       </button>
                     )}
-                </motion.div>
-              ) : isUpcoming && !canPredict ? (
-                <motion.div variants={fadeUp} className="text-center py-12">
-                  <div className="w-14 h-14 rounded-full bg-pk-anthracite flex items-center justify-center mx-auto mb-3">
-                    <Lock className="w-6 h-6 text-pk-titane" />
-                  </div>
-                  <p className="font-display text-sm text-pk-titane mb-1">
-                    {t("grand_prix.cta.unavailable")}
-                  </p>
-                  <p className="text-xs text-pk-titane/60">{t("grand_prix.picks_open_soon")}</p>
-                </motion.div>
+                </>
               ) : isFinished ? (
-                <motion.div variants={fadeUp} className="space-y-3">
-                  <div className="flex items-center gap-2.5 p-3.5 bg-pk-surface border border-white/[0.08] rounded-lg">
-                    <div className="w-8 h-8 rounded-md bg-pk-emerald/[0.12] border border-pk-emerald/25 flex items-center justify-center">
-                      <Check className="w-4 h-4 text-pk-emerald" />
+                <>
+                  {!hasPrediction && (
+                    <div className="text-center py-8" data-testid="picks-none">
+                      <div className="w-14 h-14 rounded-full bg-pk-anthracite flex items-center justify-center mx-auto mb-3">
+                        <Target className="w-6 h-6 text-pk-titane" />
+                      </div>
+                      <p className="font-display text-sm text-pk-titane">
+                        {t("grand_prix.picks.none_finished")}
+                      </p>
                     </div>
-                    <p className="text-[0.8125rem] text-pk-piste">
-                      {t("grand_prix.status.finished")}
-                    </p>
-                  </div>
-
+                  )}
                   <button
                     onClick={() => {
                       haptic("selection");
@@ -715,15 +735,28 @@ export default function GrandPrixDetailPage() {
                     {t("grand_prix.cta.results")}
                     <ChevronRight className="w-4 h-4" />
                   </button>
-                </motion.div>
-              ) : (
-                <EmptyFullPage
-                  Icon={Target}
-                  title={t("grand_prix.empty.no_picks")}
-                  description={t("grand_prix.picks_open_soon")}
-                />
-              )}
-            </>
+                </>
+              ) : isUpcoming && !canPredict && !hasPrediction ? (
+                <div className="text-center py-12">
+                  <div className="w-14 h-14 rounded-full bg-pk-anthracite flex items-center justify-center mx-auto mb-3">
+                    <Lock className="w-6 h-6 text-pk-titane" />
+                  </div>
+                  <p className="font-display text-sm text-pk-titane mb-1">
+                    {t("grand_prix.cta.unavailable")}
+                  </p>
+                  <p className="text-xs text-pk-titane/60">{t("grand_prix.picks_open_soon")}</p>
+                </div>
+              ) : isLive && !hasPrediction ? (
+                <div className="text-center py-10" data-testid="picks-none">
+                  <div className="w-14 h-14 rounded-full bg-pk-anthracite flex items-center justify-center mx-auto mb-3">
+                    <Target className="w-6 h-6 text-pk-titane" />
+                  </div>
+                  <p className="font-display text-sm text-pk-titane">
+                    {t("grand_prix.picks.none_finished")}
+                  </p>
+                </div>
+              ) : null}
+            </motion.div>
           )}
         </motion.div>
       </AnimatePresence>

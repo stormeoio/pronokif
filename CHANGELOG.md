@@ -2,6 +2,17 @@
 
 Toutes les dates sont en heure Europe/Paris. Le changelog applicatif visible dans le back-office est maintenu dans `frontend/src/pages/admin-bo/tabs/ChangelogTab.tsx`.
 
+## v0.1.1.0 — 15 juin 2026
+
+### Added
+- Fiche Course, onglet Pronos : récapitulatif en lecture seule des pronostics soumis (pole + top 10 qualifs, vainqueur + top 10 course, bonus, + blocs sprint), avec un bouton « Modifier mes pronos » tant que les pronostics sont ouverts.
+- Fiche Course, onglet Pronos : le récap reste visible une fois les pronos fermés (puce « Verrouillés ») ou la course terminée, avec un bouton « Voir les résultats ».
+- Fiche Course, premier onglet (Circuit) : `RaceLiveResults` affiche désormais l'issue de tes pronostics — pole et vainqueur face au résultat réel (✓/✗) — en plus du podium, du score perso et des classements de ligue.
+- (Frontend, inerte tant que son backend n'est pas déployé) bannière « Résultats mis à jour » après une décision officielle, sur la fiche Course et la page Résultats.
+
+### Changed
+- Enregistrer ou supprimer un pronostic invalide désormais les caches pronos + résultats, afin que le récap et les résultats se rafraîchissent sans rechargement.
+
 ## v0.1.0.1 — 9 juin 2026
 
 ### Changed

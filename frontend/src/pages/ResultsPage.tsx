@@ -7,7 +7,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { ChevronLeft, Trophy, Flag, Clock } from "lucide-react";
+import { ChevronLeft, Trophy, Flag, Clock, Info } from "lucide-react";
 import AnimatedNumber from "../components/AnimatedNumber";
 import ResultComparisonCard from "./results/ResultComparisonCard";
 import { api, getApiStatus } from "@/lib/api";
@@ -54,6 +54,9 @@ interface ResultData {
     details: string[];
     xp_earned?: number;
   };
+  // Set when the stored result changed after first classification (post-race
+  // correction). Drives the "results updated" banner.
+  corrected_at?: string | null;
 }
 
 /* ── Skeleton ──────────────────────────────────────────── */
@@ -86,7 +89,7 @@ function ResultsSkeleton() {
 export default function ResultsPage() {
   const { raceId } = useParams();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const prefersReducedMotion = useReducedMotion() ?? false;
   const rmProps = getReducedMotionProps(prefersReducedMotion);
 
@@ -121,7 +124,9 @@ export default function ResultsPage() {
       }
     },
     enabled: !!selectedRace?.id,
-    refetchInterval: (query) => (query.state.data?.results ? false : 30_000),
+    // Poll fast until results land, then gently so a later correction surfaces.
+    refetchInterval: (query) => (query.state.data?.results ? 5 * 60_000 : 30_000),
+    refetchOnWindowFocus: true,
   });
 
   const loading = racesLoading || driversLoading;
@@ -238,6 +243,26 @@ export default function ResultsPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Post-race correction notice (result changed after first
+            classification, e.g. an FIA decision repicked by the backend). */}
+        {result?.corrected_at && (
+          <motion.div
+            variants={fadeUp}
+            className="flex items-start gap-2.5 rounded-lg border border-pk-gold/25 bg-pk-gold/[0.06] px-4 py-3"
+            data-testid="results-corrected-banner"
+          >
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-pk-gold" />
+            <span className="font-data text-[0.8125rem] leading-snug text-pk-gold">
+              {t("grand_prix.live_results.corrected", {
+                date: new Date(result.corrected_at).toLocaleDateString(i18n.language, {
+                  day: "2-digit",
+                  month: "2-digit",
+                }),
+              })}
+            </span>
+          </motion.div>
+        )}
 
         {/* 3D Podium */}
         {result?.results && (

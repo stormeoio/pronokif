@@ -6,8 +6,10 @@
  * and save/delete handlers.
  */
 import { useState, useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { queryKeys } from "@/lib/queryKeys";
 import { haptic } from "@/lib/haptics";
 import type { RaceDetails, Prediction } from "@/types/api";
 
@@ -24,6 +26,14 @@ export function usePredictionForm({
   loading,
   fetchedPrediction,
 }: UsePredictionFormParams) {
+  const queryClient = useQueryClient();
+  // Keep the GP fiche (Pronos recap + post-race results) in sync after edits.
+  const invalidatePrediction = () => {
+    if (!raceId) return;
+    queryClient.invalidateQueries({ queryKey: queryKeys.predictions.get(raceId) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.results.get(raceId) });
+  };
+
   const [saving, setSaving] = useState(false);
   const [existingPrediction, setExistingPrediction] = useState<Prediction | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
@@ -163,6 +173,7 @@ export function usePredictionForm({
       setSprintFirstCorner(null);
       setSelectionMode(race?.is_sprint_weekend ? "sprint_quali_pole" : "quali_pole");
       setShowDeleteConfirm(false);
+      invalidatePrediction();
     } catch (error: unknown) {
       const e = error as { response?: { data?: { detail?: string } } };
       toast.error(e.response?.data?.detail || "Erreur lors de la suppression");
@@ -220,6 +231,7 @@ export function usePredictionForm({
         setShowCelebration(true);
         haptic("success");
       }
+      invalidatePrediction();
     } catch (error: unknown) {
       const e = error as { response?: { data?: { detail?: string } } };
       toast.error(e.response?.data?.detail || "Erreur lors de l'enregistrement");
