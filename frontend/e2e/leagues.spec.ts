@@ -113,6 +113,6 @@ test.describe("Leagues flow", () => {
 
     // Page should load without error
     await expect(page).toHaveURL(/\/join\/ABC123/);
-    await expect(page.getByText("Une erreur est survenue")).not.toBeVisible();
+    await expect(page.getByText(/Une erreur (est survenue|inattendue)/)).not.toBeVisible();
   });
 });

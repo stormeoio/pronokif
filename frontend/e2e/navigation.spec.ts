@@ -110,7 +110,7 @@ test.describe("Navigation and routing", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page).toHaveURL("/notifications");
-    await expect(page.getByText("Une erreur est survenue")).not.toBeVisible();
+    await expect(page.getByText(/Une erreur (est survenue|inattendue)/)).not.toBeVisible();
   });
 
   test("missions page loads without errors", async ({ page }) => {
@@ -118,7 +118,7 @@ test.describe("Navigation and routing", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page).toHaveURL("/missions");
-    await expect(page.getByText("Une erreur est survenue")).not.toBeVisible();
+    await expect(page.getByText(/Une erreur (est survenue|inattendue)/)).not.toBeVisible();
   });
 
   test("minigames page loads without errors", async ({ page }) => {
@@ -126,7 +126,7 @@ test.describe("Navigation and routing", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page).toHaveURL("/minigames");
-    await expect(page.getByText("Une erreur est survenue")).not.toBeVisible();
+    await expect(page.getByText(/Une erreur (est survenue|inattendue)/)).not.toBeVisible();
   });
 
   test("results page loads without errors", async ({ page }) => {
@@ -134,7 +134,7 @@ test.describe("Navigation and routing", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page).toHaveURL("/results");
-    await expect(page.getByText("Une erreur est survenue")).not.toBeVisible();
+    await expect(page.getByText(/Une erreur (est survenue|inattendue)/)).not.toBeVisible();
   });
 
   test("unknown route redirects or shows 404", async ({ page }) => {

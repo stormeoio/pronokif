@@ -12,6 +12,7 @@ vi.mock("@/lib/api", () => ({
     predictions: { stats: vi.fn(), pointsHistory: vi.fn() },
     avatars: { list: vi.fn() },
     leaderboard: { global: vi.fn() },
+    user: { cagnotte: vi.fn() },
   },
 }));
 
@@ -50,6 +51,12 @@ beforeEach(() => {
     { user_id: "u1", total_points: 100 },
     { user_id: "u2", total_points: 80 },
   ]);
+  mockApi.user.cagnotte.mockResolvedValue({
+    balance: 120,
+    breakdown: { reaction: 70, batak: 50 },
+    total_games: 9,
+    history: [],
+  });
 });
 
 describe("useProfileData", () => {
@@ -134,6 +141,43 @@ describe("useProfileData", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.stats.totalPoints).toBe(42);
     expect(mockApi.leagues.leaderboard).not.toHaveBeenCalled();
+  });
+
+  it("normalizes a malformed cagnotte response to null instead of crashing the card", async () => {
+    // Regression: an unmocked/partial endpoint returns a truthy-but-incomplete
+    // object. Without normalization this slips past ProfilePage's `{cagnotte && ...}`
+    // guard and `cagnotte.breakdown.reaction` throws, white-screening the page.
+    mockApi.user.cagnotte.mockResolvedValue({});
+
+    const { result } = renderHook(() => useProfileData("u1", "l1"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => expect(result.current.cagnotte).toBeNull());
+  });
+
+  it("passes through a well-formed cagnotte response", async () => {
+    mockApi.user.cagnotte.mockResolvedValue({
+      balance: 120,
+      breakdown: { reaction: 70, batak: 50 },
+      total_games: 9,
+      history: [],
+    });
+
+    const { result } = renderHook(() => useProfileData("u1", "l1"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() =>
+      expect(result.current.cagnotte).toEqual({
+        balance: 120,
+        breakdown: { reaction: 70, batak: 50 },
+        total_games: 9,
+        history: [],
+      }),
+    );
   });
 
   it("returns avatars data", async () => {

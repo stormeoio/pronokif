@@ -6,7 +6,7 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { LeaderboardEntry } from "@/types/api";
+import type { CagnotteResponse, LeaderboardEntry } from "@/types/api";
 
 function asFiniteNumber(value: unknown, fallback: number | null = 0): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -15,6 +15,31 @@ function asFiniteNumber(value: unknown, fallback: number | null = 0): number | n
     if (Number.isFinite(parsed)) return parsed;
   }
   return fallback;
+}
+
+/**
+ * Cagnotte (mini-game winnings) can arrive partially-formed: an empty body on a
+ * backend hiccup, an API version skew, or — as surfaced by the profile E2E suite —
+ * an unmocked endpoint. The profile card reads `breakdown.reaction`/`breakdown.batak`
+ * directly, so a missing `breakdown` throws and the error boundary swallows the
+ * entire page. Normalize to a complete object or `null` so the card's
+ * `{cagnotte && ...}` guard can hide it cleanly instead of crashing.
+ */
+function normalizeCagnotte(data: unknown): CagnotteResponse | null {
+  if (!data || typeof data !== "object") return null;
+  const c = data as Partial<CagnotteResponse>;
+  if (typeof c.balance !== "number" || !c.breakdown || typeof c.breakdown !== "object") {
+    return null;
+  }
+  return {
+    balance: c.balance,
+    breakdown: {
+      reaction: asFiniteNumber(c.breakdown.reaction, 0) ?? 0,
+      batak: asFiniteNumber(c.breakdown.batak, 0) ?? 0,
+    },
+    total_games: asFiniteNumber(c.total_games, 0) ?? 0,
+    history: Array.isArray(c.history) ? c.history : [],
+  };
 }
 
 function getLeaderboardEntries(payload: unknown): LeaderboardEntry[] {
@@ -93,7 +118,7 @@ export function useProfileData(userId: string, currentLeagueId: string | null) {
     avatars: avatarsQuery.data ?? null,
     globalPosition: asFiniteNumber(globalLbQuery.data, null),
     pointsHistory: history,
-    cagnotte: cagnotteQuery.data ?? null,
+    cagnotte: normalizeCagnotte(cagnotteQuery.data),
     stats: {
       totalPredictions: statsQuery.data?.total_predictions ?? 0,
       racesParticipated: statsQuery.data?.races_participated ?? 0,

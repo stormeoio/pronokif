@@ -42,7 +42,7 @@ test.describe("Predictions page", () => {
     await page.waitForLoadState("networkidle");
 
     // Should not show error boundary
-    await expect(page.getByText("Une erreur est survenue")).not.toBeVisible();
+    await expect(page.getByText(/Une erreur (est survenue|inattendue)/)).not.toBeVisible();
 
     // Should be on the correct URL
     await expect(page).toHaveURL(/\/predictions\/race-1/);

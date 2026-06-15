@@ -87,7 +87,7 @@ test.describe("Profile page", () => {
     // At least one stat should be visible
     await expect(page.getByText("TestPilot")).toBeVisible({ timeout: 10000 });
     // Page should render without errors
-    await expect(page.getByText("Une erreur est survenue")).not.toBeVisible();
+    await expect(page.getByText(/Une erreur (est survenue|inattendue)/)).not.toBeVisible();
   });
 
   test("page loads without crashing", async ({ page }) => {
@@ -96,7 +96,27 @@ test.describe("Profile page", () => {
 
     await expect(page).toHaveURL("/profile");
     // No error boundary
-    await expect(page.getByText("Une erreur est survenue")).not.toBeVisible();
+    await expect(page.getByText(/Une erreur (est survenue|inattendue)/)).not.toBeVisible();
+  });
+
+  test("renders profile even when the cagnotte payload is malformed", async ({ page }) => {
+    // Regression: a partial cagnotte response (no `breakdown`) must not crash the
+    // whole profile page. Pin the malformed shape explicitly (last-registered route
+    // wins) so this stays covered even if a well-formed cagnotte mock is added later.
+    await page.route("**/api/user/cagnotte", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({}),
+      }),
+    );
+
+    await page.goto("/profile");
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.getByText("TestPilot")).toBeVisible({ timeout: 10000 });
+    // No error boundary (branded copy is "Une erreur inattendue s'est produite")
+    await expect(page.getByText(/Une erreur (est survenue|inattendue)/)).not.toBeVisible();
   });
 });
 
@@ -140,6 +160,6 @@ test.describe("Missions page", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page).toHaveURL("/missions");
-    await expect(page.getByText("Une erreur est survenue")).not.toBeVisible();
+    await expect(page.getByText(/Une erreur (est survenue|inattendue)/)).not.toBeVisible();
   });
 });
