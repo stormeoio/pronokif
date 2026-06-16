@@ -156,14 +156,25 @@ jobs:
       - name: Canary — critical API endpoints
         run: |
           FAIL=0
+          # Retry each endpoint: a deploy restarts the backend, so the first hit
+          # during warm-up can transiently 5xx or hang while the Mongo connection
+          # re-establishes (motor serverSelectionTimeoutMS=30s). Pass on the first
+          # expected code; only a sustained failure fails the deploy — the same
+          # resilience the backend-health step already has. curl stays bounded by
+          # --connect-timeout/--max-time so no single attempt can hang.
           check() {
-            CODE=$(curl -sf -o /dev/null --connect-timeout 10 --max-time 20 -w "%{http_code}" "$1" 2>/dev/null || echo "000")
-            if [ "$CODE" = "$2" ]; then
-              echo "  ✅ $1 → $CODE"
-            else
-              echo "  ❌ $1 → $CODE (expected $2)"
-              FAIL=1
-            fi
+            url="$1"; want="$2"; code="000"
+            for attempt in $(seq 1 6); do
+              code=$(curl -sf -o /dev/null --connect-timeout 10 --max-time 20 -w "%{http_code}" "$url" 2>/dev/null || echo "000")
+              if [ "$code" = "$want" ]; then
+                echo "  ✅ $url → $code (attempt $attempt)"
+                return
+              fi
+              echo "  … $url → $code (attempt $attempt/6, want $want), retrying in 10s"
+              sleep 10
+            done
+            echo "  ❌ $url → $code (expected $want after 6 attempts)"
+            FAIL=1
           }
           echo "Checking critical endpoints..."
           check "https://pronokif.eu/"                     "200"
