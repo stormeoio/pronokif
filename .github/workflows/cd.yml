@@ -112,23 +112,38 @@ jobs:
         run: |
           # Poll until the deployed frontend bundle changes (new Vite hash in HTML).
           # This confirms the Docker image was rebuilt and nginx is serving fresh code.
+          # curl is bounded (--connect-timeout/--max-time) and we fast-fail when the
+          # origin is unreachable, so a down VPS fails the deploy in ~30s instead of
+          # hanging this step for the whole job timeout (an unbounded curl on an
+          # unreachable origin once wedged this step for ~50 min).
           echo "Waiting for new bundle to go live (sha=$EXPECTED_SHA)..."
-          OLD_BUNDLE=$(curl -sf https://pronokif.eu/ | grep -oiE '/assets/index-[a-zA-Z0-9_-]+\.js' | head -1 || echo "unknown")
+          OLD_BUNDLE=$(curl -sf --connect-timeout 10 --max-time 20 https://pronokif.eu/ | grep -oiE '/assets/index-[a-zA-Z0-9_-]+\.js' | head -1 || echo "unknown")
           echo "Current bundle: $OLD_BUNDLE"
+          unreachable=0
           for attempt in $(seq 1 30); do
-            NEW_BUNDLE=$(curl -sf https://pronokif.eu/ | grep -oiE '/assets/index-[a-zA-Z0-9_-]+\.js' | head -1 || echo "")
-            if [ -n "$NEW_BUNDLE" ] && [ "$NEW_BUNDLE" != "$OLD_BUNDLE" ]; then
-              echo "::notice::Bundle updated: $OLD_BUNDLE → $NEW_BUNDLE"
-              break
+            if HTML=$(curl -sf --connect-timeout 10 --max-time 20 https://pronokif.eu/); then
+              unreachable=0
+              NEW_BUNDLE=$(printf '%s' "$HTML" | grep -oiE '/assets/index-[a-zA-Z0-9_-]+\.js' | head -1 || echo "")
+              if [ -n "$NEW_BUNDLE" ] && [ "$NEW_BUNDLE" != "$OLD_BUNDLE" ]; then
+                echo "::notice::Bundle updated: $OLD_BUNDLE → $NEW_BUNDLE"
+                break
+              fi
+              echo "Attempt $attempt/30: bundle still $NEW_BUNDLE, sleeping 10s..."
+            else
+              unreachable=$((unreachable + 1))
+              echo "Attempt $attempt/30: origin unreachable ($unreachable consecutive)"
+              if [ "$unreachable" -ge 3 ]; then
+                echo "::error::Origin https://pronokif.eu unreachable for $unreachable consecutive checks — deploy did not go live (origin/VPS down)."
+                exit 1
+              fi
             fi
-            echo "Attempt $attempt/30: bundle still $NEW_BUNDLE, sleeping 10s..."
             sleep 10
           done
 
       - name: Canary — backend health
         run: |
           for attempt in $(seq 1 15); do
-            if curl --fail --silent --show-error https://pronokif.eu/api/health >/tmp/pronokif-health.json; then
+            if curl --fail --silent --show-error --connect-timeout 10 --max-time 20 https://pronokif.eu/api/health >/tmp/pronokif-health.json; then
               STATUS=$(python3 -c "import json,sys; d=json.load(open('/tmp/pronokif-health.json')); print(d.get('status','unknown'))")
               echo "::notice::Backend healthy: $STATUS"
               break
@@ -142,7 +157,7 @@ jobs:
         run: |
           FAIL=0
           check() {
-            CODE=$(curl -sf -o /dev/null -w "%{http_code}" "$1" 2>/dev/null || echo "000")
+            CODE=$(curl -sf -o /dev/null --connect-timeout 10 --max-time 20 -w "%{http_code}" "$1" 2>/dev/null || echo "000")
             if [ "$CODE" = "$2" ]; then
               echo "  ✅ $1 → $CODE"
             else
