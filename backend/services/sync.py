@@ -19,7 +19,7 @@ from typing import Any
 
 import httpx
 
-from config import JOLPICA_API, OPENF1_API, db, logger
+from config import JOLPICA_API, OPENF1_API, logger
 from data.f1_data import F1_DRIVERS_2026
 from services.race_calendar import syncable_2026_races
 from services.results import set_official_and_score
@@ -107,34 +107,6 @@ async def _resolve_round(
         if race_name and (race_name in r_name or r_name in race_name):
             return r.get("round"), races_list
     return None, races_list
-
-
-def _results_signature(results: dict) -> tuple:
-    """Order-stable, comparable signature of a results payload.
-
-    Used to detect whether a freshly fetched result actually differs from what
-    is already stored, so a re-validation pass can no-op when nothing changed.
-    Ordered classifications (top10) are position-sensitive; ``dnf_drivers`` is
-    a set (scoring is per-driver, order-insensitive). ``sprint_first_corner_leader``
-    is intentionally ignored — ``auto_sync_and_save`` never persists it.
-    """
-    bonus = results.get("bonus") or {}
-    return (
-        results.get("quali_pole"),
-        tuple(results.get("quali_top10") or []),
-        tuple(results.get("sprint_quali_top10") or []),
-        tuple(results.get("sprint_race_top10") or []),
-        results.get("race_winner"),
-        tuple(results.get("race_top10") or []),
-        bonus.get("safety_car"),
-        tuple(sorted(bonus.get("dnf_drivers") or [])),
-        bonus.get("fastest_lap"),
-        bonus.get("first_corner_leader"),
-    )
-
-
-def _results_equal(a: dict, b: dict) -> bool:
-    return _results_signature(a) == _results_signature(b)
 
 
 # ---------------------------------------------------------------------------
@@ -268,11 +240,6 @@ async def _fetch_openf1_data(
         "safety_car": None,
         "first_corner_leader": None,
         "sprint_first_corner_leader": None,
-        # Per-field fetch status: True only when OpenF1 returned a definitive
-        # answer for that field this pass. Lets callers preserve previously
-        # stored values when a sub-call fails (OpenF1 429s aggressively) rather
-        # than overwriting good data with None.
-        "_status": {"safety_car": False, "first_corner_leader": False},
     }
 
     meetings_resp = await client.get(
@@ -338,7 +305,6 @@ async def _fetch_openf1_data(
                     break
             if result["safety_car"] is None:
                 result["safety_car"] = False
-            result["_status"]["safety_car"] = True
 
         # First corner leader (second P1 entry = post-start leader)
         pos_resp = await client.get(
@@ -346,7 +312,6 @@ async def _fetch_openf1_data(
             params={"session_key": session_key},
         )
         if pos_resp.status_code == 200:
-            result["_status"]["first_corner_leader"] = True
             p1_positions = [
                 p for p in pos_resp.json() if p.get("position") == 1
             ]
@@ -578,92 +543,49 @@ async def auto_sync_and_save(race_id: str, user_id: str) -> dict:
                 fetched_data["bonus"]["first_corner_leader"] = of1[
                     "first_corner_leader"
                 ]
-                fetched_data["_openf1_status"] = of1.get("_status") or {}
             except Exception as e:
                 errors.append(f"OpenF1: {e}")
 
     except Exception as e:
         return {"status": "error", "message": str(e), "errors": [str(e)]}
 
-    if not (fetched_data["race_winner"] or len(fetched_data["race_top10"]) > 0):
-        return {
-            "status": "partial",
-            "message": "Donnees recuperees mais aucun vainqueur trouve. Resultats non sauvegardes.",
-            "fetched_data": fetched_data,
-            "errors": errors,
+    if fetched_data["race_winner"] or len(fetched_data["race_top10"]) > 0:
+        results = {
+            "quali_pole": fetched_data["quali_pole"],
+            "quali_top10": fetched_data["quali_top10"],
+            "sprint_quali_top10": fetched_data["sprint_quali_top10"],
+            "sprint_race_top10": fetched_data["sprint_race_top10"],
+            "race_winner": fetched_data["race_winner"],
+            "race_top10": fetched_data["race_top10"],
+            "bonus": fetched_data["bonus"],
         }
 
-    existing = await db.race_results.find_one({"race_id": race_id}, {"_id": 0})
-    existing_results = (existing or {}).get("results") or {}
-    existing_bonus = existing_results.get("bonus") or {}
-    of1_status = fetched_data.get("_openf1_status") or {}
+        points_calculated = await set_official_and_score(
+            race_id=race_id,
+            results=results,
+            entered_by=user_id,
+            auto_synced=True,
+        )
 
-    # Merge-preserve: only overwrite a bonus field when OpenF1 returned a
-    # definitive fresh answer this pass. A failed sub-call (e.g. 429 on
-    # /position) must not null out a previously stored value — essential once
-    # this runs repeatedly on the re-validation loop.
-    bonus = dict(fetched_data["bonus"])
-    if existing_bonus and not of1_status.get("safety_car"):
-        bonus["safety_car"] = existing_bonus.get("safety_car")
-    if existing_bonus and not of1_status.get("first_corner_leader"):
-        bonus["first_corner_leader"] = existing_bonus.get("first_corner_leader")
-    fetched_data["bonus"] = bonus
+        success_items = _build_success_items(fetched_data)
 
-    results = {
-        "quali_pole": fetched_data["quali_pole"],
-        "quali_top10": fetched_data["quali_top10"],
-        "sprint_quali_top10": fetched_data["sprint_quali_top10"],
-        "sprint_race_top10": fetched_data["sprint_race_top10"],
-        "race_winner": fetched_data["race_winner"],
-        "race_top10": fetched_data["race_top10"],
-        "bonus": bonus,
-    }
-
-    existing_complete = bool(
-        existing_results.get("race_winner") and existing_results.get("race_top10")
-    )
-
-    # Diff-detect: a re-validation pass that finds no change is a true no-op —
-    # no re-write (which would bump updated_at and re-run the scoring walk), no
-    # notifications.
-    if existing_results and _results_equal(existing_results, results):
         return {
-            "status": "unchanged",
-            "message": "Aucun changement par rapport aux resultats stockes.",
+            "status": "success",
+            "message": (
+                f"Resultats synchronises et sauvegardes! "
+                f"{points_calculated} predictions calculated."
+            ),
             "fetched_data": fetched_data,
+            "success_items": success_items,
             "errors": errors,
-            "points_calculated": 0,
+            "points_calculated": points_calculated,
         }
-
-    # A change applied to an already-classified race is a correction (FIA
-    # decision, penalty applied/rescinded …): stamp it so the UI can flag the
-    # update; affected users get a "Correction" notification via the scoring
-    # delta path.
-    mark_correction = existing_complete
-
-    points_calculated = await set_official_and_score(
-        race_id=race_id,
-        results=results,
-        entered_by=user_id,
-        auto_synced=True,
-        mark_correction=mark_correction,
-    )
-
-    success_items = _build_success_items(fetched_data)
 
     return {
-        "status": "corrected" if mark_correction else "success",
-        "message": (
-            f"Correction appliquee! {points_calculated} pronostics recalcules."
-            if mark_correction
-            else f"Resultats synchronises et sauvegardes! "
-            f"{points_calculated} predictions calculated."
-        ),
+        "status": "partial",
+        "message": "Donnees recuperees mais aucun vainqueur trouve. Resultats non sauvegardes.",
         "fetched_data": fetched_data,
-        "success_items": success_items,
         "errors": errors,
-        "points_calculated": points_calculated,
-        "corrected": mark_correction,
     }
 
 

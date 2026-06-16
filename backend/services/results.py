@@ -68,14 +68,7 @@ async def get_official(race_id: str, user: dict) -> dict:
 
     prediction = await db.predictions.find_one({"user_id": user["id"], "race_id": race_id}, {"_id": 0})
     points = calculate_points(prediction, result["results"]) if prediction else None
-    return {
-        "results": result["results"],
-        "prediction": prediction,
-        "points": points,
-        # Surfaced for the frontend "results updated (FIA decision)" banner.
-        "corrected_at": result.get("corrected_at"),
-        "updated_at": result.get("updated_at"),
-    }
+    return {"results": result["results"], "prediction": prediction, "points": points}
 
 
 async def list_admin_races() -> list[dict]:
@@ -230,7 +223,6 @@ async def set_official_and_score(
     results: dict,
     entered_by: str,
     auto_synced: bool = False,
-    mark_correction: bool = False,
 ) -> int:
     """Upsert official results then score every prediction for the race.
 
@@ -244,10 +236,6 @@ async def set_official_and_score(
     silently dropped because a background pass briefly holds the lock. Scoring
     correctness across any overlap is guaranteed by the idempotent snapshot delta,
     not by the lock.
-
-    ``mark_correction`` records a post-completion correction (a result that
-    changed after it was already classified — e.g. an FIA decision): it stamps
-    ``corrected_at`` on the race_results doc so the frontend can flag the update.
     """
     if not auto_synced:
         return await _apply_official_results_and_score(
@@ -255,7 +243,6 @@ async def set_official_and_score(
             results=results,
             entered_by=entered_by,
             auto_synced=auto_synced,
-            mark_correction=mark_correction,
         )
 
     lock_token = str(uuid.uuid4())
@@ -268,7 +255,6 @@ async def set_official_and_score(
             results=results,
             entered_by=entered_by,
             auto_synced=auto_synced,
-            mark_correction=mark_correction,
         )
     finally:
         await _release_score_lock(race_id, lock_token)
@@ -280,7 +266,6 @@ async def _apply_official_results_and_score(
     results: dict,
     entered_by: str,
     auto_synced: bool = False,
-    mark_correction: bool = False,
 ) -> int:
     """Upsert official results then score every prediction for the race.
 
@@ -295,25 +280,17 @@ async def _apply_official_results_and_score(
     """
     championship_context = await championship_context_for_race_id(race_id)
     now = datetime.now(UTC).isoformat()
-    result_set: dict[str, Any] = {
-        "race_id": race_id,
-        **championship_context,
-        "results": results,
-        "entered_by": entered_by,
-        # ``updated_at`` always tracks the last write; ``entered_at`` (below) is
-        # pinned to first creation so a re-validation pass that re-writes a race
-        # never bumps its "first posted" time (which would resurface it via
-        # get_latest_unseen) and so corrections keep the original posting date.
-        "updated_at": now,
-        "auto_synced": auto_synced,
-    }
-    if mark_correction:
-        result_set["corrected_at"] = now
     await db.race_results.update_one(
         {"race_id": race_id},
         {
-            "$set": result_set,
-            "$setOnInsert": {"entered_at": now},
+            "$set": {
+                "race_id": race_id,
+                **championship_context,
+                "results": results,
+                "entered_by": entered_by,
+                "entered_at": now,
+                "auto_synced": auto_synced,
+            }
         },
         upsert=True,
     )
