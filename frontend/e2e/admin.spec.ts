@@ -186,8 +186,8 @@ test.describe("Admin panel", () => {
     await page.waitForLoadState("networkidle");
 
     await expect(page).toHaveURL("/admin");
-    // Should not show error boundary
-    await expect(page.getByText(/une erreur est survenue/i)).not.toBeVisible();
+    // Should not show error boundary (its real copy is "Une erreur inattendue s'est produite")
+    await expect(page.getByText(/Une erreur (est survenue|inattendue)/)).not.toBeVisible();
     await expect(page.getByRole("button", { name: "Utilisateurs", exact: true })).toBeVisible();
   });
 
