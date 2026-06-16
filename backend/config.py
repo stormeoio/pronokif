@@ -28,7 +28,12 @@ def _required_env(key: str) -> str:
 MONGO_URL = _required_env("MONGO_URL")
 DB_NAME = _required_env("DB_NAME")
 
-client = AsyncIOMotorClient(MONGO_URL)
+# serverSelectionTimeoutMS: fail fast (5s) when MongoDB is briefly unreachable
+# instead of motor's 30s default. A deploy restarts the backend, so the first
+# requests during warm-up shouldn't hang ~30s before erroring while the DB
+# connection re-establishes (this is what made /api/races/upcoming 500 after a
+# ~30s stall in the post-deploy canary).
+client = AsyncIOMotorClient(MONGO_URL, serverSelectionTimeoutMS=5000)
 db = client[DB_NAME]
 
 # JWT Configuration
