@@ -68,6 +68,7 @@ jobs:
           tests/test_config.py
           tests/test_email_service.py
           tests/test_scoring.py
+          tests/test_server_lifespan.py
           tests/test_sync_helpers.py
           -v
           --tb=short

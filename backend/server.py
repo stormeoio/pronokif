@@ -81,9 +81,41 @@ from services.sync import auto_sync_loop
 auto_sync_task: asyncio.Task | None = None
 
 
+async def _await_database_ready(attempts: int = 20, base_delay: float = 1.0) -> None:
+    """Block until MongoDB answers a ping, retrying with capped backoff.
+
+    A host reboot (or `docker compose up`) can start the API before MongoDB is
+    accepting connections. Without this, the lifespan's ``ensure_indexes()``
+    raises ``ServerSelectionTimeoutError`` on the first call and the app
+    crash-loops — made tighter by the 5s ``serverSelectionTimeoutMS``. Retry so
+    the API waits for the DB instead of dying at boot.
+    """
+    delay = base_delay
+    for attempt in range(1, attempts + 1):
+        try:
+            await client.admin.command("ping")
+            if attempt > 1:
+                logger.info("[MongoDB] reachable after %d attempt(s)", attempt)
+            return
+        except Exception as exc:  # noqa: BLE001 — any connection error should retry at boot
+            if attempt == attempts:
+                logger.error("[MongoDB] unreachable after %d attempts: %s", attempts, exc)
+                raise
+            logger.warning(
+                "[MongoDB] not ready (attempt %d/%d: %s); retrying in %.1fs",
+                attempt,
+                attempts,
+                type(exc).__name__,
+                delay,
+            )
+            await asyncio.sleep(delay)
+            delay = min(delay * 2, 5.0)
+
+
 @contextlib.asynccontextmanager
 async def lifespan(_app: FastAPI):
     global auto_sync_task
+    await _await_database_ready()
     await ensure_indexes()
     smtp_settings = get_smtp_settings()
     if smtp_settings:
